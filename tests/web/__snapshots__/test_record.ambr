@@ -18,28 +18,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -47,13 +75,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -61,20 +92,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -83,19 +135,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -104,7 +158,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -118,28 +172,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -157,9 +211,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -167,7 +221,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -185,14 +239,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -200,37 +260,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -243,7 +309,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -265,13 +332,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -300,14 +367,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -321,17 +388,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -339,7 +417,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -352,15 +430,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -374,20 +452,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -395,10 +473,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -421,7 +499,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -432,7 +510,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -717,28 +795,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -746,13 +852,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -760,20 +869,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -782,19 +912,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -803,7 +935,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -817,28 +949,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -856,9 +988,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -866,7 +998,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -884,14 +1016,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -899,37 +1037,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -942,7 +1086,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -964,13 +1109,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -999,14 +1144,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -1020,17 +1165,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -1038,7 +1194,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -1051,15 +1207,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -1073,20 +1229,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -1094,10 +1250,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -1120,7 +1276,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -1131,7 +1287,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -1355,28 +1511,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -1384,13 +1568,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -1398,20 +1585,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -1420,19 +1628,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -1441,7 +1651,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -1455,28 +1665,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -1494,9 +1704,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -1504,7 +1714,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -1522,14 +1732,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -1537,37 +1753,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -1580,7 +1802,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -1602,13 +1825,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -1637,14 +1860,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -1658,17 +1881,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -1676,7 +1910,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -1689,15 +1923,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -1711,20 +1945,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -1732,10 +1966,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -1758,7 +1992,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -1769,7 +2003,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -2217,28 +2451,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -2246,13 +2508,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -2260,20 +2525,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -2282,19 +2568,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -2303,7 +2591,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -2317,28 +2605,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -2356,9 +2644,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -2366,7 +2654,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -2384,14 +2672,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -2399,37 +2693,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -2442,7 +2742,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -2464,13 +2765,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -2499,14 +2800,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -2520,17 +2821,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -2538,7 +2850,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -2551,15 +2863,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -2573,20 +2885,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -2594,10 +2906,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -2620,7 +2932,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -2631,7 +2943,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -2917,28 +3229,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -2946,13 +3286,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -2960,20 +3303,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -2982,19 +3346,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -3003,7 +3369,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -3017,28 +3383,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -3056,9 +3422,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -3066,7 +3432,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -3084,14 +3450,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -3099,37 +3471,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -3142,7 +3520,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -3164,13 +3543,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -3199,14 +3578,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -3220,17 +3599,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -3238,7 +3628,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -3251,15 +3641,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -3273,20 +3663,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -3294,10 +3684,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -3320,7 +3710,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -3331,7 +3721,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -3779,28 +4169,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -3808,13 +4226,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -3822,20 +4243,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -3844,19 +4286,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -3865,7 +4309,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -3879,28 +4323,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -3918,9 +4362,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -3928,7 +4372,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -3946,14 +4390,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -3961,37 +4411,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -4004,7 +4460,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -4026,13 +4483,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -4061,14 +4518,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -4082,17 +4539,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -4100,7 +4568,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -4113,15 +4581,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -4135,20 +4603,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -4156,10 +4624,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -4182,7 +4650,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -4193,7 +4661,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -4641,28 +5109,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -4670,13 +5166,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -4684,20 +5183,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -4706,19 +5226,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -4727,7 +5249,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -4741,28 +5263,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -4780,9 +5302,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -4790,7 +5312,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -4808,14 +5330,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -4823,37 +5351,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -4866,7 +5400,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -4888,13 +5423,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -4923,14 +5458,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -4944,17 +5479,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -4962,7 +5508,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -4975,15 +5521,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -4997,20 +5543,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -5018,10 +5564,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -5044,7 +5590,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -5055,7 +5601,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -5225,8 +5771,8 @@
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
-                      <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
+                      <td data-label="Guild"><a href="/g/201">guild</a></td>
+                      <td data-label="Channel"><a href="/g/201/c/301">#channel</a></td>
                       <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
@@ -5255,7 +5801,13 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump">
+                          <div class="jumps">
+                              <a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
+                              <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
+                              <a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a>
+                          </div>
+                      </td>
                   </tr>
                   
                   <tr>
@@ -5263,8 +5815,8 @@
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
-                      <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
+                      <td data-label="Guild"><a href="/g/201">guild</a></td>
+                      <td data-label="Channel"><a href="/g/201/c/301">#channel</a></td>
                       <td data-label="Format">Standard</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
@@ -5293,7 +5845,13 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/902" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump">
+                          <div class="jumps">
+                              <a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
+                              <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
+                              <a href="https://discord.com/channels/201/301/902" class="button">Jump&nbsp;to&nbsp;game</a>
+                          </div>
+                      </td>
                   </tr>
                   
                   <tr>
@@ -5301,8 +5859,8 @@
                       
                       <td data-label="Time" class="timestamp">1577836800000.0</td>
                       
-                      <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
-                      <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
+                      <td data-label="Guild"><a href="/g/201">guild</a></td>
+                      <td data-label="Channel"><a href="/g/201/c/301">#channel</a></td>
                       <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
@@ -5331,7 +5889,13 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump">
+                          <div class="jumps">
+                              <a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
+                              <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
+                              <a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a>
+                          </div>
+                      </td>
                   </tr>
                   
               </tbody>
@@ -5481,28 +6045,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -5510,13 +6102,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -5524,20 +6119,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -5546,19 +6162,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -5567,7 +6185,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -5581,28 +6199,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -5620,9 +6238,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -5630,7 +6248,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -5648,14 +6266,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -5663,37 +6287,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -5706,7 +6336,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -5728,13 +6359,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -5763,14 +6394,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -5784,17 +6415,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -5802,7 +6444,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -5815,15 +6457,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -5837,20 +6479,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -5858,10 +6500,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -5884,7 +6526,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -5895,7 +6537,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -6188,28 +6830,56 @@
     padding: 0;
   }
   
+  :root {
+    --brand-purple: #5a3efd;
+    --brand-purple-dark: #3f2bcc;
+    --brand-orange: #f6ad4b;
+    --brand-orange-dark: #c98a2f;
+    --link: #ffb342;
+    --link-hover: #ffd160;
+    --accent: #818cf8;
+    --text: #e6e8ee;
+    --muted: #9aa3b2;
+    --card-bg: #232a39;
+    --card-bg-hover: #2a3243;
+    --page-bg: #1a202c;
+    --page-text: #ffffff;
+    --page-muted: #a0aec0;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --danger-bg: #3f1e1e;
+    --danger-bg-hover: #552a2a;
+    --danger-border: #5a2a2a;
+    --danger-text: #fca5a5;
+  }
+  
   body {
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Verdana",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
       sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e0e0e0;
+    background: var(--page-bg);
+    color: var(--page-text);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 2rem 1rem 3rem;
+    line-height: 1.45;
   }
   
   a,
   a:visited,
   a:active {
-    color: rgba(246, 173, 75);
+    color: var(--link);
     text-decoration: none;
   }
   a:hover {
-    filter: brightness(150%);
+    color: var(--link-hover);
   }
   
   .container {
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
@@ -6217,13 +6887,16 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
   }
+  .header > a {
+    display: inline-flex;
+  }
   .header img {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
   }
   .header .titles {
@@ -6231,20 +6904,41 @@
     min-width: 0;
   }
   .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
   }
   .header .subtitle {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--page-muted);
     margin-top: 0.25rem;
+  }
+  /* The user and guild subtitles carry extra inline content — a monospace ID span
+     and, on the user page, a copy button — whose natural line boxes are ~1px taller
+     than the plain-text subtitles on the channel and game pages. Pin their line
+     height so every detail page's header (and its divider rule) lands in the same
+     spot regardless of subtitle content. */
+  .header .subtitle .user-id {
+    display: inline-block;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+  .header .subtitle .copy {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .header-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+  .header-nav .button {
+    min-width: 0;
+    font-size: 0.8rem;
+    background: var(--card-bg);
+    border-color: #333;
+    color: var(--page-text);
   }
   
   .section {
@@ -6253,19 +6947,21 @@
   .section h2 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: var(--accent);
     margin-bottom: 0.5rem;
   }
   
   .card {
-    background: #252545;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
+    box-shadow: var(--shadow);
   }
   
   .empty {
-    color: #9ca3af;
+    color: var(--muted);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -6274,7 +6970,7 @@
     margin-bottom: 0.75rem;
   }
   .owner-promote-status strong {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   table {
@@ -6288,28 +6984,28 @@
     vertical-align: top;
   }
   table thead th {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
   }
   table tbody tr + tr td {
-    border-top: 1px solid #2a2a4a;
+    border-top: 1px solid var(--border);
   }
   table tbody tr:nth-child(even) td {
-    background: #1a1a35;
+    background: var(--page-bg);
   }
   table tbody td {
-    color: #e0e0e0;
+    color: var(--text);
     font-size: 0.9rem;
   }
   
   .user-id {
     font-family: monospace;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   
@@ -6327,9 +7023,9 @@
     height: 1.5rem;
     margin-left: 0.35rem;
     border-radius: 4px;
-    background: #1e1e3f;
-    border: 1px solid #333;
-    color: #c4b5fd;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
     font-size: 0.75rem;
     cursor: pointer;
     user-select: none;
@@ -6337,7 +7033,7 @@
     vertical-align: middle;
   }
   .copy:hover {
-    background: #2a2a55;
+    background: var(--card-bg-hover);
   }
   .copy.copied {
     color: #4ade80;
@@ -6355,14 +7051,20 @@
     flex-wrap: wrap;
   }
   .player .name {
-    color: #e0e0e0;
+    color: var(--text);
+  }
+  
+  .jumps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .button {
     display: inline-block;
-    background: #1e1e3f;
-    color: #c4b5fd;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.35rem 0.75rem;
     font-size: 0.7rem;
@@ -6370,37 +7072,43 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.15s;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   .button:hover {
-    background: #2a2a55;
-    filter: none;
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .button-danger {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border-color: #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
   }
   .button-danger:hover {
-    background: #552a2a;
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
   }
   .award-error {
-    background: #3f1e1e;
-    color: #fca5a5;
-    border: 1px solid #5a2a2a;
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-border);
   }
   .block-add-form {
     margin-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
   }
   a.button,
   a.button:visited,
   a.button:active {
-    color: #c4b5fd;
+    color: var(--text);
   }
   a.button:hover {
-    color: #c4b5fd;
+    color: var(--accent);
     text-decoration: none;
   }
   
@@ -6413,7 +7121,8 @@
   }
   
   .filters {
-    background: #1e1e3f;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     margin-bottom: 0.75rem;
@@ -6435,13 +7144,13 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--page-muted);
   }
   .filters input,
   .filters select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -6470,14 +7179,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
   .settings-form select {
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.35rem 0.5rem;
     font-size: 0.85rem;
@@ -6491,17 +7200,28 @@
     text-transform: none;
     letter-spacing: normal;
     font-size: 0.85rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   .settings-form .toggle-row input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: #7c5cff;
+    accent-color: var(--brand-purple);
     cursor: pointer;
   }
   .settings-form .hint {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.75rem;
+  }
+  
+  .block-list > summary {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .block-list[open] > summary {
+    margin-bottom: 0.75rem;
   }
   
   .motd-help {
@@ -6509,7 +7229,7 @@
     font-size: 0.75rem;
   }
   .motd-help summary {
-    color: #c4b5fd;
+    color: var(--accent);
     cursor: pointer;
   }
   .motd-help .hint {
@@ -6522,15 +7242,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   .motd-placeholders code {
-    background: #16213e;
-    border: 1px solid #333;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.05rem 0.3rem;
     font-size: 0.72rem;
-    color: #e0e0e0;
+    color: var(--text);
   }
   
   .login-prompt {
@@ -6544,20 +7264,20 @@
   }
   
   table thead th .sort {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     white-space: nowrap;
   }
   table thead th .sort:hover {
-    color: #c4b5fd;
+    color: var(--accent);
   }
   table thead th .sort .arrow {
     margin-left: 0.25rem;
-    color: #c4b5fd;
+    color: var(--accent);
   }
   
   .count {
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin-left: 0.5rem;
   }
@@ -6565,10 +7285,10 @@
   .footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border);
     text-align: center;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--muted);
   }
   
   @media (max-width: 720px) {
@@ -6591,7 +7311,7 @@
     }
     table tbody tr {
       padding: 0.75rem 0;
-      border-bottom: 1px solid #2a2a4a;
+      border-bottom: 1px solid var(--border);
     }
     table tbody tr + tr td {
       border-top: none;
@@ -6602,7 +7322,7 @@
     table tbody td::before {
       content: attr(data-label);
       display: block;
-      color: #9ca3af;
+      color: var(--muted);
       font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -6772,8 +7492,8 @@
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
-                      <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
-                      <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
+                      <td data-label="Guild"><a href="/g/201">guild</a></td>
+                      <td data-label="Channel"><a href="/g/201/c/301">#channel</a></td>
                       <td data-label="Format">Legacy</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
@@ -6802,7 +7522,13 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump">
+                          <div class="jumps">
+                              <a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
+                              <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
+                              <a href="https://discord.com/channels/201/301/903" class="button">Jump&nbsp;to&nbsp;game</a>
+                          </div>
+                      </td>
                   </tr>
                   
                   <tr>
@@ -6810,8 +7536,8 @@
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
-                      <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
-                      <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
+                      <td data-label="Guild"><a href="/g/201">guild</a></td>
+                      <td data-label="Channel"><a href="/g/201/c/301">#channel</a></td>
                       <td data-label="Format">Standard</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
@@ -6840,7 +7566,13 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/902" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump">
+                          <div class="jumps">
+                              <a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
+                              <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
+                              <a href="https://discord.com/channels/201/301/902" class="button">Jump&nbsp;to&nbsp;game</a>
+                          </div>
+                      </td>
                   </tr>
                   
                   <tr>
@@ -6848,8 +7580,8 @@
                       
                       <td data-label="Time">December 31, 2019, 4:00:00 PM PST</td>
                       
-                      <td data-label="Guild"><a href="https://discord.com/channels/201">guild</a></td>
-                      <td data-label="Channel"><a href="https://discord.com/channels/201/301">#channel</a></td>
+                      <td data-label="Guild"><a href="/g/201">guild</a></td>
+                      <td data-label="Channel"><a href="/g/201/c/301">#channel</a></td>
                       <td data-label="Format">Modern</td>
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
@@ -6878,7 +7610,13 @@
                               
                           </div>
                       </td>
-                      <td data-label="Jump"><a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                      <td data-label="Jump">
+                          <div class="jumps">
+                              <a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
+                              <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
+                              <a href="https://discord.com/channels/201/301/901" class="button">Jump&nbsp;to&nbsp;game</a>
+                          </div>
+                      </td>
                   </tr>
                   
               </tbody>

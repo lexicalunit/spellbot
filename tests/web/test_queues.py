@@ -885,6 +885,11 @@ class TestGuildNotifyEndpoint:
         assert "Formats" in body
         assert "Brackets" in body
         assert f'action="/queues/g/{guild.xid}/notify"' in body
+        # The header links back to the active queues list, this server's details
+        # page, and the viewer's own records.
+        assert 'class="page-header__user" href="/queues">Active Queues</a>' in body
+        assert f'class="page-header__user" href="/g/{guild.xid}">Server Details</a>' in body
+        assert f'class="page-header__user" href="/u/{me.xid}">My Records</a>' in body
         assert "Save preferences" in body
         assert "Do not notify me about games on this server" in body
         # No alert exists yet, so the off toggle should be pre-checked.

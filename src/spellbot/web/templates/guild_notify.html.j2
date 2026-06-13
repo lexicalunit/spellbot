@@ -19,11 +19,12 @@
                 <img class="logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
             </a>
             <h1>Notification Preferences</h1>
+            <nav class="page-header__links" aria-label="Site">
+                <a class="page-header__user" href="/queues">Active Queues</a>
+                <a class="page-header__user" href="/g/{{ guild.guild_xid }}">Server Details</a>
+                <a class="page-header__user" href="/u/{{ viewer.xid }}">My Records</a>
+            </nav>
         </header>
-
-        <nav class="breadcrumbs" aria-label="Breadcrumb">
-            <a href="/queues">← Back to Active Queues</a>
-        </nav>
 
         <section class="notify">
             <div class="notify__guild">
@@ -172,7 +173,6 @@
 
                 <div class="notify__actions">
                     <button type="submit" class="notify__save">Save preferences</button>
-                    <a class="notify__cancel" href="/queues">Cancel</a>
                 </div>
             </form>
         </section>

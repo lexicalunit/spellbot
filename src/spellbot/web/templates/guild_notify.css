@@ -1,13 +1,8 @@
-.breadcrumbs {
-  margin: 0 0 1rem;
-  font-size: 0.9rem;
-}
-.breadcrumbs a {
-  color: var(--brand-orange);
-  text-decoration: none;
-}
-.breadcrumbs a:hover {
-  text-decoration: underline;
+.page-header__links {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .notify {
   background: var(--card-bg);
@@ -170,15 +165,6 @@
 }
 .notify__save:hover {
   background: #6b75d4;
-}
-.notify__cancel {
-  font-size: 0.9rem;
-  color: rgba(240, 244, 255, 0.7);
-  text-decoration: none;
-}
-.notify__cancel:hover {
-  color: #f0f4ff;
-  text-decoration: underline;
 }
 .notify__hours-toggle {
   display: flex;

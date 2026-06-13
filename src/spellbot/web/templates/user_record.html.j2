@@ -13,7 +13,8 @@
 {% block content %}
 {%- if is_own_profile %}
 <div class="section">
-    <h2>Blocked Users</h2>
+    <details class="block-list"{{ ' open' if block_error else '' }}>
+    <summary>Blocked Users</summary>
     {%- if block_error %}
     <div class="card award-error">{{ block_error }}</div>
     {%- endif %}
@@ -60,6 +61,7 @@
             </div>
         </form>
     </div>
+    </details>
 </div>
 {%- elif not is_logged_in %}
 <div class="section">
@@ -101,8 +103,8 @@
                     {% else %}
                     <td data-label="Time" class="timestamp">{{ record.updated_at }}</td>
                     {% endif %}
-                    <td data-label="Guild"><a href="https://discord.com/channels/{{ record.guild }}">{{ record.guild_name }}</a></td>
-                    <td data-label="Channel"><a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}">#{{ record.channel_name }}</a></td>
+                    <td data-label="Guild"><a href="/g/{{ record.guild }}">{{ record.guild_name }}</a></td>
+                    <td data-label="Channel"><a href="/g/{{ record.guild }}/c/{{ record.channel }}">#{{ record.channel_name }}</a></td>
                     <td data-label="Format">{{ record.format }}</td>
                     <td data-label="Seats">{{ record.seats }}</td>
                     <td data-label="Bracket">{{ record.bracket }}</td>
@@ -123,7 +125,13 @@
                             {% endfor %}
                         </div>
                     </td>
-                    <td data-label="Jump"><a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                    <td data-label="Jump">
+                        <div class="jumps">
+                            <a href="https://discord.com/channels/{{ record.guild }}" class="button">Jump&nbsp;to&nbsp;guild</a>
+                            <a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}" class="button">Jump&nbsp;to&nbsp;channel</a>
+                            <a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">Jump&nbsp;to&nbsp;game</a>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
