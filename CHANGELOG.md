@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v21.0.2) - 2026-06-13
+
 ### Changed
 
 - Unified style across various records and active queues pages.
