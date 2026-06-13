@@ -1,61 +1,5 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --brand-purple: #5a3efd;
-  --brand-purple-dark: #3f2bcc;
-  --brand-orange: #f6ad4b;
-  --brand-orange-dark: #c98a2f;
-  --link: #ffb342;
-  --link-hover: #ffd160;
-  --accent: #818cf8;
-  --text: #e6e8ee;
-  --muted: #9aa3b2;
-  --card-bg: #232a39;
-  --card-bg-hover: #2a3243;
-  --page-bg: #1a202c;
-  --page-text: #ffffff;
-  --page-muted: #a0aec0;
-  --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
-  --danger-bg: #3f1e1e;
-  --danger-bg-hover: #552a2a;
-  --danger-border: #5a2a2a;
-  --danger-text: #fca5a5;
-}
-
-body {
-  font-family:
-    "Verdana",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
-  background: var(--page-bg);
-  color: var(--page-text);
-  min-height: 100vh;
-  padding: 2rem 1rem 3rem;
-  line-height: 1.45;
-}
-
-a,
-a:visited,
-a:active {
-  color: var(--link);
-  text-decoration: none;
-}
-a:hover {
-  color: var(--link-hover);
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
+/* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+   and .container live in base.css, which is included before this file. */
 
 .header {
   display: flex;
@@ -63,7 +7,7 @@ a:hover {
   gap: 1rem;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-strong);
 }
 .header > a {
   display: inline-flex;
@@ -111,7 +55,7 @@ a:hover {
   min-width: 0;
   font-size: 0.8rem;
   background: var(--card-bg);
-  border-color: #333;
+  border-color: var(--border-strong);
   color: var(--page-text);
 }
 

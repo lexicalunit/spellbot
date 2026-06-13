@@ -1,56 +1,5 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --brand-purple: #5a3efd;
-  --brand-purple-dark: #3f2bcc;
-  --brand-orange: #f6ad4b;
-  --brand-orange-dark: #c98a2f;
-  --link: #ffb342;
-  --link-hover: #ffd160;
-  --text: #e6e8ee;
-  --muted: #9aa3b2;
-  --card-bg: #232a39;
-  --card-bg-hover: #2a3243;
-  --page-bg: #1a202c;
-  --page-text: #ffffff;
-  --page-muted: #a0aec0;
-  --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
-}
-
-body {
-  font-family:
-    "Verdana",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
-  background: var(--page-bg);
-  color: var(--page-text);
-  min-height: 100vh;
-  padding: 2rem 1rem 3rem;
-  line-height: 1.45;
-}
-
-a,
-a:visited,
-a:active {
-  color: var(--link);
-  text-decoration: none;
-}
-a:hover {
-  color: var(--link-hover);
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
+/* Active Queues + Notification Preferences pages. Shared reset, tokens, body,
+   links, and .container live in base.css, which is included before this file. */
 
 .page-header {
   display: flex;
@@ -58,7 +7,7 @@ a:hover {
   gap: 1rem;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-strong);
 }
 .page-header a {
   display: inline-flex;
@@ -81,7 +30,7 @@ a:hover {
 .page-header__user:visited {
   align-self: center;
   padding: 0.35rem 0.75rem;
-  border: 1px solid #333;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   background: var(--card-bg);
   color: var(--page-text);
@@ -90,8 +39,8 @@ a:hover {
 }
 .page-header__admin:hover,
 .page-header__user:hover {
-  border-color: #818cf8;
-  color: #818cf8;
+  border-color: var(--accent);
+  color: var(--accent);
   filter: none;
 }
 .page-header__stat {
@@ -107,7 +56,7 @@ a:hover {
 }
 .page-header__stat-value {
   font-weight: 700;
-  color: #818cf8;
+  color: var(--accent);
 }
 .page-header__stat-label {
   color: var(--page-muted);
@@ -288,6 +237,20 @@ a:hover {
   .played-list {
     width: 100%;
   }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .page-header .page-header__admin,
+  .page-header .page-header__user {
+    align-self: flex-start;
+  }
+  .page-header__stat {
+    margin-left: 0;
+    align-self: flex-start;
+    margin-bottom: 0;
+  }
 }
 .played-list__row,
 .played-list__row:link,
@@ -307,7 +270,7 @@ a:hover {
 }
 .played-list__row:hover {
   background: var(--card-bg-hover);
-  border-left-color: #818cf8;
+  border-left-color: var(--accent);
 }
 .played-list__logo {
   width: 32px;
@@ -372,7 +335,7 @@ a:hover {
   color: var(--brand-orange);
 }
 .gallery-divider__label--played {
-  color: #818cf8;
+  color: var(--accent);
 }
 
 .queue-card__header {

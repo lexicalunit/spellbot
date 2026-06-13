@@ -4,9 +4,16 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+/* On narrow screens the header stacks (see queues.css), so the nav drops below
+   the title and should align to the left edge rather than the right. */
+@media (max-width: 720px) {
+  .page-header__links {
+    margin-left: 0;
+  }
+}
 .notify {
   background: var(--card-bg);
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -95,7 +102,7 @@
   height: 1rem;
 }
 .notify__fieldset {
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1rem 1.25rem 1.25rem;
   margin: 0;
@@ -112,7 +119,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #818cf8;
+  color: var(--accent);
 }
 .notify__hint {
   margin: 0 0 0.75rem;
@@ -144,7 +151,7 @@
   border-color: rgba(129, 140, 248, 0.4);
 }
 .notify__option input {
-  accent-color: #818cf8;
+  accent-color: var(--accent);
 }
 .notify__actions {
   display: flex;
@@ -160,7 +167,7 @@
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  background: #818cf8;
+  background: var(--accent);
   color: #1a202c;
 }
 .notify__save:hover {
@@ -177,7 +184,7 @@
   margin-bottom: 1rem;
 }
 .notify__hours-toggle input {
-  accent-color: #818cf8;
+  accent-color: var(--accent);
   width: 1rem;
   height: 1rem;
 }
@@ -228,7 +235,7 @@
   width: 18px;
   height: 34px;
   border-radius: 6px;
-  background: #818cf8;
+  background: var(--accent);
   border: 1px solid #1a202c;
   pointer-events: auto;
   cursor: pointer;
@@ -237,7 +244,7 @@
   width: 18px;
   height: 34px;
   border-radius: 6px;
-  background: #818cf8;
+  background: var(--accent);
   border: 1px solid #1a202c;
   pointer-events: auto;
   cursor: pointer;
