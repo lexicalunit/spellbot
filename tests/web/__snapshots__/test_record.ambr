@@ -70,6 +70,12 @@
     color: #9ca3af;
     margin-top: 0.25rem;
   }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
   
   .section {
     margin-bottom: 1.5rem;
@@ -451,6 +457,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -758,6 +768,12 @@
     font-size: 0.85rem;
     color: #9ca3af;
     margin-top: 0.25rem;
+  }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
   }
   
   .section {
@@ -1141,6 +1157,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -1386,6 +1406,12 @@
     font-size: 0.85rem;
     color: #9ca3af;
     margin-top: 0.25rem;
+  }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
   }
   
   .section {
@@ -1767,6 +1793,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -2239,6 +2269,12 @@
     color: #9ca3af;
     margin-top: 0.25rem;
   }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
   
   .section {
     margin-bottom: 1.5rem;
@@ -2619,6 +2655,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -2928,6 +2968,12 @@
     font-size: 0.85rem;
     color: #9ca3af;
     margin-top: 0.25rem;
+  }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
   }
   
   .section {
@@ -3309,6 +3355,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -3781,6 +3831,12 @@
     color: #9ca3af;
     margin-top: 0.25rem;
   }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
   
   .section {
     margin-bottom: 1.5rem;
@@ -4161,6 +4217,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -4633,6 +4693,12 @@
     color: #9ca3af;
     margin-top: 0.25rem;
   }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
   
   .section {
     margin-bottom: 1.5rem;
@@ -5015,6 +5081,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -5463,6 +5533,12 @@
     color: #9ca3af;
     margin-top: 0.25rem;
   }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
   
   .section {
     margin-bottom: 1.5rem;
@@ -5845,6 +5921,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           
@@ -6159,6 +6239,12 @@
     font-size: 0.85rem;
     color: #9ca3af;
     margin-top: 0.25rem;
+  }
+  .header-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
   }
   
   .section {
@@ -6542,6 +6628,10 @@
   </div>
   
               </div>
+              <nav class="header-nav">
+                  <a href="/queues" class="button">Active Queues</a>
+                  
+              </nav>
           </div>
   
           

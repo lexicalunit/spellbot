@@ -870,6 +870,34 @@ class TestWebGameDetail:
         )
         assert resp.status == 200
 
+    async def test_game_detail_nav_links(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(id=5, guild=guild, channel=channel)
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+
+        # Anonymous: the Active Queues link shows, the per-user link does not.
+        resp = await client.get(f"/game/{game.id}")
+        text = await resp.text()
+        assert '<nav class="header-nav">' in text
+        assert 'href="/queues"' in text
+        assert "My Records" not in text
+
+        # Logged in: the link to the viewer's own records page also shows.
+        mocker.patch(
+            "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(777, "Me")),
+        )
+        resp = await client.get(f"/game/{game.id}")
+        text = await resp.text()
+        assert 'href="/u/777"' in text
+        assert ">My Records</a>" in text
+
     async def test_game_detail_missing(self, client: ClientSession) -> None:
         resp = await client.get("/game/99999")
         assert resp.status == 404

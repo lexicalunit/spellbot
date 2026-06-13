@@ -442,6 +442,7 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         return web.Response(status=404)
     records, total = result
 
+    viewer_xid, _ = await get_viewer(request)
     channel = None
     is_logged_in = False
     is_moderator = False
@@ -460,7 +461,6 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         user = await services.users.get(opts.target_xid)
         target_name = user.name if user else None
         page_size = USER_PAGE_SIZE
-        viewer_xid, _ = await get_viewer(request)
         is_logged_in = viewer_xid is not None
         is_own_profile = viewer_xid == opts.target_xid
         if is_own_profile:
@@ -479,6 +479,7 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
         "tz_name": opts.tz_name,
         "guild_xid": opts.guild_xid,
         "guild_name": guild_name,
+        "viewer_xid": viewer_xid,
         "target_xid": opts.target_xid,
         "target_name": target_name,
         "page": opts.page,
@@ -632,10 +633,12 @@ async def game_impl(request: web.Request) -> web.Response:
             tz_offset = int(tz_offset_cookie)
     tz_name = request.cookies.get("timezone_name")
 
+    viewer_xid, _ = await get_viewer(request)
     context = {
         "game": game,
         "tz_offset": tz_offset,
         "tz_name": tz_name,
+        "viewer_xid": viewer_xid,
     }
     return aiohttp_jinja2.render_template("game.html.j2", request, context)
 
@@ -667,12 +670,14 @@ async def guild_impl(request: web.Request) -> web.Response:
     is_logged_in, is_moderator = await viewer_access(request, guild_xid)
     guild_settings = await services.guilds.get(guild_xid) if is_moderator else None
     awards = await services.guilds.award_list(guild_xid) if is_moderator else []
+    viewer_xid, _ = await get_viewer(request)
 
     context = {
         "guild": guild["guild"],
         "channels": guild["channels"],
         "tz_offset": tz_offset,
         "tz_name": tz_name,
+        "viewer_xid": viewer_xid,
         "is_owner": await is_owner_request(request),
         "is_logged_in": is_logged_in,
         "is_moderator": is_moderator,

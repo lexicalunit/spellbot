@@ -22,6 +22,10 @@
                 <h1>{% block heading %}SpellBot{% endblock %}</h1>
                 {% block subtitle %}{% endblock %}
             </div>
+            <nav class="header-nav">
+                <a href="/queues" class="button">Active Queues</a>
+                {% if viewer_xid %}<a href="/u/{{ viewer_xid }}" class="button">My Records</a>{% endif %}
+            </nav>
         </div>
 
         {% block content %}{% endblock %}

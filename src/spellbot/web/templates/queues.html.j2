@@ -22,6 +22,9 @@
             {% if is_admin %}
             <a class="page-header__admin" href="/admin/dashboard">Admin Dashboard</a>
             {% endif %}
+            {% if viewer.logged_in %}
+            <a class="page-header__user" href="/u/{{ viewer.xid }}">My Records</a>
+            {% endif %}
             <div class="page-header__stat" title="Pending queues plus games started in the last 2 hours">
                 <span class="page-header__stat-value">{{ "{:,}".format(stats.active_games) }}</span>
                 <span class="page-header__stat-label">Active Games</span>

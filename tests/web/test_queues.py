@@ -697,6 +697,8 @@ class TestPlayedGuildsSection:
         resp = await client.get("/queues")
         body = await resp.text()
         assert "Your Servers" in body
+        assert f'href="/u/{me.xid}"' in body
+        assert ">My Records</a>" in body
         assert 'class="played-list__row"' in body
         assert "Played Guild" in body
         assert f'href="/queues/g/{guild.xid}"' in body
@@ -760,6 +762,7 @@ class TestPlayedGuildsSection:
         body = await resp.text()
         assert "Your Servers" not in body
         assert 'class="played-list__row"' not in body
+        assert "My Records" not in body
 
     async def test_section_hidden_when_no_history(
         self,

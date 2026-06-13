@@ -75,7 +75,10 @@ a:hover {
 }
 .page-header__admin,
 .page-header__admin:link,
-.page-header__admin:visited {
+.page-header__admin:visited,
+.page-header__user,
+.page-header__user:link,
+.page-header__user:visited {
   align-self: center;
   padding: 0.35rem 0.75rem;
   border: 1px solid #333;
@@ -85,7 +88,8 @@ a:hover {
   font-size: 0.8rem;
   white-space: nowrap;
 }
-.page-header__admin:hover {
+.page-header__admin:hover,
+.page-header__user:hover {
   border-color: #818cf8;
   color: #818cf8;
   filter: none;
