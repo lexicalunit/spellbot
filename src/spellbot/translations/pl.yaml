@@ -98,7 +98,7 @@ pl:
     awards_title: "Nagrody SpellBot dla graczy w gildii %{guild}"
     awards_empty: "**Na tym serwerze nie skonfigurowano żadnych nagród.**\n\nAby dodać nagrody, użyj komendy `/award add`."
     setup_title: "Konfiguracja SpellBota dla gildii %{guild}"
-    setup_description: "To są bieżące ustawienia SpellBota na tym serwerze. Użyj poniższych przycisków oraz komend `/set`, aby skonfigurować SpellBota w żądany sposób.\n\nMożesz również wyświetlić konfigurację nagród za pomocą komendy `/awards`, a konfigurację kanałów za pomocą komendy `/channels`."
+    setup_description: "SpellBot pomaga Twojej społeczności znajdować i grać w gry Magic: The Gathering. Odwiedź panel SpellBota, aby skonfigurować serwer, kanały i nagrody graczy.\n\n[Skonfiguruj SpellBota →](%{link})"
     field_motd: "MOTD"
     field_none: "Brak"
     field_public_links: "Linki publiczne"
@@ -160,7 +160,10 @@ pl:
     user_info_no_games: "Brak rozegranych meczów"
     user_info_play_range: "Zasięg gry"
     user_info_game_history: "Historia meczów"
-    user_info_view_link: "[Wyświetl na spellbot.io](%{link})"
+    view_link: "[Wyświetl na spellbot.io](%{link})"
+    game_info_title: "Informacje o grze #SB%{game_id}"
+    game_info_pending: "Jeszcze nie rozpoczęto"
+    game_info_details: "Szczegóły"
     user_info_footer: "ID użytkownika: %{user_id}"
     analytics_title: "Analityka serwera dla %{guild}"
     analytics_description: "Wyświetl pulpit analityki swojego serwera:\n📊 [Otwórz analitykę](%{url})\n\n_Ten link wygasa za %{minutes} min._"
@@ -183,6 +186,7 @@ pl:
     list_title: "Zablokowani użytkownicy"
     list_empty: "Nie masz zablokowanych użytkowników."
     list_page: "Strona %{current} z %{total}"
+    manage_message: "Możesz przeglądać i zarządzać zablokowanymi użytkownikami na stronie swojego profilu.\n\n[Otwórz swój profil na spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "Usunięto Cię ze wszystkich oczekujących meczów na tym kanale."

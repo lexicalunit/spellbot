@@ -98,7 +98,7 @@ da:
     awards_title: "SpellBot-spillerpriser for %{guild}"
     awards_empty: "**Der er ikke konfigureret nogen priser på denne server.**\n\nFor at tilføje priser skal du bruge kommandoen `/award add`."
     setup_title: "SpellBot-opsætning for %{guild}"
-    setup_description: "Her er de aktuelle indstillinger for SpellBot på denne server. Brug knapperne nedenfor samt kommandoerne `/set` til at konfigurere SpellBot, som du har lyst til.\n\nDu kan også få vist præmiekonfigurationen med kommandoen `/awards` og kanalkonfigurationen med kommandoen `/channels`."
+    setup_description: "SpellBot hjælper dit fællesskab med at finde og spille Magic: The Gathering-spil sammen. Besøg SpellBot-kontrolpanelet for at konfigurere din server, kanaler og spillerbelønninger.\n\n[Konfigurér SpellBot →](%{link})"
     field_motd: "MOTD"
     field_none: "Ingen"
     field_public_links: "Offentlige links"
@@ -160,7 +160,10 @@ da:
     user_info_no_games: "Ingen spillede kampe"
     user_info_play_range: "Spilletid"
     user_info_game_history: "Kamphistorik"
-    user_info_view_link: "[Vis på spellbot.io](%{link})"
+    view_link: "[Vis på spellbot.io](%{link})"
+    game_info_title: "Spilinfo for #SB%{game_id}"
+    game_info_pending: "Ikke startet endnu"
+    game_info_details: "Detaljer"
     user_info_footer: "Bruger-ID: %{user_id}"
     analytics_title: "Serveranalyse for %{guild}"
     analytics_description: "Vis din servers analyse-dashboard:\n📊 [Åbn Analyse](%{url})\n\n_Dette link udløber om %{minutes} minutter._"
@@ -183,6 +186,7 @@ da:
     list_title: "Blokerede brugere"
     list_empty: "Du har ingen blokerede brugere."
     list_page: "Side %{current} af %{total}"
+    manage_message: "Du kan se og administrere dine blokerede brugere på din profilside.\n\n[Åbn din profil på spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "Du blev fjernet fra alle afventende kampe i denne kanal."

@@ -13,14 +13,12 @@ from spellbot.models import GameStatus
 from spellbot.web.api import rest
 from spellbot.web.api.rest import (
     close_http_session,
-    delete_message,
     game_record_embed,
     post_with_retry,
     reply,
     retry_if_not_unrecoverable,
     send_dm,
     send_message,
-    update_message,
 )
 from tests.mocks import create_mock_game, create_mock_user
 
@@ -440,48 +438,6 @@ class TestSendDm:
         )
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})
-
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("reset_http_session")
-class TestUpdateMessage:
-    async def test_update_message_success(self, mocker: MockerFixture) -> None:
-        mock_post = mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            return_value={"id": "12345"},
-        )
-        result = await update_message(123, 456, {"content": "Updated"})
-        assert result == {"id": "12345"}
-        mock_post.assert_called_once()
-
-    async def test_update_message_failure(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            side_effect=Exception("Connection error"),
-        )
-        result = await update_message(123, 456, {"content": "Updated"})
-        assert result is None
-
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("reset_http_session")
-class TestDeleteMessage:
-    async def test_delete_message_success(self, mocker: MockerFixture) -> None:
-        mock_post = mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            return_value={},
-        )
-        result = await delete_message(123, 456)
-        assert result == {}
-        mock_post.assert_called_once()
-
-    async def test_delete_message_failure(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            side_effect=Exception("Connection error"),
-        )
-        result = await delete_message(123, 456)
-        assert result is None
 
 
 @pytest.mark.asyncio

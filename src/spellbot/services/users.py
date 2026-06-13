@@ -259,6 +259,21 @@ async def pending_games(user_data: UserData) -> int:
 
 
 @tracer.wrap()
+async def ensure_exists(user_xid: int) -> None:
+    """
+    Insert a placeholder user row for the given xid if one does not already exist.
+
+    Used by web flows (e.g. blocking) that only have a Discord user id to work with, so the
+    foreign keys that reference `users.xid` can be satisfied. The name is filled in the next
+    time SpellBot sees the user on Discord.
+    """
+    stmt = (
+        insert(User).values(xid=user_xid, name="").on_conflict_do_nothing(index_elements=[User.xid])
+    )
+    await DatabaseSession.execute(stmt)
+    await DatabaseSession.commit()
+
+
 async def block(author_xid: int, target_xid: int) -> None:
     """Add a block for the given author, blocking the given target."""
     values = {

@@ -65,7 +65,7 @@ class ContextLocal[ProxiedObject]:
     def __copy__(self) -> NoReturn:
         raise NotImplementedError
 
-    def __deepcopy__(self, memo: Any) -> NoReturn:
+    def __deepcopy__(self, _: Any) -> NoReturn:
         raise NotImplementedError
 
 
@@ -85,7 +85,7 @@ class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject]):
     def __copy__(self) -> NoReturn:
         raise NotImplementedError
 
-    def __deepcopy__(self, memo: Any) -> NoReturn:
+    def __deepcopy__(self, _: Any) -> NoReturn:
         raise NotImplementedError
 
 

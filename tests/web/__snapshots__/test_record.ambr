@@ -200,6 +200,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -276,7 +294,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -308,6 +326,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -842,6 +889,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -918,7 +983,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -950,6 +1015,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -1423,6 +1517,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -1499,7 +1611,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -1531,6 +1643,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -2228,6 +2369,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -2304,7 +2463,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -2336,6 +2495,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -2871,6 +3059,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -2947,7 +3153,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -2979,6 +3185,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -3676,6 +3911,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -3752,7 +4005,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -3784,6 +4037,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -4481,6 +4763,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -4557,7 +4857,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -4589,6 +4889,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -4689,6 +5018,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Log in to view and manage your own block list.
+              <a href="/queues/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Games <span class="count">(3 matching)</span></h2>
       
@@ -5256,6 +5593,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -5332,7 +5687,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -5364,6 +5719,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -5464,6 +5848,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Log in to view and manage your own block list.
+              <a href="/queues/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Games <span class="count">(0 matching)</span></h2>
       
@@ -5898,6 +6290,24 @@
     background: #2a2a55;
     filter: none;
   }
+  .button-danger {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border-color: #5a2a2a;
+  }
+  .button-danger:hover {
+    background: #552a2a;
+  }
+  .award-error {
+    background: #3f1e1e;
+    color: #fca5a5;
+    border: 1px solid #5a2a2a;
+  }
+  .block-add-form {
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+    padding-top: 1rem;
+  }
   a.button,
   a.button:visited,
   a.button:active {
@@ -5974,7 +6384,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: #e0e0e0;
   }
   .settings-form input[type="text"],
   .settings-form input[type="number"],
@@ -6006,6 +6416,35 @@
   .settings-form .hint {
     color: #9ca3af;
     font-size: 0.75rem;
+  }
+  
+  .motd-help {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+  }
+  .motd-help summary {
+    color: #c4b5fd;
+    cursor: pointer;
+  }
+  .motd-help .hint {
+    margin: 0.35rem 0;
+  }
+  .motd-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #9ca3af;
+  }
+  .motd-placeholders code {
+    background: #16213e;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.72rem;
+    color: #e0e0e0;
   }
   
   .login-prompt {
@@ -6106,6 +6545,14 @@
           </div>
   
           
+  <div class="section">
+      <div class="card">
+          <p class="login-prompt">
+              Log in to view and manage your own block list.
+              <a href="/queues/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
+          </p>
+      </div>
+  </div>
   <div class="section">
       <h2>Games <span class="count">(3 matching)</span></h2>
       

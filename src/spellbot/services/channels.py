@@ -64,9 +64,14 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
 
 async def forget(xid: int) -> None:
     """Delete the channel with the given xid from the database."""
-    await DatabaseSession.execute(
-        delete(Channel).where(Channel.xid == xid).execution_options(synchronize_session=False),  # type: ignore
+    query = (
+        delete(Channel)
+        .where(Channel.xid == xid)  # type: ignore
+        .execution_options(synchronize_session=False)
     )
+    # Record the deletion in one actor-attributed transaction so the audit triggers capture it.
+    async with audit.transaction():
+        await DatabaseSession.execute(query)
     channel_cache.pop(xid, None)
 
 
@@ -88,89 +93,6 @@ async def _set_column(xid: int, **values: object) -> None:
     # Record the change in one actor-attributed transaction so the audit triggers capture it.
     async with audit.transaction():
         await DatabaseSession.execute(query)
-
-
-async def set_default_seats(xid: int, seats: int) -> None:
-    """Set the default number of seats for games in this channel."""
-    await _set_column(xid, default_seats=seats)
-
-
-async def set_default_format(xid: int, format: int) -> None:
-    """Set the default game format for this channel."""
-    await _set_column(xid, default_format=format)
-
-
-async def set_default_bracket(xid: int, bracket: int) -> None:
-    """Set the default game bracket for this channel."""
-    await _set_column(xid, default_bracket=bracket)
-
-
-async def set_default_service(xid: int, service: int) -> None:
-    """Set the default game service for this channel."""
-    await _set_column(xid, default_service=service)
-
-
-async def set_auto_verify(xid: int, setting: bool) -> None:
-    """Set whether users are automatically verified in this channel."""
-    await _set_column(xid, auto_verify=setting)
-
-
-async def set_verified_only(xid: int, setting: bool) -> None:
-    """Set whether only verified users can use this channel."""
-    await _set_column(xid, verified_only=setting)
-
-
-async def set_unverified_only(xid: int, setting: bool) -> None:
-    """Set whether only unverified users can use this channel."""
-    await _set_column(xid, unverified_only=setting)
-
-
-async def set_motd(xid: int, message: str | None = None) -> str:
-    """Set the message of the day for this channel."""
-    if message:
-        max_len = Channel.motd.property.columns[0].type.length
-        motd = message[:max_len]
-    else:
-        motd = ""
-    await _set_column(xid, motd=motd)
-    return motd
-
-
-async def set_extra(xid: int, message: str | None = None) -> str:
-    """Set extra text to display in game posts for this channel."""
-    if message:
-        max_len = Channel.extra.property.columns[0].type.length
-        extra = message[:max_len]
-    else:
-        extra = ""
-    await _set_column(xid, extra=extra)
-    return extra
-
-
-async def set_voice_category(xid: int, value: str) -> str:
-    """Set the voice channel category prefix for this channel."""
-    max_len = Channel.voice_category.property.columns[0].type.length
-    name = value[:max_len]
-    await _set_column(xid, voice_category=name)
-    return name
-
-
-async def set_delete_expired(xid: int, value: bool) -> bool:
-    """Set whether expired games should be deleted in this channel."""
-    await _set_column(xid, delete_expired=value)
-    return value
-
-
-async def set_blind_games(xid: int, value: bool) -> bool:
-    """Set whether games in this channel should be created in blind mode."""
-    await _set_column(xid, blind_games=value)
-    return value
-
-
-async def set_voice_invite(xid: int, value: bool) -> bool:
-    """Set whether voice channel invites should be created for games."""
-    await _set_column(xid, voice_invite=value)
-    return value
 
 
 # Channel columns that guild moderators may edit from the web admin panel, derived from

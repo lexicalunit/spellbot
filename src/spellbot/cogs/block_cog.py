@@ -62,15 +62,13 @@ class BlockCog(commands.Cog):
 
     @app_commands.command(
         name="blocked",
-        description="List all users you've blocked.",
+        description="Get a link to view and manage the users you've blocked.",
     )
-    @app_commands.describe(page="If there are multiple pages of output, which one?")
     @tracer.wrap(name="interaction", resource="blocked")
-    async def blocked(self, interaction: discord.Interaction, page: int | None = 1) -> None:
+    async def blocked(self, interaction: discord.Interaction) -> None:
         add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
-            page = page or 1
-            await action.blocked(page=page)
+            await action.blocked()
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover

@@ -40,7 +40,7 @@ def member_response(role_ids: list[str], *, status_code: int = 200) -> MagicMock
 
 @pytest.fixture(autouse=True)
 def reset_moderation_cache(mocker: MockerFixture) -> None:
-    moderation.clear_cache()
+    moderation.mod_cache.clear()
     mocker.patch.object(moderation.settings, "BOT_TOKEN", "bot-token")
 
 

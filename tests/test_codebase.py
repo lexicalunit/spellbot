@@ -77,6 +77,23 @@ class TestCodebase:
         exitcode: int = cast("int", proc.returncode)
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
+    def test_deadcode(self) -> None:  # pragma: no cover
+        """
+        Checks that the Python codebase is free of dead code (via vulture).
+
+        Configuration (paths, allowlist, ignores) lives in `[tool.vulture]` in pyproject.toml.
+        Genuine findings should be deleted; unavoidable false positives belong in
+        `.vulture_allowlist.py`.
+        """
+        chdir(REPO_ROOT)
+        cmd = ["vulture"]
+        print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
+        proc = run(cmd, capture_output=True, check=False)  # noqa: S603
+        exitcode: int = cast("int", proc.returncode)
+        out = proc.stdout.decode("utf-8")
+        err = proc.stderr.decode("utf-8")
+        assert exitcode == 0, f"vulture found dead code:\n{out}\n{err}"
+
     def test_pyproject_dependencies(self) -> None:  # pragma: no cover
         """Checks that pyproject.toml dependencies are sorted."""
         with Path("pyproject.toml").open("rb") as fp:

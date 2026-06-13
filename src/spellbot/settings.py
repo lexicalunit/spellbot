@@ -124,7 +124,6 @@ class Settings(BaseSettings):
     # Girudo
     GIRUDO_BASE_URL: str = "https://game.girudo.com"
     GIRUDO_AUTH_URL: str = "https://game.girudo.com/auth-service/api/v1/login"
-    GIRUDO_LOBBY_URL: str = "https://game.girudo.com/game-service/v1/game/lobby?limit=15&offset=0"
     GIRUDO_CREATE_URL: str = "https://game.girudo.com/game-service/v1/game/multiplayer"
     GIRUDO_EMAILS: str | None = None
     GIRUDO_PASSWORDS: str | None = None

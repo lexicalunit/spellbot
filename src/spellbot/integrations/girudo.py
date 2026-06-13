@@ -49,37 +49,6 @@ def create_timeout() -> httpx.Timeout:
     return httpx.Timeout(timeout_s, connect=timeout_s, read=timeout_s, write=timeout_s)
 
 
-def get_all_girudo_formats() -> dict[str, GirudoGameFormat]:
-    if not GIRUDO_FORMATS_CACHE:
-        return {}
-
-    return dict(GIRUDO_FORMATS_CACHE)
-
-
-async def ensure_formats_loaded() -> dict[str, GirudoGameFormat]:
-    if GIRUDO_FORMATS_CACHE is not None:
-        return dict(GIRUDO_FORMATS_CACHE)
-
-    accounts = get_accounts()
-    if not accounts:
-        logger.warning("No Girudo accounts configured, cannot fetch formats")
-        return {}
-
-    try:
-        email, password = await pick_account(accounts)
-        timeout = create_timeout()
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            token = await authenticate(client, email=email, password=password)
-            if not token:
-                logger.warning("Failed to authenticate for format fetch")
-                return {}
-
-            return await fetch_and_cache_formats(client, token)
-    except Exception as ex:
-        logger.warning("Failed to ensure formats loaded: %s", ex, exc_info=True)
-        return {}
-
-
 async def fetch_and_cache_formats(
     client: httpx.AsyncClient,
     token: str,
@@ -232,16 +201,6 @@ class GirudoLinkDetails(NamedTuple):
     password: str | None = None
 
 
-class GirudoAuthError(RuntimeError):
-    def __init__(self, message: str = "Failed to authenticate to Girudo") -> None:
-        super().__init__(message)
-
-
-class GirudoGameCreateError(RuntimeError):
-    def __init__(self, message: str = "Failed to create game on Girudo") -> None:
-        super().__init__(message)
-
-
 def encode_password(raw_password: str) -> str:
     try:
         return base64.b64encode(raw_password.encode("utf-8")).decode("utf-8")
@@ -374,43 +333,6 @@ async def create_game(
     except Exception as ex:
         logger.warning("Girudo create game error: %s", ex, exc_info=True)
         return None
-
-
-async def fetch_lobbies(
-    client: httpx.AsyncClient,
-    token: str,
-) -> dict[str, Any]:
-    headers = {"Authorization": f"Bearer {token}"}
-    try:
-        if not settings.GIRUDO_LOBBY_URL:
-            logger.warning("GIRUDO_LOBBY_URL not configured")
-            return {}
-        resp = await client.get(settings.GIRUDO_LOBBY_URL, headers=headers)
-        resp.raise_for_status()
-        data = resp.json()
-        return data.get("data") or {}
-    except Exception as ex:
-        logger.warning("Girudo fetch lobbies failed: %s", ex, exc_info=True)
-        return {}
-
-
-async def get_available_lobby(
-    client: httpx.AsyncClient,
-    token: str,
-) -> str | None:
-    lobbies = await fetch_lobbies(client, token)
-
-    for game_uuid, info in lobbies.items():
-        try:
-            curr = int(info.get("current_player_count", 0))
-            maxp = int(info.get("max_players", 0))
-        except ValueError, TypeError:
-            continue
-        if curr < maxp and settings.GIRUDO_BASE_URL:
-            base_url = settings.GIRUDO_BASE_URL.replace("api.", "game.")
-            return f"{base_url}/join-game/{game_uuid}?type=player"
-
-    return None
 
 
 async def generate_link(

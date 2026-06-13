@@ -98,7 +98,7 @@ ja:
     awards_title: "%{guild} の SpellBot プレイヤーアワード"
     awards_empty: "**このサーバーには設定済みのアワードがありません。**\n\nアワードを追加するには `/award add` コマンドを使用してください。"
     setup_title: "%{guild} の SpellBot セットアップ"
-    setup_description: "これは、このサーバーでの SpellBot の現在の設定です。下のボタンと `/set` コマンドを使って、SpellBot を希望どおりに設定してください。\n\n`/awards` コマンドでアワード設定、`/channels` コマンドでチャンネル設定も確認できます。"
+    setup_description: "SpellBot は、コミュニティが Magic: The Gathering のゲームを見つけて一緒に遊ぶお手伝いをします。サーバー、チャンネル、プレイヤーアワードの設定は SpellBot ダッシュボードから行えます。\n\n[SpellBot を設定する →](%{link})"
     field_motd: "MOTD"
     field_none: "なし"
     field_public_links: "公開リンク"
@@ -160,7 +160,10 @@ ja:
     user_info_no_games: "ゲーム履歴なし"
     user_info_play_range: "プレイ期間"
     user_info_game_history: "ゲーム履歴"
-    user_info_view_link: "[spellbot.io で見る](%{link})"
+    view_link: "[spellbot.io で見る](%{link})"
+    game_info_title: "ゲーム情報 #SB%{game_id}"
+    game_info_pending: "まだ開始していません"
+    game_info_details: "詳細"
     user_info_footer: "ユーザー ID：%{user_id}"
     analytics_title: "%{guild} のサーバー分析"
     analytics_description: "サーバーの分析ダッシュボードを表示：\n📊 [分析を開く](%{url})\n\n_このリンクの有効期限は %{minutes} 分です。_"
@@ -183,6 +186,7 @@ ja:
     list_title: "ブロックしたユーザー"
     list_empty: "ブロックしたユーザーはいません。"
     list_page: "ページ %{current} / %{total}"
+    manage_message: "ブロックしたユーザーは、プロフィールページで確認・管理できます。\n\n[spellbot.io でプロフィールを開く](%{link})"
   # Leave action messages
   leave:
     removed_channel: "このチャンネル内の保留中のゲームからすべて退出しました。"

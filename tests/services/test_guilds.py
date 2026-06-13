@@ -47,20 +47,6 @@ class TestServiceGuilds:
         assert guild_data is not None
         assert guild_data.xid == 404
 
-    async def test_guilds_set_motd(self) -> None:
-        guild = GuildFactory.create()
-        guild_data = await guilds.get(guild.xid)
-        assert guild_data is not None
-
-        message_of_the_day = "message of the day"
-        updated_guild_data = await guilds.set_motd(guild_data, message_of_the_day)
-
-        assert updated_guild_data.motd == message_of_the_day
-        DatabaseSession.expire_all()
-        guild = await DatabaseSession.get(Guild, guild.xid)
-        assert guild
-        assert guild.motd == message_of_the_day
-
     async def test_guilds_set_banned(self) -> None:
         guild = GuildFactory.create()
 
@@ -70,50 +56,6 @@ class TestServiceGuilds:
         guild = await DatabaseSession.get(Guild, guild.xid)
         assert guild
         assert guild.banned
-
-    async def test_guilds_toggle_show_links(self) -> None:
-        guild = GuildFactory.create(xid=101, show_links=False)
-        guild_data = await guilds.get(101)
-        assert guild_data is not None
-        assert not guild_data.show_links
-
-        guild_data = await guilds.toggle_show_links(guild_data)
-
-        DatabaseSession.expire_all()
-        guild = await DatabaseSession.get(Guild, 101)
-        assert guild
-        assert guild.show_links
-        assert guild_data.show_links
-
-        guild_data = await guilds.toggle_show_links(guild_data)
-
-        DatabaseSession.expire_all()
-        guild = await DatabaseSession.get(Guild, 101)
-        assert guild
-        assert not guild.show_links
-        assert not guild_data.show_links
-
-    async def test_guilds_toggle_voice_create(self) -> None:
-        guild = GuildFactory.create(xid=101, voice_create=False)
-        guild_data = await guilds.get(101)
-        assert guild_data is not None
-        assert not guild_data.voice_create
-
-        guild_data = await guilds.toggle_voice_create(guild_data)
-
-        DatabaseSession.expire_all()
-        guild = await DatabaseSession.get(Guild, 101)
-        assert guild
-        assert guild.voice_create
-        assert guild_data.voice_create
-
-        guild_data = await guilds.toggle_voice_create(guild_data)
-
-        DatabaseSession.expire_all()
-        guild = await DatabaseSession.get(Guild, 101)
-        assert guild
-        assert not guild.voice_create
-        assert not guild_data.voice_create
 
     async def test_guilds_voiced(self) -> None:
         assert await guilds.voiced() == []
@@ -326,20 +268,62 @@ class TestServiceGuilds:
         award2 = GuildAwardFactory.create(guild=guild)
 
         award1_id = award1.id
-        await guilds.award_delete(award1.id)
-        await guilds.award_delete(404)
+        assert await guilds.award_delete(guild.xid, award1.id) is True
+        # Deleting a missing award, or one in another guild, is a no-op returning False.
+        assert await guilds.award_delete(guild.xid, 404) is False
+        assert await guilds.award_delete(guild.xid + 1, award2.id) is False
 
         DatabaseSession.expire_all()
         assert not await DatabaseSession.get(GuildAward, award1_id)
         assert await DatabaseSession.get(GuildAward, award2.id)
 
-    async def test_guilds_has_award_with_count(self, guild: Guild) -> None:
-        award1 = GuildAwardFactory.create(guild=guild, count=10)
-        award2 = GuildAwardFactory.create(guild=guild, count=20)
+    async def test_guilds_award_update(self, guild: Guild) -> None:
+        award = GuildAwardFactory.create(
+            guild=guild,
+            count=5,
+            role="old-role",
+            message="old-message",
+            repeating=False,
+        )
 
-        assert await guilds.has_award_with_count(guild.xid, award1.count)
-        assert await guilds.has_award_with_count(guild.xid, award2.count)
-        assert not await guilds.has_award_with_count(guild.xid, 30)
+        updated = await guilds.award_update(
+            guild.xid,
+            award.id,
+            count=10,
+            role="new-role",
+            message="new-message",
+            repeating=True,
+            verified_only=True,
+        )
+        assert updated is not None
+        assert updated.count == 10
+        assert updated.role == "new-role"
+        assert updated.message == "new-message"
+        assert updated.repeating is True
+        assert updated.verified_only is True
+
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(GuildAward, award.id)
+        assert refreshed is not None
+        assert refreshed.count == 10
+        assert refreshed.role == "new-role"
+
+        # Updating a missing award, or one in another guild, returns None and changes nothing.
+        assert await guilds.award_update(guild.xid, 404, count=1, role="x", message="y") is None
+        assert (
+            await guilds.award_update(guild.xid + 1, award.id, count=1, role="x", message="y")
+            is None
+        )
+
+    async def test_guilds_award_list(self, guild: Guild) -> None:
+        # Returned ordered by required game count, ascending.
+        award_b = GuildAwardFactory.create(guild=guild, count=20, role="b")
+        award_a = GuildAwardFactory.create(guild=guild, count=10, role="a")
+        other_guild = GuildFactory.create()
+        GuildAwardFactory.create(guild=other_guild, count=5, role="other")
+
+        awards = await guilds.award_list(guild.xid)
+        assert [a.id for a in awards] == [award_a.id, award_b.id]
 
     async def test_guilds_setup_mythic_track(self) -> None:
         guild = GuildFactory.create(xid=101, enable_mythic_track=False)
@@ -354,28 +338,6 @@ class TestServiceGuilds:
         guild = await DatabaseSession.get(Guild, 101)
         assert guild
         assert guild.enable_mythic_track
-
-    async def test_guilds_toggle_use_max_bitrate(self) -> None:
-        guild = GuildFactory.create(xid=101, use_max_bitrate=False)
-        guild_data = await guilds.get(101)
-        assert guild_data is not None
-        assert not guild_data.use_max_bitrate
-
-        guild_data = await guilds.toggle_use_max_bitrate(guild_data)
-
-        DatabaseSession.expire_all()
-        guild = await DatabaseSession.get(Guild, 101)
-        assert guild
-        assert guild.use_max_bitrate
-        assert guild_data.use_max_bitrate
-
-        guild_data = await guilds.toggle_use_max_bitrate(guild_data)
-
-        DatabaseSession.expire_all()
-        guild = await DatabaseSession.get(Guild, 101)
-        assert guild
-        assert not guild.use_max_bitrate
-        assert not guild_data.use_max_bitrate
 
     async def test_guilds_voice_category_prefixes(self) -> None:
 

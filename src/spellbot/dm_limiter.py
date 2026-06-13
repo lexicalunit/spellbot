@@ -86,20 +86,3 @@ async def try_consume_dm_slot(kind: DMKind) -> bool:
         logger.warning("redis error in dm rate limiter", exc_info=True)
         return False
     return int(result) == 1
-
-
-async def current_dm_count(kind: DMKind) -> int:
-    if not settings.REDIS_URL:
-        return 0
-    try:
-        redis = await get_redis()
-        cutoff = int(time.time()) - settings.DM_WINDOW_SECONDS
-        key = window_key_for(kind)
-        await cast(
-            "Awaitable[int]",
-            redis.zremrangebyscore(key, "-inf", cutoff),
-        )
-        return int(await cast("Awaitable[int]", redis.zcard(key)))
-    except Exception:
-        logger.warning("redis error reading dm window count", exc_info=True)
-        return 0

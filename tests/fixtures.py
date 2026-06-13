@@ -111,39 +111,9 @@ def get_last_send_message(
     send_message.assert_called_once()  # type: ignore
     send_message_call = send_message.call_args_list[0]  # type: ignore
     actual = send_message_call.kwargs[kwarg]
-    if kwarg == "embed":
+    if kwarg == "embed":  # pragma: no cover
         actual = actual.to_dict()
-    if kwarg == "view":
-        actual = actual.to_components()
-    return actual
-
-
-@overload
-def get_last_edit_message(  # pragma: no cover
-    interaction: discord.Interaction,
-    kwarg: Literal["embed"],
-) -> dict[str, Any]: ...
-
-
-@overload
-def get_last_edit_message(  # pragma: no cover
-    interaction: discord.Interaction,
-    kwarg: Literal["view"],
-) -> list[dict[str, Any]]: ...
-
-
-def get_last_edit_message(
-    interaction: discord.Interaction,
-    kwarg: str,
-) -> dict[str, Any] | list[dict[str, Any]] | Any:
-    """Get the last edit_original_response call's kwargs from an interaction."""
-    edit_message = interaction.edit_original_response
-    edit_message.assert_called_once()  # type: ignore
-    edit_message_call = edit_message.call_args_list[0]  # type: ignore
-    actual = edit_message_call.kwargs[kwarg]
-    if kwarg == "embed":
-        actual = actual.to_dict()
-    if kwarg == "view":
+    if kwarg == "view":  # pragma: no cover
         actual = actual.to_components()
     return actual
 

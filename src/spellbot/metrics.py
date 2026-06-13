@@ -6,12 +6,10 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any
 
 from datadog import initialize
-from datadog.api.events import Event
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 from ddtrace.trace import tracer
 from wrapt import wrap_function_wrapper
 
-from . import __version__
 from .environment import running_in_pytest
 from .errors import (
     AdminOnlyError,
@@ -97,17 +95,6 @@ def setup_metrics() -> None:  # pragma: no cover
     patch_discord()
 
 
-@skip_if_no_metrics
-def alert_error(
-    title: str,
-    text: str = "",
-    tags: list[str] | None = None,
-) -> None:  # pragma: no cover
-    tags = tags or []
-    tags.append(f"version:{__version__}")
-    Event.create(alert_type="error", title=title, text=text, tags=tags)
-
-
 def generate_request_id() -> str:
     """Generate a unique request ID for spans."""
     return str(uuid.uuid4())
@@ -141,12 +128,6 @@ def add_span_context(interaction: Any) -> None:  # pragma: no cover
             span.set_tag("data", data)
         if guild_id := getattr(interaction, "guild_id", None):
             span.set_tag("guild_xid", str(guild_id))
-
-
-@skip_if_no_metrics
-def add_span_kv(key: str, value: Any) -> None:  # pragma: no cover
-    if span := tracer.current_span():
-        span.set_tag(key, value)
 
 
 @skip_if_no_metrics

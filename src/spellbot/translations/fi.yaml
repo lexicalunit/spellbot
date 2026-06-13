@@ -98,7 +98,7 @@ fi:
     awards_title: "SpellBot-pelaajapalkinnot – %{guild}"
     awards_empty: "**Ei määritettyjä palkintoja tällä palvelimella.**\n\nVoit lisätä palkintoja `/award add` -komennolla."
     setup_title: "SpellBot-asetukset – %{guild}"
-    setup_description: "Nämä ovat tämän palvelimen nykyiset SpellBot-asetukset. Voit määrittää SpellBotin haluamallasi tavalla käyttämällä alla olevia painikkeita sekä `/set`-komentoja.\n\nPalkintojen määrityksiä voi tarkastella komennolla `/awards` ja kanavien määrityksiä komennolla `/channels`."
+    setup_description: "SpellBot auttaa yhteisöäsi löytämään ja pelaamaan Magic: The Gathering -pelejä. Määritä palvelimesi, kanavasi ja pelaajapalkinnot SpellBotin hallintapaneelissa.\n\n[Määritä SpellBot →](%{link})"
     field_motd: "MOTD"
     field_none: "Ei mitään"
     field_public_links: "Julkiset linkit"
@@ -160,7 +160,10 @@ fi:
     user_info_no_games: "Ei pelattuja pelejä"
     user_info_play_range: "Pelin aikaväli"
     user_info_game_history: "Pelihistoria"
-    user_info_view_link: "[Näytä kohteessa spellbot.io](%{link})"
+    view_link: "[Näytä kohteessa spellbot.io](%{link})"
+    game_info_title: "Pelin tiedot #SB%{game_id}"
+    game_info_pending: "Ei vielä alkanut"
+    game_info_details: "Tiedot"
     user_info_footer: "Käyttäjätunnus: %{user_id}"
     analytics_title: "%{guild} -palvelinanalytiikka"
     analytics_description: "Näytä palvelimen analytiikkapaneeli:\n📊 [Avaa analytiikka](%{url})\n\n_Tämä linkki vanhenee %{minutes} minuutin kuluttua._"
@@ -183,6 +186,7 @@ fi:
     list_title: "Estetyt käyttäjät"
     list_empty: "Estettyjä käyttäjiä ei ole."
     list_page: "Sivu %{current} / %{total}"
+    manage_message: "Voit tarkastella ja hallita estämiäsi käyttäjiä profiilisivullasi.\n\n[Avaa profiilisi osoitteessa spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "Sinut poistettiin kaikista avoimista peleistä tällä kanavalla."

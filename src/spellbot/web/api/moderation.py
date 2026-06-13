@@ -38,11 +38,6 @@ def cache_put(key: tuple[int, int], result: bool) -> None:
     mod_cache[key] = (result, time.monotonic() + MOD_CACHE_TTL_S)
 
 
-def clear_cache() -> None:
-    """Drop all cached moderator decisions (used by tests)."""
-    mod_cache.clear()
-
-
 async def viewer_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
     """
     Return True when `viewer_xid` is a moderator/admin of `guild_xid`.

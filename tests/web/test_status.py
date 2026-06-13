@@ -41,7 +41,7 @@ class TestFormatLatency:
             pytest.param(100.0, "100.0ms", id="exact"),
         ],
     )
-    def testformat_latency(self, latency: float | None, expected: str) -> None:
+    def test_format_latency(self, latency: float | None, expected: str) -> None:
         assert format_latency(latency) == expected
 
 
@@ -82,7 +82,7 @@ class TestGetLatencyClass:
             pytest.param(500.0, "latency-bad", id="bad_high"),
         ],
     )
-    def testget_latency_class(self, latency: float | None, expected: str) -> None:
+    def test_get_latency_class(self, latency: float | None, expected: str) -> None:
         assert get_latency_class(latency) == expected
 
 

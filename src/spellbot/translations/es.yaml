@@ -98,7 +98,7 @@ es:
     awards_title: "Premios de SpellBot a los jugadores de %{guild}"
     awards_empty: "**No hay premios configurados en este servidor.**\n\nPara añadir premios, utilice el comando `/award add`."
     setup_title: "Configuración de SpellBot de %{guild}"
-    setup_description: "Estos son los ajustes actuales de SpellBot en este servidor. Use los botones de abajo, así como los comandos `/set`, para configurar SpellBot como desee.\n\nTambién puede ver la configuración de Premios usando el comando `/awards` y la configuración de Canales usando el comando `/channels`."
+    setup_description: "SpellBot ayuda a tu comunidad a encontrar y jugar partidas de Magic: The Gathering. Visita el panel de SpellBot para configurar tu servidor, canales y premios de jugadores.\n\n[Configurar SpellBot →](%{link})"
     field_motd: "MOTD"
     field_none: "Ninguno"
     field_public_links: "Enlaces públicos"
@@ -160,7 +160,10 @@ es:
     user_info_no_games: "No hay partidas jugadas"
     user_info_play_range: "Intervalo de tiempo del juego"
     user_info_game_history: "Historial de partidas"
-    user_info_view_link: "[Ver en spellbot.io](%{link})"
+    view_link: "[Ver en spellbot.io](%{link})"
+    game_info_title: "Información de la partida #SB%{game_id}"
+    game_info_pending: "Aún no ha comenzado"
+    game_info_details: "Detalles"
     user_info_footer: "ID de usuario: %{user_id}"
     analytics_title: "Análisis del servidor de %{guild}"
     analytics_description: "Vea el panel de análisis de su servidor:\n📊 [Abrir Análisis](%{url})\n\n_Este enlace caduca en %{minutes} minutos._"
@@ -183,6 +186,7 @@ es:
     list_title: "Usuarios bloqueados"
     list_empty: "No tiene usuarios bloqueados."
     list_page: "Página %{current} de %{total}"
+    manage_message: "Puedes ver y gestionar los usuarios que has bloqueado desde tu página de perfil.\n\n[Abre tu perfil en spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "Lo/a han eliminado de todas las partidas pendientes en este canal."

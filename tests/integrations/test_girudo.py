@@ -83,17 +83,6 @@ class TestGirudoDefaults:
         assert timeout.read == 10
         assert timeout.write == 10
 
-    def test_get_all_girudo_formats_empty(self) -> None:
-        girudo.GIRUDO_FORMATS_CACHE = None
-        result = girudo.get_all_girudo_formats()
-        assert result == {}
-
-    def test_get_all_girudo_formats_with_cache(self) -> None:
-        girudo.GIRUDO_FORMATS_CACHE = GirudoTestData.formats_cache()
-        result = girudo.get_all_girudo_formats()
-        assert "commander_edh" in result
-        assert result["commander_edh"].uuid == GirudoTestData.FORMAT_COMMANDER_UUID
-
 
 class TestGirudoEncoding:
     """Test password encoding."""
@@ -417,88 +406,6 @@ class TestGirudoFormats:
         result = await girudo.fetch_and_cache_tcg_names(client, GirudoTestData.AUTH_TOKEN)
         assert result == {}
 
-    @pytest.mark.asyncio
-    async def test_ensure_formats_loaded_no_accounts(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(girudo, "get_accounts", list)
-
-        result = await girudo.ensure_formats_loaded()
-        assert result == {}
-
-    @pytest.mark.asyncio
-    async def test_ensure_formats_loaded_cached(self) -> None:
-        girudo.GIRUDO_FORMATS_CACHE = {"test": GirudoGameFormat(uuid="u1", name="Test")}
-
-        result = await girudo.ensure_formats_loaded()
-        assert "test" in result
-
-    @pytest.mark.asyncio
-    async def test_ensure_formats_loaded_exception(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test ensure_formats_loaded handles exception gracefully."""
-        monkeypatch.setattr(
-            girudo,
-            "get_accounts",
-            lambda: [(GirudoTestData.AUTH_EMAIL, GirudoTestData.AUTH_PASSWORD)],
-        )
-
-        async def mock_pick_account(accounts: Any) -> tuple[str, str]:
-            raise RuntimeError("Simulated failure")
-
-        monkeypatch.setattr(girudo, "pick_account", mock_pick_account)
-
-        result = await girudo.ensure_formats_loaded()
-        assert result == {}
-
-    @pytest.mark.asyncio
-    async def test_ensure_formats_loaded_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test ensure_formats_loaded successfully fetches and returns formats."""
-        monkeypatch.setattr(
-            girudo,
-            "get_accounts",
-            lambda: [(GirudoTestData.AUTH_EMAIL, GirudoTestData.AUTH_PASSWORD)],
-        )
-        monkeypatch.setattr(girudo.settings, "GIRUDO_TIMEOUT_S", 5)
-
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
-            return GirudoTestData.AUTH_TOKEN
-
-        expected_formats = {"test": GirudoGameFormat(uuid="test-uuid", name="Test")}
-
-        async def mock_fetch_formats(client: Any, token: str) -> dict[str, GirudoGameFormat]:
-            return expected_formats
-
-        monkeypatch.setattr(girudo, "authenticate", mock_auth)
-        monkeypatch.setattr(girudo, "fetch_and_cache_formats", mock_fetch_formats)
-
-        result = await girudo.ensure_formats_loaded()
-        assert result == expected_formats
-
-    @pytest.mark.asyncio
-    async def test_ensure_formats_loaded_auth_failure(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """Test ensure_formats_loaded when authentication fails."""
-        monkeypatch.setattr(
-            girudo,
-            "get_accounts",
-            lambda: [(GirudoTestData.AUTH_EMAIL, GirudoTestData.AUTH_PASSWORD)],
-        )
-        monkeypatch.setattr(girudo.settings, "GIRUDO_TIMEOUT_S", 5)
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_AUTH_URL",
-            f"{GirudoTestData.API_BASE_URL}/auth",
-        )
-
-        # Return None for auth failure
-        async def mock_auth(client: Any, **kwargs: Any) -> None:
-            return None
-
-        monkeypatch.setattr(girudo, "authenticate", mock_auth)
-
-        result = await girudo.ensure_formats_loaded()
-        assert result == {}
-
 
 class TestGirudoFormatMapping:
     """Test game format mapping."""
@@ -537,18 +444,6 @@ class TestGirudoFormatMapping:
 
         result = girudo.girudo_game_format(GameFormat.MODERN)
         assert result.uuid == GirudoTestData.FORMAT_DEFAULT_UUID
-
-
-class TestGirudoErrors:
-    """Test error classes."""
-
-    def test_girudo_auth_error(self) -> None:
-        error = girudo.GirudoAuthError()
-        assert str(error) == "Failed to authenticate to Girudo"
-
-    def test_girudo_game_create_error(self) -> None:
-        error = girudo.GirudoGameCreateError()
-        assert str(error) == "Failed to create game on Girudo"
 
 
 class TestGirudoGameCreation:
@@ -670,114 +565,6 @@ class TestGirudoGameCreation:
         client.post = AsyncMock(side_effect=RuntimeError("Network error"))
         game = create_mock_game()
         link = await girudo.create_game(client, GirudoTestData.AUTH_TOKEN, game)
-        assert link is None
-
-
-class TestGirudoLobbies:
-    """Test lobby fetching."""
-
-    @pytest.mark.asyncio
-    async def test_fetch_lobbies_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_LOBBY_URL",
-            f"{GirudoTestData.API_BASE_URL}/lobbies",
-        )
-
-        response = MockHTTPResponse(200, GirudoTestData.lobbies_response())
-        client = MockHTTPClient(response)
-
-        lobbies = await girudo.fetch_lobbies(client, GirudoTestData.AUTH_TOKEN)
-        assert GirudoTestData.LOBBY_UUID_AVAILABLE in lobbies
-        assert GirudoTestData.LOBBY_UUID_FULL in lobbies
-        assert lobbies[GirudoTestData.LOBBY_UUID_AVAILABLE]["current_player_count"] == 2
-        assert lobbies[GirudoTestData.LOBBY_UUID_AVAILABLE]["max_players"] == 4
-
-    @pytest.mark.asyncio
-    async def test_fetch_lobbies_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_LOBBY_URL",
-            f"{GirudoTestData.API_BASE_URL}/lobbies",
-        )
-
-        response = MockHTTPResponse(500, {})
-        client = MockHTTPClient(response)
-
-        lobbies = await girudo.fetch_lobbies(client, GirudoTestData.AUTH_TOKEN)
-        assert lobbies == {}
-
-    @pytest.mark.asyncio
-    async def test_get_available_lobby_found(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(girudo.settings, "GIRUDO_BASE_URL", GirudoTestData.API_BASE_URL)
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_LOBBY_URL",
-            f"{GirudoTestData.API_BASE_URL}/lobbies",
-        )
-
-        response = MockHTTPResponse(200, GirudoTestData.lobbies_response())
-        client = MockHTTPClient(response)
-
-        link = await girudo.get_available_lobby(client, GirudoTestData.AUTH_TOKEN)
-        assert link is not None
-        assert f"join-game/{GirudoTestData.LOBBY_UUID_AVAILABLE}" in link
-
-    @pytest.mark.asyncio
-    async def test_get_available_lobby_none_available(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_LOBBY_URL",
-            f"{GirudoTestData.API_BASE_URL}/lobbies",
-        )
-
-        response = MockHTTPResponse(
-            200,
-            {
-                "data": {
-                    GirudoTestData.LOBBY_UUID_FULL: {"current_player_count": 4, "max_players": 4},
-                },
-            },
-        )
-        client = MockHTTPClient(response)
-
-        link = await girudo.get_available_lobby(client, GirudoTestData.AUTH_TOKEN)
-        assert link is None
-
-    @pytest.mark.asyncio
-    async def test_fetch_lobbies_no_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test fetch_lobbies when GIRUDO_LOBBY_URL not configured."""
-        monkeypatch.setattr(girudo.settings, "GIRUDO_LOBBY_URL", None)
-        client = MockHTTPClient(MockHTTPResponse(200, {}))
-        lobbies = await girudo.fetch_lobbies(client, GirudoTestData.AUTH_TOKEN)
-        assert lobbies == {}
-
-    @pytest.mark.asyncio
-    async def test_get_available_lobby_invalid_player_counts(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        """Test get_available_lobby skips lobbies with invalid player counts."""
-        monkeypatch.setattr(girudo.settings, "GIRUDO_BASE_URL", GirudoTestData.API_BASE_URL)
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_LOBBY_URL",
-            f"{GirudoTestData.API_BASE_URL}/lobbies",
-        )
-        response = MockHTTPResponse(
-            200,
-            {
-                "data": {
-                    "lobby1": {"current_player_count": "invalid", "max_players": 4},
-                    "lobby2": {"current_player_count": 2, "max_players": "invalid"},
-                },
-            },
-        )
-        client = MockHTTPClient(response)
-        link = await girudo.get_available_lobby(client, GirudoTestData.AUTH_TOKEN)
         assert link is None
 
 

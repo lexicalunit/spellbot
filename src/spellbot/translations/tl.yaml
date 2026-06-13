@@ -98,7 +98,7 @@ tl:
     awards_title: "Mga Award sa Player ng SpellBot para sa %{guild}"
     awards_empty: "**Walang award na na-configure sa server na ito.**\n\nPara magdagdag ng mga award, gamitin ang `/award add` command."
     setup_title: "Setup ng SpellBot para sa %{guild}"
-    setup_description: "Ito ang mga kasalukuyang setting para sa SpellBot sa server na ito. Pakigamit ang mga button sa ibaba, pati na rin ang mga `/set` command, para i-set up ang SpellBot ayon sa gusto mo.\n\nPuwede mo ring tingnan ang configuration ng Mga Award gamit ang `/awards` command at configuration ng Mga Channel gamit ang `/channels` command."
+    setup_description: "Tinutulungan ng SpellBot ang iyong komunidad na maghanap at maglaro ng mga laro ng Magic: The Gathering. Bisitahin ang SpellBot dashboard para i-configure ang iyong server, mga channel, at mga award ng manlalaro.\n\n[I-configure ang SpellBot →](%{link})"
     field_motd: "MOTD"
     field_none: "Wala"
     field_public_links: "Mga Pampublikong Link"
@@ -160,7 +160,10 @@ tl:
     user_info_no_games: "Walang nilarong game"
     user_info_play_range: "Range ng Paglalaro"
     user_info_game_history: "History ng Game"
-    user_info_view_link: "[Tingnan sa spellbot.io](%{link})"
+    view_link: "[Tingnan sa spellbot.io](%{link})"
+    game_info_title: "Impormasyon ng game para sa #SB%{game_id}"
+    game_info_pending: "Hindi pa nagsisimula"
+    game_info_details: "Mga Detalye"
     user_info_footer: "User ID: %{user_id}"
     analytics_title: "Analytics ng Server para sa %{guild}"
     analytics_description: "Tingnan ang analytics dashboard ng server mo:\n📊 [Buksan ang Analytics](%{url})\n\n_Mag-e-expire ang link na ito sa loob ng %{minutes} (na) minuto._"
@@ -183,6 +186,7 @@ tl:
     list_title: "Mga Na-block na User"
     list_empty: "Wala kang na-block na user."
     list_page: "Page %{current} sa %{total}"
+    manage_message: "Makikita at mapamamahalaan mo ang mga user na na-block mo mula sa iyong profile page.\n\n[Buksan ang iyong profile sa spellbot.io](%{link})"
   # Leave action messages
   leave:
     removed_channel: "Inalis ka sa anumang pending game sa channel na ito."

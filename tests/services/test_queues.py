@@ -4,8 +4,11 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
+from sqlalchemy import func, select
 
+from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.models import Game, Guild, GuildMember
 from spellbot.services import queues
 
 if TYPE_CHECKING:
@@ -16,6 +19,36 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.use_db
 
 NOW = datetime(2024, 6, 15, 12, 0, tzinfo=UTC)
+
+
+async def public_recent_started_count(  # pragma: no cover
+    within: timedelta,
+    *,
+    only_member_of: int | None = None,
+    only_mythic_track: bool = False,
+) -> int:
+    cutoff = datetime.now(UTC) - within
+    stmt = (
+        select(func.count(Game.id))
+        .select_from(Game)
+        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .where(
+            Game.started_at.is_not(None),
+            Game.started_at >= cutoff,
+            Game.deleted_at.is_(None),
+            Guild.banned.is_(False),
+            Guild.promote.is_(True),
+        )
+    )
+    if only_member_of is not None:
+        stmt = stmt.join(
+            GuildMember,
+            GuildMember.guild_xid == Guild.xid,
+        ).where(GuildMember.user_xid == only_member_of)
+    if only_mythic_track:
+        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
+    result = await DatabaseSession.execute(stmt)
+    return int(result.scalar() or 0)
 
 
 @pytest.mark.asyncio
@@ -207,7 +240,7 @@ class TestPublicActiveQueues:
 @pytest.mark.asyncio
 class TestPublicRecentStartedCount:
     async def test_empty_returns_zero(self) -> None:
-        assert await queues.public_recent_started_count(timedelta(hours=2)) == 0
+        assert await public_recent_started_count(timedelta(hours=2)) == 0
 
     async def test_counts_only_started_within_window_and_promotable(
         self,
@@ -244,7 +277,7 @@ class TestPublicRecentStartedCount:
         # Unpromoted guild: not counted.
         factories.game.create(guild=hidden, channel=ch_h, started_at=NOW - timedelta(minutes=5))
 
-        assert await queues.public_recent_started_count(timedelta(hours=2)) == 2
+        assert await public_recent_started_count(timedelta(hours=2)) == 2
 
     async def test_only_member_of_restricts_to_user_guilds(
         self,
@@ -261,10 +294,8 @@ class TestPublicRecentStartedCount:
         factories.game.create(guild=mine, channel=ch1, started_at=NOW - timedelta(minutes=5))
         factories.game.create(guild=theirs, channel=ch2, started_at=NOW - timedelta(minutes=5))
 
-        assert (
-            await queues.public_recent_started_count(timedelta(hours=2), only_member_of=me.xid) == 1
-        )
-        assert await queues.public_recent_started_count(timedelta(hours=2), only_member_of=999) == 0
+        assert await public_recent_started_count(timedelta(hours=2), only_member_of=me.xid) == 1
+        assert await public_recent_started_count(timedelta(hours=2), only_member_of=999) == 0
 
 
 @pytest.mark.asyncio
@@ -372,9 +403,9 @@ class TestOnlyMythicTrackFilter:
         factories.game.create(guild=disabled, channel=ch2, started_at=NOW - timedelta(minutes=10))
         factories.game.create(guild=disabled, channel=ch2, started_at=NOW - timedelta(minutes=20))
 
-        assert await queues.public_recent_started_count(timedelta(hours=2)) == 3
+        assert await public_recent_started_count(timedelta(hours=2)) == 3
         assert (
-            await queues.public_recent_started_count(
+            await public_recent_started_count(
                 timedelta(hours=2),
                 only_mythic_track=True,
             )

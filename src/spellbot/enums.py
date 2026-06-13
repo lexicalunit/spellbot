@@ -1,18 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any
 
 from spellbot.i18n import t
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
     import discord
-
-
-# Additional metadata related to supported game formats.
-class FormatDetails(NamedTuple):
-    players: int
 
 
 class GameService(Enum):
@@ -96,7 +91,7 @@ class GameFormat(Enum):
         return obj
 
     def __init__(self, players: int, title: str | None = None) -> None:
-        """Each enum has certain additional properties taken from FormatDetails."""
+        """Build a format with its default player count and an optional display title."""
         self.players = players
         self.title = title
 
