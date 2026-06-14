@@ -38,10 +38,10 @@
                         &nbsp;<a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}" class="button">Channel records</a>
                     </td>
                 </tr>
-                {% if game.game_link %}
+                {% if game.game_link and can_view_links %}
                 <tr><td>Game link</td><td><a href="{{ game.game_link }}">{{ game.game_link }}</a></td></tr>
                 {% endif %}
-                {% if game.voice_xid %}
+                {% if game.voice_xid and can_view_links %}
                 <tr>
                     <td>Voice channel</td>
                     <td>

@@ -796,7 +796,7 @@ class TestWebGameDetail:
         freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
         user1 = factories.user.create(xid=101, name="user-1")
         user2 = factories.user.create(xid=102, name="user-2")
-        guild = factories.guild.create(xid=201, name="guild")
+        guild = factories.guild.create(xid=201, name="guild", show_links=True)
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
         game = factories.game.create(
             id=1,
@@ -818,6 +818,143 @@ class TestWebGameDetail:
         assert resp.status == 200
         text = await resp.text()
         assert text == snapshot
+
+    async def test_game_detail_links_hidden_from_anonymous(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # show_links defaults to False, so an anonymous viewer must not see the link.
+        guild = factories.guild.create(xid=201, name="guild", show_links=False)
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+            game_link="https://example.com/play/abc",
+            voice_xid=401,
+            voice_invite_link="https://discord.gg/invite",
+        )
+        factories.user.create(xid=101, name="user-1")
+        factories.play.create(game_id=game.id, user_xid=101, og_guild_xid=guild.xid)
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "https://example.com/play/abc" not in text
+        assert "Game link" not in text
+        assert "Open voice channel" not in text
+        assert "https://discord.gg/invite" not in text
+
+    async def test_game_detail_links_shown_when_show_links_enabled(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild", show_links=True)
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+            game_link="https://example.com/play/abc",
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "https://example.com/play/abc" in text
+
+    async def test_game_detail_links_shown_to_player(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild", show_links=False)
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+            game_link="https://example.com/play/abc",
+        )
+        factories.user.create(xid=101, name="user-1")
+        factories.play.create(game_id=game.id, user_xid=101, og_guild_xid=guild.xid)
+        mocker.patch(
+            "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(101, "player")),
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "https://example.com/play/abc" in text
+
+    async def test_game_detail_links_hidden_from_non_player(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild", show_links=False)
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+            game_link="https://example.com/play/abc",
+        )
+        factories.user.create(xid=101, name="user-1")
+        factories.play.create(game_id=game.id, user_xid=101, og_guild_xid=guild.xid)
+        mocker.patch(
+            "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(999, "stranger")),
+        )
+        mocker.patch(
+            "spellbot.web.api.record.viewer_is_moderator",
+            AsyncMock(return_value=False),
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "https://example.com/play/abc" not in text
+
+    async def test_game_detail_links_shown_to_moderator(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild", show_links=False)
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+            game_link="https://example.com/play/abc",
+        )
+        factories.user.create(xid=101, name="user-1")
+        factories.play.create(game_id=game.id, user_xid=101, og_guild_xid=guild.xid)
+        mocker.patch(
+            "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(999, "mod")),
+        )
+        mocker.patch(
+            "spellbot.web.api.record.viewer_is_moderator",
+            AsyncMock(return_value=True),
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "https://example.com/play/abc" in text
 
     async def test_game_detail_pending(
         self,

@@ -617,6 +617,27 @@ async def user_block_remove_endpoint(request: web.Request) -> web.StreamResponse
         return await user_block_remove_impl(request)
 
 
+async def viewer_can_view_game_links(
+    game: dict[str, Any],
+    viewer_xid: int | None,
+) -> bool:
+    """
+    Return True when the viewer may see a game's join links on its detail page.
+
+    Links are public when the guild has `show_links` enabled (the bot already posts
+    them in the channel for everyone to see). Otherwise the links are restricted to
+    the game's own players, the guild's moderators/admins, and the bot owner (the
+    last two are both covered by `viewer_is_moderator`).
+    """
+    if game["guild"].get("show_links"):
+        return True
+    if viewer_xid is None:
+        return False
+    if any(play["user_xid"] == viewer_xid for play in game["plays"]):
+        return True
+    return await viewer_is_moderator(viewer_xid, game["guild"]["xid"])
+
+
 async def game_impl(request: web.Request) -> web.Response:
     try:
         game_id = int(request.match_info["game_id"])
@@ -639,6 +660,7 @@ async def game_impl(request: web.Request) -> web.Response:
         "tz_offset": tz_offset,
         "tz_name": tz_name,
         "viewer_xid": viewer_xid,
+        "can_view_links": await viewer_can_view_game_links(game, viewer_xid),
     }
     return aiohttp_jinja2.render_template("game.html.j2", request, context)
 

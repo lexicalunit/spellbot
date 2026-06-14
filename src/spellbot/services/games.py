@@ -159,6 +159,7 @@ async def game_detail_view(game_id: int) -> dict[str, Any] | None:
         "guild": {
             "xid": guild.xid if guild else game.guild_xid,
             "name": guild.name if guild else None,
+            "show_links": guild.show_links if guild else False,
         },
         "channel": {
             "xid": channel.xid if channel else game.channel_xid,
