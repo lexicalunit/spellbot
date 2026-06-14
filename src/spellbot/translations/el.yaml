@@ -62,6 +62,7 @@ el:
     too_many_friends: "Αναφέρατε πάρα πολλούς παίκτες."
     cannot_join: "Δεν μπορείτε να συμμετάσχετε σε αυτό το παιχνίδι."
     game_started: "Λυπούμαστε, το παιχνίδι έχει ήδη ξεκινήσει."
+    game_full: "Sorry, that game is already full."
     invalid_player_count: "Δεν μπορείτε να δημιουργήσετε παιχνίδι %{format} με %{count} παίκτες."
     excluded_players: "Μερικοί από τους παίκτες που αναφέρατε δεν μπορούν να προστεθούν σε ένα παιχνίδι: %{players}"
     found_game: "Βρήκα ένα παιχνίδι %{format} για εσάς!"
