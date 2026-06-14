@@ -62,6 +62,7 @@ fi:
     too_many_friends: "Mainitsit liian monta pelaajaa."
     cannot_join: "Et voi liittyä tähän peliin."
     game_started: "Pahoittelut, tämä peli on jo alkanut."
+    game_full: "Sorry, that game is already full."
     invalid_player_count: "Et voi luoda %{format} -peliä %{count} pelaajalla."
     excluded_players: "Joitakin mainitsemiasi pelaajia ei voida lisätä peliin: %{players}"
     found_game: "Löysin sinulle %{format} -pelin!"
