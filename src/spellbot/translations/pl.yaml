@@ -62,6 +62,7 @@ pl:
     too_many_friends: "Wspomniałeś(-aś) o zbyt wielu graczach."
     cannot_join: "Nie możesz dołączyć do tego meczu."
     game_started: "Niestety ten mecz już się rozpoczął."
+    game_full: "Sorry, that game is already full."
     invalid_player_count: "Nie możesz utworzyć meczu %{format} z %{count} graczami."
     excluded_players: "Niektórych wspomnianych przez Ciebie graczy nie można dodać do meczu: %{players}"
     found_game: "Znalazłem dla Ciebie mecz %{format}!"
