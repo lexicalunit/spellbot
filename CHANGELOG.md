@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.0.4](https://github.com/lexicalunit/spellbot/releases/tag/v21.0.4) - 2026-06-13
+
 ### Changed
 
 - Don't allow anonymous users to view the game link for games played on servers that have private links enabled.
