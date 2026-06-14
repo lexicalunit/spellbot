@@ -62,6 +62,7 @@ fr:
     too_many_friends: "Vous avez mentionné trop de joueurs."
     cannot_join: "Vous ne pouvez pas rejoindre cette partie."
     game_started: "Désolés, cette partie a déjà démarré."
+    game_full: "Désolés, cette partie est déjà complète."
     invalid_player_count: "Vous ne pouvez pas créer de partie %{format} avec %{count} joueurs."
     excluded_players: "Certains des joueurs que vous avez mentionnés ne peuvent pas être ajoutés à une partie : %{players}"
     found_game: "Je vous ai trouvé une partie %{format} !"

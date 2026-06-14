@@ -58,6 +58,7 @@ class TestServiceGames:
         updated_game_data = await games.add_player(game_data, user.xid)
 
         # Verify the returned GameData has the updated player
+        assert updated_game_data is not None
         assert any(p.xid == user.xid for p in updated_game_data.players)
 
         # Verify in database
@@ -67,6 +68,25 @@ class TestServiceGames:
         found_game = await found.game(game.channel_xid)
         assert found_game is not None
         assert found_game.id == game.id
+
+    async def test_games_add_player_when_full(self, game: Game) -> None:
+        # A game can be fully seated while still PENDING if the start step bailed
+        # after a prior join took the last seat. Joining such a game must not crash;
+        # add_player should return None instead of asserting.
+        PostFactory.create(guild=game.guild, channel=game.channel, game=game)
+        for _ in range(game.seats):
+            UserFactory.create(game=game)
+
+        game_data = await games.get(game.id)  # type: ignore
+        assert game_data is not None
+        latecomer = UserFactory.create()
+        assert await games.add_player(game_data, latecomer.xid) is None
+
+        # The latecomer was not added to the full game.
+        DatabaseSession.expire_all()
+        found = await DatabaseSession.get(User, latecomer.xid)
+        assert found
+        assert await found.game(game.channel_xid) is None
 
     async def test_games_to_embed(self, game: Game) -> None:
         # The to_embed method is now on GameData, not GamesService

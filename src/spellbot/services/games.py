@@ -249,16 +249,20 @@ async def guild_detail_view(guild_xid: int) -> dict[str, Any] | None:
 
 
 @tracer.wrap()
-async def add_player(game_data: GameData, player_xid: int) -> GameData:
-    """Add the player with the given id to the given game."""
-    # Double check that the number of players + 1 doesn't go over the seat limit,
-    # this should in theory never happen. If we see this assertion failing, investigate.
+async def add_player(game_data: GameData, player_xid: int) -> GameData | None:
+    """
+    Add the player with the given id to the given game.
+
+    Returns `None` if the game is already full.
+    """
     players: int = (
         await DatabaseSession.execute(
             select(func.count()).select_from(Queue).where(Queue.game_id == game_data.id),
         )
     ).scalar() or 0
-    assert players + 1 <= game_data.seats
+    if players + 1 > game_data.seats:
+        logger.warning("User tried to join a game that is already full.")
+        return None
 
     # upsert into queues
     await DatabaseSession.execute(

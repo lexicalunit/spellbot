@@ -62,6 +62,7 @@ ja:
     too_many_friends: "メンションしたプレイヤーが多すぎます。"
     cannot_join: "このゲームには参加できません。"
     game_started: "申し訳ありませんが、そのゲームはすでに始まっています。"
+    game_full: "申し訳ありませんが、そのゲームはすでに満員です。"
     invalid_player_count: "%{format} のゲームは、%{count}人のプレイヤーでは作成できません。"
     excluded_players: "メンションしたプレイヤーの一部はゲームに追加できません：%{players}"
     found_game: "%{format} のゲームが見つかりました！"

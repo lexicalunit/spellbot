@@ -179,6 +179,10 @@ class LookingForGameAction(BaseAction):
             return None, None
 
         found = await services.games.add_player(found, self.interaction.user.id)
+        if found is None:
+            # The game filled up without yet being marked as started, this can happen
+            await safe_send_user(self.interaction.user, t("lfg.game_full", locale=locale))
+            return None, None
         return False, found
 
     @tracer.wrap()

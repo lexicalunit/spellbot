@@ -62,6 +62,7 @@ sv:
     too_many_friends: "Du nämnde för många spelare."
     cannot_join: "Du kan inte gå med i detta spel."
     game_started: "Tyvärr, det spelet har redan börjat."
+    game_full: "Tyvärr, det spelet är redan fullt."
     invalid_player_count: "Du kan inte skapa ett %{format}-spel med %{count} spelare."
     excluded_players: "Vissa av de spelare du nämnde kan inte läggas till i ett spel: %{players}"
     found_game: "Jag hittade ett %{format}-spel för dig!"
