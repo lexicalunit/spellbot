@@ -62,6 +62,7 @@ da:
     too_many_friends: "Du omtalte for mange spillere."
     cannot_join: "Du kan ikke deltage i denne kamp."
     game_started: "Kampen er desværre allerede begyndt."
+    game_full: "Sorry, that game is already full."
     invalid_player_count: "Du kan ikke oprette en %{format}-kamp med %{count} spillere."
     excluded_players: "Nogle af de spillere, du omtalte, kan ikke føjes til en kamp: %{players}"
     found_game: "Jeg har fundet en %{format}-kamp til dig!"
