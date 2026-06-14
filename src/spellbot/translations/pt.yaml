@@ -62,6 +62,7 @@ pt:
     too_many_friends: "Mencionou demasiados jogadores."
     cannot_join: "Não se pode juntar a este jogo."
     game_started: "Lamentamos, esse jogo já começou."
+    game_full: "Sorry, that game is already full."
     invalid_player_count: "Não pode criar um jogo %{format} com %{count} jogadores."
     excluded_players: "Alguns dos jogadores que mencionou não podem ser adicionados a um jogo: %{players}"
     found_game: "Encontrei um jogo %{format} para si!"
