@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import logging
 import secrets
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
 
 import httpx
 from aiohttp import web
 from aiohttp_session import get_session
 
+from spellbot import services
+from spellbot.database import db_session_manager
 from spellbot.settings import settings
 from spellbot.web.api.admin_auth import ADMIN_NAME_KEY, ADMIN_XID_KEY
 from spellbot.web.api.oauth import (
@@ -18,6 +21,9 @@ from spellbot.web.api.oauth import (
     parse_user_xid,
     safe_relative_path,
 )
+
+if TYPE_CHECKING:
+    from aiohttp_session import Session
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +44,25 @@ def viewer_oauth_redirect_uri() -> str:
     return f"{settings.API_BASE_URL.rstrip('/')}/queues/oauth/callback"
 
 
+async def grant_admin_if_authorized(session: Session, user: dict[str, Any], xid: int) -> None:
+    """
+    Start an admin session for `xid` when it is the bot owner or a dashboard admin.
+
+    This mirrors the authorization check in `admin_oauth_callback` so that completing
+    the public viewer login *also* unlocks `/admin/*` for privileged identities — a
+    single login works from either entry point. Crucially, we only ever elevate an
+    identity that would already pass the admin OAuth check, so the viewer flow can never
+    grant admin access to anyone the admin flow would have rejected.
+    """
+    is_admin_identity = settings.OWNER_XID is not None and xid == settings.OWNER_XID
+    if not is_admin_identity:
+        async with db_session_manager():
+            is_admin_identity = await services.users.is_admin(xid)
+    if is_admin_identity:
+        session[ADMIN_XID_KEY] = xid
+        session[ADMIN_NAME_KEY] = display_name(user, xid)
+
+
 async def get_viewer(request: web.Request) -> tuple[int | None, str | None]:
     """
     Return the current viewer's `(xid, name)` from the session, or `(None, None)`.
@@ -46,9 +71,13 @@ async def get_viewer(request: web.Request) -> tuple[int | None, str | None]:
     Absent that, we fall back to an authenticated *admin* session: the admin's
     Discord identity was already verified at `/admin/login`, and an admin is a
     strictly higher-privilege identity than a viewer, so honoring it here unifies
-    login across the admin and `/queues` pages without expanding access. The
-    reverse direction is NOT symmetric — a viewer session never writes the admin
-    keys, so it can never unlock `/admin/*` (see the admin auth middleware).
+    login across the admin and `/queues` pages without expanding access.
+
+    Login is also unified in the other direction, but only for privileged identities:
+    the viewer OAuth callback additionally writes the admin keys when the logged-in
+    user is the owner or a dashboard admin (see `grant_admin_if_authorized`). A
+    *non-admin* viewer session still never writes the admin keys, so it can never
+    unlock `/admin/*` (see the admin auth middleware).
     """
     session = await get_session(request)
     xid = session.get(VIEWER_XID_KEY)
@@ -134,11 +163,14 @@ async def viewer_oauth_callback(request: web.Request) -> web.StreamResponse:
     if xid is None:
         return web.Response(status=401, text="Could not identify Discord user.")
 
-    # Preserve any admin session that already exists by only writing to the viewer
-    # keys. We deliberately do NOT set "xid" or "name" (the admin-side keys).
     session.pop(VIEWER_STATE_KEY, None)
     session[VIEWER_XID_KEY] = xid
     session[VIEWER_NAME_KEY] = display_name(user, xid)
+    # Unify login across the two entry points: if this verified identity is the owner or
+    # a dashboard admin, also start an admin session so this single login unlocks /admin/*
+    # too. Non-admin identities only ever get the viewer keys above, so the public flow
+    # still can't unlock /admin/* for anyone the admin flow would reject.
+    await grant_admin_if_authorized(session, user, xid)
     # Return to the page the viewer started from, when one was safely recorded.
     next_path = safe_relative_path(session.pop(VIEWER_NEXT_KEY, None))
     return web.HTTPFound(next_path or VIEWER_REDIRECT_AFTER_LOGIN)

@@ -1407,10 +1407,67 @@ class TestWebGuildAwards:
         resp = await mod_client.get(f"/g/{guild.xid}")
         assert resp.status == 200
         text = await resp.text()
+        # The guild page only summarizes awards and links out to the dedicated page;
+        # the management forms now live on /g/{xid}/awards.
+        assert "Player Awards" in text
+        assert f"/g/{guild.xid}/awards" in text
+        assert "Add an award" not in text
+        # The summary lists each award's game count and role, but not its editor.
+        assert "5 games" in text
+        assert "@Veteran" in text
+
+    async def test_awards_page_visible_for_moderator(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=750, name="guild")
+        factories.guild_award.create(guild=guild, count=5, role="Veteran", message="gg")
+        resp = await mod_client.get(f"/g/{guild.xid}/awards")
+        assert resp.status == 200
+        text = await resp.text()
         assert "Player Awards" in text
         assert "Add an award" in text
         assert "Veteran" in text
         assert f"/g/{guild.xid}/awards/add" in text
+
+    async def test_awards_page_ordered_ascending_by_count(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=751, name="guild")
+        factories.guild_award.create(guild=guild, count=50, role="Fifty", message="m")
+        factories.guild_award.create(guild=guild, count=5, role="Five", message="m")
+        factories.guild_award.create(guild=guild, count=20, role="Twenty", message="m")
+        resp = await mod_client.get(f"/g/{guild.xid}/awards")
+        assert resp.status == 200
+        text = await resp.text()
+        assert text.index("Five") < text.index("Twenty") < text.index("Fifty")
+
+    async def test_awards_page_forbidden_for_non_moderator(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.web.api.record.viewer_is_moderator",
+            AsyncMock(return_value=False),
+        )
+        guild = factories.guild.create(xid=752, name="guild")
+        resp = await owner_client.get(f"/g/{guild.xid}/awards", allow_redirects=False)
+        assert resp.status == 403
+
+    async def test_awards_page_redirects_anonymous_to_login(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=753, name="guild")
+        resp = await client.get(f"/g/{guild.xid}/awards", allow_redirects=False)
+        assert resp.status == 302
+        assert "/queues/login" in resp.headers["Location"]
 
     async def test_add_award_persists(
         self,
@@ -1430,7 +1487,7 @@ class TestWebGuildAwards:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        assert resp.headers["Location"] == f"/g/{guild.xid}/awards"
         award = (
             await DatabaseSession.execute(
                 select(GuildAward).where(GuildAward.guild_xid == guild.xid),
@@ -1456,7 +1513,7 @@ class TestWebGuildAwards:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert resp.headers["Location"].startswith(f"/g/{guild.xid}?award_error=")
+        assert resp.headers["Location"].startswith(f"/g/{guild.xid}/awards?award_error=")
         count = (
             await DatabaseSession.execute(
                 select(func.count())
@@ -1478,7 +1535,7 @@ class TestWebGuildAwards:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert resp.headers["Location"] == f"/g/{guild.xid}?award_error=bad_count"
+        assert resp.headers["Location"] == f"/g/{guild.xid}/awards?award_error=bad_count"
         count = (
             await DatabaseSession.execute(select(func.count()).select_from(GuildAward))
         ).scalar()
@@ -1533,10 +1590,10 @@ class TestWebGuildAwards:
     ) -> None:
         guild = factories.guild.create(xid=737, name="guild")
         # A known code maps to a server-controlled message.
-        resp = await mod_client.get(f"/g/{guild.xid}?award_error=no_role")
+        resp = await mod_client.get(f"/g/{guild.xid}/awards?award_error=no_role")
         assert "An award needs a role to give or take." in await resp.text()
         # A crafted/unknown code is ignored — never reflected back into the page.
-        resp = await mod_client.get(f"/g/{guild.xid}?award_error=INJECTED_MARKER_XYZ")
+        resp = await mod_client.get(f"/g/{guild.xid}/awards?award_error=INJECTED_MARKER_XYZ")
         assert "INJECTED_MARKER_XYZ" not in await resp.text()
 
     async def test_update_award_persists(
@@ -1558,7 +1615,7 @@ class TestWebGuildAwards:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        assert resp.headers["Location"] == f"/g/{guild.xid}/awards"
         DatabaseSession.expire_all()
         updated = (
             await DatabaseSession.execute(select(GuildAward).where(GuildAward.id == award.id))
@@ -1595,7 +1652,7 @@ class TestWebGuildAwards:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert resp.headers["Location"] == f"/g/{guild.xid}"
+        assert resp.headers["Location"] == f"/g/{guild.xid}/awards"
         DatabaseSession.expire_all()
         assert await DatabaseSession.get(GuildAward, award.id) is None
 
@@ -1663,7 +1720,7 @@ class TestWebGuildAwards:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert resp.headers["Location"] == f"/g/{guild.xid}?award_error=message_too_long"
+        assert resp.headers["Location"] == f"/g/{guild.xid}/awards?award_error=message_too_long"
         count = (
             await DatabaseSession.execute(select(func.count()).select_from(GuildAward))
         ).scalar()
@@ -1705,7 +1762,7 @@ class TestWebGuildAwards:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert resp.headers["Location"] == f"/g/{guild.xid}?award_error=no_role"
+        assert resp.headers["Location"] == f"/g/{guild.xid}/awards?award_error=no_role"
         DatabaseSession.expire_all()
         unchanged = await DatabaseSession.get(GuildAward, award.id)
         assert unchanged is not None
@@ -1737,12 +1794,12 @@ class TestWebGuildAwards:
 class TestAwardErrorRedirect:
     def test_known_code_is_passed_through(self) -> None:
         resp = record.award_error_redirect(123, "no_role")
-        assert resp.location == "/g/123?award_error=no_role"
+        assert resp.location == "/g/123/awards?award_error=no_role"
 
     def test_unknown_code_is_dropped(self) -> None:
         # An unrecognized code must never be reflected into the redirect URL.
         resp = record.award_error_redirect(123, "totally-bogus")
-        assert resp.location == "/g/123"
+        assert resp.location == "/g/123/awards"
 
 
 @pytest.mark.asyncio

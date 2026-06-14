@@ -68,6 +68,64 @@
   color: var(--accent);
   margin-bottom: 0.5rem;
 }
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.section-head h2 {
+  margin-bottom: 0;
+}
+
+.award-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.award-summary li {
+  padding: 0.35rem 0;
+}
+.award-summary li + li {
+  border-top: 1px solid var(--border);
+}
+
+.award-card {
+  padding: 0;
+  margin-bottom: 0.75rem;
+}
+.award-card-summary {
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.award-card-summary::-webkit-details-marker {
+  display: none;
+}
+.award-card-summary::before {
+  content: "\25B6";
+  font-size: 0.7em;
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+.award-card[open] > .award-card-summary::before {
+  transform: rotate(90deg);
+}
+.award-card[open] > .award-card-summary {
+  border-bottom: 1px solid var(--border);
+}
+.award-card-body {
+  padding: 1.25rem;
+}
+.award-add-card {
+  margin-top: 0.75rem;
+}
 
 .card {
   background: var(--card-bg);
@@ -214,6 +272,7 @@ table tbody td {
   background: var(--danger-bg);
   color: var(--danger-text);
   border: 1px solid var(--danger-border);
+  margin-bottom: 0.75rem;
 }
 .block-add-form {
   margin-top: 1rem;
@@ -328,7 +387,7 @@ a.button:hover {
 }
 .settings-form .hint {
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .block-list > summary {
@@ -344,7 +403,7 @@ a.button:hover {
 
 .motd-help {
   margin-top: 0.35rem;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 .motd-help summary {
   color: var(--accent);

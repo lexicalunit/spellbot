@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from aiohttp_session import Session
 
 from spellbot.web.api import oauth, viewer_auth
 from spellbot.web.api.admin_auth import ADMIN_NAME_KEY, ADMIN_XID_KEY
@@ -19,6 +21,8 @@ from spellbot.web.api.viewer_auth import (
 from tests.web.test_admin_auth import make_httpx_client
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
     from aiohttp import web
     from aiohttp.test_utils import TestClient
     from pytest_mock import MockerFixture
@@ -207,12 +211,29 @@ class TestHasViewerSession:
         assert await has_viewer_session(MagicMock()) is False
 
 
+@contextlib.asynccontextmanager
+async def noop_db_session() -> AsyncIterator[None]:
+    """Stand in for `db_session_manager` without opening a real database session."""
+    yield
+
+
+def blank_session() -> Session:
+    """Build an empty session for exercising `grant_admin_if_authorized` directly."""
+    return Session(None, data=None, new=True)
+
+
 def configure_viewer(mocker: MockerFixture) -> None:
     mocker.patch.object(viewer_auth.settings, "BOT_APPLICATION_ID", "appid-1")
     mocker.patch.object(viewer_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
     # Must match the test client's host (127.0.0.1) so `canonical_host_redirect`
     # in `viewer_login` doesn't bounce the request away before issuing state.
     mocker.patch.object(viewer_auth.settings, "API_BASE_URL", "http://127.0.0.1")
+    # The viewer callback now elevates owner/admin identities to a full admin session
+    # (`grant_admin_if_authorized`), which consults the database for non-owners. Default
+    # the flow to a non-admin identity and stub the DB session so the public-viewer path
+    # never touches a real database. Tests that exercise elevation override these.
+    mocker.patch("spellbot.web.api.viewer_auth.db_session_manager", noop_db_session)
+    mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=False))
 
 
 async def start_viewer_login(client: WebClient) -> str:
@@ -421,6 +442,54 @@ class TestViewerLogout:
 
 
 @pytest.mark.asyncio
+class TestGrantAdminIfAuthorized:
+    async def test_owner_gets_admin_keys(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 42)
+        session = blank_session()
+        await viewer_auth.grant_admin_if_authorized(
+            session,
+            {"id": "42", "global_name": "Owner"},
+            42,
+        )
+        assert session[ADMIN_XID_KEY] == 42
+        assert session[ADMIN_NAME_KEY] == "Owner"
+
+    async def test_owner_check_skips_database(self, mocker: MockerFixture) -> None:
+        # An owner is recognized without ever consulting the database.
+        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 42)
+        is_admin = mocker.patch(
+            "spellbot.services.users.is_admin",
+            AsyncMock(return_value=False),
+        )
+        session = blank_session()
+        await viewer_auth.grant_admin_if_authorized(session, {"id": "42"}, 42)
+        assert session[ADMIN_XID_KEY] == 42
+        is_admin.assert_not_awaited()
+
+    async def test_dashboard_admin_gets_admin_keys(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 99)
+        mocker.patch("spellbot.web.api.viewer_auth.db_session_manager", noop_db_session)
+        mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=True))
+        session = blank_session()
+        await viewer_auth.grant_admin_if_authorized(
+            session,
+            {"id": "7", "username": "mod"},
+            7,
+        )
+        assert session[ADMIN_XID_KEY] == 7
+        assert session[ADMIN_NAME_KEY] == "mod"
+
+    async def test_non_admin_gets_no_admin_keys(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 99)
+        mocker.patch("spellbot.web.api.viewer_auth.db_session_manager", noop_db_session)
+        mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=False))
+        session = blank_session()
+        await viewer_auth.grant_admin_if_authorized(session, {"id": "7"}, 7)
+        assert ADMIN_XID_KEY not in session
+        assert ADMIN_NAME_KEY not in session
+
+
+@pytest.mark.asyncio
 class TestAdminIsolation:
     """A viewer-only session must never grant access to `/admin/*` routes."""
 
@@ -429,7 +498,7 @@ class TestAdminIsolation:
         client: WebClient,
         mocker: MockerFixture,
     ) -> None:
-        configure_viewer(mocker)
+        configure_viewer(mocker)  # defaults this identity to a non-admin
         state = await start_viewer_login(client)
         mocker.patch(
             "spellbot.web.api.oauth.httpx.AsyncClient",
@@ -444,3 +513,46 @@ class TestAdminIsolation:
         resp = await client.get("/admin/dashboard", allow_redirects=False)
         assert resp.status == 302
         assert resp.headers["Location"] == "/admin/login"
+
+    async def test_owner_viewer_login_unlocks_admin(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        # Logging in as the owner from the public /queues flow also starts an admin
+        # session, so /admin/* is reachable without a separate /admin/login.
+        configure_viewer(mocker)
+        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 42)
+        state = await start_viewer_login(client)
+        mocker.patch(
+            "spellbot.web.api.oauth.httpx.AsyncClient",
+            return_value=make_httpx_client(identify_json={"id": "42", "username": "owner"}),
+        )
+        callback = await client.get(
+            f"/queues/oauth/callback?code=abc&state={state}",
+            allow_redirects=False,
+        )
+        assert callback.status == 302
+        resp = await client.get("/admin/dashboard", allow_redirects=False)
+        assert resp.status == 200
+
+    async def test_dashboard_admin_viewer_login_unlocks_admin(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        configure_viewer(mocker)
+        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 99)
+        mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=True))
+        state = await start_viewer_login(client)
+        mocker.patch(
+            "spellbot.web.api.oauth.httpx.AsyncClient",
+            return_value=make_httpx_client(identify_json={"id": "7", "username": "mod"}),
+        )
+        callback = await client.get(
+            f"/queues/oauth/callback?code=abc&state={state}",
+            allow_redirects=False,
+        )
+        assert callback.status == 302
+        resp = await client.get("/admin/dashboard", allow_redirects=False)
+        assert resp.status == 200

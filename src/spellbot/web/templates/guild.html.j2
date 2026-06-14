@@ -100,93 +100,21 @@
 </div>
 {%- endif %}
 {%- if is_moderator and guild_settings %}
-{% macro award_fields(award) %}
-<div class="grid">
-    <div class="field">
-        <label>Games required</label>
-        <p class="hint">{{ award_help['count'] }}</p>
-        <input type="number" name="count" min="1" required
-               value="{{ award.count if award else '' }}">
-    </div>
-    <div class="field">
-        <label>Role</label>
-        <p class="hint">{{ award_help['role'] }}</p>
-        <input type="text" name="role" maxlength="{{ award_role_max }}" required
-               value="{{ award.role if award else '' }}">
-    </div>
-    <div class="field">
-        <label>Message</label>
-        <p class="hint">{{ award_help['message'] }}</p>
-        <input type="text" name="message" maxlength="{{ award_message_max }}"
-               value="{{ award.message if award else '' }}">
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="repeating" value="true"
-                   {{ 'checked' if award and award.repeating else '' }}>
-            <label>Repeating</label>
-        </div>
-        <p class="hint">{{ award_help['repeating'] }}</p>
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="remove" value="true"
-                   {{ 'checked' if award and award.remove else '' }}>
-            <label>Remove role instead of giving</label>
-        </div>
-        <p class="hint">{{ award_help['remove'] }}</p>
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="verified_only" value="true"
-                   {{ 'checked' if award and award.verified_only else '' }}>
-            <label>Verified users only</label>
-        </div>
-        <p class="hint">{{ award_help['verified_only'] }}</p>
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="unverified_only" value="true"
-                   {{ 'checked' if award and award.unverified_only else '' }}>
-            <label>Unverified users only</label>
-        </div>
-        <p class="hint">{{ award_help['unverified_only'] }}</p>
-    </div>
-</div>
-{% endmacro %}
 <div class="section">
-    <h2>Player Awards</h2>
-    {%- if award_error %}
-    <div class="card award-error">{{ award_error }}</div>
-    {%- endif %}
-    {% for award in awards %}
-    <div class="card">
-        <form method="post" action="/g/{{ guild.xid }}/awards/{{ award.id }}/update" class="settings-form">
-            {{ award_fields(award) }}
-            <div class="actions">
-                <button type="submit" class="button">Save award</button>
-            </div>
-        </form>
-        <form method="post" action="/g/{{ guild.xid }}/awards/{{ award.id }}/delete" class="settings-form"
-              onsubmit="return confirm('Delete this award?');">
-            <div class="actions">
-                <button type="submit" class="button button-danger">Delete award</button>
-            </div>
-        </form>
+    <div class="section-head">
+        <h2>Player Awards</h2>
+        <a href="/g/{{ guild.xid }}/awards" class="button">Manage player awards</a>
     </div>
-    {% else %}
     <div class="card">
-        <p class="empty">No awards configured yet. Add one below.</p>
-    </div>
-    {% endfor %}
-    <div class="card">
-        <h3>Add an award</h3>
-        <form method="post" action="/g/{{ guild.xid }}/awards/add" class="settings-form">
-            {{ award_fields(none) }}
-            <div class="actions">
-                <button type="submit" class="button">Add award</button>
-            </div>
-        </form>
+        {%- if awards %}
+        <ul class="award-summary">
+            {% for award in awards %}
+            <li>{{ "{:,}".format(award.count) }} game{{ '' if award.count == 1 else 's' }} &middot; @{{ award.role }}</li>
+            {% endfor %}
+        </ul>
+        {%- else %}
+        <p class="empty">No player awards are configured yet.</p>
+        {%- endif %}
     </div>
 </div>
 {%- endif %}

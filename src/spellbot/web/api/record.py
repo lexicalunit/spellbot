@@ -707,10 +707,6 @@ async def guild_impl(request: web.Request) -> web.Response:
         "guild_settings": guild_settings,
         "guild_help": web_editable_docs(Guild),
         "awards": awards,
-        "award_help": award_help(),
-        "award_role_max": AWARD_ROLE_MAX,
-        "award_message_max": AWARD_MESSAGE_MAX,
-        "award_error": AWARD_ERRORS.get(request.query.get("award_error", "")),
     }
     return aiohttp_jinja2.render_template("guild.html.j2", request, context)
 
@@ -721,6 +717,43 @@ async def guild_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     async with db_session_manager():
         return await guild_impl(request)
+
+
+async def guild_awards_impl(request: web.Request) -> web.Response:
+    """Moderator-only: render the dedicated player awards management page."""
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except ValueError:
+        return web.Response(status=404)
+    guild = await services.games.guild_detail_view(guild_xid)
+    if guild is None:
+        return web.Response(status=404)
+
+    is_logged_in, is_moderator = await viewer_access(request, guild_xid)
+    if not is_logged_in:
+        return web.HTTPFound(login_url(request))
+    if not is_moderator:
+        return web.Response(status=403, text="Forbidden")
+
+    viewer_xid, _ = await get_viewer(request)
+    context = {
+        "guild": guild["guild"],
+        "viewer_xid": viewer_xid,
+        "awards": await services.guilds.award_list(guild_xid),
+        "award_help": award_help(),
+        "award_role_max": AWARD_ROLE_MAX,
+        "award_message_max": AWARD_MESSAGE_MAX,
+        "award_error": AWARD_ERRORS.get(request.query.get("award_error", "")),
+    }
+    return aiohttp_jinja2.render_template("awards.html.j2", request, context)
+
+
+@routes.get(r"/g/{guild}/awards")
+@tracer.wrap(name="web", resource="guild_awards")
+async def guild_awards_endpoint(request: web.Request) -> web.Response:
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        return await guild_awards_impl(request)
 
 
 async def guild_promote_impl(request: web.Request) -> web.Response:
@@ -776,7 +809,7 @@ def award_error_redirect(guild_xid: int, code: str) -> web.HTTPFound:
     the path is fixed and can never point off-site, and `code` must be a key of `AWARD_ERRORS`, so
     no user-supplied text is ever reflected. An unrecognized code is dropped rather than reflected.
     """
-    location = f"/g/{int(guild_xid)}"
+    location = f"/g/{int(guild_xid)}/awards"
     if code in AWARD_ERRORS:
         location = f"{location}?{urlencode({'award_error': code})}"
     return web.HTTPFound(location)
@@ -805,7 +838,7 @@ async def award_add_impl(request: web.Request) -> web.Response:
         verified_only=values["verified_only"],
         unverified_only=values["unverified_only"],
     )
-    return web.HTTPFound(f"/g/{guild_xid}")
+    return web.HTTPFound(f"/g/{guild_xid}/awards")
 
 
 @routes.post(r"/g/{guild}/awards/add")
@@ -843,7 +876,7 @@ async def award_update_impl(request: web.Request) -> web.Response:
     )
     if updated is None:
         return web.Response(status=404)
-    return web.HTTPFound(f"/g/{guild_xid}")
+    return web.HTTPFound(f"/g/{guild_xid}/awards")
 
 
 @routes.post(r"/g/{guild}/awards/{award}/update")
@@ -865,7 +898,7 @@ async def award_delete_impl(request: web.Request) -> web.Response:
         return web.Response(status=403, text="Forbidden")
     if not await services.guilds.award_delete(guild_xid, award_id):
         return web.Response(status=404)
-    return web.HTTPFound(f"/g/{guild_xid}")
+    return web.HTTPFound(f"/g/{guild_xid}/awards")
 
 
 @routes.post(r"/g/{guild}/awards/{award}/delete")
