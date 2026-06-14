@@ -62,6 +62,7 @@ tl:
     too_many_friends: "Masyado kang maraming na-mention na player."
     cannot_join: "Hindi ka puwedeng sumali sa game na ito."
     game_started: "Pasensya na, nagsimula na ang game na iyon."
+    game_full: "Sorry, that game is already full."
     invalid_player_count: "Hindi ka puwedeng gumawa ng %{format} game nang may %{count} (na) player."
     excluded_players: "Hindi puwedeng idagdag sa isang game ang ilan sa mga player na na-mention mo: %{players}"
     found_game: "Nakahanap ako ng %{format} game para sa iyo!"
