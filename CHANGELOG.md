@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.0.5](https://github.com/lexicalunit/spellbot/releases/tag/v21.0.5) - 2026-06-13
+
 ### Fixed
 
 - Fixes a possible race condition in /lfg and Join button handling.
