@@ -136,6 +136,11 @@
   box-shadow: var(--shadow);
 }
 
+/* Space sibling cards within a section (e.g. settings + "forget" cards). */
+.card + .card {
+  margin-top: 0.75rem;
+}
+
 .empty {
   color: var(--muted);
   font-style: italic;

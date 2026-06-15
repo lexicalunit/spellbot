@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Notification Preferences — {{ guild.guild_name or "SpellBot Server" }}</title>
-    <meta name="description" content="Choose which SpellBot game posts you want to be notified about.">
+    <title>{{ t("web.notify.title", name=guild.guild_name or t("web.common.spellbot_server")) }}</title>
+    <meta name="description" content="{{ t('web.notify.meta_description') }}">
     <meta name="theme-color" content="#1a202c">
     <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
     <style>
@@ -19,11 +19,11 @@
             <a href="/queues">
                 <img class="logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
             </a>
-            <h1>Notification Preferences</h1>
+            <h1>{{ t("web.notify.heading") }}</h1>
             <nav class="page-header__links" aria-label="Site">
-                <a class="page-header__user" href="/queues">Active Queues</a>
-                <a class="page-header__user" href="/g/{{ guild.guild_xid }}">Server Details</a>
-                <a class="page-header__user" href="/u/{{ viewer.xid }}">My Records</a>
+                <a class="page-header__user" href="/queues">{{ t("web.nav.active_queues") }}</a>
+                <a class="page-header__user" href="/g/{{ guild.guild_xid }}">{{ t("web.nav.server_details") }}</a>
+                <a class="page-header__user" href="/u/{{ viewer.xid }}">{{ t("web.nav.my_records") }}</a>
             </nav>
         </header>
 
@@ -37,9 +37,9 @@
                     loading="lazy"
                 >
                 <div class="notify__guild-titles">
-                    <h2 class="notify__guild-name">{{ guild.guild_name or "SpellBot Server" }}</h2>
+                    <h2 class="notify__guild-name">{{ guild.guild_name or t("web.common.spellbot_server") }}</h2>
                     <p class="notify__guild-sub">
-                        Choose what kinds of new games you want to be pinged about in this server.
+                        {{ t("web.notify.guild_sub") }}
                     </p>
                 </div>
             </div>
@@ -54,13 +54,13 @@
                             value="1"
                             {% if notifications_off %}checked{% endif %}
                         >
-                        <span>Do not notify me about games on this server</span>
+                        <span>{{ t("web.notify.off_label") }}</span>
                     </label>
                 </div>
 
                 <fieldset class="notify__fieldset">
-                    <legend class="notify__legend">Formats</legend>
-                    <p class="notify__hint">Select the formats you want to be notified about. Leave empty to receive all formats.</p>
+                    <legend class="notify__legend">{{ t("web.notify.formats") }}</legend>
+                    <p class="notify__hint">{{ t("web.notify.formats_hint") }}</p>
                     <div class="notify__options">
                         {% for c in format_choices %}
                         <label class="notify__option">
@@ -77,8 +77,8 @@
                 </fieldset>
 
                 <fieldset class="notify__fieldset">
-                    <legend class="notify__legend">Brackets</legend>
-                    <p class="notify__hint">Select the brackets you want to be notified about. Leave empty to receive all brackets.</p>
+                    <legend class="notify__legend">{{ t("web.notify.brackets") }}</legend>
+                    <p class="notify__hint">{{ t("web.notify.brackets_hint") }}</p>
                     <div class="notify__options">
                         {% for c in bracket_choices %}
                         <label class="notify__option">
@@ -96,8 +96,8 @@
 
                 {% if channel_choices|length > 1 %}
                 <fieldset class="notify__fieldset">
-                    <legend class="notify__legend">Channels</legend>
-                    <p class="notify__hint">Select the channels you want to be notified about. Leave empty to receive all channels.</p>
+                    <legend class="notify__legend">{{ t("web.notify.channels") }}</legend>
+                    <p class="notify__hint">{{ t("web.notify.channels_hint") }}</p>
                     <div class="notify__options">
                         {% for c in channel_choices %}
                         <label class="notify__option">
@@ -115,11 +115,9 @@
                 {% endif %}
 
                 <fieldset class="notify__fieldset notify__hours">
-                    <legend class="notify__legend">Active Hours</legend>
+                    <legend class="notify__legend">{{ t("web.notify.active_hours") }}</legend>
                     <p class="notify__hint">
-                        Only notify me during a specific window of the day, in my local time.
-                        Maximum window is {{ active_hours_max_length }} hours.
-                        Defaults to 5pm&ndash;10pm if you don't pick a range.
+                        {{ t("web.notify.active_hours_hint", hours=active_hours_max_length) }}
                     </p>
                     <label class="notify__hours-toggle">
                         <input
@@ -129,7 +127,7 @@
                             value="1"
                             {% if active_hours %}checked{% endif %}
                         >
-                        <span>Limit notifications to a daily window</span>
+                        <span>{{ t("web.notify.limit_window") }}</span>
                     </label>
                     <div class="notify__hours-panel" data-default-start="17" data-default-end="22">
                         <div class="notify__hours-readout" id="active-hours-readout"></div>
@@ -173,13 +171,13 @@
                 </fieldset>
 
                 <div class="notify__actions">
-                    <button type="submit" class="notify__save">Save preferences</button>
+                    <button type="submit" class="notify__save">{{ t("web.notify.save") }}</button>
                 </div>
             </form>
         </section>
 
         <footer class="page-footer">
-            <p>Powered by <a href="https://spellbot.io/">SpellBot</a>.</p>
+            <p>{{ t("web.common.powered_by", link='<a href="https://spellbot.io/">SpellBot</a>') | safe }}</p>
         </footer>
     </div>
     <div
@@ -194,9 +192,18 @@
             var form = document.querySelector(".notify__form");
             var toast = document.getElementById("notify-toast");
             if (!form || !toast) return;
-            var successMessage = "Your notification preferences have been saved.";
-            var offMessage = "Notifications turned off for this server.";
-            var errorMessage = "Could not save your preferences. Please try again.";
+            var I18N = {
+                unit_hour: {{ t("web.notify.unit_hour") | tojson }},
+                unit_hours: {{ t("web.notify.unit_hours") | tojson }},
+                pick_different: {{ t("web.notify.js_pick_different") | tojson }},
+                must_differ: {{ t("web.notify.js_must_differ") | tojson }},
+                range_max: {{ t("web.notify.js_range_max", max=active_hours_max_length) | tojson }},
+                times_in: {{ t("web.notify.js_times_in") | tojson }},
+                times_local: {{ t("web.notify.js_times_local") | tojson }},
+            };
+            var successMessage = {{ t("web.notify.js_saved") | tojson }};
+            var offMessage = {{ t("web.notify.js_off") | tojson }};
+            var errorMessage = {{ t("web.notify.js_error") | tojson }};
             var hideTimer = null;
             var offCb = document.getElementById("notify-off");
             var fieldsets = form.querySelectorAll(".notify__fieldset");
@@ -261,11 +268,11 @@
                 var len = rangeLength(start, end);
                 if (readout) {
                     if (start === end) {
-                        readout.textContent = "Pick different start and end hours";
+                        readout.textContent = I18N.pick_different;
                     } else {
                         readout.textContent =
                             formatHour(start) + " – " + formatHour(end) +
-                            " (" + len + " hour" + (len === 1 ? "" : "s") + ")";
+                            " (" + len + " " + (len === 1 ? I18N.unit_hour : I18N.unit_hours) + ")";
                     }
                 }
                 if (bandA && bandB) {
@@ -290,11 +297,10 @@
                 hoursInvalid = invalid;
                 if (hoursError) {
                     if (invalid && start === end) {
-                        hoursError.textContent = "Start and end must differ.";
+                        hoursError.textContent = I18N.must_differ;
                         hoursError.hidden = false;
                     } else if (invalid) {
-                        hoursError.textContent =
-                            "Range must be " + ACTIVE_HOURS_MAX + " hours or less.";
+                        hoursError.textContent = I18N.range_max;
                         hoursError.hidden = false;
                     } else {
                         hoursError.hidden = true;
@@ -309,8 +315,8 @@
                 } catch (e) { tz = ""; }
                 if (tz) tzInput.value = tz;
                 tzLabel.textContent = tzInput.value
-                    ? "Times shown in " + tzInput.value
-                    : "Times shown in your local timezone";
+                    ? I18N.times_in.replace("%{tz}", tzInput.value)
+                    : I18N.times_local;
             }
             if (hoursEnabledCb) hoursEnabledCb.addEventListener("change", updateHoursState);
             if (startSlider) startSlider.addEventListener("input", updateHoursState);

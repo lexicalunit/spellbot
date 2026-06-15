@@ -81,6 +81,21 @@ class TestQueuesEndpoint:
         assert "Active Games" in body
         assert '<span class="page-header__stat-value">0</span>' in body
 
+    async def test_renders_in_browser_locale(self, client: WebClient) -> None:
+        # The page is translated server-side based on the Accept-Language header.
+        resp = await client.get("/queues", headers={"Accept-Language": "ja,en;q=0.5"})
+        assert resp.status == 200
+        body = await resp.text()
+        assert '<html lang="ja">' in body
+        assert "アクティブなキュー" in body  # "Active Queues"
+
+    async def test_unsupported_locale_falls_back_to_english(self, client: WebClient) -> None:
+        resp = await client.get("/queues", headers={"Accept-Language": "zh-CN"})
+        assert resp.status == 200
+        body = await resp.text()
+        assert '<html lang="en">' in body
+        assert "Active Queues" in body
+
     async def test_renders_cards_for_pending_queues(
         self,
         client: WebClient,
@@ -480,8 +495,7 @@ class TestQueuesEndpoint:
         )
         resp = await client.get("/queues?my=1")
         body = await resp.text()
-        assert "servers you've played in" in body
-        assert "Uncheck the filter" in body
+        assert "played in. Uncheck the filter to see all servers" in body
 
 
 @pytest.mark.asyncio
@@ -852,7 +866,7 @@ class TestPlayedGuildsSection:
         resp = await client.get("/queues")
         body = await resp.text()
         played_idx = body.index("Your Servers")
-        divider_idx = body.index('aria-label="Active queues"')
+        divider_idx = body.index('aria-label="Active Queues"')
         active_idx = body.index("Jump to Game")
         assert played_idx < divider_idx < active_idx
 

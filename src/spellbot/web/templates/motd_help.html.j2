@@ -1,14 +1,14 @@
 {# Shared reference for the placeholders supported in server and channel MOTDs. #}
 {% macro motd_placeholders() %}
 <details class="motd-help">
-    <summary>Available placeholders</summary>
-    <p class="hint">These tokens are replaced with each game's details when the message of the day is shown in a game post:</p>
+    <summary>{{ t("web.motd.available") }}</summary>
+    <p class="hint">{{ t("web.motd.intro") }}</p>
     <ul class="motd-placeholders">
-        <li><code>${game_id}</code> — the game's SpellBot ID</li>
-        <li><code>${game_format}</code> — the game's format (e.g. Commander)</li>
-        <li><code>${game_bracket}</code> — the game's commander bracket</li>
-        <li><code>${game_start}</code> — when the game starts (a Discord timestamp), or “pending”</li>
-        <li><code>${player_name_1}</code>, <code>${player_name_2}</code>, … — the players' names, in join order</li>
+        <li><code>${game_id}</code> — {{ t("web.motd.game_id") }}</li>
+        <li><code>${game_format}</code> — {{ t("web.motd.game_format") }}</li>
+        <li><code>${game_bracket}</code> — {{ t("web.motd.game_bracket") }}</li>
+        <li><code>${game_start}</code> — {{ t("web.motd.game_start") }}</li>
+        <li><code>${player_name_1}</code>, <code>${player_name_2}</code>, … — {{ t("web.motd.player_names") }}</li>
     </ul>
 </details>
 {% endmacro %}

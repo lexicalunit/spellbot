@@ -289,6 +289,37 @@ class TestLookingForGameAction:
         await action.update_other_game_posts([])
         stub.assert_not_called()
 
+    async def test_upsert_game_join_game_filled_up(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """Joining a game that fills up before add_player runs warns the user."""
+        # message_xid makes origin=True, routing through the join (not create) path.
+        mocker.patch.object(
+            services.games,
+            "get_by_message_xid",
+            AsyncMock(return_value=create_mock_game(game_id=1)),
+        )
+        mocker.patch.object(services.games, "blocked", AsyncMock(return_value=False))
+        # The game filled up between fetch and add_player, so it returns None.
+        mocker.patch.object(services.games, "add_player", AsyncMock(return_value=None))
+        stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
+
+        new, game = await action.upsert_game(
+            friend_xids=[],
+            seats=4,
+            rules=None,
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
+            service=GameService.SPELLTABLE.value,
+            message_xid=12345,
+        )
+
+        assert new is None
+        assert game is None
+        stub.assert_awaited_once()
+
     async def test_update_other_game_posts_with_games(
         self,
         action: LookingForGameAction,

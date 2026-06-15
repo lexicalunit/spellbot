@@ -19,27 +19,27 @@
 <form method="get" class="filters">
     <div class="row">
         <div class="field">
-            <label for="f-with-player">Player (name or ID)</label>
-            <input type="text" id="f-with-player" name="with_player" value="{{ filters.with_player or '' }}" placeholder="e.g. amy or 12345">
+            <label for="f-with-player">{{ t("web.filters.player_label") }}</label>
+            <input type="text" id="f-with-player" name="with_player" value="{{ filters.with_player or '' }}" placeholder="{{ t('web.filters.player_placeholder') }}">
         </div>
         {% if show_guild %}
         <div class="field">
-            <label for="f-guild">Guild (name or ID)</label>
-            <input type="text" id="f-guild" name="guild" value="{{ filters.guild or '' }}" placeholder="e.g. my-guild or 67890">
+            <label for="f-guild">{{ t("web.filters.guild_label") }}</label>
+            <input type="text" id="f-guild" name="guild" value="{{ filters.guild or '' }}" placeholder="{{ t('web.filters.guild_placeholder') }}">
         </div>
         {% endif %}
         <div class="field">
-            <label for="f-from">From</label>
+            <label for="f-from">{{ t("web.filters.from") }}</label>
             <input type="date" id="f-from" name="from" value="{{ filters['from'] or '' }}">
         </div>
         <div class="field">
-            <label for="f-to">To</label>
+            <label for="f-to">{{ t("web.filters.to") }}</label>
             <input type="date" id="f-to" name="to" value="{{ filters.to or '' }}">
         </div>
     </div>
     <div class="row">
         <div class="field">
-            <label for="f-formats">Format(s)</label>
+            <label for="f-formats">{{ t("web.filters.formats") }}</label>
             <select id="f-formats" name="formats" multiple size="6">
                 {% for c in format_choices %}
                 <option value="{{ c.value }}" {% if c.value in filters.formats %}selected{% endif %}>{{ c.label }}</option>
@@ -47,7 +47,7 @@
             </select>
         </div>
         <div class="field">
-            <label for="f-brackets">Bracket(s)</label>
+            <label for="f-brackets">{{ t("web.filters.brackets") }}</label>
             <select id="f-brackets" name="brackets" multiple size="6">
                 {% for c in bracket_choices %}
                 <option value="{{ c.value }}" {% if c.value in filters.brackets %}selected{% endif %}>{{ c.label }}</option>
@@ -56,8 +56,8 @@
         </div>
     </div>
     <div class="actions">
-        <button type="submit" class="button">Apply filters</button>
-        <a href="?" class="button">Reset</a>
+        <button type="submit" class="button">{{ t("web.filters.apply") }}</button>
+        <a href="?" class="button">{{ t("web.filters.reset") }}</a>
     </div>
 </form>
 {% endmacro %}

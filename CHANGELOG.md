@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added i18n for web pages.
+
 ### Fixed
 
 - Fix links vs buttons in records pages.

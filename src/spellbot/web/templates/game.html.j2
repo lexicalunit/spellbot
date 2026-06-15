@@ -1,76 +1,76 @@
 {% extends "record_base.html.j2" %}
-{% block title %}Game SB#{{ game.id }}{% endblock %}
-{% block heading %}Game SB#{{ game.id }}{% endblock %}
+{% block title %}{{ t("web.field.game") }} SB#{{ game.id }}{% endblock %}
+{% block heading %}{{ t("web.field.game") }} SB#{{ game.id }}{% endblock %}
 {% block subtitle %}
 <div class="subtitle">
-    {{ game.status }} &middot; {{ game.format }} &middot; {{ game.seats }} seats
+    {{ game.status }} &middot; {{ game.format }} &middot; {{ game.seats }} {{ t("web.common.seats_suffix") }}
     {% if game.guild.name %}&middot; <a href="/g/{{ game.guild.xid }}">{{ game.guild.name }}</a>{% endif %}
     {% if game.channel.name %}&middot; <a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}">#{{ game.channel.name }}</a>{% endif %}
 </div>
 {% endblock %}
 {% block content %}
 <div class="section">
-    <h2>Details</h2>
+    <h2>{{ t("web.game.details") }}</h2>
     <div class="card">
         <table>
             <tbody>
-                <tr><td>Status</td><td>{{ game.status }}</td></tr>
-                <tr><td>Format</td><td>{{ game.format }}</td></tr>
-                <tr><td>Bracket</td><td>{{ game.bracket }}</td></tr>
-                <tr><td>Service</td><td>{{ game.service }}</td></tr>
-                <tr><td>Seats</td><td>{{ game.seats }}</td></tr>
-                <tr><td>Locale</td><td>{{ game.locale }}</td></tr>
-                <tr><td>Blind</td><td>{{ 'Yes' if game.blind else 'No' }}</td></tr>
-                {% if game.rules %}<tr><td>Rules</td><td>{{ game.rules }}</td></tr>{% endif %}
+                <tr><td>{{ t("web.field.status") }}</td><td>{{ game.status }}</td></tr>
+                <tr><td>{{ t("web.field.format") }}</td><td>{{ game.format }}</td></tr>
+                <tr><td>{{ t("web.field.bracket") }}</td><td>{{ game.bracket }}</td></tr>
+                <tr><td>{{ t("web.field.service") }}</td><td>{{ game.service }}</td></tr>
+                <tr><td>{{ t("web.field.seats") }}</td><td>{{ game.seats }}</td></tr>
+                <tr><td>{{ t("web.field.locale") }}</td><td>{{ game.locale }}</td></tr>
+                <tr><td>{{ t("web.game.blind") }}</td><td>{{ t("web.common.yes_label") if game.blind else t("web.common.no_label") }}</td></tr>
+                {% if game.rules %}<tr><td>{{ t("web.game.rules") }}</td><td>{{ game.rules }}</td></tr>{% endif %}
                 <tr>
-                    <td>Guild</td>
+                    <td>{{ t("web.field.guild") }}</td>
                     <td>
-                        <a href="/g/{{ game.guild.xid }}">{{ game.guild.name | default('Unknown Guild', true) }}</a>
+                        <a href="/g/{{ game.guild.xid }}">{{ game.guild.name | default(t("web.common.unknown_guild"), true) }}</a>
                         <span class="user-id">{{ game.guild.xid }}</span>
-                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}" class="button">Jump&nbsp;to&nbsp;guild</a>
+                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}" class="button">{{ t("web.common.jump_to_guild") | replace(" ", "&nbsp;") | safe }}</a>
                     </td>
                 </tr>
                 <tr>
-                    <td>Channel</td>
+                    <td>{{ t("web.field.channel") }}</td>
                     <td>
-                        <a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}">#{{ game.channel.name | default('Unknown Channel', true) }}</a>
+                        <a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}">#{{ game.channel.name | default(t("web.common.unknown_channel"), true) }}</a>
                         <span class="user-id">{{ game.channel.xid }}</span>
-                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.channel.xid }}" class="button">Jump&nbsp;to&nbsp;channel</a>
+                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.channel.xid }}" class="button">{{ t("web.common.jump_to_channel") | replace(" ", "&nbsp;") | safe }}</a>
                     </td>
                 </tr>
                 {% if game.game_link and can_view_links %}
-                <tr><td>Game link</td><td><a href="{{ game.game_link }}">{{ game.game_link }}</a></td></tr>
+                <tr><td>{{ t("web.game.game_link") }}</td><td><a href="{{ game.game_link }}">{{ game.game_link }}</a></td></tr>
                 {% endif %}
                 {% if game.voice_xid and can_view_links %}
                 <tr>
-                    <td>Voice channel</td>
+                    <td>{{ t("web.game.voice_channel") }}</td>
                     <td>
                         <span class="user-id">{{ game.voice_xid }}</span>
-                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.voice_xid }}" class="button">Jump&nbsp;to&nbsp;channel</a>
-                        {% if game.voice_invite_link %}&nbsp;<a href="{{ game.voice_invite_link }}" class="button">Jump&nbsp;to&nbsp;voice&nbsp;invite</a>{% endif %}
+                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.voice_xid }}" class="button">{{ t("web.common.jump_to_channel") | replace(" ", "&nbsp;") | safe }}</a>
+                        {% if game.voice_invite_link %}&nbsp;<a href="{{ game.voice_invite_link }}" class="button">{{ t("web.common.jump_to_voice_invite") | replace(" ", "&nbsp;") | safe }}</a>{% endif %}
                     </td>
                 </tr>
                 {% endif %}
                 <tr>
-                    <td>Created</td>
+                    <td>{{ t("web.field.created") }}</td>
                     {% if tz_offset and tz_name %}<td>{{ game.created_at | humanize(tz_offset, tz_name) }}</td>
                     {% else %}<td class="timestamp">{{ game.created_at }}</td>{% endif %}
                 </tr>
                 <tr>
-                    <td>Updated</td>
+                    <td>{{ t("web.field.updated") }}</td>
                     {% if tz_offset and tz_name %}<td>{{ game.updated_at | humanize(tz_offset, tz_name) }}</td>
                     {% else %}<td class="timestamp">{{ game.updated_at }}</td>{% endif %}
                 </tr>
                 {% if game.started_at %}
                 <tr>
-                    <td>Started</td>
+                    <td>{{ t("web.field.started") }}</td>
                     {% if tz_offset and tz_name %}<td>{{ game.started_at | humanize(tz_offset, tz_name) }}</td>
                     {% else %}<td class="timestamp">{{ game.started_at }}</td>{% endif %}
                 </tr>
                 {% endif %}
                 {% if game.deleted_at %}
                 <tr>
-                    <td>Deleted</td>
+                    <td>{{ t("web.field.deleted") }}</td>
                     {% if tz_offset and tz_name %}<td>{{ game.deleted_at | humanize(tz_offset, tz_name) }}</td>
                     {% else %}<td class="timestamp">{{ game.deleted_at }}</td>{% endif %}
                 </tr>
@@ -82,19 +82,19 @@
 
 {% if game.posts %}
 <div class="section">
-    <h2>Discord posts ({{ game.posts | length }})</h2>
+    <h2>{{ t("web.game.discord_posts") }} ({{ game.posts | length }})</h2>
     <div class="card">
         <table>
             <thead>
-                <tr><th>Guild</th><th>Channel</th><th>Message</th><th>Jump</th></tr>
+                <tr><th>{{ t("web.field.guild") }}</th><th>{{ t("web.field.channel") }}</th><th>{{ t("web.game.message") }}</th><th>{{ t("web.field.jump") }}</th></tr>
             </thead>
             <tbody>
                 {% for post in game.posts %}
                 <tr>
-                    <td data-label="Guild"><span class="user-id">{{ post.guild_xid }}</span></td>
-                    <td data-label="Channel"><span class="user-id">{{ post.channel_xid }}</span></td>
-                    <td data-label="Message"><span class="user-id">{{ post.message_xid }}</span></td>
-                    <td data-label="Jump"><a href="https://discord.com/channels/{{ post.guild_xid }}/{{ post.channel_xid }}/{{ post.message_xid }}" class="button">Jump&nbsp;to&nbsp;game</a></td>
+                    <td data-label="{{ t('web.field.guild') }}"><span class="user-id">{{ post.guild_xid }}</span></td>
+                    <td data-label="{{ t('web.field.channel') }}"><span class="user-id">{{ post.channel_xid }}</span></td>
+                    <td data-label="{{ t('web.game.message') }}"><span class="user-id">{{ post.message_xid }}</span></td>
+                    <td data-label="{{ t('web.field.jump') }}"><a href="https://discord.com/channels/{{ post.guild_xid }}/{{ post.channel_xid }}/{{ post.message_xid }}" class="button">{{ t("web.common.jump_to_game") | replace(" ", "&nbsp;") | safe }}</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -105,24 +105,24 @@
 
 {% if game.plays %}
 <div class="section">
-    <h2>Players ({{ game.plays | length }})</h2>
+    <h2>{{ t("web.game.players") }} ({{ game.plays | length }})</h2>
     <div class="card">
         <table>
             <thead>
-                <tr><th>User Name</th><th>User ID</th><th>Entered Guild</th><th>Records</th></tr>
+                <tr><th>{{ t("web.field.user_name") }}</th><th>{{ t("web.field.user_id") }}</th><th>{{ t("web.game.entered_guild") }}</th><th>{{ t("web.game.records") }}</th></tr>
             </thead>
             <tbody>
                 {% for play in game.plays %}
                 <tr>
-                    <td data-label="User Name">{{ play.user_name | default('Unknown User', true) }}</td>
-                    <td data-label="User ID">
+                    <td data-label="{{ t('web.field.user_name') }}">{{ play.user_name | default(t("web.common.unknown_user"), true) }}</td>
+                    <td data-label="{{ t('web.field.user_id') }}">
                         <span class="id-copy">
                             <span class="user-id">{{ play.user_xid }}</span>
-                            <button type="button" class="copy" data-copy="{{ play.user_xid }}" title="Copy User ID">⎘</button>
+                            <button type="button" class="copy" data-copy="{{ play.user_xid }}" title="{{ t('web.common.copy_user_id') }}">⎘</button>
                         </span>
                     </td>
-                    <td data-label="Entered Guild"><span class="user-id">{{ play.og_guild_xid }}</span></td>
-                    <td data-label="Records"><a href="/u/{{ play.user_xid }}" class="button">User records</a></td>
+                    <td data-label="{{ t('web.game.entered_guild') }}"><span class="user-id">{{ play.og_guild_xid }}</span></td>
+                    <td data-label="{{ t('web.game.records') }}"><a href="/u/{{ play.user_xid }}" class="button">{{ t("web.game.user_records") }}</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -133,23 +133,23 @@
 
 {% if game.queued %}
 <div class="section">
-    <h2>Queued ({{ game.queued | length }})</h2>
+    <h2>{{ t("web.game.queued") }} ({{ game.queued | length }})</h2>
     <div class="card">
         <table>
             <thead>
-                <tr><th>User Name</th><th>User ID</th><th>Entered Guild</th></tr>
+                <tr><th>{{ t("web.field.user_name") }}</th><th>{{ t("web.field.user_id") }}</th><th>{{ t("web.game.entered_guild") }}</th></tr>
             </thead>
             <tbody>
                 {% for q in game.queued %}
                 <tr>
-                    <td data-label="User Name">{{ q.user_name | default('Unknown User', true) }}</td>
-                    <td data-label="User ID">
+                    <td data-label="{{ t('web.field.user_name') }}">{{ q.user_name | default(t("web.common.unknown_user"), true) }}</td>
+                    <td data-label="{{ t('web.field.user_id') }}">
                         <span class="id-copy">
                             <span class="user-id">{{ q.user_xid }}</span>
-                            <button type="button" class="copy" data-copy="{{ q.user_xid }}" title="Copy User ID">⎘</button>
+                            <button type="button" class="copy" data-copy="{{ q.user_xid }}" title="{{ t('web.common.copy_user_id') }}">⎘</button>
                         </span>
                     </td>
-                    <td data-label="Entered Guild"><span class="user-id">{{ q.og_guild_xid }}</span></td>
+                    <td data-label="{{ t('web.game.entered_guild') }}"><span class="user-id">{{ q.og_guild_xid }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>

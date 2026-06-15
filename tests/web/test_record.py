@@ -1470,6 +1470,20 @@ class TestWebGuildAwards:
         assert resp.status == 302
         assert "/queues/login" in resp.headers["Location"]
 
+    async def test_awards_page_404_for_non_integer_guild(
+        self,
+        client: ClientSession,
+    ) -> None:
+        resp = await client.get("/g/not-a-number/awards", allow_redirects=False)
+        assert resp.status == 404
+
+    async def test_awards_page_404_for_unknown_guild(
+        self,
+        client: ClientSession,
+    ) -> None:
+        resp = await client.get("/g/999999/awards", allow_redirects=False)
+        assert resp.status == 404
+
     async def test_add_award_persists(
         self,
         mod_client: ClientSession,

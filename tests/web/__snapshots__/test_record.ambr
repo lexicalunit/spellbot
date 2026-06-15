@@ -214,6 +214,11 @@
     box-shadow: var(--shadow);
   }
   
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
+  }
+  
   .empty {
     color: var(--muted);
     font-style: italic;
@@ -1058,6 +1063,11 @@
     box-shadow: var(--shadow);
   }
   
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
+  }
+  
   .empty {
     color: var(--muted);
     font-style: italic;
@@ -1457,7 +1467,7 @@
   <div class="section">
       <div class="card">
           <p class="login-prompt">
-              Moderators can manage this server's settings here.
+              Moderators can manage this server&#39;s settings here.
               <a href="/queues/login?next=%2Fg%2F201" class="button">Log in with Discord</a>
           </p>
       </div>
@@ -1839,6 +1849,11 @@
     padding: 1.25rem;
     overflow-x: auto;
     box-shadow: var(--shadow);
+  }
+  
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
   }
   
   .empty {
@@ -2238,7 +2253,7 @@
   <div class="section">
       <div class="card">
           <p class="login-prompt">
-              Moderators can manage this channel's settings here.
+              Moderators can manage this channel&#39;s settings here.
               <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
           </p>
       </div>
@@ -2848,6 +2863,11 @@
     box-shadow: var(--shadow);
   }
   
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
+  }
+  
   .empty {
     color: var(--muted);
     font-style: italic;
@@ -3245,7 +3265,7 @@
   <div class="section">
       <div class="card">
           <p class="login-prompt">
-              Moderators can manage this channel's settings here.
+              Moderators can manage this channel&#39;s settings here.
               <a href="/queues/login?next=%2Fg%2F201%2Fc%2F101" class="button">Log in with Discord</a>
           </p>
       </div>
@@ -3693,6 +3713,11 @@
     box-shadow: var(--shadow);
   }
   
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
+  }
+  
   .empty {
     color: var(--muted);
     font-style: italic;
@@ -4090,7 +4115,7 @@
   <div class="section">
       <div class="card">
           <p class="login-prompt">
-              Moderators can manage this channel's settings here.
+              Moderators can manage this channel&#39;s settings here.
               <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
           </p>
       </div>
@@ -4700,6 +4725,11 @@
     box-shadow: var(--shadow);
   }
   
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
+  }
+  
   .empty {
     color: var(--muted);
     font-style: italic;
@@ -5097,7 +5127,7 @@
   <div class="section">
       <div class="card">
           <p class="login-prompt">
-              Moderators can manage this channel's settings here.
+              Moderators can manage this channel&#39;s settings here.
               <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
           </p>
       </div>
@@ -5705,6 +5735,11 @@
     padding: 1.25rem;
     overflow-x: auto;
     box-shadow: var(--shadow);
+  }
+  
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
   }
   
   .empty {
@@ -6710,6 +6745,11 @@
     box-shadow: var(--shadow);
   }
   
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
+  }
+  
   .empty {
     color: var(--muted);
     font-style: italic;
@@ -7560,6 +7600,11 @@
     padding: 1.25rem;
     overflow-x: auto;
     box-shadow: var(--shadow);
+  }
+  
+  /* Space sibling cards within a section (e.g. settings + "forget" cards). */
+  .card + .card {
+    margin-top: 0.75rem;
   }
   
   .empty {

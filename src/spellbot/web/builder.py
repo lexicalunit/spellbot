@@ -14,6 +14,7 @@ from babel.dates import format_datetime
 
 from spellbot import services
 from spellbot.database import db_session_manager
+from spellbot.i18n import best_locale, t
 from spellbot.models import import_models
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
@@ -57,6 +58,22 @@ def humanize(ts: int, offset: int, zone: str) -> str:
     with suppress(ZoneInfoNotFoundError):
         d = d.replace(tzinfo=ZoneInfo(zone))
     return format_datetime(d, format="long", locale=settings.LOCALE)
+
+
+async def i18n_context_processor(request: web.Request) -> dict[str, object]:
+    """
+    Expose a request-scoped translator and language to every template.
+
+    The viewer's language is negotiated from the browser's `Accept-Language`
+    header so server-rendered pages arrive already translated. Templates call
+    `{{ t("web.some.key") }}`; anything without a `web` entry falls back to `en`.
+    """
+    locale = best_locale(request.headers.get("Accept-Language"))
+
+    def translate(key: str, **kwargs: object) -> str:
+        return t(key, locale=locale, **kwargs)
+
+    return {"lang": locale, "t": translate}
 
 
 @web.middleware
@@ -141,11 +158,13 @@ def build_web_app() -> web.Application:
     # so it must come before `admin_auth_middleware`
     admin_auth.setup_admin_sessions(app)
     app.middlewares.append(admin_auth.admin_auth_middleware)
+    app.middlewares.append(aiohttp_jinja2.context_processors_middleware)
     aiohttp_jinja2.setup(
         app,
         loader=jinja2.FileSystemLoader(TEMPLATES_ROOT),
         filters={"humanize": humanize, "wait": queues.format_wait},
     )
+    app[aiohttp_jinja2.APP_CONTEXT_PROCESSORS_KEY] = (i18n_context_processor,)
     for routes in ALL_ROUTES:
         app.router.add_routes(routes)
     app.router.add_get("/analytics.js", serve_analytics_js)
