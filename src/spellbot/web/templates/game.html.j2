@@ -4,8 +4,8 @@
 {% block subtitle %}
 <div class="subtitle">
     {{ game.status }} &middot; {{ game.format }} &middot; {{ game.seats }} seats
-    {% if game.guild.name %}&middot; <a href="https://discord.com/channels/{{ game.guild.xid }}">{{ game.guild.name }}</a>{% endif %}
-    {% if game.channel.name %}&middot; <a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.channel.xid }}">#{{ game.channel.name }}</a>{% endif %}
+    {% if game.guild.name %}&middot; <a href="/g/{{ game.guild.xid }}">{{ game.guild.name }}</a>{% endif %}
+    {% if game.channel.name %}&middot; <a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}">#{{ game.channel.name }}</a>{% endif %}
 </div>
 {% endblock %}
 {% block content %}
@@ -25,17 +25,17 @@
                 <tr>
                     <td>Guild</td>
                     <td>
-                        <a href="https://discord.com/channels/{{ game.guild.xid }}">{{ game.guild.name | default('Unknown Guild', true) }}</a>
+                        <a href="/g/{{ game.guild.xid }}">{{ game.guild.name | default('Unknown Guild', true) }}</a>
                         <span class="user-id">{{ game.guild.xid }}</span>
-                        &nbsp;<a href="/g/{{ game.guild.xid }}" class="button">Guild records</a>
+                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}" class="button">Jump&nbsp;to&nbsp;guild</a>
                     </td>
                 </tr>
                 <tr>
                     <td>Channel</td>
                     <td>
-                        <a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.channel.xid }}">#{{ game.channel.name | default('Unknown Channel', true) }}</a>
+                        <a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}">#{{ game.channel.name | default('Unknown Channel', true) }}</a>
                         <span class="user-id">{{ game.channel.xid }}</span>
-                        &nbsp;<a href="/g/{{ game.guild.xid }}/c/{{ game.channel.xid }}" class="button">Channel records</a>
+                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.channel.xid }}" class="button">Jump&nbsp;to&nbsp;channel</a>
                     </td>
                 </tr>
                 {% if game.game_link and can_view_links %}
@@ -45,9 +45,9 @@
                 <tr>
                     <td>Voice channel</td>
                     <td>
-                        <a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.voice_xid }}">Open voice channel</a>
                         <span class="user-id">{{ game.voice_xid }}</span>
-                        {% if game.voice_invite_link %}&nbsp;<a href="{{ game.voice_invite_link }}">Voice invite</a>{% endif %}
+                        &nbsp;<a href="https://discord.com/channels/{{ game.guild.xid }}/{{ game.voice_xid }}" class="button">Jump&nbsp;to&nbsp;channel</a>
+                        {% if game.voice_invite_link %}&nbsp;<a href="{{ game.voice_invite_link }}" class="button">Jump&nbsp;to&nbsp;voice&nbsp;invite</a>{% endif %}
                     </td>
                 </tr>
                 {% endif %}

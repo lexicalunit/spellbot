@@ -844,7 +844,8 @@ class TestWebGameDetail:
         text = await resp.text()
         assert "https://example.com/play/abc" not in text
         assert "Game link" not in text
-        assert "Open voice channel" not in text
+        assert "Voice channel" not in text
+        assert "https://discord.com/channels/201/401" not in text
         assert "https://discord.gg/invite" not in text
 
     async def test_game_detail_links_shown_when_show_links_enabled(

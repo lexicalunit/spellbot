@@ -597,8 +597,8 @@
                   
   <div class="subtitle">
       STARTED &middot; Modern &middot; 2 seats
-      &middot; <a href="https://discord.com/channels/201">guild</a>
-      &middot; <a href="https://discord.com/channels/201/301">#channel</a>
+      &middot; <a href="/g/201">guild</a>
+      &middot; <a href="/g/201/c/301">#channel</a>
   </div>
   
               </div>
@@ -625,17 +625,17 @@
                   <tr>
                       <td>Guild</td>
                       <td>
-                          <a href="https://discord.com/channels/201">guild</a>
+                          <a href="/g/201">guild</a>
                           <span class="user-id">201</span>
-                          &nbsp;<a href="/g/201" class="button">Guild records</a>
+                          &nbsp;<a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
                       </td>
                   </tr>
                   <tr>
                       <td>Channel</td>
                       <td>
-                          <a href="https://discord.com/channels/201/301">#channel</a>
+                          <a href="/g/201/c/301">#channel</a>
                           <span class="user-id">301</span>
-                          &nbsp;<a href="/g/201/c/301" class="button">Channel records</a>
+                          &nbsp;<a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
                       </td>
                   </tr>
                   
@@ -1440,9 +1440,9 @@
                   <h1>guild</h1>
                   
   <div class="subtitle">
-      <a href="https://discord.com/channels/201">Open server</a>
-      &middot; <a href="/queues/g/201">Notification preferences</a>
+      <a href="/queues/g/201">Notification preferences</a>
       <span class="user-id">201</span>
+      &nbsp;<a href="https://discord.com/channels/201" class="button">Jump&nbsp;to&nbsp;guild</a>
       &middot; 2 channels with games
   </div>
   
@@ -2223,8 +2223,8 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="/g/201">guild</a> &middot;
-      <a href="https://discord.com/channels/201/301">Open channel</a>
+      <a href="/g/201">guild</a>
+      <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
   </div>
   
               </div>
@@ -3230,8 +3230,8 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="/g/201">guild</a> &middot;
-      <a href="https://discord.com/channels/201/101">Open channel</a>
+      <a href="/g/201">guild</a>
+      <a href="https://discord.com/channels/201/101" class="button">Jump&nbsp;to&nbsp;channel</a>
   </div>
   
               </div>
@@ -4075,8 +4075,8 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="/g/201">guild</a> &middot;
-      <a href="https://discord.com/channels/201/301">Open channel</a>
+      <a href="/g/201">guild</a>
+      <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
   </div>
   
               </div>
@@ -5082,8 +5082,8 @@
                   <h1>Channel Records: #channel</h1>
                   
   <div class="subtitle">
-      <a href="/g/201">guild</a> &middot;
-      <a href="https://discord.com/channels/201/301">Open channel</a>
+      <a href="/g/201">guild</a>
+      <a href="https://discord.com/channels/201/301" class="button">Jump&nbsp;to&nbsp;channel</a>
   </div>
   
               </div>

@@ -5,8 +5,8 @@
 {% block heading %}Channel Records: #{{ target_name or 'Unknown Channel' }}{% endblock %}
 {% block subtitle %}
 <div class="subtitle">
-    {% if guild_name %}<a href="/g/{{ guild_xid }}">{{ guild_name }}</a> &middot;{% endif %}
-    <a href="https://discord.com/channels/{{ guild_xid }}/{{ target_xid }}">Open channel</a>
+    {% if guild_name %}<a href="/g/{{ guild_xid }}">{{ guild_name }}</a>{% endif %}
+    <a href="https://discord.com/channels/{{ guild_xid }}/{{ target_xid }}" class="button">Jump&nbsp;to&nbsp;channel</a>
 </div>
 {% endblock %}
 {% block content %}

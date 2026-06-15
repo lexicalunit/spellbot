@@ -4,9 +4,9 @@
 {% block heading %}{{ guild.name | default('SpellBot Server', true) }}{% endblock %}
 {% block subtitle %}
 <div class="subtitle">
-    <a href="https://discord.com/channels/{{ guild.xid }}">Open server</a>
-    &middot; <a href="/queues/g/{{ guild.xid }}">Notification preferences</a>
+    <a href="/queues/g/{{ guild.xid }}">Notification preferences</a>
     <span class="user-id">{{ guild.xid }}</span>
+    &nbsp;<a href="https://discord.com/channels/{{ guild.xid }}" class="button">Jump&nbsp;to&nbsp;guild</a>
     &middot; {{ channels | length }} channel{{ '' if channels | length == 1 else 's' }} with games
 </div>
 {% endblock %}
