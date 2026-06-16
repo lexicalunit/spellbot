@@ -1040,11 +1040,15 @@ async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamRespo
     response.enable_chunked_encoding()
     await response.prepare(request)
 
-    await response.write(csv_line(header))
-    async for record in stream:
-        await response.write(csv_line(format_row(record)))
-
-    await response.write_eof()
+    try:
+        await response.write(csv_line(header))
+        async for record in stream:
+            await response.write(csv_line(format_row(record)))
+        await response.write_eof()
+    except ConnectionResetError, ConnectionError:
+        # The client disconnected mid-export (closed the tab, timed out, etc.).
+        # Nothing left to send, and it's not an error on our side.
+        logger.info("client disconnected during %s export", kind.name.lower())
     return response
 
 

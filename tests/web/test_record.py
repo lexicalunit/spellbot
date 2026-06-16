@@ -706,6 +706,43 @@ class TestWebRecordExport:
         resp = await client.get("/u/xyz/export.csv")
         assert resp.status == 404
 
+    async def test_user_export_client_disconnect(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+        factories.play.create(game_id=game.id, user_xid=user.xid)
+
+        # Simulate the client dropping the connection partway through the stream.
+        mocker.patch.object(
+            record.web.StreamResponse,
+            "write",
+            side_effect=ConnectionResetError("Cannot write to closing transport"),
+        )
+
+        with caplog.at_level("INFO"):
+            resp = await client.get(f"/u/{user.xid}/export.csv")
+
+        # The disconnect is swallowed: the request completes without a 500/traceback.
+        assert resp.status == 200
+        assert any("client disconnected" in r.message for r in caplog.records)
+
     async def test_channel_export_success(
         self,
         client: ClientSession,
