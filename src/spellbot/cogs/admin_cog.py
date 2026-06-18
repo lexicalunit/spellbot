@@ -90,17 +90,6 @@ class AdminCog(commands.Cog):
         async with AdminAction.create(self.bot, interaction) as action:
             await action.expire_games(guild_xid=interaction.guild_id)
 
-    @app_commands.check(is_admin)
-    @app_commands.command(
-        name="analytics",
-        description="View server analytics dashboard (admin only).",
-    )
-    @tracer.wrap(name="interaction", resource="analytics")
-    async def analytics(self, interaction: discord.Interaction) -> None:
-        add_span_context(interaction)
-        async with AdminAction.create(self.bot, interaction) as action:
-            await action.analytics()
-
     @app_commands.check(is_mod)
     @app_commands.command(
         name="user_info",

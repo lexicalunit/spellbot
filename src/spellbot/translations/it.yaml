@@ -166,8 +166,6 @@ it:
     game_info_pending: "Not started yet"
     game_info_details: "Details"
     user_info_footer: "ID utente: %{user_id}"
-    analytics_title: "Analisi del server per %{guild}"
-    analytics_description: "Visualizza la dashboard di analisi del tuo server:\n📊 [Apri Analisi](%{url})\n\n_Questo link scade tra %{minutes} minuti._"
     mythic_track_title: "Configurazione tracciamento Mitiche per %{guild}"
     mythic_track_on: "✅ Il tracciamento Mitiche è stato **attivato** per questo server!\n\nPer continuare la configurazione, [collega il tuo account Discord al tracciamento Mitiche](%{guide}).\n\nQuando questa funzione è attiva, SpellBot genererà dei codici PIN che i giocatori dovranno inserire nel tracciamento Mitiche affinché le loro partite possano essere tracciate."
     mythic_track_off: "❌ Il tracciamento Mitiche è stato **disattivato** per questo server. Esegui nuovamente questo comando per riattivarlo. Ricorda che la disattivazione di questa funzione _non_ rimuove i dati esistenti del tracciamento Mitiche."

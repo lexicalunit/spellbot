@@ -50,6 +50,8 @@ class TestWebAnalyticsShell:
         text = await resp.text()
         assert "test-guild" in text
         assert "Loading analytics" in text
+        # The page links back to the guild page.
+        assert f'href="/g/{guild.xid}"' in text
 
     async def test_analytics_shell_invalid_guild(
         self,
@@ -64,14 +66,16 @@ class TestWebAnalyticsShell:
         resp = await client.get(path)
         assert resp.status == 404
 
-    async def test_analytics_shell_missing_signature(
+    async def test_analytics_shell_anonymous_redirected_to_login(
         self,
         client: ClientSession,
     ) -> None:
-        resp = await client.get("/g/201/analytics")
-        assert resp.status == 403
+        # No signature and no logged-in session: bounce to login like the settings/audit pages.
+        resp = await client.get("/g/201/analytics", allow_redirects=False)
+        assert resp.status == 302
+        assert "/queues/login" in resp.headers["Location"]
 
-    async def test_analytics_shell_expired_signature(
+    async def test_analytics_shell_expired_signature_redirected_to_login(
         self,
         client: ClientSession,
         mocker: MockerFixture,
@@ -82,15 +86,45 @@ class TestWebAnalyticsShell:
         path = f"{parsed.path}?{parsed.query}"
 
         mocker.patch("spellbot.utils.time.time", return_value=2000.0)
-        resp = await client.get(path)
-        assert resp.status == 403
+        resp = await client.get(path, allow_redirects=False)
+        assert resp.status == 302
+        assert "/queues/login" in resp.headers["Location"]
 
-    async def test_analytics_shell_invalid_signature(
+    async def test_analytics_shell_invalid_signature_redirected_to_login(
         self,
         client: ClientSession,
     ) -> None:
-        resp = await client.get("/g/201/analytics?expires=9999999999&sig=bad")
+        resp = await client.get(
+            "/g/201/analytics?expires=9999999999&sig=bad",
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+        assert "/queues/login" in resp.headers["Location"]
+
+    async def test_analytics_shell_logged_in_non_moderator_forbidden(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        factories.guild.create(xid=201, name="test-guild")
+        resp = await owner_client.get("/g/201/analytics")
         assert resp.status == 403
+
+    async def test_analytics_shell_moderator_session(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # A logged-in moderator can view analytics without a signed link.
+        factories.guild.create(xid=201, name="test-guild")
+        resp = await mod_client.get("/g/201/analytics")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "test-guild" in text
+        # Session view shows the Share button (not the expiry countdown).
+        assert "Share this page" in text
+        # The page links back to the guild page.
+        assert 'href="/g/201"' in text
 
     async def test_analytics_shell_bad_guild_in_url(
         self,
@@ -138,6 +172,32 @@ class TestWebAnalyticsSummary:
         data = await resp.json()
         assert data["total_games"] == 1
         assert data["active_players"] == 1
+
+    async def test_analytics_summary_moderator_session(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # A logged-in moderator can fetch analytics data without a signed link.
+        # NB: don't freeze/mock time here — that patches the global `time.time` and
+        # breaks the encrypted session cookie, dropping the moderator's session.
+        guild = factories.guild.create(xid=201, name="test-guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        user = factories.user.create(xid=101, name="player1")
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.COMMANDER.value,
+            started_at=datetime.now(tz=UTC),
+            created_at=datetime.now(tz=UTC),
+        )
+        factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
+
+        resp = await mod_client.get(f"/g/{guild.xid}/analytics/summary")
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["total_games"] == 1
 
     async def test_analytics_summary_invalid_guild(
         self,
@@ -711,6 +771,59 @@ class TestWebAnalyticsMembershipChecks:
         assert resp.status == 200
         data = await resp.json()
         assert data["top_blocked"] == []
+
+
+@pytest.mark.asyncio
+class TestWebAnalyticsShare:
+    """Tests for the moderator-only 'Share this page' endpoint."""
+
+    async def test_share_moderator_returns_signed_url(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # NB: don't mock the global clock here — it would invalidate the session cookie.
+        guild = factories.guild.create(xid=201, name="test-guild")
+
+        resp = await mod_client.get(f"/g/{guild.xid}/analytics/share")
+        assert resp.status == 200
+        data = await resp.json()
+        # The minted link points at the analytics page and carries a signature.
+        assert f"/g/{guild.xid}/analytics" in data["url"]
+        assert "expires=" in data["url"]
+        assert "sig=" in data["url"]
+
+    async def test_share_anonymous_forbidden(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="test-guild")
+        resp = await client.get(f"/g/{guild.xid}/analytics/share")
+        assert resp.status == 403
+
+    async def test_share_non_moderator_forbidden(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="test-guild")
+        resp = await owner_client.get(f"/g/{guild.xid}/analytics/share")
+        assert resp.status == 403
+
+    async def test_share_guild_not_found(
+        self,
+        mod_client: ClientSession,
+    ) -> None:
+        resp = await mod_client.get("/g/99999/analytics/share")
+        assert resp.status == 404
+
+    async def test_share_bad_guild_in_url(
+        self,
+        mod_client: ClientSession,
+    ) -> None:
+        resp = await mod_client.get("/g/notanumber/analytics/share")
+        assert resp.status == 404
 
 
 @pytest.mark.asyncio

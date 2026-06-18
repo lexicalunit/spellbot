@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a "share this page" link for the analytics page.
+
+### Changed
+
+- Mods/admins can now simply log in to view a server's analytics page.
+
+### Removed
+
+- Removed the `/analytics` command since the analytics page is now available to mods/admins without it.
+
 ## [v21.2.1](https://github.com/lexicalunit/spellbot/releases/tag/v21.2.1) - 2026-06-16
 
 ### Changed

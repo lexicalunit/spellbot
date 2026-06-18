@@ -166,8 +166,6 @@ pt:
     game_info_pending: "Not started yet"
     game_info_details: "Details"
     user_info_footer: "ID de utilizador: %{user_id}"
-    analytics_title: "Estatísticas de servidor de %{guild}"
-    analytics_description: "Ver o painel de estatísticas do seu servidor:\n📊 [Open Analytics](%{url})\n\n_Este link expira em %{minutes} minutos._"
     mythic_track_title: "Configuração Mythic Track para %{guild}"
     mythic_track_on: "✅ Mythic Track foi **ativado** neste servidor!\n\nPara continuar a configuração, [ligue a sua conta do Discord a Mythic Track](%{guide}).\n\nEnquanto esta funcionalidade estiver ativada, o SpellBot irá gerar códigos PIN para os jogadores introduzirem no Mythic Track, para que os seus jogos possam ser registados."
     mythic_track_off: "❌ Mythic Track foi **desativado** neste servidor. Execute novamente este comando para reativar a funcionalidade. Note que desativar esta funcionalidade _não_ elimina dados existentes do Mythic Track."

@@ -18,7 +18,6 @@ from spellbot.operations import (
     safe_update_embed,
 )
 from spellbot.settings import settings
-from spellbot.utils import generate_signed_url
 
 from .base_action import BaseAction
 
@@ -305,29 +304,4 @@ class AdminAction(BaseAction):
 
         embed.set_footer(text=t("admin.user_info_footer", locale=locale, user_id=target_xid))
 
-        await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
-
-    async def analytics(self) -> None:
-        assert self.interaction.guild
-        assert self.interaction.guild_id is not None
-        locale = user_locale(self.interaction)
-
-        EXPIRE_TIME = 15  # minutes
-        url = generate_signed_url(
-            guild_xid=self.interaction.guild_id,
-            expires_in_minutes=EXPIRE_TIME,
-        )
-
-        embed = Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
-        embed.set_author(
-            name=t("admin.analytics_title", locale=locale, guild=self.interaction.guild.name),
-        )
-        embed.description = t(
-            "admin.analytics_description",
-            locale=locale,
-            url=url,
-            minutes=EXPIRE_TIME,
-        )
-        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

@@ -166,8 +166,6 @@ ja:
     game_info_pending: "Not started yet"
     game_info_details: "Details"
     user_info_footer: "ユーザー ID：%{user_id}"
-    analytics_title: "%{guild} のサーバー分析"
-    analytics_description: "サーバーの分析ダッシュボードを表示：\n📊 [分析を開く](%{url})\n\n_このリンクの有効期限は %{minutes} 分です。_"
     mythic_track_title: "%{guild} の Mythic Track 設定"
     mythic_track_on: "✅ このサーバーで Mythic Track を **有効** にしました！\n\n設定を続けるには、[Discord アカウントを Mythic Track に接続](%{guide})してください。\n\nこの機能が有効な間、SpellBot はプレイヤーが Mythic Track に入力する PIN コードを生成し、ゲームを追跡できるようにします。"
     mythic_track_off: "❌ このサーバーで Mythic Track を **無効** にしました。このコマンドをもう一度実行すると、再度有効にできます。なお、この機能を無効にしても、既存の Mythic Track データが _削除されることはありません_。"

@@ -118,11 +118,16 @@ def concat_js(*names: str) -> str:
 
 
 async def serve_analytics_js(_: web.Request) -> web.Response:
-    """Serve the analytics JavaScript file with caching headers."""
+    """
+    Serve the analytics JavaScript file.
+
+    No-cache headers (like `dashboard.js`) ensure viewers pick up new analytics code
+    immediately after a deploy without a hard refresh, instead of running a stale copy.
+    """
     return web.Response(
         body=concat_js("analytics_pure.js", "analytics.js"),
         headers={
-            "Cache-Control": "public, max-age=3600",  # 1 hour cache
+            "Cache-Control": "no-cache, no-store, must-revalidate",
             "Content-Type": "application/javascript; charset=utf-8",
         },
     )

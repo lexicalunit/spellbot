@@ -166,8 +166,6 @@ tl:
     game_info_pending: "Not started yet"
     game_info_details: "Details"
     user_info_footer: "User ID: %{user_id}"
-    analytics_title: "Analytics ng Server para sa %{guild}"
-    analytics_description: "Tingnan ang analytics dashboard ng server mo:\n📊 [Buksan ang Analytics](%{url})\n\n_Mag-e-expire ang link na ito sa loob ng %{minutes} (na) minuto._"
     mythic_track_title: "Setup ng Mythic Track para sa %{guild}"
     mythic_track_on: "✅ **Na-on** ang Mythic Track para sa server na ito!\n\nPara ipagpatuloy ang setup, [ikonekta ang Discord account mo sa Mythic Track](%{guide}).\n\nHabang naka-on ang feature na ito, bubuo ang SpellBot ng mga PIN code para makapasok ang mga player sa Mythic Track para ma-track ang kanilang mga game."
     mythic_track_off: "❌ **Na-off** ang Mythic Track para sa server na ito. I-run ulit ang command na ito para mai-on ulit. Tandaan na kahit i-off ang feature na ito, hindi maaalis ang anumang kasalukuyang data ng Mythic Track."

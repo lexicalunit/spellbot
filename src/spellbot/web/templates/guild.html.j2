@@ -7,6 +7,7 @@
     <a href="/queues/g/{{ guild.xid }}">{{ t("web.nav.notification_preferences") }}</a>
     <span class="user-id">{{ guild.xid }}</span>
     &nbsp;<a href="https://discord.com/channels/{{ guild.xid }}" class="button">{{ t("web.common.jump_to_guild") | replace(" ", "&nbsp;") | safe }}</a>
+    {%- if is_moderator %}&nbsp;<a href="/g/{{ guild.xid }}/analytics" class="button">{{ t("web.guild.view_analytics") }}</a>{%- endif %}
     &middot; {{ t("web.guild.channels_with_games", count=channels | length) }}
 </div>
 {% endblock %}

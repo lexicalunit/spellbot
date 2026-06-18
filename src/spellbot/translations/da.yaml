@@ -166,8 +166,6 @@ da:
     game_info_pending: "Not started yet"
     game_info_details: "Details"
     user_info_footer: "Bruger-ID: %{user_id}"
-    analytics_title: "Serveranalyse for %{guild}"
-    analytics_description: "Vis din servers analyse-dashboard:\n📊 [Åbn Analyse](%{url})\n\n_Dette link udløber om %{minutes} minutter._"
     mythic_track_title: "Opsætning af Mythic Track for %{guild}"
     mythic_track_on: "✅ Mythic Track er blevet slået **til** for denne server!\n\nFor at fortsætte opsætningen skal du [forbinde din Discord-konto til Mythic Track](%{guide}).\n\nMens denne funktion er slået til, genererer SpellBot pinkoder, som spillerne skal indtaste i Mythic Track, så deres kampe kan spores."
     mythic_track_off: "❌ Mythic Track er blevet slået **fra** for denne server. Kør denne kommando igen for at slå det til igen. Bemærk, at deaktivering af denne funktion _ikke_ fjerner eksisterende Mythic Track-data."

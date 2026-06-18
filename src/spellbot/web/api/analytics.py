@@ -15,7 +15,8 @@ from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.models import Guild, GuildMember
 from spellbot.settings import settings
-from spellbot.utils import validate_signature
+from spellbot.utils import generate_signed_url, validate_signature
+from spellbot.web.api.record import login_url, request_is_moderator, viewer_access
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -24,12 +25,39 @@ logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
+# How long a "Share this page" pre-signed link stays valid.
+SHARE_LINK_EXPIRE_MINUTES = 15
+
+
+def has_valid_signature(request: web.Request, guild_xid: int) -> bool:
+    """Return True when the request carries a valid, unexpired HMAC signature."""
+    try:
+        expires = int(request.query["expires"])
+        sig = request.query["sig"]
+    except KeyError, ValueError:
+        return False
+    return validate_signature(guild_xid, expires, sig)
+
+
+async def analytics_access_granted(request: web.Request, guild_xid: int) -> bool:
+    """
+    Return True when the request may view analytics for `guild_xid`.
+
+    Access is granted to a valid signed (shared) link or to a logged-in moderator of
+    the guild, mirroring how guild settings access is gated.
+    """
+    if not settings.CHECK_SIGNATURE:
+        return True
+    if has_valid_signature(request, guild_xid):
+        return True
+    return await request_is_moderator(request, guild_xid)
+
 
 async def validate_analytics_request(
     request: web.Request,
 ) -> tuple[int, None] | tuple[None, web.Response]:
     """
-    Validate guild_xid, expires, and signature.
+    Validate access to analytics data for a guild.
 
     Returns (guild_xid, None) or (None, error_response).
     """
@@ -38,17 +66,8 @@ async def validate_analytics_request(
     except KeyError, ValueError:
         return None, web.Response(status=404)
 
-    if not settings.CHECK_SIGNATURE:
-        return guild_xid, None
-
-    try:
-        expires = int(request.query["expires"])
-        sig = request.query["sig"]
-    except KeyError, ValueError:
-        return None, web.Response(status=403, text="Missing or invalid signature parameters.")
-
-    if not validate_signature(guild_xid, expires, sig):
-        return None, web.Response(status=403, text="Invalid or expired link.")
+    if not await analytics_access_granted(request, guild_xid):
+        return None, web.Response(status=403, text="Forbidden")
 
     return guild_xid, None
 
@@ -81,7 +100,7 @@ async def analytics_json_endpoint(
 
 @routes.get(r"/g/{guild}/analytics")
 @tracer.wrap(name="web", resource="analytics")
-async def analytics_endpoint(request: web.Request) -> web.Response:
+async def analytics_endpoint(request: web.Request) -> web.StreamResponse:
     """Shell page endpoint - returns HTML immediately with loading spinner."""
     add_span_request_id(generate_request_id())
     try:
@@ -89,14 +108,15 @@ async def analytics_endpoint(request: web.Request) -> web.Response:
     except KeyError, ValueError:
         return web.Response(status=404)
 
-    try:
-        expires = int(request.query["expires"])
-        sig = request.query["sig"]
-    except KeyError, ValueError:
-        return web.Response(status=403, text="Missing or invalid signature parameters.")
-
-    if not validate_signature(guild_xid, expires, sig):
-        return web.Response(status=403, text="Invalid or expired link.")
+    # A valid signed link grants a "shared" view (e.g. a logged-out recipient); otherwise
+    # require a logged-in moderator session, the same gate used for guild settings.
+    is_shared = settings.CHECK_SIGNATURE and has_valid_signature(request, guild_xid)
+    if not is_shared and settings.CHECK_SIGNATURE:
+        is_logged_in, is_moderator = await viewer_access(request, guild_xid)
+        if not is_logged_in:
+            return web.HTTPFound(login_url(request))
+        if not is_moderator:
+            return web.Response(status=403, text="Forbidden")
 
     async def get_guild_name() -> str | None:
         result = await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
@@ -109,8 +129,39 @@ async def analytics_endpoint(request: web.Request) -> web.Response:
     if guild_name is None:
         return web.Response(status=404, text="Guild not found.")
 
-    context = {"guild_xid": guild_xid, "guild_name": guild_name, "expires": expires, "sig": sig}
+    context = {
+        "guild_xid": guild_xid,
+        "guild_name": guild_name,
+        "is_shared": is_shared,
+        "expires": request.query.get("expires") if is_shared else None,
+        "sig": request.query.get("sig") if is_shared else None,
+    }
     return aiohttp_jinja2.render_template("analytics.html.j2", request, context)
+
+
+@routes.get(r"/g/{guild}/analytics/share")
+@tracer.wrap(name="web", resource="analytics_share")
+async def analytics_share_endpoint(request: web.Request) -> web.Response:
+    """Moderator-only: mint a fresh pre-signed shareable analytics link."""
+    add_span_request_id(generate_request_id())
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except KeyError, ValueError:
+        return web.Response(status=404)
+
+    if not await request_is_moderator(request, guild_xid):
+        return web.Response(status=403, text="Forbidden")
+
+    async with db_session_manager():
+        if not await services.plays.guild_exists(guild_xid):
+            return web.Response(status=404, text="Guild not found.")
+
+    url = generate_signed_url(guild_xid, expires_in_minutes=SHARE_LINK_EXPIRE_MINUTES)
+    return web.Response(
+        status=200,
+        content_type="application/json",
+        text=json.dumps({"url": url}),
+    )
 
 
 @routes.get(r"/g/{guild}/analytics/summary")
