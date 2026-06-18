@@ -44,7 +44,7 @@ class TestWebStaticFiles:
         assert "ANALYTICS_CONFIG" in text
         # pure helpers are concatenated ahead of the main IIFE
         assert "function toDayMap" in text
-        assert resp.headers.get("Cache-Control") == "public, max-age=3600"
+        assert resp.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
 
     async def test_dashboard_js(self, client: ClientSession) -> None:
         resp = await client.get("/dashboard.js")

@@ -1286,6 +1286,8 @@ class TestWebGuildSettings:
         resp = await client.get(f"/g/{guild.xid}")
         text = await resp.text()
         assert "Server Settings" not in text
+        # The analytics link is moderator-only and hidden from anonymous visitors.
+        assert f"/g/{guild.xid}/analytics" not in text
         # Anonymous visitors are offered a login button that returns to this page.
         assert "Log in with Discord" in text
         assert f"/queues/login?next=%2Fg%2F{guild.xid}" in text
@@ -1319,6 +1321,8 @@ class TestWebGuildSettings:
         assert "Server Settings" in text
         assert 'name="motd"' in text
         assert 'value="hello world"' in text
+        # Moderators get a link to the analytics page in the subtitle.
+        assert f"/g/{guild.xid}/analytics" in text
         assert "Log in with Discord" not in text
         # The column's doc (minus the marker) is shown as help text.
         assert "shown in all game posts on the server." in text

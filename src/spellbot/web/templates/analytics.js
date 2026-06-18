@@ -25,9 +25,10 @@
   const QUERY = config.query;
   const EXPIRES = config.expires;
 
-  /* ── Countdown timer ── */
+  /* ── Countdown timer (shared links only) ── */
   (function () {
     const el = document.getElementById("countdown");
+    if (!el || EXPIRES == null) return;
     function tick() {
       const left = Math.max(0, EXPIRES - Math.floor(Date.now() / 1000));
       const m = Math.floor(left / 60);
@@ -41,6 +42,40 @@
     }
     tick();
     setInterval(tick, 1000);
+  })();
+
+  /* ── Share button (moderator session view only) ── */
+  (function () {
+    const btn = document.getElementById("shareBtn");
+    if (!btn) return;
+    const feedback = document.getElementById("shareFeedback");
+    function show(text, color) {
+      if (!feedback) return;
+      feedback.style.color = color;
+      feedback.textContent = text;
+    }
+    btn.addEventListener("click", async function () {
+      btn.disabled = true;
+      show("Creating link…", "#9ca3af");
+      try {
+        const resp = await fetch(config.shareUrl);
+        if (!resp.ok) throw new Error("share request failed");
+        const data = await resp.json();
+        let copied = false;
+        try {
+          await navigator.clipboard.writeText(data.url);
+          copied = true;
+        } catch (e) {
+          copied = false;
+        }
+        /* On clipboard failure, show the link so it can be copied manually. */
+        show(copied ? "Link copied!" : data.url, copied ? "#34d399" : "#f59e0b");
+      } catch (err) {
+        show("Could not create link", "#f87171");
+      } finally {
+        btn.disabled = false;
+      }
+    });
   })();
 
   /* ── Chart.js defaults ── */
@@ -1009,7 +1044,8 @@
     }
     showLoading(sectionId);
     pendingRequests[requestPeriod].add(name);
-    const periodParam = "&period=" + requestPeriod;
+    /* QUERY is empty in the moderator session view, so start the query string here. */
+    const periodParam = (QUERY ? "&" : "?") + "period=" + requestPeriod;
     fetch(BASE_URL + "/" + name + QUERY + periodParam)
       .then((r) => {
         if (!r.ok) throw new Error("Failed");

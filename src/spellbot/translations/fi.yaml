@@ -166,8 +166,6 @@ fi:
     game_info_pending: "Not started yet"
     game_info_details: "Details"
     user_info_footer: "Käyttäjätunnus: %{user_id}"
-    analytics_title: "%{guild} -palvelinanalytiikka"
-    analytics_description: "Näytä palvelimen analytiikkapaneeli:\n📊 [Avaa analytiikka](%{url})\n\n_Tämä linkki vanhenee %{minutes} minuutin kuluttua._"
     mythic_track_title: "Mythic Track -määritys – %{guild}"
     mythic_track_on: "✅ Mythic Track on asetettu **päälle** tässä palvelimessa!\n\nVoit jatkaa määrityksiä [yhdistämällä Discord-tilisi Mythic Trackiin](%{guide}).\n\nKun tämä ominaisuus on käytössä, SpellBot luo pelaajille PIN-koodit Mythic Trackia varten, jotta heidän pelejään voidaan seurata."
     mythic_track_off: "❌ Mythic Track on asetettu **pois päältä** tässä palvelimessa. Jos haluat asettaa sen taas päälle, suorita komento uudelleen. Huomaa, että ominaisuuden asettaminen pois päältä _ei_ poista jo olemassa olevia Mythic Track -tietoja."
