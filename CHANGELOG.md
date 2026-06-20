@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.3.1](https://github.com/lexicalunit/spellbot/releases/tag/v21.3.1) - 2026-06-19
+
 ### Changed
 
 - Don't show the game link on the channel record page or for other players.
