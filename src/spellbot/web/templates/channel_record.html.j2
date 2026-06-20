@@ -171,7 +171,6 @@
                     <th>{{ sort_header('seats', t("web.field.seats"), sort_by, sort_dir, filters) }}</th>
                     <th>{{ sort_header('bracket', t("web.field.bracket"), sort_by, sort_dir, filters) }}</th>
                     <th>{{ t("web.field.locale") }}</th>
-                    <th>{{ t("web.field.link") }}</th>
                     <th>{{ t("web.field.user_name") }}</th>
                     <th>{{ t("web.field.user_id") }}</th>
                     <th>{{ t("web.field.jump") }}</th>
@@ -190,9 +189,6 @@
                     <td data-label="{{ t('web.field.seats') }}">{{ record.seats }}</td>
                     <td data-label="{{ t('web.field.bracket') }}">{{ record.bracket }}</td>
                     <td data-label="{{ t('web.field.locale') }}">{{ record.locale }}</td>
-                    <td data-label="{{ t('web.field.link') }}">
-                        {% if record.link %}<a href="{{ record.link }}">{{ t("web.common.open_in", service=record.service) }}</a>{% else %}&mdash;{% endif %}
-                    </td>
                     <td data-label="{{ t('web.field.user_name') }}">
                         <a href="/u/{{ record.user_xid }}">{{ record.user_name | default(t("web.common.unknown_user"), true) }}</a>
                     </td>

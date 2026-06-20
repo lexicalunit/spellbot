@@ -2368,7 +2368,6 @@
                       <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
                       <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
-                      <th>Link</th>
                       <th>User Name</th>
                       <th>User ID</th>
                       <th>Jump</th>
@@ -2385,9 +2384,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -2409,9 +2405,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -2433,9 +2426,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -2457,9 +2447,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -2481,9 +2468,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -2505,9 +2489,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -4230,7 +4211,6 @@
                       <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
                       <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
-                      <th>Link</th>
                       <th>User Name</th>
                       <th>User ID</th>
                       <th>Jump</th>
@@ -4247,9 +4227,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -4271,9 +4248,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -4295,9 +4269,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -4319,9 +4290,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -4343,9 +4311,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -4367,9 +4332,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -5242,7 +5204,6 @@
                       <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
                       <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
-                      <th>Link</th>
                       <th>User Name</th>
                       <th>User ID</th>
                       <th>Jump</th>
@@ -5259,9 +5220,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -5283,9 +5241,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -5307,9 +5262,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -5331,9 +5283,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -5355,9 +5304,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/101">user1</a>
                       </td>
@@ -5379,9 +5325,6 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
                       <td data-label="User Name">
                           <a href="/u/102">user2</a>
                       </td>
@@ -6263,7 +6206,7 @@
                       <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
                       <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
-                      <th>Link</th>
+                      
                       <th>Players</th>
                       <th>Jump</th>
                   </tr>
@@ -6281,9 +6224,7 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
+                      
                       <td data-label="Players">
                           <div class="players">
                               
@@ -6325,9 +6266,7 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
+                      
                       <td data-label="Players">
                           <div class="players">
                               
@@ -6369,9 +6308,7 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
+                      
                       <td data-label="Players">
                           <div class="players">
                               
@@ -8128,7 +8065,7 @@
                       <th><a class="sort" href="?sort=seats&amp;dir=desc">Seats</a></th>
                       <th><a class="sort" href="?sort=bracket&amp;dir=desc">Bracket</a></th>
                       <th>Locale</th>
-                      <th>Link</th>
+                      
                       <th>Players</th>
                       <th>Jump</th>
                   </tr>
@@ -8146,9 +8083,7 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
+                      
                       <td data-label="Players">
                           <div class="players">
                               
@@ -8190,9 +8125,7 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
+                      
                       <td data-label="Players">
                           <div class="players">
                               
@@ -8234,9 +8167,7 @@
                       <td data-label="Seats">2</td>
                       <td data-label="Bracket">None</td>
                       <td data-label="Locale">en</td>
-                      <td data-label="Link">
-                          &mdash;
-                      </td>
+                      
                       <td data-label="Players">
                           <div class="players">
                               

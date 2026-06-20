@@ -89,7 +89,7 @@
                     <th>{{ sort_header('seats', t("web.field.seats"), sort_by, sort_dir, filters) }}</th>
                     <th>{{ sort_header('bracket', t("web.field.bracket"), sort_by, sort_dir, filters) }}</th>
                     <th>{{ t("web.field.locale") }}</th>
-                    <th>{{ t("web.field.link") }}</th>
+                    {% if is_own_profile %}<th>{{ t("web.field.link") }}</th>{% endif %}
                     <th>{{ t("web.field.players") }}</th>
                     <th>{{ t("web.field.jump") }}</th>
                 </tr>
@@ -109,9 +109,11 @@
                     <td data-label="{{ t('web.field.seats') }}">{{ record.seats }}</td>
                     <td data-label="{{ t('web.field.bracket') }}">{{ record.bracket }}</td>
                     <td data-label="{{ t('web.field.locale') }}">{{ record.locale }}</td>
+                    {% if is_own_profile %}
                     <td data-label="{{ t('web.field.link') }}">
                         {% if record.link %}<a href="{{ record.link }}">{{ t("web.common.open_in", service=record.service) }}</a>{% else %}&mdash;{% endif %}
                     </td>
+                    {% endif %}
                     <td data-label="{{ t('web.field.players') }}">
                         <div class="players">
                             {% for name, data in record.scores.items() %}

@@ -145,6 +145,84 @@ class TestWebRecord:
         text = await resp.text()
         assert text == snapshot
 
+    async def test_user_record_link_column_only_for_owner(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            game_link="https://example.com/play/abc",
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+        factories.play.create(game_id=game.id, user_xid=user.xid)
+
+        # Anonymous visitors must not see the link column.
+        resp = await client.get(f"/u/{user.xid}")
+        assert resp.status == 200
+        assert "https://example.com/play/abc" not in await resp.text()
+
+        # A different logged-in viewer must not see another user's links either.
+        mocker.patch(
+            "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(999, "stranger")),
+        )
+        resp = await client.get(f"/u/{user.xid}")
+        assert resp.status == 200
+        assert "https://example.com/play/abc" not in await resp.text()
+
+        # The profile owner sees the link column.
+        mocker.patch(
+            "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(user.xid, "user")),
+        )
+        resp = await client.get(f"/u/{user.xid}")
+        assert resp.status == 200
+        assert "https://example.com/play/abc" in await resp.text()
+
+    async def test_channel_record_never_shows_link_column(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            game_link="https://example.com/play/abc",
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+        factories.play.create(game_id=game.id, user_xid=user.xid)
+
+        # Even a logged-in moderator must never see the link column on a channel page.
+        mocker.patch(
+            "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(user.xid, "user")),
+        )
+        mocker.patch(
+            "spellbot.web.api.record.viewer_is_moderator",
+            AsyncMock(return_value=True),
+        )
+        resp = await client.get(f"/g/{guild.xid}/c/{channel.xid}")
+        assert resp.status == 200
+        assert "https://example.com/play/abc" not in await resp.text()
+
     async def test_user_record_no_plays(
         self,
         client: ClientSession,
