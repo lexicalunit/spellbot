@@ -1,4 +1,3 @@
-# ruff: noqa
 """
 Vulture allowlist — symbols reported as unused that are intentionally kept.
 

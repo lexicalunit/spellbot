@@ -131,6 +131,7 @@ exclude = [
   ".svn",
   ".tox",
   ".venv",
+  ".vulture_allowlist.py",
   "buck-out",
   "build",
   "dist",
