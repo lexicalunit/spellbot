@@ -1,4 +1,4 @@
-.PHONY: all install test lint format typecheck check dev clean session-key
+.PHONY: all install test lint format format-check typecheck check dev clean session-key
 .PHONY: infra-stage infra-prod infra-o11y
 
 all: check
@@ -13,16 +13,23 @@ test: install
 lint: install
 	@echo "linting..."
 	@uv run --frozen ruff check .
+	@npm run lint
 
 format: install
 	@echo "formatting..."
 	@uv run --frozen ruff format .
+	@npm run format
+
+format-check: install
+	@echo "checking formatting..."
+	@uv run --frozen ruff format --check .
+	@npm run format:check
 
 typecheck: install
 	@echo "static code analysis..."
 	@uv run --frozen pyright
 
-check: lint typecheck test
+check: lint format-check typecheck test
 
 dev: install
 	@echo "starting bot (-dmt) and api (-da)..."

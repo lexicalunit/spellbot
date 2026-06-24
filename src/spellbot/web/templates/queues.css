@@ -320,12 +320,7 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(246, 173, 75, 0.35),
-    transparent
-  );
+  background: linear-gradient(to right, transparent, rgba(246, 173, 75, 0.35), transparent);
 }
 .gallery-divider__label {
   font-size: 0.85rem;

@@ -1,13 +1,8 @@
 import { describe, it, expect } from "vitest";
 import pure from "../src/spellbot/web/templates/analytics_pure.js";
 
-const {
-  escapeHtml,
-  renderPlayerRow,
-  renderLeftServerNote,
-  getUserTimezone,
-  getLanguageName,
-} = pure;
+const { escapeHtml, renderPlayerRow, renderLeftServerNote, getUserTimezone, getLanguageName } =
+  pure;
 
 describe("escapeHtml", () => {
   it("escapes the five HTML metacharacters", () => {
@@ -61,9 +56,9 @@ describe("renderPlayerRow", () => {
 
 describe("renderLeftServerNote", () => {
   it("returns the explanation note when at least one player has left", () => {
-    expect(
-      renderLeftServerNote([{ left_server: false }, { left_server: true }]),
-    ).toContain("left-server-note");
+    expect(renderLeftServerNote([{ left_server: false }, { left_server: true }])).toContain(
+      "left-server-note",
+    );
   });
 
   it("returns an empty string when nobody has left", () => {

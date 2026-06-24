@@ -17,11 +17,7 @@ describe("unifyDates", () => {
   it("returns the sorted union of dates across all series", () => {
     const a = [{ date: "2026-01-02" }, { date: "2026-01-01" }];
     const b = [{ date: "2026-01-03" }, { date: "2026-01-01" }];
-    expect(unifyDates([a, b])).toEqual([
-      "2026-01-01",
-      "2026-01-02",
-      "2026-01-03",
-    ]);
+    expect(unifyDates([a, b])).toEqual(["2026-01-01", "2026-01-02", "2026-01-03"]);
   });
 
   it("returns an empty list for no series", () => {
@@ -169,8 +165,6 @@ describe("heatColor", () => {
 
   it("honors custom lo/hi rgb triples", () => {
     expect(heatColor(0, 10, [0, 0, 0], [255, 255, 255])).toBe("rgb(0,0,0)");
-    expect(heatColor(10, 10, [0, 0, 0], [255, 255, 255])).toBe(
-      "rgb(255,255,255)",
-    );
+    expect(heatColor(10, 10, [0, 0, 0], [255, 255, 255])).toBe("rgb(255,255,255)");
   });
 });

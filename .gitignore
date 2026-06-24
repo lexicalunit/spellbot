@@ -6,15 +6,25 @@
 /.ruff_cache
 /.vscode
 /coverage
+/coverage-js
 /db
 /env
+/node_modules
 /sql/*.csv
 /sql/*.data
 /states
 /tmp
 demo_analytics.html
-/node_modules
-/coverage-js
+docs/_site
+docs/.bundle/config
+docs/.DS_Store
+docs/.sass-cache
+docs/.vagrant
+docs/beautiful-jekyll-theme-*.gem
+docs/ehthumbs.db
+docs/Gemfile.lock
+docs/Thumbs.db
+docs/vendor/bundle
 
 ########################################################################
 # https://github.com/github/gitignore/blob/master/Global/Windows.gitignore

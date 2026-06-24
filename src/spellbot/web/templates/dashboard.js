@@ -75,9 +75,7 @@
 
   async function fetchJson(path) {
     const res = await fetch(
-      "/admin/dashboard/" +
-        path +
-        qs(state.period, state.guildMode, state.guildXid),
+      "/admin/dashboard/" + path + qs(state.period, state.guildMode, state.guildXid),
       { credentials: "same-origin" },
     );
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -85,8 +83,7 @@
   }
 
   function showError(sectionId, msg) {
-    document.getElementById(sectionId).innerHTML =
-      '<div class="section-error">' + msg + "</div>";
+    document.getElementById(sectionId).innerHTML = '<div class="section-error">' + msg + "</div>";
   }
   function addCanvas(sectionId) {
     const el = document.getElementById(sectionId);
@@ -177,8 +174,7 @@
         el.textContent = "—";
         return;
       }
-      el.innerHTML =
-        escapeHtml(fmt(value)) + ' <span class="stat-unit">games</span>';
+      el.innerHTML = escapeHtml(fmt(value)) + ' <span class="stat-unit">games</span>';
     });
   }
 
@@ -193,11 +189,9 @@
       document.getElementById("bucketLabel").textContent = data.bucket || "—";
       setBracketStats(data.brackets);
     } catch (ex) {
-      ["statGames", "statPlayers", "statServers", "statFillRate"].forEach(
-        function (id) {
-          document.getElementById(id).textContent = "—";
-        },
-      );
+      ["statGames", "statPlayers", "statServers", "statFillRate"].forEach(function (id) {
+        document.getElementById(id).textContent = "—";
+      });
       document.getElementById("bucketLabel").textContent = "—";
       setBracketStats(null);
     }
@@ -207,18 +201,12 @@
     try {
       const data = await fetchJson("totals");
       document.getElementById("statTotalGames").textContent = fmt(data.games);
-      document.getElementById("statTotalPlayers").textContent = fmt(
-        data.players,
-      );
-      document.getElementById("statTotalServers").textContent = fmt(
-        data.servers,
-      );
+      document.getElementById("statTotalPlayers").textContent = fmt(data.players);
+      document.getElementById("statTotalServers").textContent = fmt(data.servers);
     } catch (ex) {
-      ["statTotalGames", "statTotalPlayers", "statTotalServers"].forEach(
-        function (id) {
-          document.getElementById(id).textContent = "—";
-        },
-      );
+      ["statTotalGames", "statTotalPlayers", "statTotalServers"].forEach(function (id) {
+        document.getElementById(id).textContent = "—";
+      });
     }
   }
 
@@ -231,10 +219,7 @@
     let users;
     let games;
     try {
-      [users, games] = await Promise.all([
-        fetchJson("users-activity"),
-        fetchJson("games"),
-      ]);
+      [users, games] = await Promise.all([fetchJson("users-activity"), fetchJson("games")]);
     } catch (ex) {
       showError("gameActivitySection", "Failed to load game activity.");
       ["statWau", "statMau", "statDauMau"].forEach(function (id) {
@@ -242,22 +227,15 @@
       });
       return;
     }
-    document.getElementById("statDauMau").textContent =
-      (users.dau_mau || 0) + "%";
+    document.getElementById("statDauMau").textContent = (users.dau_mau || 0) + "%";
     document.getElementById("statWau").textContent = fmt(avgCount(users.wau));
     document.getElementById("statMau").textContent = fmt(avgCount(users.mau));
-    const rawDates = unifyDates([
-      users.new_users,
-      games.started,
-      games.expired,
-    ]);
+    const rawDates = unifyDates([users.new_users, games.started, games.expired]);
     const trim = trimNow(rawDates);
     const labels = rawDates.slice(trim.startIdx).map(function (s) {
       return s.slice(0, 10);
     });
-    const newUsers = alignSeries(rawDates, users.new_users).slice(
-      trim.startIdx,
-    );
+    const newUsers = alignSeries(rawDates, users.new_users).slice(trim.startIdx);
     const started = alignSeries(rawDates, games.started).slice(trim.startIdx);
     const expired = alignSeries(rawDates, games.expired).slice(trim.startIdx);
     const dash = dashSegment(trim.partialFromIdx);
@@ -296,12 +274,7 @@
         type: "line",
         data: {
           labels: labels,
-          datasets: [
-            applyDash(
-              lineDataset("Total Unique Players", points, "#8b5cf6", true),
-              dash,
-            ),
-          ],
+          datasets: [applyDash(lineDataset("Total Unique Players", points, "#8b5cf6", true), dash)],
         },
         options: lineOpts(false),
       });
@@ -457,13 +430,8 @@
     const body = rows
       .map(function (r) {
         const color = colorByName[r.name];
-        const inChart = Object.prototype.hasOwnProperty.call(
-          datasetIndexByName,
-          r.name,
-        );
-        const swatch = color
-          ? '<span style="background:' + color + '"></span>'
-          : "";
+        const inChart = Object.prototype.hasOwnProperty.call(datasetIndexByName, r.name);
+        const swatch = color ? '<span style="background:' + color + '"></span>' : "";
         const trAttrs = inChart
           ? ' class="interactive" data-name="' + escapeHtml(r.name) + '"'
           : "";
@@ -551,9 +519,7 @@
           type: "line",
           data: {
             labels: labels,
-            datasets: [
-              applyDash(lineDataset("Adoption Rate", rate, COLORS[7]), dash),
-            ],
+            datasets: [applyDash(lineDataset("Adoption Rate", rate, COLORS[7]), dash)],
           },
           options: percentLineOpts("Adoption Rate"),
         });
@@ -1042,11 +1008,7 @@
     const body = rows
       .map(function (r) {
         return (
-          "<tr><td>" +
-          escapeHtml(r.rule) +
-          '</td><td class="num">' +
-          fmt(r.count) +
-          "</td></tr>"
+          "<tr><td>" + escapeHtml(r.rule) + '</td><td class="num">' + fmt(r.count) + "</td></tr>"
         );
       })
       .join("");
@@ -1170,9 +1132,7 @@
       const cols = [];
       for (let h = 0; h < 24; h += 1) {
         cols.push(
-          '<div class="hm-col">' +
-            (h % 3 === 0 ? String(h).padStart(2, "0") : "") +
-            "</div>",
+          '<div class="hm-col">' + (h % 3 === 0 ? String(h).padStart(2, "0") : "") + "</div>",
         );
       }
       const rows = grid
@@ -1329,8 +1289,7 @@
         const d = await fetchJson(fetchPath);
         const series = d.rate || [];
         if (!series.length) {
-          document.getElementById(sectionId).innerHTML =
-            '<div class="no-data">No data yet.</div>';
+          document.getElementById(sectionId).innerHTML = '<div class="no-data">No data yet.</div>';
           destroyChart(chartKey);
           return;
         }
@@ -1416,8 +1375,7 @@
         fmt(d.total) +
         ' <span class="stat-unit">players waiting</span></div>';
       if (!d.by_format.length) {
-        el.innerHTML =
-          header + '<div class="no-data">No one is queued right now.</div>';
+        el.innerHTML = header + '<div class="no-data">No one is queued right now.</div>';
         return;
       }
       const body = d.by_format
@@ -1525,43 +1483,33 @@
   }
 
   function bindControls() {
-    document
-      .querySelectorAll("#periodToggle .toggle-btn")
-      .forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          document
-            .querySelectorAll("#periodToggle .toggle-btn")
-            .forEach(function (b) {
-              b.classList.remove("active");
-            });
-          btn.classList.add("active");
-          state.period = btn.dataset.period;
-          reloadAll();
+    document.querySelectorAll("#periodToggle .toggle-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll("#periodToggle .toggle-btn").forEach(function (b) {
+          b.classList.remove("active");
         });
-      });
-    document
-      .querySelectorAll("#guildModeToggle .toggle-btn")
-      .forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          document
-            .querySelectorAll("#guildModeToggle .toggle-btn")
-            .forEach(function (b) {
-              b.classList.remove("active");
-            });
-          btn.classList.add("active");
-          state.guildMode = btn.dataset.mode;
-          const sel = document.getElementById("guildSelect");
-          sel.disabled = state.guildMode === "all";
-          if (state.guildMode === "all") state.guildXid = "";
-          reloadAll();
-        });
-      });
-    document
-      .getElementById("guildSelect")
-      .addEventListener("change", function (e) {
-        state.guildXid = e.target.value;
+        btn.classList.add("active");
+        state.period = btn.dataset.period;
         reloadAll();
       });
+    });
+    document.querySelectorAll("#guildModeToggle .toggle-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll("#guildModeToggle .toggle-btn").forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        state.guildMode = btn.dataset.mode;
+        const sel = document.getElementById("guildSelect");
+        sel.disabled = state.guildMode === "all";
+        if (state.guildMode === "all") state.guildXid = "";
+        reloadAll();
+      });
+    });
+    document.getElementById("guildSelect").addEventListener("change", function (e) {
+      state.guildXid = e.target.value;
+      reloadAll();
+    });
   }
 
   // Owner-only SQL console. The textarea/button only exist in the DOM when the
@@ -1577,8 +1525,7 @@
 
     function renderResult(data) {
       if (!data.columns || !data.columns.length) {
-        resultEl.innerHTML =
-          '<div class="sql-status">Query ran (no result set returned).</div>';
+        resultEl.innerHTML = '<div class="sql-status">Query ran (no result set returned).</div>';
         return;
       }
       const head = data.columns
@@ -1590,8 +1537,7 @@
         .map(function (row) {
           const cells = row
             .map(function (cell) {
-              if (cell === null)
-                return '<td class="sql-null">NULL</td>';
+              if (cell === null) return '<td class="sql-null">NULL</td>';
               return "<td>" + escapeHtml(String(cell)) + "</td>";
             })
             .join("");
@@ -1623,8 +1569,7 @@
         const elapsed = ((Date.now() - started) / 1000).toFixed(2);
         if (data.error) {
           statusEl.textContent = "Error (" + elapsed + "s)";
-          resultEl.innerHTML =
-            '<div class="sql-error">' + escapeHtml(data.error) + "</div>";
+          resultEl.innerHTML = '<div class="sql-error">' + escapeHtml(data.error) + "</div>";
           return;
         }
         renderResult(data);
@@ -1637,8 +1582,7 @@
           "s";
       } catch (ex) {
         statusEl.textContent = "Request failed.";
-        resultEl.innerHTML =
-          '<div class="sql-error">' + escapeHtml(String(ex)) + "</div>";
+        resultEl.innerHTML = '<div class="sql-error">' + escapeHtml(String(ex)) + "</div>";
       } finally {
         runBtn.disabled = false;
       }

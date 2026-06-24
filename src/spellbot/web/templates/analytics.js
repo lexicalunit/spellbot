@@ -223,15 +223,10 @@
 
   /* ── Helpers for section state ── */
   function showError(sectionId, msg) {
-    document.getElementById(sectionId).innerHTML =
-      '<div class="section-error">' + msg + "</div>";
+    document.getElementById(sectionId).innerHTML = '<div class="section-error">' + msg + "</div>";
   }
   function showNoData(sectionId) {
-    document.getElementById(sectionId).innerHTML =
-      '<div class="no-data">No data yet.</div>';
-  }
-  function clearSection(sectionId) {
-    document.getElementById(sectionId).innerHTML = "";
+    document.getElementById(sectionId).innerHTML = '<div class="no-data">No data yet.</div>';
   }
   function addCanvas(sectionId, canvasId) {
     const el = document.getElementById(sectionId);
@@ -263,29 +258,6 @@
       },
     },
   };
-  const stackedOpts = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: "index", intersect: false },
-    plugins: {
-      legend: { display: true, labels: { color: "#e0e0e0", boxWidth: 12 } },
-      zoom: zoomOpts,
-    },
-    scales: {
-      x: {
-        stacked: true,
-        grid: { color: GRID },
-        ticks: { color: TICK, maxRotation: 45 },
-      },
-      y: {
-        stacked: true,
-        grid: { color: GRID },
-        ticks: { color: TICK },
-        beginAtZero: true,
-      },
-    },
-  };
-
   /* ── Global period state and caching ── */
   let currentPeriod = "30d";
   const dataCache = { "30d": {}, all: {} };
@@ -299,48 +271,29 @@
     const now = new Date();
     const label = periodLabel(currentPeriod);
     const weeksLabel = currentPeriod === "all" ? "All Time" : "Last 12 Weeks";
-    document.getElementById("activityTitle").textContent =
-      "Game Activity (" + label + ")";
-    document.getElementById("bracketsTitle").textContent =
-      "Games by Bracket (" + label + ")";
-    document.getElementById("waitTimeTitle").textContent =
-      "Average Wait Time (" + label + ")";
-    document.getElementById("retentionTitle").textContent =
-      "Player Retention (" + weeksLabel + ")";
-    document.getElementById("growthTitle").textContent =
-      "Cumulative Player Growth (" + label + ")";
-    document.getElementById("formatsTitle").textContent =
-      "Popular Formats (" + label + ")";
-    document.getElementById("channelsTitle").textContent =
-      "Busiest Channels (" + label + ")";
+    document.getElementById("activityTitle").textContent = "Game Activity (" + label + ")";
+    document.getElementById("bracketsTitle").textContent = "Games by Bracket (" + label + ")";
+    document.getElementById("waitTimeTitle").textContent = "Average Wait Time (" + label + ")";
+    document.getElementById("retentionTitle").textContent = "Player Retention (" + weeksLabel + ")";
+    document.getElementById("growthTitle").textContent = "Cumulative Player Growth (" + label + ")";
+    document.getElementById("formatsTitle").textContent = "Popular Formats (" + label + ")";
+    document.getElementById("channelsTitle").textContent = "Busiest Channels (" + label + ")";
     document.getElementById("channelPlayersTitle").textContent =
       "Unique Players per Channel (" + label + ")";
-    document.getElementById("servicesTitle").textContent =
-      "Popular Services (" + label + ")";
-    document.getElementById("playersTitle").textContent =
-      "Top Players (" + label + ")";
-    document.getElementById("blockedTitle").textContent =
-      "Most Blocked Players (" + label + ")";
+    document.getElementById("servicesTitle").textContent = "Popular Services (" + label + ")";
+    document.getElementById("playersTitle").textContent = "Top Players (" + label + ")";
+    document.getElementById("blockedTitle").textContent = "Most Blocked Players (" + label + ")";
     document.getElementById("hourOfDayTitle").textContent =
       "Games by Hour of Day, " + getUserTimezone(now) + " (" + label + ")";
-    document.getElementById("dayOfWeekTitle").textContent =
-      "Games by Day of Week (" + label + ")";
-    document.getElementById("topRulesTitle").textContent =
-      "Top Game Rules (" + label + ")";
-    document.getElementById("rulesCloudTitle").textContent =
-      "Rules Word Cloud (" + label + ")";
-    document.getElementById("languagesTitle").textContent =
-      "Game Languages (" + label + ")";
+    document.getElementById("dayOfWeekTitle").textContent = "Games by Day of Week (" + label + ")";
+    document.getElementById("topRulesTitle").textContent = "Top Game Rules (" + label + ")";
+    document.getElementById("rulesCloudTitle").textContent = "Rules Word Cloud (" + label + ")";
+    document.getElementById("languagesTitle").textContent = "Game Languages (" + label + ")";
   }
 
   function showLoading(sectionId) {
     if (sectionId === "summarySection") {
-      [
-        "statFillRate",
-        "statTotalGames",
-        "statActivePlayers",
-        "statRepeatRate",
-      ].forEach((id) => {
+      ["statFillRate", "statTotalGames", "statActivePlayers", "statRepeatRate"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '<div class="section-spinner"></div>';
       });
@@ -351,16 +304,9 @@
   }
 
   function showSummaryError() {
-    [
-      "statFillRate",
-      "statTotalGames",
-      "statActivePlayers",
-      "statRepeatRate",
-    ].forEach((id) => {
+    ["statFillRate", "statTotalGames", "statActivePlayers", "statRepeatRate"].forEach((id) => {
       const el = document.getElementById(id);
-      if (el)
-        el.innerHTML =
-          '<span style="color:#f87171;font-size:0.8rem">Error</span>';
+      if (el) el.innerHTML = '<span style="color:#f87171;font-size:0.8rem">Error</span>';
     });
   }
 
@@ -369,9 +315,7 @@
     currentPeriod = period;
     document
       .querySelectorAll("#globalPeriodToggle .toggle-btn")
-      .forEach((b) =>
-        b.classList.toggle("active", b.dataset.period === period),
-      );
+      .forEach((b) => b.classList.toggle("active", b.dataset.period === period));
     updateTitles();
     refreshAll();
   }
@@ -383,14 +327,9 @@
 
   function renderSummary(data) {
     document.getElementById("statFillRate").textContent = data.fill_rate + "%";
-    document.getElementById("statTotalGames").textContent = fmt(
-      data.total_games,
-    );
-    document.getElementById("statActivePlayers").textContent = fmt(
-      data.active_players,
-    );
-    document.getElementById("statRepeatRate").textContent =
-      data.repeat_player_rate + "%";
+    document.getElementById("statTotalGames").textContent = fmt(data.total_games);
+    document.getElementById("statActivePlayers").textContent = fmt(data.active_players);
+    document.getElementById("statRepeatRate").textContent = data.repeat_player_rate + "%";
   }
 
   function renderActivity(data) {
@@ -458,9 +397,7 @@
     const allDays = (data.avg_wait_per_day || []).map((d) => d.day);
     const days = excludeToday(allDays, new Date());
     const daySet = new Set(days);
-    const filteredData = (data.avg_wait_per_day || []).filter((d) =>
-      daySet.has(d.day),
-    );
+    const filteredData = (data.avg_wait_per_day || []).filter((d) => daySet.has(d.day));
     if (filteredData.length) {
       const canvas = addCanvas("waitTimeSection", "chartWaitTime");
       setupZoomableChart(
@@ -511,9 +448,7 @@
         "Bracket 4: Optimized",
         "Bracket 5: Competitive",
       ];
-      const brackets = bracketOrder.filter((b) =>
-        bracketData.some((d) => d.bracket === b),
-      );
+      const brackets = bracketOrder.filter((b) => bracketData.some((d) => d.bracket === b));
       const bracketMap = {};
       bracketData.forEach((d) => {
         bracketMap[d.day + "|" + d.bracket] = d.count;
@@ -616,9 +551,7 @@
               data: data.games_histogram.map((d) => d.players),
               backgroundColor: data.games_histogram.map((d) => {
                 const b = parseFloat(d.bucket);
-                return !isNaN(b) && b === Math.ceil(medianVal)
-                  ? "#f59e0b"
-                  : "#60a5fa";
+                return !isNaN(b) && b === Math.ceil(medianVal) ? "#f59e0b" : "#60a5fa";
               }),
               borderRadius: 3,
             },
@@ -686,9 +619,7 @@
       new Chart(canvas, {
         type: "bar",
         data: {
-          labels: hourData.map(
-            (d) => d.localHour.toString().padStart(2, "0") + ":00",
-          ),
+          labels: hourData.map((d) => d.localHour.toString().padStart(2, "0") + ":00"),
           datasets: [
             {
               label: "Games",
@@ -868,9 +799,7 @@
       const section = document.getElementById("blockedSection");
       section.innerHTML =
         '<table><thead><tr><th>Player</th><th>Discord ID</th><th style="text-align:right">Times Blocked</th></tr></thead><tbody>' +
-        data.top_blocked
-          .map((p) => renderPlayerRow(p, "Times Blocked"))
-          .join("") +
+        data.top_blocked.map((p) => renderPlayerRow(p, "Times Blocked")).join("") +
         "</tbody></table>" +
         renderLeftServerNote(data.top_blocked);
     } else {

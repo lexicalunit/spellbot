@@ -5,10 +5,20 @@
   "description": "Vitest unit tests for the pure JavaScript helpers in src/spellbot/web/templates.",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "npm run format:js && npm run format:css",
+    "format:js": "oxfmt --write \"**/*.js\"",
+    "format:css": "prettier --write \"**/*.css\" \"**/*.html.j2\"",
+    "format:check": "oxfmt --check \"**/*.js\" && prettier --check \"**/*.css\" \"**/*.html.j2\""
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.7",
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "prettier": "^3.8.4",
+    "prettier-plugin-jinja-template": "^2.2.0",
     "vitest": "^4.1.7"
   }
 }
