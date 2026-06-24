@@ -82,6 +82,7 @@ p.note:before {
 
 a {
   transition: all 0.3s ease-in-out;
+  text-decoration: none;
 }
 
 footer {
