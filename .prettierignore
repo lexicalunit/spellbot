@@ -1,0 +1,6 @@
+# Vendored / third-party CSS assets — do not format
+docs/assets/css/bootstrap-social.css
+docs/assets/css/beautifuljekyll.css
+docs/assets/css/beautifuljekyll-minimal.css
+docs/assets/css/pygment_highlights.css
+docs/assets/css/staticman.css

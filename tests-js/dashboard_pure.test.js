@@ -79,33 +79,19 @@ describe("bucketStartUtc / bucketEndUtc", () => {
 
   it("rolls forward by one day, week, or month in UTC", () => {
     const start = bucketStartUtc("2026-03-15");
-    expect(bucketEndUtc(start, "day").toISOString()).toBe(
-      "2026-03-16T00:00:00.000Z",
-    );
-    expect(bucketEndUtc(start, "week").toISOString()).toBe(
-      "2026-03-22T00:00:00.000Z",
-    );
-    expect(bucketEndUtc(start, "month").toISOString()).toBe(
-      "2026-04-15T00:00:00.000Z",
-    );
+    expect(bucketEndUtc(start, "day").toISOString()).toBe("2026-03-16T00:00:00.000Z");
+    expect(bucketEndUtc(start, "week").toISOString()).toBe("2026-03-22T00:00:00.000Z");
+    expect(bucketEndUtc(start, "month").toISOString()).toBe("2026-04-15T00:00:00.000Z");
   });
 
   it("defaults to day when bucket is unrecognized", () => {
     const start = bucketStartUtc("2026-03-15");
-    expect(bucketEndUtc(start, "decade").toISOString()).toBe(
-      "2026-03-16T00:00:00.000Z",
-    );
+    expect(bucketEndUtc(start, "decade").toISOString()).toBe("2026-03-16T00:00:00.000Z");
   });
 });
 
 describe("computeTrim", () => {
-  const days = [
-    "2026-03-10",
-    "2026-03-11",
-    "2026-03-12",
-    "2026-03-13",
-    "2026-03-14",
-  ];
+  const days = ["2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14"];
 
   it("starts at index 0 when startMs is null (all-time)", () => {
     const now = Date.UTC(2026, 2, 14, 12);

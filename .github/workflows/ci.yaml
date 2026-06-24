@@ -45,11 +45,17 @@ jobs:
             docs:
               - 'docs/**'
             frontend:
-              - 'src/spellbot/web/templates/**/*.js'
+              - 'src/spellbot/web/templates/**'
               - 'tests-js/**'
+              - 'docs/assets/js/**'
+              - 'docs/assets/css/**'
               - 'package.json'
               - 'package-lock.json'
               - 'vitest.config.js'
+              - '.oxlintrc.json'
+              - '.oxfmtrc.json'
+              - '.prettierrc.json'
+              - '.prettierignore'
               - '.github/workflows/ci.yaml'
             infra-app:
               - 'infrastructure/app/**'
@@ -231,6 +237,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint (oxlint)
+        run: npm run lint
+
+      - name: Check formatting (oxfmt + prettier)
+        run: npm run format:check
 
       - name: Run Vitest
         run: npm test

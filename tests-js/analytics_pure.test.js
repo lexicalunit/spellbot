@@ -53,9 +53,7 @@ describe("getTimezoneOffsetHours", () => {
 
   it("returns 0 for UTC", () => {
     // ``-0 / 60`` evaluates to ``-0``; ``toBeCloseTo`` ignores the sign.
-    expect(getTimezoneOffsetHours({ getTimezoneOffset: () => 0 })).toBeCloseTo(
-      0,
-    );
+    expect(getTimezoneOffsetHours({ getTimezoneOffset: () => 0 })).toBeCloseTo(0);
   });
 
   it("returns a negative offset for west-of-UTC timezones", () => {
@@ -106,12 +104,10 @@ describe("excludeToday", () => {
       getMonth: () => 2,
       getDate: () => 4,
     };
-    expect(
-      excludeToday(
-        ["2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06"],
-        fake,
-      ),
-    ).toEqual(["2026-03-03", "2026-03-06"]);
+    expect(excludeToday(["2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06"], fake)).toEqual([
+      "2026-03-03",
+      "2026-03-06",
+    ]);
   });
 
   it("returns the original list when neither today value is present", () => {
@@ -121,9 +117,6 @@ describe("excludeToday", () => {
       getMonth: () => 2,
       getDate: () => 5,
     };
-    expect(excludeToday(["2026-03-01", "2026-03-02"], fake)).toEqual([
-      "2026-03-01",
-      "2026-03-02",
-    ]);
+    expect(excludeToday(["2026-03-01", "2026-03-02"], fake)).toEqual(["2026-03-01", "2026-03-02"]);
   });
 });
