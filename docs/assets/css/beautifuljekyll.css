@@ -155,6 +155,8 @@ img {
   background-color: var(--navbar-col);
   border-bottom: 1px solid var(--navbar-border-col);
   font-family: var(--header-font);
+  padding-left: 1rem;
+  padding-right: 1rem;
   {% if site.navbar-img %}
     background-image: url({{ site.navbar-img | relative_url }});
     background-attachment: fixed;

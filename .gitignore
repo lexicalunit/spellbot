@@ -18,8 +18,10 @@ demo_analytics.html
 docs/_site
 docs/.bundle/config
 docs/.DS_Store
+docs/.jekyll-cache
 docs/.sass-cache
 docs/.vagrant
+docs/assets/vendor
 docs/beautiful-jekyll-theme-*.gem
 docs/ehthumbs.db
 docs/Gemfile.lock

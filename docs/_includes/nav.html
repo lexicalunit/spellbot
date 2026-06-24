@@ -11,12 +11,12 @@
   </button>
 
   <div class="collapse navbar-collapse" id="main-navbar">
-    <ul class="navbar-nav ml-auto">
+    <ul class="navbar-nav ms-auto">
       {%- for link in site.navbar-links -%}
         {%- if link[1].first %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ link[0] }}</a>
-            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
               {%- for childlink in link[1] -%}
                 {%- for linkparts in childlink %}
                   <a class="dropdown-item" href="{{ linkparts[1] | relative_url }}">{{ linkparts[0] }}</a>
@@ -30,14 +30,6 @@
           </li>
         {%- endif -%}
       {%- endfor -%}
-      {% if site.post_search %}
-        <li class="nav-item">
-          <a class="nav-link" id="nav-search-link" href="#" title="Search">
-            <span id="nav-search-icon" class="fa fa-search"></span>
-            <span id="nav-search-text">Search</span>
-          </a>
-        </li>
-      {%- endif -%}
     </ul>
   </div>
 
@@ -58,5 +50,3 @@
   {% endif %}
 
 </nav>
-
-{% include search.html %}

@@ -3,7 +3,7 @@
   "printWidth": 100,
   "ignorePatterns": [
     "docs/assets/js/beautifuljekyll.js",
-    "docs/assets/js/jquery-*.js",
-    "docs/assets/js/staticman.js"
+    "docs/assets/js/staticman.js",
+    "docs/assets/vendor/**"
   ]
 }

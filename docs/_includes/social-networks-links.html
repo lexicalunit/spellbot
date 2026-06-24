@@ -3,18 +3,6 @@
 
 {%- for network in site.social-network-links -%}
 
-  {%- if network[0] == "rss" and network[1] and site.rss-description -%}
-  <li class="list-inline-item">
-    <a href="{{ '/feed.xml' | relative_url }}" title="RSS">
-      <span class="fa-stack fa-lg" aria-hidden="true">
-        <i class="fas fa-circle fa-stack-2x"></i>
-        <i class="fas fa-rss social-icon fa-stack-1x"></i>
-      </span>
-      <span class="sr-only">RSS</span>
-    </a>
-  </li>
-  {%- endif -%}
-
   {%- if network[0] == "email" -%}
   <li class="list-inline-item">
     <a href="mailto:{{ network[1] }}" title="Email me">
@@ -22,7 +10,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fas fa-envelope social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Email me</span>
+      <span class="visually-hidden">Email me</span>
    </a>
   </li>
   {%- endif -%}
@@ -34,7 +22,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fas fa-calendar-check social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Schedule a meeting with me</span>
+      <span class="visually-hidden">Schedule a meeting with me</span>
    </a>
   </li>
   {%- endif -%}
@@ -46,7 +34,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-facebook social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Facebook</span>
+      <span class="visually-hidden">Facebook</span>
    </a>
   </li>
   {%- endif -%}
@@ -58,7 +46,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-telegram-plane social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Telegram</span>
+      <span class="visually-hidden">Telegram</span>
     </a>
   </li>
   {%- endif -%}
@@ -70,7 +58,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-whatsapp social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Whatsapp</span>
+      <span class="visually-hidden">Whatsapp</span>
     </a>
   </li>
   {%- endif -%}
@@ -82,7 +70,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-github social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">GitHub</span>
+      <span class="visually-hidden">GitHub</span>
    </a>
   </li>
   {%- endif -%}
@@ -94,7 +82,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-gitlab social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">GitLab</span>
+      <span class="visually-hidden">GitLab</span>
    </a>
   </li>
   {%- endif -%}
@@ -106,7 +94,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-bluesky social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">BlueSky</span>
+      <span class="visually-hidden">BlueSky</span>
    </a>
   </li>
   {%- endif -%}
@@ -118,7 +106,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-x-twitter social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">X (Twitter)</span>
+      <span class="visually-hidden">X (Twitter)</span>
    </a>
   </li>
   {%- endif -%}
@@ -130,7 +118,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-reddit social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Reddit</span>
+      <span class="visually-hidden">Reddit</span>
    </a>
   </li>
   {%- endif -%}
@@ -142,7 +130,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-linkedin social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">LinkedIn</span>
+      <span class="visually-hidden">LinkedIn</span>
    </a>
   </li>
   {%- endif -%}
@@ -154,7 +142,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-xing social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Xing</span>
+      <span class="visually-hidden">Xing</span>
    </a>
   </li>
   {%- endif -%}
@@ -166,7 +154,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-stack-overflow social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">StackOverflow</span>
+      <span class="visually-hidden">StackOverflow</span>
    </a>
   </li>
   {%- endif -%}
@@ -178,7 +166,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-snapchat-ghost social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Snapchat</span>
+      <span class="visually-hidden">Snapchat</span>
    </a>
   </li>
   {%- endif -%}
@@ -190,7 +178,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-instagram social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Instagram</span>
+      <span class="visually-hidden">Instagram</span>
    </a>
   </li>
   {%- endif -%}
@@ -202,7 +190,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-youtube social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">YouTube</span>
+      <span class="visually-hidden">YouTube</span>
    </a>
   </li>
   {%- endif -%}
@@ -214,7 +202,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-spotify social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Spotify</span>
+      <span class="visually-hidden">Spotify</span>
    </a>
   </li>
   {%- endif -%}
@@ -226,7 +214,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fas fa-phone social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Phone</span>
+      <span class="visually-hidden">Phone</span>
    </a>
   </li>
   {%- endif -%}
@@ -238,7 +226,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-steam social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Steam</span>
+      <span class="visually-hidden">Steam</span>
    </a>
   </li>
   {%- endif -%}
@@ -250,7 +238,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-twitch social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Twitch</span>
+      <span class="visually-hidden">Twitch</span>
    </a>
   </li>
   {%- endif -%}
@@ -262,7 +250,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-yelp social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Yelp</span>
+      <span class="visually-hidden">Yelp</span>
    </a>
   </li>
   {%- endif -%}
@@ -274,7 +262,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-mastodon social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Mastodon</span>
+      <span class="visually-hidden">Mastodon</span>
     </a>
   </li>
   {%- endif -%}
@@ -286,7 +274,7 @@
        <i class="fas fa-circle fa-stack-2x"></i>
        <i class="fab fa-orcid social-icon fa-stack-1x"></i>
      </span>
-     <span class="sr-only">ORCID</span>
+     <span class="visually-hidden">ORCID</span>
    </a>
  </li>
   {%- endif -%}
@@ -298,7 +286,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fa fa-graduation-cap social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Google Scholar</span>
+      <span class="visually-hidden">Google Scholar</span>
     </a>
   </li>
   {%- endif -%}
@@ -310,7 +298,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-patreon social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Patreon</span>
+      <span class="visually-hidden">Patreon</span>
     </a>
   </li>
   {%- endif -%}
@@ -322,7 +310,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-medium social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Medium</span>
+      <span class="visually-hidden">Medium</span>
     </a>
   </li>
   {%- endif -%}
@@ -334,7 +322,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-itch-io social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Itchio</span>
+      <span class="visually-hidden">Itchio</span>
    </a>
   </li>
   {%- endif -%}
@@ -350,7 +338,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-discord social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Discord</span>
+      <span class="visually-hidden">Discord</span>
    </a>
   </li>
   {%- endif -%}
@@ -362,7 +350,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-kaggle social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Kaggle</span>
+      <span class="visually-hidden">Kaggle</span>
    </a>
   </li>
   {%- endif -%}
@@ -374,7 +362,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-hackerrank social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Hackerrank</span>
+      <span class="visually-hidden">Hackerrank</span>
    </a>
   </li>
   {%- endif -%}
@@ -386,7 +374,7 @@
         <i class="fas fa-circle fa-stack-2x"></i>
         <i class="fab fa-untappd social-icon fa-stack-1x"></i>
       </span>
-      <span class="sr-only">Untappd</span>
+      <span class="visually-hidden">Untappd</span>
    </a>
   </li>
   {%- endif -%}

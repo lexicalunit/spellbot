@@ -54,15 +54,7 @@
   <meta name="keywords" content="{{ site.keywords }}">
   {% endif %}
 
-  {% if site.rss-description %}
-  <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ '/feed.xml' | absolute_url }}">
-  {% endif %}
-
   {% include gtag.html %}
-  {% include gtm_head.html %}
-  {% include google_analytics.html %}
-  {% include cloudflare_analytics.html %}
-  {% include mathjax.html %}
 
   {% if layout.common-ext-css %}
     {% for css in layout.common-ext-css %}
@@ -153,12 +145,6 @@
 
   {% if img != "" %}
   <meta name="twitter:image" content="{{ img | absolute_url }}">
-  {% endif %}
-
-  {% include matomo.html %}
-
-  {% if page.comments and site.staticman.repository and site.staticman.branch %}
-  <link rel="stylesheet" href="{{ "/assets/css/staticman.css" | relative_url }}">
   {% endif %}
 
   {% assign favicon_exists = site.static_files | where: "path", "/favicon.ico" | size %}
