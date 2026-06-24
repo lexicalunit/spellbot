@@ -2,8 +2,8 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "ignorePatterns": [
     "docs/assets/js/beautifuljekyll.js",
-    "docs/assets/js/jquery-*.js",
-    "docs/assets/js/staticman.js"
+    "docs/assets/js/staticman.js",
+    "docs/assets/vendor/**"
   ],
   "categories": {
     "correctness": "error"

@@ -11,7 +11,13 @@
     "format": "npm run format:js && npm run format:css",
     "format:js": "oxfmt --write \"**/*.js\"",
     "format:css": "prettier --write \"**/*.css\" \"**/*.html.j2\"",
-    "format:check": "oxfmt --check \"**/*.js\" && prettier --check \"**/*.css\" \"**/*.html.j2\""
+    "format:check": "oxfmt --check \"**/*.js\" && prettier --check \"**/*.css\" \"**/*.html.j2\"",
+    "docs:vendor": "node scripts/vendor-docs-assets.mjs"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.2",
+    "bootstrap": "^5.3.8",
+    "jquery": "^4.0.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.7",
