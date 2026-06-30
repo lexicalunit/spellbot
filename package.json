@@ -20,7 +20,7 @@
     "jquery": "^4.0.0"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.9",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "prettier": "^3.8.4",
