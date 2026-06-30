@@ -25,6 +25,6 @@
     "oxlint": "^1.71.0",
     "prettier": "^3.8.4",
     "prettier-plugin-jinja-template": "^2.2.0",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }
