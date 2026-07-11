@@ -228,7 +228,7 @@ ja:
     banned: "SpellBotの使用は禁止されています。"
     verified_only: "ここでそれを行うことができるのは検証済みユーザーのみです。"
     unverified_only: "ここでそれを行うことができるのは未検証のユーザーのみです。"
-    cooldown: "%{seconds}秒後にもう一度お試しください。"
+    cooldown: "Please try again in %{seconds}s."
   # Playgroup Live commands
   playgroup:
     already_linked: "あなたのDiscordアカウントはすでにPlaygroup Liveにリンクされています！"
