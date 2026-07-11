@@ -228,7 +228,7 @@ pl:
     banned: "Zostałeś zbanowany w użyciu SpellBota."
     verified_only: "Tylko zweryfikowani użytkownicy mogą to zrobić tutaj."
     unverified_only: "Tylko niezweryfikowani użytkownicy mogą to zrobić tutaj."
-    cooldown: "Spróbuj ponownie za %{seconds}s."
+    cooldown: "Please try again in %{seconds}s."
   # Playgroup Live commands
   playgroup:
     already_linked: "Twoje konto Discord jest już połączone z Playgroup Live!"
