@@ -147,6 +147,17 @@ class TestOperationsOriginalResponse:
         interaction.original_response.assert_called_once_with()
         assert response == original_response
 
+    async def test_unknown_message(self) -> None:
+        interaction = AsyncMock()
+        interaction.user = MagicMock()
+        interaction.user.id = 123
+        interaction.original_response.side_effect = discord.errors.NotFound(
+            MagicMock(),
+            {"code": 10008},
+        )
+        response = await safe_original_response(interaction)
+        assert response is None
+
 
 @pytest.mark.asyncio
 class TestOperationsFetchUser:

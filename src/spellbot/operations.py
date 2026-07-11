@@ -166,11 +166,19 @@ async def safe_call_with_expected(
 async def safe_original_response(
     interaction: discord.Interaction,
 ) -> discord.InteractionMessage | None:
-    return await safe_call(
+    _, result = await safe_call_with_expected(
         interaction.original_response,
-        "could fetch original response for user %(user_xid)s",
+        [
+            ExpectedError(
+                is_unknown_message,
+                "unknown_message",
+                "unknown message fetching original response for user %(user_xid)s (deleted)",
+            ),
+        ],
+        "could not fetch original response for user %(user_xid)s",
         user_xid=interaction.user.id,
     )
+    return result
 
 
 def is_unknown_interaction(ex: BaseException) -> bool:

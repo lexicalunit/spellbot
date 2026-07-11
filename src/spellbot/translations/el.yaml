@@ -228,6 +228,7 @@ el:
     banned: "Έχετε αποκλειστεί από τη χρήση του SpellBot."
     verified_only: "Μόνο επαληθευμένοι χρήστες μπορούν να το κάνουν εδώ."
     unverified_only: "Μόνο μη επαληθευμένοι χρήστες μπορούν να το κάνουν εδώ."
+    cooldown: "Παρακαλώ δοκιμάστε ξανά σε %{seconds}s."
   # Playgroup Live commands
   playgroup:
     already_linked: "Ο λογαριασμός σας Discord είναι ήδη συνδεδεμένος με το Playgroup Live!"

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from datadog import initialize
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 from ddtrace.trace import tracer
+from discord.app_commands import CommandOnCooldown
 from wrapt import wrap_function_wrapper
 
 from .environment import running_in_pytest
@@ -148,6 +149,7 @@ def add_span_error(ex: BaseException) -> None:  # pragma: no cover
 @skip_if_no_metrics
 def setup_ignored_errors(span: Span) -> None:  # pragma: no cover
     span._ignore_exception(AdminOnlyError)  # noqa: SLF001
+    span._ignore_exception(CommandOnCooldown)  # noqa: SLF001
     span._ignore_exception(GuildBannedError)  # noqa: SLF001
     span._ignore_exception(GuildOnlyError)  # noqa: SLF001
     span._ignore_exception(ModOnlyError)  # noqa: SLF001

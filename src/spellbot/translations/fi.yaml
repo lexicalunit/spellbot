@@ -228,6 +228,7 @@ fi:
     banned: "Sinulle on annettu porttikielto käyttää SpellBotia."
     verified_only: "Vain todennetut käyttäjät voivat tehdä sen täällä."
     unverified_only: "Vain vahvistamattomat käyttäjät voivat tehdä sen täällä."
+    cooldown: "Yritä uudelleen %{seconds}s kuluttua."
   # Playgroup Live commands
   playgroup:
     already_linked: "Discord-tilisi on jo yhdistetty Playgroup Liveen!"
