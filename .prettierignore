@@ -1,6 +1,0 @@
-# Vendored / third-party CSS assets — do not format
-docs/assets/css/beautifuljekyll.css
-docs/assets/css/pygment_highlights.css
-
-# Vendored from npm at build time (scripts/vendor-docs-assets.mjs)
-docs/assets/vendor/

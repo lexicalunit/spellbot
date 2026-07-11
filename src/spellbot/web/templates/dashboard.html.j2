@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>SpellBot Admin Dashboard</title>
-    <meta name="theme-color" content="#5A3EFD">
-    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
-    <style>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>SpellBot Admin Dashboard</title>
+        <meta name="theme-color" content="#5A3EFD">
+        <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+        <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -235,157 +236,443 @@
         .sql-result table.lang-table td, .sql-result table.lang-table th { white-space: nowrap; }
         .sql-result td.sql-null { color: #6b7280; font-style: italic; }
         .sql-error { color: #fca5a5; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 0.8rem; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <a href="https://spellbot.io/">
-                <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
-            </a>
-            <h1>SpellBot Admin Dashboard</h1>
-            <a class="nav-link" href="/queues">Active Queues</a>
-            <span class="user">Signed in as <strong>{{ admin_name }}</strong></span>
-            <form action="/admin/logout" method="post">
-                <button class="logout" type="submit">Sign out</button>
-            </form>
-        </div>
-
-        <div class="sticky-controls">
-            <div class="toggle-group" id="periodToggle">
-                <button class="toggle-btn" data-period="7d">7d</button>
-                <button class="toggle-btn active" data-period="30d">30d</button>
-                <button class="toggle-btn" data-period="90d">90d</button>
-                <button class="toggle-btn" data-period="180d">6mo</button>
-                <button class="toggle-btn" data-period="365d">1y</button>
-                <button class="toggle-btn" data-period="730d">2y</button>
-                <button class="toggle-btn" data-period="all">All</button>
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <a href="https://spellbot.io/">
+                    <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+                </a>
+                <h1>SpellBot Admin Dashboard</h1>
+                <a class="nav-link" href="/queues">Active Queues</a>
+                <span class="user">Signed in as <strong>{{ admin_name }}</strong></span>
+                <form action="/admin/logout" method="post">
+                    <button class="logout" type="submit">Sign out</button>
+                </form>
             </div>
-            <div class="guild-filter">
-                <div class="toggle-group" id="guildModeToggle">
-                    <button class="toggle-btn active" data-mode="all">All</button>
-                    <button class="toggle-btn" data-mode="include">Only</button>
-                    <button class="toggle-btn" data-mode="exclude">Except</button>
+            <div class="sticky-controls">
+                <div class="toggle-group" id="periodToggle">
+                    <button class="toggle-btn" data-period="7d">7d</button>
+                    <button class="toggle-btn active" data-period="30d">30d</button>
+                    <button class="toggle-btn" data-period="90d">90d</button>
+                    <button class="toggle-btn" data-period="180d">6mo</button>
+                    <button class="toggle-btn" data-period="365d">1y</button>
+                    <button class="toggle-btn" data-period="730d">2y</button>
+                    <button class="toggle-btn" data-period="all">All</button>
                 </div>
-                <select id="guildSelect" disabled>
-                    <option value="">All servers</option>
-                </select>
+                <div class="guild-filter">
+                    <div class="toggle-group" id="guildModeToggle">
+                        <button class="toggle-btn active" data-mode="all">All</button>
+                        <button class="toggle-btn" data-mode="include">Only</button>
+                        <button class="toggle-btn" data-mode="exclude">Except</button>
+                    </div>
+                    <select id="guildSelect" disabled>
+                        <option value="">All servers</option>
+                    </select>
+                </div>
+                <div class="bucket-indicator">Bucket: <span id="bucketLabel">—</span></div>
             </div>
-            <div class="bucket-indicator">Bucket: <span id="bucketLabel">—</span></div>
-        </div>
-
-        {% if is_owner %}
-        <details class="sql-console section" id="sqlConsole">
-            <summary>SQL Console</summary>
-            <p class="sql-hint">Read-only queries against the production database. Statements run in a rolled-back, read-only transaction (15s timeout). Press Ctrl/Cmd+Enter to run.</p>
-            <textarea id="sqlQuery" spellcheck="false" placeholder="SELECT * FROM games ORDER BY created_at DESC LIMIT 20;"></textarea>
-            <div class="sql-toolbar">
-                <button id="sqlRunBtn" type="button">Run</button>
-                <span id="sqlStatus" class="sql-status"></span>
+            {% if is_owner %}
+                <details class="sql-console section" id="sqlConsole">
+                    <summary>SQL Console</summary>
+                    <p class="sql-hint">Read-only queries against the production database. Statements run in a rolled-back, read-only transaction (15s timeout). Press Ctrl/Cmd+Enter to run.</p>
+                    <textarea id="sqlQuery"
+                              spellcheck="false"
+                              placeholder="SELECT * FROM games ORDER BY created_at DESC LIMIT 20;"></textarea>
+                    <div class="sql-toolbar">
+                        <button id="sqlRunBtn" type="button">Run</button>
+                        <span id="sqlStatus" class="sql-status"></span>
+                    </div>
+                    <div id="sqlResult" class="sql-result"></div>
+                </details>
+            {% endif %}
+            <div class="summary">
+                <div class="stat">
+                    <div id="statTotalGames" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Total Games</div>
+                </div>
+                <div class="stat">
+                    <div id="statTotalPlayers" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Total Players</div>
+                </div>
+                <div class="stat">
+                    <div id="statTotalServers" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Total Servers</div>
+                </div>
             </div>
-            <div id="sqlResult" class="sql-result"></div>
-        </details>
-        {% endif %}
-
-        <div class="summary">
-            <div class="stat"><div id="statTotalGames" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Total Games</div></div>
-            <div class="stat"><div id="statTotalPlayers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Total Players</div></div>
-            <div class="stat"><div id="statTotalServers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Total Servers</div></div>
-        </div>
-
-        <div class="summary">
-            <div class="stat"><div id="statGames" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Games</div></div>
-            <div class="stat"><div id="statPlayers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Players</div></div>
-            <div class="stat"><div id="statServers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Active Servers</div></div>
-            <div class="stat"><div id="statWau" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Avg WAU</div></div>
-            <div class="stat"><div id="statMau" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Avg MAU</div></div>
-            <div class="stat"><div id="statDauMau" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">DAU:MAU %</div></div>
-            <div class="stat"><div id="statFillRate" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Game Fill Rate</div></div>
-        </div>
-
-        <div class="row row-1-3">
-            <div class="section"><h2>Queue Depth (Right Now)</h2><div id="queueDepthSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Active Queues (Right Now)</h2><div id="activeQueuesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        </div>
-
-        <div class="section"><h2>Game Activity</h2><div id="gameActivitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        <div class="section"><h2>Cumulative Player Growth</h2><div id="playerGrowthSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        <div class="section"><h2>Casual vs cEDH (% of bucket)</h2><div id="casualVsCedhSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        <div class="section">
-            <h2>Server Popularity (Top 20, % of bucket)</h2>
-            <div class="chart-with-table">
-                <div id="serverPopularitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
-                <div id="serverPopularityTable" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
+            <div class="summary">
+                <div class="stat">
+                    <div id="statGames" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Games</div>
+                </div>
+                <div class="stat">
+                    <div id="statPlayers" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Players</div>
+                </div>
+                <div class="stat">
+                    <div id="statServers" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Active Servers</div>
+                </div>
+                <div class="stat">
+                    <div id="statWau" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Avg WAU</div>
+                </div>
+                <div class="stat">
+                    <div id="statMau" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Avg MAU</div>
+                </div>
+                <div class="stat">
+                    <div id="statDauMau" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">DAU:MAU %</div>
+                </div>
+                <div class="stat">
+                    <div id="statFillRate" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Game Fill Rate</div>
+                </div>
+            </div>
+            <div class="row row-1-3">
+                <div class="section">
+                    <h2>Queue Depth (Right Now)</h2>
+                    <div id="queueDepthSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Active Queues (Right Now)</h2>
+                    <div id="activeQueuesSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Game Activity</h2>
+                <div id="gameActivitySection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Cumulative Player Growth</h2>
+                <div id="playerGrowthSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Casual vs cEDH (% of bucket)</h2>
+                <div id="casualVsCedhSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Server Popularity (Top 20, % of bucket)</h2>
+                <div class="chart-with-table">
+                    <div id="serverPopularitySection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                    <div id="serverPopularityTable" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Service Popularity (% of bucket)</h2>
+                <div id="servicePopularitySection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="summary">
+                <div class="stat">
+                    <div id="statBracket1" class="stat-value bracket-1">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Bracket 1: Exhibition</div>
+                </div>
+                <div class="stat">
+                    <div id="statBracket2" class="stat-value bracket-2">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Bracket 2: Core</div>
+                </div>
+                <div class="stat">
+                    <div id="statBracket3" class="stat-value bracket-3">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Bracket 3: Upgraded</div>
+                </div>
+                <div class="stat">
+                    <div id="statBracket4" class="stat-value bracket-4">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Bracket 4: Optimized</div>
+                </div>
+                <div class="stat">
+                    <div id="statBracket5" class="stat-value bracket-5">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Bracket 5: Competitive</div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Bracket Adoption Rate</h2>
+                <div class="chart-with-table compact">
+                    <div id="bracketAdoptionSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                    <div id="bracketLeadersTable" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2>Popular Hours of Day (Local Time)</h2>
+                    <div id="hourOfDaySection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Popular Days of Week (UTC)</h2>
+                    <div id="dayOfWeekSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Activity Heatmap (Day x Hour, Local Time)</h2>
+                <div id="activityHeatmapSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Cohort Retention (Weekly)</h2>
+                <div id="cohortRetentionSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Average Wait Time</h2>
+                <div id="avgWaitTimeSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Wait Time Distribution (p50 / p95 / p99, minutes)</h2>
+                <div id="waitTimeDistributionSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row row-three">
+                <div class="section">
+                    <h2>Voice Channel Adoption</h2>
+                    <div id="voiceAdoptionSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Blind Game Adoption</h2>
+                    <div id="blindAdoptionSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Mythic Track Verification Rate</h2>
+                    <div id="mythicVerificationSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2 id="gamesPerPlayerTitle">Games per Player</h2>
+                <div id="gamesPerPlayerSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2>Popular Game Formats</h2>
+                    <div id="popularFormatsSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Popular Seat Counts</h2>
+                    <div id="popularSeatsSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2>Most Active Players</h2>
+                    <div id="topPlayersSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Most Blocked Players (All Time)</h2>
+                    <div id="topBlockedSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row row-three">
+                <div class="section">
+                    <h2>User Languages</h2>
+                    <div id="userLanguagesSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Game Languages</h2>
+                    <div id="gameLanguagesSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Guild Languages</h2>
+                    <div id="guildLanguagesSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Most Active Server per Language</h2>
+                <div id="topGuildPerGameLanguageSection" class="table-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2>Top Game Rules</h2>
+                    <div id="topRulesSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>Rules Word Cloud</h2>
+                    <div id="rulesCloudSection" class="table-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <p>SpellBot Admin Dashboard</p>
             </div>
         </div>
-        <div class="section"><h2>Service Popularity (% of bucket)</h2><div id="servicePopularitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-
-        <div class="summary">
-            <div class="stat"><div id="statBracket1" class="stat-value bracket-1"><div class="section-spinner"></div></div><div class="stat-label">Bracket 1: Exhibition</div></div>
-            <div class="stat"><div id="statBracket2" class="stat-value bracket-2"><div class="section-spinner"></div></div><div class="stat-label">Bracket 2: Core</div></div>
-            <div class="stat"><div id="statBracket3" class="stat-value bracket-3"><div class="section-spinner"></div></div><div class="stat-label">Bracket 3: Upgraded</div></div>
-            <div class="stat"><div id="statBracket4" class="stat-value bracket-4"><div class="section-spinner"></div></div><div class="stat-label">Bracket 4: Optimized</div></div>
-            <div class="stat"><div id="statBracket5" class="stat-value bracket-5"><div class="section-spinner"></div></div><div class="stat-label">Bracket 5: Competitive</div></div>
-        </div>
-        <div class="section">
-            <h2>Bracket Adoption Rate</h2>
-            <div class="chart-with-table compact">
-                <div id="bracketAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
-                <div id="bracketLeadersTable" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="section"><h2>Popular Hours of Day (Local Time)</h2><div id="hourOfDaySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Popular Days of Week (UTC)</h2><div id="dayOfWeekSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        </div>
-
-        <div class="section"><h2>Activity Heatmap (Day x Hour, Local Time)</h2><div id="activityHeatmapSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-
-        <div class="section"><h2>Cohort Retention (Weekly)</h2><div id="cohortRetentionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-
-        <div class="section"><h2>Average Wait Time</h2><div id="avgWaitTimeSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-
-        <div class="section"><h2>Wait Time Distribution (p50 / p95 / p99, minutes)</h2><div id="waitTimeDistributionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-
-        <div class="row row-three">
-            <div class="section"><h2>Voice Channel Adoption</h2><div id="voiceAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Blind Game Adoption</h2><div id="blindAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Mythic Track Verification Rate</h2><div id="mythicVerificationSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        </div>
-
-        <div class="section"><h2 id="gamesPerPlayerTitle">Games per Player</h2><div id="gamesPerPlayerSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-
-        <div class="row">
-            <div class="section"><h2>Popular Game Formats</h2><div id="popularFormatsSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Popular Seat Counts</h2><div id="popularSeatsSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        </div>
-
-        <div class="row">
-            <div class="section"><h2>Most Active Players</h2><div id="topPlayersSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Most Blocked Players (All Time)</h2><div id="topBlockedSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        </div>
-
-        <div class="row row-three">
-            <div class="section"><h2>User Languages</h2><div id="userLanguagesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Game Languages</h2><div id="gameLanguagesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Guild Languages</h2><div id="guildLanguagesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        </div>
-
-        <div class="section"><h2>Most Active Server per Language</h2><div id="topGuildPerGameLanguageSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-
-        <div class="row">
-            <div class="section"><h2>Top Game Rules</h2><div id="topRulesSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-            <div class="section"><h2>Rules Word Cloud</h2><div id="rulesCloudSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
-        </div>
-
-        <div class="footer"><p>SpellBot Admin Dashboard</p></div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
-    <script>window.CHART_AVAILABLE = typeof Chart !== "undefined";</script>
-    <script>window.SQL_CONSOLE_ENABLED = {{ 'true' if is_owner else 'false' }};</script>
-    <script src="/dashboard.js"></script>
-</body>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+        <script>window.CHART_AVAILABLE = typeof Chart !== "undefined";</script>
+        <script>window.SQL_CONSOLE_ENABLED = {{ 'true' if is_owner else 'false' }};</script>
+        <script src="/dashboard.js"></script>
+    </body>
 </html>

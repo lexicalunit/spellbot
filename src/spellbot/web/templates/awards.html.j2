@@ -2,105 +2,127 @@
 {% block title %}{{ t("web.awards.title") }}{% endblock %}
 {% block heading %}{{ t("web.awards.title") }}{% endblock %}
 {% block subtitle %}
-<div class="subtitle">
-    <a href="/g/{{ guild.xid }}">{{ t("web.nav.back_to", name=guild.name or t("web.common.server")) }}</a>
-    <span class="user-id">{{ guild.xid }}</span>
-    &middot; {{ t("web.awards.configured", count=awards | length) }}
-</div>
+    <div class="subtitle">
+        <a href="/g/{{ guild.xid }}">{{ t("web.nav.back_to", name=guild.name or t("web.common.server") ) }}</a>
+        <span class="user-id">{{ guild.xid }}</span>
+        &middot; {{ t("web.awards.configured", count=awards | length) }}
+    </div>
 {% endblock %}
 {% block content %}
-{% macro award_fields(award) %}
-<div class="grid">
-    <div class="field">
-        <label>{{ t("web.awards.games_required") }}</label>
-        <p class="hint">{{ award_help['count'] }}</p>
-        <input type="number" name="count" min="1" required
-               value="{{ award.count if award else '' }}">
-    </div>
-    <div class="field">
-        <label>{{ t("web.awards.role") }}</label>
-        <p class="hint">{{ award_help['role'] }}</p>
-        <input type="text" name="role" maxlength="{{ award_role_max }}" required
-               value="{{ award.role if award else '' }}">
-    </div>
-    <div class="field">
-        <label>{{ t("web.awards.message") }}</label>
-        <p class="hint">{{ award_help['message'] }}</p>
-        <input type="text" name="message" maxlength="{{ award_message_max }}"
-               value="{{ award.message if award else '' }}">
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="repeating" value="true"
-                   {{ 'checked' if award and award.repeating else '' }}>
-            <label>{{ t("web.awards.repeating") }}</label>
-        </div>
-        <p class="hint">{{ award_help['repeating'] }}</p>
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="remove" value="true"
-                   {{ 'checked' if award and award.remove else '' }}>
-            <label>{{ t("web.awards.remove") }}</label>
-        </div>
-        <p class="hint">{{ award_help['remove'] }}</p>
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="verified_only" value="true"
-                   {{ 'checked' if award and award.verified_only else '' }}>
-            <label>{{ t("web.awards.verified_only") }}</label>
-        </div>
-        <p class="hint">{{ award_help['verified_only'] }}</p>
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="unverified_only" value="true"
-                   {{ 'checked' if award and award.unverified_only else '' }}>
-            <label>{{ t("web.awards.unverified_only") }}</label>
-        </div>
-        <p class="hint">{{ award_help['unverified_only'] }}</p>
-    </div>
-</div>
-{% endmacro %}
-<div class="section">
-    <h2>{{ t("web.awards.title") }} <span class="count">({{ awards | length }})</span></h2>
-    {%- if award_error %}
-    <div class="card award-error">{{ award_error }}</div>
-    {%- endif %}
-    {% for award in awards %}
-    <details class="card award-card"{% if award_error %} open{% endif %}>
-        <summary class="award-card-summary">
-            {{ t("web.guild.award_summary", count=award.count, role=award.role) }}
-        </summary>
-        <div class="award-card-body">
-            <form method="post" action="/g/{{ guild.xid }}/awards/{{ award.id }}/update" class="settings-form">
-                {{ award_fields(award) }}
-                <div class="actions">
-                    <button type="submit" class="button">{{ t("web.awards.save") }}</button>
-                </div>
-            </form>
-            <form method="post" action="/g/{{ guild.xid }}/awards/{{ award.id }}/delete" class="settings-form"
-                  onsubmit='return confirm({{ t("web.awards.delete_confirm") | tojson }});'>
-                <div class="actions">
-                    <button type="submit" class="button button-danger">{{ t("web.awards.delete") }}</button>
-                </div>
-            </form>
-        </div>
-    </details>
-    {% else %}
-    <div class="card">
-        <p class="empty">{{ t("web.awards.none") }}</p>
-    </div>
-    {% endfor %}
-    <div class="card award-add-card">
-        <h3>{{ t("web.awards.add_heading") }}</h3>
-        <form method="post" action="/g/{{ guild.xid }}/awards/add" class="settings-form">
-            {{ award_fields(none) }}
-            <div class="actions">
-                <button type="submit" class="button">{{ t("web.awards.add_button") }}</button>
+    {% macro award_fields(award) %}
+        <div class="grid">
+            <div class="field">
+                <label>{{ t("web.awards.games_required") }}</label>
+                <p class="hint">{{ award_help['count'] }}</p>
+                <input type="number"
+                       name="count"
+                       min="1"
+                       required
+                       value="{{ award.count if award else '' }}">
             </div>
-        </form>
+            <div class="field">
+                <label>{{ t("web.awards.role") }}</label>
+                <p class="hint">{{ award_help['role'] }}</p>
+                <input type="text"
+                       name="role"
+                       maxlength="{{ award_role_max }}"
+                       required
+                       value="{{ award.role if award else '' }}">
+            </div>
+            <div class="field">
+                <label>{{ t("web.awards.message") }}</label>
+                <p class="hint">{{ award_help['message'] }}</p>
+                <input type="text"
+                       name="message"
+                       maxlength="{{ award_message_max }}"
+                       value="{{ award.message if award else '' }}">
+            </div>
+            <div class="field">
+                <div class="toggle-row">
+                    <input type="checkbox"
+                           name="repeating"
+                           value="true"
+                           {{ 'checked' if award and award.repeating else '' }}>
+                    <label>{{ t("web.awards.repeating") }}</label>
+                </div>
+                <p class="hint">{{ award_help['repeating'] }}</p>
+            </div>
+            <div class="field">
+                <div class="toggle-row">
+                    <input type="checkbox"
+                           name="remove"
+                           value="true"
+                           {{ 'checked' if award and award.remove else '' }}>
+                    <label>{{ t("web.awards.remove") }}</label>
+                </div>
+                <p class="hint">{{ award_help['remove'] }}</p>
+            </div>
+            <div class="field">
+                <div class="toggle-row">
+                    <input type="checkbox"
+                           name="verified_only"
+                           value="true"
+                           {{ 'checked' if award and award.verified_only else '' }}>
+                    <label>{{ t("web.awards.verified_only") }}</label>
+                </div>
+                <p class="hint">{{ award_help['verified_only'] }}</p>
+            </div>
+            <div class="field">
+                <div class="toggle-row">
+                    <input type="checkbox"
+                           name="unverified_only"
+                           value="true"
+                           {{ 'checked' if award and award.unverified_only else '' }}>
+                    <label>{{ t("web.awards.unverified_only") }}</label>
+                </div>
+                <p class="hint">{{ award_help['unverified_only'] }}</p>
+            </div>
+        </div>
+    {% endmacro %}
+    <div class="section">
+        <h2>{{ t("web.awards.title") }} <span class="count">({{ awards | length }})</span></h2>
+        {%- if award_error %}
+            <div class="card award-error">{{ award_error }}</div>
+        {%- endif %}
+        {% for award in awards %}
+            <details class="card award-card"{% if award_error %} open{% endif %}>
+                <summary class="award-card-summary">
+                    {{ t("web.guild.award_summary", count=award.count, role=award.role) }}
+                </summary>
+                <div class="award-card-body">
+                    <form method="post"
+                          action="/g/{{ guild.xid }}/awards/{{ award.id }}/update"
+                          class="settings-form">
+                        {{ award_fields(award) }}
+                        <div class="actions">
+                            <button type="submit" class="button">{{ t("web.awards.save") }}</button>
+                        </div>
+                    </form>
+                    <form method="post"
+                          action="/g/{{ guild.xid }}/awards/{{ award.id }}/delete"
+                          class="settings-form"
+                          onsubmit='return confirm({{ t("web.awards.delete_confirm") | tojson }});'>
+                        <div class="actions">
+                            <button type="submit" class="button button-danger">{{ t("web.awards.delete") }}</button>
+                        </div>
+                    </form>
+                </div>
+            </details>
+        {% else %}
+            <div class="card">
+                <p class="empty">{{ t("web.awards.none") }}</p>
+            </div>
+        {% endfor %}
+        <div class="card award-add-card">
+            <h3>{{ t("web.awards.add_heading") }}</h3>
+            <form method="post"
+                  action="/g/{{ guild.xid }}/awards/add"
+                  class="settings-form">
+                {{ award_fields(none) }}
+                <div class="actions">
+                    <button type="submit" class="button">{{ t("web.awards.add_button") }}</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 {% endblock %}

@@ -1,146 +1,166 @@
 {% extends "record_base.html.j2" %}
 {% from "record_filters.html.j2" import sort_header, filter_form with context %}
 {% block title %}{{ t("web.records.user_title", name=target_name or target_xid) }}{% endblock %}
-{% block heading %}{{ t("web.records.user_heading", name=target_name or t("web.common.unknown_user")) }}{% endblock %}
+{% block heading %}{{ t("web.records.user_heading", name=target_name or t("web.common.unknown_user") ) }}{% endblock %}
 {% block subtitle %}
-<div class="subtitle">
-    <span class="id-copy">
-        <span class="user-id">{{ target_xid }}</span>
-        <button type="button" class="copy" data-copy="{{ target_xid }}" title="{{ t('web.common.copy_user_id') }}">⎘</button>
-    </span>
-</div>
+    <div class="subtitle">
+        <span class="id-copy">
+            <span class="user-id">{{ target_xid }}</span>
+            <button type="button"
+                    class="copy"
+                    data-copy="{{ target_xid }}"
+                    title="{{ t('web.common.copy_user_id') }}">⎘</button>
+        </span>
+    </div>
 {% endblock %}
 {% block content %}
-{%- if is_own_profile %}
-<div class="section">
-    <details class="block-list"{{ ' open' if block_error else '' }}>
-    <summary>{{ t("web.blocks.title") }}</summary>
-    {%- if block_error %}
-    <div class="card award-error">{{ block_error }}</div>
-    {%- endif %}
-    <div class="card">
-        <p class="hint">
-            {{ t("web.blocks.description") }}
-        </p>
-        {% if blocked_users %}
-        <table>
-            <thead>
-                <tr><th>{{ t("web.blocks.user") }}</th><th>{{ t("web.field.user_id") }}</th><th></th></tr>
-            </thead>
-            <tbody>
-                {% for blocked in blocked_users %}
-                <tr>
-                    <td data-label="{{ t('web.blocks.user') }}">{{ blocked.name | default(t("web.common.unknown_user"), true) }}</td>
-                    <td data-label="{{ t('web.field.user_id') }}">
-                        <span class="id-copy">
-                            <span class="user-id">{{ blocked.xid }}</span>
-                            <button type="button" class="copy" data-copy="{{ blocked.xid }}" title="{{ t('web.common.copy_user_id') }}">⎘</button>
-                        </span>
-                    </td>
-                    <td data-label="">
-                        <form method="post" action="/u/{{ target_xid }}/blocks/{{ blocked.xid }}/remove">
-                            <button type="submit" class="button button-danger">{{ t("web.blocks.unblock") }}</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="empty">{{ t("web.blocks.none") }}</p>
-        {% endif %}
-        <form method="post" action="/u/{{ target_xid }}/blocks/add" class="settings-form block-add-form">
-            <div class="field">
-                <label for="block-target">{{ t("web.blocks.add_label") }}</label>
-                <p class="hint">{{ t("web.blocks.add_hint") }}</p>
-                <input type="text" id="block-target" name="target" maxlength="100" required
-                       placeholder="{{ t('web.blocks.add_placeholder') }}">
-            </div>
-            <div class="actions">
-                <button type="submit" class="button">{{ t("web.blocks.add_button") }}</button>
-            </div>
-        </form>
-    </div>
-    </details>
-</div>
-{%- elif not is_logged_in %}
-<div class="section">
-    <div class="card">
-        <p class="login-prompt">
-            {{ t("web.records.login_block_list") }}
-            <a href="{{ login_url }}" class="button">{{ t("web.common.login_with_discord") }}</a>
-        </p>
-    </div>
-</div>
-{%- endif %}
-<div class="section">
-    <h2>{{ t("web.records.games") }} <span class="count">({{ t("web.records.matching", count=total) }})</span></h2>
-    {{ filter_form(true, format_choices, bracket_choices, filters) }}
-    <div class="card">
-        {% if records %}
-        <table>
-            <thead>
-                <tr>
-                    <th>{{ sort_header('id', t("web.field.game"), sort_by, sort_dir, filters) }}</th>
-                    <th>{{ sort_header('updated_at', t("web.field.time"), sort_by, sort_dir, filters) }}</th>
-                    <th>{{ sort_header('guild_name', t("web.field.guild"), sort_by, sort_dir, filters) }}</th>
-                    <th>{{ t("web.field.channel") }}</th>
-                    <th>{{ sort_header('format', t("web.field.format"), sort_by, sort_dir, filters) }}</th>
-                    <th>{{ sort_header('seats', t("web.field.seats"), sort_by, sort_dir, filters) }}</th>
-                    <th>{{ sort_header('bracket', t("web.field.bracket"), sort_by, sort_dir, filters) }}</th>
-                    <th>{{ t("web.field.locale") }}</th>
-                    {% if is_own_profile %}<th>{{ t("web.field.link") }}</th>{% endif %}
-                    <th>{{ t("web.field.players") }}</th>
-                    <th>{{ t("web.field.jump") }}</th>
-                </tr>
-            </thead>
-            <tbody id="rows">
-                {% for record in records %}
-                <tr>
-                    <td data-label="{{ t('web.field.game') }}"><a href="/game/{{ record.id }}">SB#{{ record.id }}</a></td>
-                    {% if tz_offset and tz_name %}
-                    <td data-label="{{ t('web.field.time') }}">{{ record.updated_at | humanize(tz_offset, tz_name) }}</td>
+    {%- if is_own_profile %}
+        <div class="section">
+            <details class="block-list"{{ ' open' if block_error else '' }}>
+                <summary>{{ t("web.blocks.title") }}</summary>
+                {%- if block_error %}
+                    <div class="card award-error">{{ block_error }}</div>
+                {%- endif %}
+                <div class="card">
+                    <p class="hint">{{ t("web.blocks.description") }}</p>
+                    {% if blocked_users %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>{{ t("web.blocks.user") }}</th>
+                                    <th>{{ t("web.field.user_id") }}</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for blocked in blocked_users %}
+                                    <tr>
+                                        <td data-label="{{ t('web.blocks.user') }}">{{ blocked.name | default(t("web.common.unknown_user") , true) }}</td>
+                                        <td data-label="{{ t('web.field.user_id') }}">
+                                            <span class="id-copy">
+                                                <span class="user-id">{{ blocked.xid }}</span>
+                                                <button type="button"
+                                                        class="copy"
+                                                        data-copy="{{ blocked.xid }}"
+                                                        title="{{ t('web.common.copy_user_id') }}">⎘</button>
+                                            </span>
+                                        </td>
+                                        <td data-label="">
+                                            <form method="post"
+                                                  action="/u/{{ target_xid }}/blocks/{{ blocked.xid }}/remove">
+                                                <button type="submit" class="button button-danger">{{ t("web.blocks.unblock") }}</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     {% else %}
-                    <td data-label="{{ t('web.field.time') }}" class="timestamp">{{ record.updated_at }}</td>
+                        <p class="empty">{{ t("web.blocks.none") }}</p>
                     {% endif %}
-                    <td data-label="{{ t('web.field.guild') }}"><a href="/g/{{ record.guild }}">{{ record.guild_name }}</a></td>
-                    <td data-label="{{ t('web.field.channel') }}"><a href="/g/{{ record.guild }}/c/{{ record.channel }}">#{{ record.channel_name }}</a></td>
-                    <td data-label="{{ t('web.field.format') }}">{{ record.format }}</td>
-                    <td data-label="{{ t('web.field.seats') }}">{{ record.seats }}</td>
-                    <td data-label="{{ t('web.field.bracket') }}">{{ record.bracket }}</td>
-                    <td data-label="{{ t('web.field.locale') }}">{{ record.locale }}</td>
-                    {% if is_own_profile %}
-                    <td data-label="{{ t('web.field.link') }}">
-                        {% if record.link %}<a href="{{ record.link }}">{{ t("web.common.open_in", service=record.service) }}</a>{% else %}&mdash;{% endif %}
-                    </td>
-                    {% endif %}
-                    <td data-label="{{ t('web.field.players') }}">
-                        <div class="players">
-                            {% for name, data in record.scores.items() %}
-                            <div class="player">
-                                <span class="name">{{ name | default(t("web.common.unknown_user"), true) }}</span>
-                                <span class="id-copy">
-                                    <span class="user-id">{{ data[0] }}</span>
-                                    <button type="button" class="copy" data-copy="{{ data[0] }}" title="{{ t('web.common.copy_user_id') }}">⎘</button>
-                                </span>
-                            </div>
-                            {% endfor %}
+                    <form method="post"
+                          action="/u/{{ target_xid }}/blocks/add"
+                          class="settings-form block-add-form">
+                        <div class="field">
+                            <label for="block-target">{{ t("web.blocks.add_label") }}</label>
+                            <p class="hint">{{ t("web.blocks.add_hint") }}</p>
+                            <input type="text"
+                                   id="block-target"
+                                   name="target"
+                                   maxlength="100"
+                                   required
+                                   placeholder="{{ t('web.blocks.add_placeholder') }}">
                         </div>
-                    </td>
-                    <td data-label="{{ t('web.field.jump') }}">
-                        <div class="jumps">
-                            <a href="https://discord.com/channels/{{ record.guild }}" class="button">{{ t("web.common.jump_to_guild") | replace(" ", "&nbsp;") | safe }}</a>
-                            <a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}" class="button">{{ t("web.common.jump_to_channel") | replace(" ", "&nbsp;") | safe }}</a>
-                            <a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}" class="button">{{ t("web.common.jump_to_game") | replace(" ", "&nbsp;") | safe }}</a>
+                        <div class="actions">
+                            <button type="submit" class="button">{{ t("web.blocks.add_button") }}</button>
                         </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="empty">{{ t("web.records.none_user") }}</div>
-        {% endif %}
+                    </form>
+                </div>
+            </details>
+        </div>
+    {%- elif not is_logged_in %}
+        <div class="section">
+            <div class="card">
+                <p class="login-prompt">
+                    {{ t("web.records.login_block_list") }}
+                    <a href="{{ login_url }}" class="button">{{ t("web.common.login_with_discord") }}</a>
+                </p>
+            </div>
+        </div>
+    {%- endif %}
+    <div class="section">
+        <h2>{{ t("web.records.games") }} <span class="count">({{ t("web.records.matching", count=total) }})</span></h2>
+        {{ filter_form(true, format_choices, bracket_choices, filters) }}
+        <div class="card">
+            {% if records %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{{ sort_header('id', t("web.field.game") , sort_by, sort_dir, filters) }}</th>
+                            <th>{{ sort_header('updated_at', t("web.field.time") , sort_by, sort_dir, filters) }}</th>
+                            <th>{{ sort_header('guild_name', t("web.field.guild") , sort_by, sort_dir, filters) }}</th>
+                            <th>{{ t("web.field.channel") }}</th>
+                            <th>{{ sort_header('format', t("web.field.format") , sort_by, sort_dir, filters) }}</th>
+                            <th>{{ sort_header('seats', t("web.field.seats") , sort_by, sort_dir, filters) }}</th>
+                            <th>{{ sort_header('bracket', t("web.field.bracket") , sort_by, sort_dir, filters) }}</th>
+                            <th>{{ t("web.field.locale") }}</th>
+                            {% if is_own_profile %}<th>{{ t("web.field.link") }}</th>{% endif %}
+                            <th>{{ t("web.field.players") }}</th>
+                            <th>{{ t("web.field.jump") }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rows">
+                        {% for record in records %}
+                            <tr>
+                                <td data-label="{{ t('web.field.game') }}"><a href="/game/{{ record.id }}">SB#{{ record.id }}</a></td>
+                                {% if tz_offset and tz_name %}
+                                    <td data-label="{{ t('web.field.time') }}">{{ record.updated_at | humanize(tz_offset, tz_name) }}</td>
+                                {% else %}
+                                    <td data-label="{{ t('web.field.time') }}" class="timestamp">{{ record.updated_at }}</td>
+                                {% endif %}
+                                <td data-label="{{ t('web.field.guild') }}"><a href="/g/{{ record.guild }}">{{ record.guild_name }}</a></td>
+                                <td data-label="{{ t('web.field.channel') }}"><a href="/g/{{ record.guild }}/c/{{ record.channel }}">#{{ record.channel_name }}</a></td>
+                                <td data-label="{{ t('web.field.format') }}">{{ record.format }}</td>
+                                <td data-label="{{ t('web.field.seats') }}">{{ record.seats }}</td>
+                                <td data-label="{{ t('web.field.bracket') }}">{{ record.bracket }}</td>
+                                <td data-label="{{ t('web.field.locale') }}">{{ record.locale }}</td>
+                                {% if is_own_profile %}
+                                    <td data-label="{{ t('web.field.link') }}">
+                                        {% if record.link %}<a href="{{ record.link }}">{{ t("web.common.open_in", service=record.service) }}</a>{% else %}&mdash;{% endif %}
+                                    </td>
+                                {% endif %}
+                                <td data-label="{{ t('web.field.players') }}">
+                                    <div class="players">
+                                        {% for name, data in record.scores.items() %}
+                                            <div class="player">
+                                                <span class="name">{{ name | default(t("web.common.unknown_user") , true) }}</span>
+                                                <span class="id-copy">
+                                                    <span class="user-id">{{ data[0] }}</span>
+                                                    <button type="button"
+                                                            class="copy"
+                                                            data-copy="{{ data[0] }}"
+                                                            title="{{ t('web.common.copy_user_id') }}">⎘</button>
+                                                </span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td data-label="{{ t('web.field.jump') }}">
+                                    <div class="jumps">
+                                        <a href="https://discord.com/channels/{{ record.guild }}" class="button">{{ t("web.common.jump_to_guild") | replace(" ", "&nbsp;") | safe }}</a>
+                                        <a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}"
+                                           class="button">{{ t("web.common.jump_to_channel") | replace(" ", "&nbsp;") | safe }}</a>
+                                        <a href="https://discord.com/channels/{{ record.guild }}/{{ record.channel }}/{{ record.message }}"
+                                           class="button">{{ t("web.common.jump_to_game") | replace(" ", "&nbsp;") | safe }}</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty">{{ t("web.records.none_user") }}</div>
+            {% endif %}
+        </div>
     </div>
-</div>
 {% endblock %}

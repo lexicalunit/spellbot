@@ -8,10 +8,10 @@
     "test:watch": "vitest",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "format": "npm run format:js && npm run format:css",
-    "format:js": "oxfmt --write \"**/*.js\"",
-    "format:css": "prettier --write \"**/*.css\" \"**/*.html.j2\"",
-    "format:check": "oxfmt --check \"**/*.js\" && prettier --check \"**/*.css\" \"**/*.html.j2\"",
+    "format": "npm run format:web && npm run format:jinja",
+    "format:web": "oxfmt --write \"**/*.js\" \"**/*.css\"",
+    "format:jinja": "uv run --frozen djlint src/spellbot/web/templates --reformat",
+    "format:check": "oxfmt --check \"**/*.js\" \"**/*.css\" && uv run --frozen djlint src/spellbot/web/templates --check",
     "docs:vendor": "node scripts/vendor-docs-assets.mjs"
   },
   "dependencies": {
@@ -23,8 +23,6 @@
     "@vitest/coverage-v8": "^4.1.9",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
-    "prettier": "^3.8.4",
-    "prettier-plugin-jinja-template": "^2.2.0",
     "vitest": "^4.1.9"
   }
 }

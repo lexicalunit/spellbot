@@ -57,6 +57,7 @@ spellbot = "spellbot:main"
 dev = [
   "callee>=0",
   "coverage>=7",
+  "djlint>=1",
   "exceptiongroup>=1",
   "factory-boy>=3",
   "faker>=24",
@@ -261,6 +262,12 @@ ignore_names = [
 ]
 min_confidence = 60
 paths = ["src/spellbot", "tests", ".vulture_allowlist.py"]
+
+[tool.djlint]
+profile = "jinja"
+extension = "html.j2"
+indent = 4
+max_line_length = 100
 
 [tool.pytest.ini_options]
 addopts = """

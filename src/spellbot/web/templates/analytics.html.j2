@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>SpellBot Analytics – {{ guild_name }}</title>
-    <meta name="author" content="Amy Troschinetz">
-    <meta name="description" content="Server analytics for {{ guild_name }}">
-    <meta name="theme-color" content="#5A3EFD">
-    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
-    <style>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>SpellBot Analytics – {{ guild_name }}</title>
+        <meta name="author" content="Amy Troschinetz">
+        <meta name="description" content="Server analytics for {{ guild_name }}">
+        <meta name="theme-color" content="#5A3EFD">
+        <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+        <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -134,170 +135,237 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
         .cloud-word:hover { transform: scale(1.15) rotate(0deg) !important; filter: brightness(1.3); z-index: 10; position: relative; }
-    </style>
-</head>
-<body>
-    <!-- Screen reader text for loading state -->
-    <span class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0">Loading analytics...</span>
-    <div id="mainContainer" class="container">
-        <div class="header">
-            <a href="https://spellbot.io/">
-                <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
-            </a>
-            <h1><a href="/g/{{ guild_xid }}">{{ guild_name }}</a> – Analytics</h1>
-            <a href="/g/{{ guild_xid }}" class="back-link">← Back to server</a>
-        </div>
-
-        <div class="sticky-controls">
-            <div class="toggle-group" id="globalPeriodToggle">
-                <button class="toggle-btn active" data-period="30d" onclick="switchPeriod('30d')">Last 30 Days</button>
-                <button class="toggle-btn" data-period="all" onclick="switchPeriod('all')">All Time</button>
+        </style>
+    </head>
+    <body>
+        <!-- Screen reader text for loading state -->
+        <span class="sr-only"
+              style="position:absolute;
+                     width:1px;
+                     height:1px;
+                     padding:0;
+                     margin:-1px;
+                     overflow:hidden;
+                     clip:rect(0,0,0,0);
+                     border:0">Loading analytics...</span>
+        <div id="mainContainer" class="container">
+            <div class="header">
+                <a href="https://spellbot.io/">
+                    <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+                </a>
+                <h1><a href="/g/{{ guild_xid }}">{{ guild_name }}</a> – Analytics</h1>
+                <a href="/g/{{ guild_xid }}" class="back-link">← Back to server</a>
             </div>
-            {%- if is_shared %}
-            <div class="expires">Expires in <span id="countdown"></span></div>
-            {%- else %}
-            <button type="button" id="shareBtn" class="share-btn">Share this page</button>
-            <span id="shareFeedback" class="share-feedback"></span>
-            {%- endif %}
-        </div>
-
-        <div id="summarySection" class="summary">
-            <div class="stat"><div id="statFillRate" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Game Fill Rate</div></div>
-            <div class="stat"><div id="statTotalGames" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Total Games</div></div>
-            <div class="stat"><div id="statActivePlayers" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Active Players</div></div>
-            <div class="stat"><div id="statRepeatRate" class="stat-value"><div class="section-spinner"></div></div><div class="stat-label">Repeat Player Rate</div></div>
-        </div>
-
-        <div class="section">
-            <h2 id="activityTitle">Game Activity</h2>
-            <div id="activitySection" class="chart-box">
-                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+            <div class="sticky-controls">
+                <div class="toggle-group" id="globalPeriodToggle">
+                    <button class="toggle-btn active"
+                            data-period="30d"
+                            onclick="switchPeriod('30d')">Last 30 Days</button>
+                    <button class="toggle-btn" data-period="all" onclick="switchPeriod('all')">All Time</button>
+                </div>
+                {%- if is_shared %}
+                    <div class="expires">Expires in <span id="countdown"></span></div>
+                {%- else %}
+                    <button type="button" id="shareBtn" class="share-btn">Share this page</button>
+                    <span id="shareFeedback" class="share-feedback"></span>
+                {%- endif %}
             </div>
-        </div>
-
-        <div class="section">
-            <h2 id="bracketsTitle">Games by Bracket</h2>
-            <div id="bracketsSection" class="chart-box">
-                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 id="waitTimeTitle">Average Wait Time</h2>
-            <div id="waitTimeSection" class="chart-box">
-                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 id="retentionTitle">Player Retention</h2>
-            <div id="retentionSection" class="chart-box">
-                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 id="growthTitle">Cumulative Player Growth</h2>
-            <div id="growthSection" class="chart-box">
-                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 id="histogramTitle">Games per Player</h2>
-            <div id="histogramSection" class="chart-box">
-                <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="section">
-                <h2 id="hourOfDayTitle">Games by Hour of Day (UTC)</h2>
-                <div id="hourOfDaySection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+            <div id="summarySection" class="summary">
+                <div class="stat">
+                    <div id="statFillRate" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Game Fill Rate</div>
+                </div>
+                <div class="stat">
+                    <div id="statTotalGames" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Total Games</div>
+                </div>
+                <div class="stat">
+                    <div id="statActivePlayers" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Active Players</div>
+                </div>
+                <div class="stat">
+                    <div id="statRepeatRate" class="stat-value">
+                        <div class="section-spinner"></div>
+                    </div>
+                    <div class="stat-label">Repeat Player Rate</div>
                 </div>
             </div>
             <div class="section">
-                <h2 id="dayOfWeekTitle">Games by Day of Week</h2>
-                <div id="dayOfWeekSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
+                <h2 id="activityTitle">Game Activity</h2>
+                <div id="activitySection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
                 </div>
+            </div>
+            <div class="section">
+                <h2 id="bracketsTitle">Games by Bracket</h2>
+                <div id="bracketsSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2 id="waitTimeTitle">Average Wait Time</h2>
+                <div id="waitTimeSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2 id="retentionTitle">Player Retention</h2>
+                <div id="retentionSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2 id="growthTitle">Cumulative Player Growth</h2>
+                <div id="growthSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h2 id="histogramTitle">Games per Player</h2>
+                <div id="histogramSection" class="chart-box">
+                    <div class="section-loading">
+                        <div class="section-spinner"></div>
+                        <div class="section-loading-text">Loading...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2 id="hourOfDayTitle">Games by Hour of Day (UTC)</h2>
+                    <div id="hourOfDaySection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 id="dayOfWeekTitle">Games by Day of Week</h2>
+                    <div id="dayOfWeekSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2 id="channelPlayersTitle">Unique Players per Channel</h2>
+                    <div id="channelPlayersSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 id="channelsTitle">Busiest Channels</h2>
+                    <div id="channelsSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2 id="formatsTitle">Popular Formats</h2>
+                    <div id="formatsSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 id="servicesTitle">Popular Services</h2>
+                    <div id="servicesSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 id="playersTitle">Top Players</h2>
+                    <div id="playersSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 id="blockedTitle">Most Blocked Players</h2>
+                    <div id="blockedSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="section">
+                    <h2 id="topRulesTitle">Top Game Rules</h2>
+                    <div id="topRulesSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 id="rulesCloudTitle">Rules Word Cloud</h2>
+                    <div id="rulesCloudSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2 id="languagesTitle">Game Languages</h2>
+                    <div id="languagesSection" class="chart-box">
+                        <div class="section-loading">
+                            <div class="section-spinner"></div>
+                            <div class="section-loading-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <p>Generated by <a href="https://spellbot.io/">SpellBot</a></p>
             </div>
         </div>
-
-        <div class="row">
-            <div class="section">
-                <h2 id="channelPlayersTitle">Unique Players per Channel</h2>
-                <div id="channelPlayersSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-            <div class="section">
-                <h2 id="channelsTitle">Busiest Channels</h2>
-                <div id="channelsSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="section">
-                <h2 id="formatsTitle">Popular Formats</h2>
-                <div id="formatsSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-            <div class="section">
-                <h2 id="servicesTitle">Popular Services</h2>
-                <div id="servicesSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-            <div class="section">
-                <h2 id="playersTitle">Top Players</h2>
-                <div id="playersSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-            <div class="section">
-                <h2 id="blockedTitle">Most Blocked Players</h2>
-                <div id="blockedSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="section">
-                <h2 id="topRulesTitle">Top Game Rules</h2>
-                <div id="topRulesSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-            <div class="section">
-                <h2 id="rulesCloudTitle">Rules Word Cloud</h2>
-                <div id="rulesCloudSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-            <div class="section">
-                <h2 id="languagesTitle">Game Languages</h2>
-                <div id="languagesSection" class="chart-box">
-                    <div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>Generated by <a href="https://spellbot.io/">SpellBot</a></p>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-    <script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+        <script src="https://cdn.jsdelivr.net/npm/hammerjs@2"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+        <script>
     /* Config passed to external analytics.js */
     window.ANALYTICS_CONFIG = {
         baseUrl: "/g/{{ guild_xid }}/analytics",
@@ -321,7 +389,7 @@
             });
         });
     }
-    </script>
-    <script src="/analytics.js"></script>
-</body>
+        </script>
+        <script src="/analytics.js"></script>
+    </body>
 </html>

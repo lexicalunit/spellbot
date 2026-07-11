@@ -1,273 +1,363 @@
 <!DOCTYPE html>
 <html lang="{{ lang }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{{ t("web.queues.title") }}</title>
-    <meta name="description" content="{{ t('web.queues.meta_description') }}">
-    <meta name="theme-color" content="#1a202c">
-    <meta http-equiv="refresh" content="60">
-    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
-    <style>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>{{ t("web.queues.title") }}</title>
+        <meta name="description" content="{{ t('web.queues.meta_description') }}">
+        <meta name="theme-color" content="#1a202c">
+        <meta http-equiv="refresh" content="60">
+        <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+        <style>
         {% include "base.css" %}
         {% include "queues.css" %}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header class="page-header">
-            <a href="https://spellbot.io/">
-                <img class="logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
-            </a>
-            <h1>{{ t("web.queues.heading") }}</h1>
-            {% if is_admin %}
-            <a class="page-header__admin" href="/admin/dashboard">{{ t("web.nav.admin_dashboard") }}</a>
-            {% endif %}
-            {% if viewer.logged_in %}
-            <a class="page-header__user" href="/u/{{ viewer.xid }}">{{ t("web.nav.my_records") }}</a>
-            {% endif %}
-            <div class="page-header__stat" title="{{ t('web.queues.active_games_tooltip') }}">
-                <span class="page-header__stat-value">{{ "{:,}".format(stats.active_games) }}</span>
-                <span class="page-header__stat-label">{{ t("web.queues.active_games") }}</span>
-            </div>
-        </header>
-
-        {% set show_filter_bar = rows or games or viewer.logged_in or viewer.login_enabled %}
-        {% if show_filter_bar %}
-        <div class="filters" role="group" aria-label="{{ t('web.queues.filter_aria') }}">
-            {% if rows or games %}
-            <label class="filters__field">
-                <span class="filters__label">{{ t("web.field.format") }}</span>
-                <select id="filter-format" class="filters__select">
-                    <option value="">{{ t("web.queues.all_formats") }}</option>
-                    {% for f in formats %}
-                    <option value="{{ f }}">{{ f }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label class="filters__field">
-                <span class="filters__label">{{ t("web.field.bracket") }}</span>
-                <select id="filter-bracket" class="filters__select">
-                    <option value="">{{ t("web.queues.all_brackets") }}</option>
-                    {% for b in brackets %}
-                    <option value="{{ b }}">{{ b }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label class="filters__field">
-                <span class="filters__label">{{ t("web.field.language") }}</span>
-                <select id="filter-language" class="filters__select">
-                    <option value="">{{ t("web.queues.all_languages") }}</option>
-                    {% for l in languages %}
-                    <option value="{{ l }}">{{ l }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            {% endif %}
-            <div class="filters__viewer">
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header class="page-header">
+                <a href="https://spellbot.io/">
+                    <img class="logo"
+                         alt="SpellBot"
+                         src="https://spellbot.io/assets/img/avatar-icon.png">
+                </a>
+                <h1>{{ t("web.queues.heading") }}</h1>
+                {% if is_admin %}
+                    <a class="page-header__admin" href="/admin/dashboard">{{ t("web.nav.admin_dashboard") }}</a>
+                {% endif %}
                 {% if viewer.logged_in %}
-                <label class="filters__mine">
-                    <input
-                        type="checkbox"
-                        id="filter-mine"
-                        {% if viewer.my_filter_on %}checked{% endif %}
-                    >
-                    <span>{{ t("web.queues.only_played") }}</span>
-                </label>
-                <div class="filters__identity">
-                    <span class="filters__identity-name">{{ t("web.queues.logged_in_as", name=('<strong>' | safe) ~ (viewer.name | e) ~ ('</strong>' | safe)) | safe }}</span>
-                    {% if not viewer.via_admin %}
-                    <form method="post" action="/queues/logout" class="filters__logout-form">
-                        <button type="submit" class="filters__logout">{{ t("web.queues.log_out") }}</button>
-                    </form>
+                    <a class="page-header__user" href="/u/{{ viewer.xid }}">{{ t("web.nav.my_records") }}</a>
+                {% endif %}
+                <div class="page-header__stat"
+                     title="{{ t('web.queues.active_games_tooltip') }}">
+                    <span class="page-header__stat-value">{{ "{:,}".format(stats.active_games) }}</span>
+                    <span class="page-header__stat-label">{{ t("web.queues.active_games") }}</span>
+                </div>
+            </header>
+            {% set show_filter_bar = rows or games or viewer.logged_in or viewer.login_enabled %}
+            {% if show_filter_bar %}
+                <div class="filters"
+                     role="group"
+                     aria-label="{{ t('web.queues.filter_aria') }}">
+                    {% if rows or games %}
+                        <label class="filters__field">
+                            <span class="filters__label">{{ t("web.field.format") }}</span>
+                            <select id="filter-format" class="filters__select">
+                                <option value="">{{ t("web.queues.all_formats") }}</option>
+                                {% for f in formats %}
+                                    <option value="{{ f }}">{{ f }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label class="filters__field">
+                            <span class="filters__label">{{ t("web.field.bracket") }}</span>
+                            <select id="filter-bracket" class="filters__select">
+                                <option value="">{{ t("web.queues.all_brackets") }}</option>
+                                {% for b in brackets %}
+                                    <option value="{{ b }}">{{ b }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label class="filters__field">
+                            <span class="filters__label">{{ t("web.field.language") }}</span>
+                            <select id="filter-language" class="filters__select">
+                                <option value="">{{ t("web.queues.all_languages") }}</option>
+                                {% for l in languages %}
+                                    <option value="{{ l }}">{{ l }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    {% endif %}
+                    <div class="filters__viewer">
+                        {% if viewer.logged_in %}
+                            <label class="filters__mine">
+                                <input type="checkbox"
+                                       id="filter-mine"
+                                       {% if viewer.my_filter_on %}checked{% endif %}>
+                                <span>{{ t("web.queues.only_played") }}</span>
+                            </label>
+                            <div class="filters__identity">
+                                <span class="filters__identity-name">{{ t("web.queues.logged_in_as", name=('<strong>' | safe) ~ (viewer.name | e) ~ ('</strong>' | safe)) | safe }}</span>
+                                {% if not viewer.via_admin %}
+                                    <form method="post" action="/queues/logout" class="filters__logout-form">
+                                        <button type="submit" class="filters__logout">{{ t("web.queues.log_out") }}</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        {% elif viewer.login_enabled %}
+                            <a class="filters__login" href="/queues/login" rel="nofollow">
+                                {{ t("web.queues.login_to_filter") }}
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% if rows or games %}
+                        <p id="filter-empty" class="filters__empty" hidden>{{ t("web.queues.no_match") }}</p>
                     {% endif %}
                 </div>
-                {% elif viewer.login_enabled %}
-                <a class="filters__login" href="/queues/login" rel="nofollow">
-                    {{ t("web.queues.login_to_filter") }}
-                </a>
-                {% endif %}
-            </div>
-            {% if rows or games %}
-            <p id="filter-empty" class="filters__empty" hidden>
-                {{ t("web.queues.no_match") }}
-            </p>
             {% endif %}
-        </div>
-        {% endif %}
-
-        {% if viewer.logged_in and played_guilds %}
-        <div class="gallery-divider" role="separator" aria-label="{{ t('web.queues.your_servers') }}">
-            <span class="gallery-divider__label gallery-divider__label--played">{{ t("web.queues.your_servers") }}</span>
-        </div>
-        <ul class="played-list">
-            {% for pg in played_guilds %}
-            {% set pg_name = pg.guild_name or t("web.common.this_server") %}
-            <li>
-                <a
-                    class="played-list__row"
-                    href="/queues/g/{{ pg.guild_xid }}"
-                    aria-label="{% if pg.notifications_on %}{{ t('web.queues.manage_notifications_for', name=pg_name) }}{% else %}{{ t('web.queues.setup_notifications_for', name=pg_name) }}{% endif %}"
-                    data-tooltip="{% if pg.notifications_on %}{{ t('web.queues.manage_notifications') }}{% else %}{{ t('web.queues.setup_notifications') }}{% endif %}"
-                >
-                    <img
-                        class="played-list__logo"
-                        src="{{ pg.logo }}"
-                        alt=""
-                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
-                        loading="lazy"
-                    >
-                    <span class="played-list__name">{{ pg.guild_name or t("web.common.spellbot_server") }}</span>
-                    <span class="played-list__action{% if pg.notifications_on %} played-list__action--on{% endif %}" aria-hidden="true">
-                        <svg class="played-list__action-icon" viewBox="0 0 24 24" width="14" height="14" focusable="false">
-                            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
-                        </svg>
-                        <span class="played-list__action-label">{% if pg.notifications_on %}{{ t("web.queues.notifications_on_short") }}{% else %}{{ t("web.queues.notifications_label") }}{% endif %}</span>
-                    </span>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-
-        {% if not rows and not games %}
-        <div class="empty">
-            {% if viewer.my_filter_on %}
-            {{ t("web.queues.empty_mine") }}
+            {% if viewer.logged_in and played_guilds %}
+                <div class="gallery-divider"
+                     role="separator"
+                     aria-label="{{ t('web.queues.your_servers') }}">
+                    <span class="gallery-divider__label gallery-divider__label--played">{{ t("web.queues.your_servers") }}</span>
+                </div>
+                <ul class="played-list">
+                    {% for pg in played_guilds %}
+                        {% set pg_name = pg.guild_name or t("web.common.this_server") %}
+                        <li>
+                            <a class="played-list__row"
+                               href="/queues/g/{{ pg.guild_xid }}"
+                               aria-label="{% if pg.notifications_on %}{{ t('web.queues.manage_notifications_for', name=pg_name) }}{% else %}{{ t('web.queues.setup_notifications_for', name=pg_name) }}{% endif %}"
+                               data-tooltip="{% if pg.notifications_on %}{{ t('web.queues.manage_notifications') }}{% else %}{{ t('web.queues.setup_notifications') }}{% endif %}">
+                                <img class="played-list__logo"
+                                     src="{{ pg.logo }}"
+                                     alt=""
+                                     onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                                     loading="lazy">
+                                <span class="played-list__name">{{ pg.guild_name or t("web.common.spellbot_server") }}</span>
+                                <span class="played-list__action{% if pg.notifications_on %} played-list__action--on{% endif %}"
+                                      aria-hidden="true">
+                                    <svg class="played-list__action-icon"
+                                         viewBox="0 0 24 24"
+                                         width="14"
+                                         height="14"
+                                         focusable="false">
+                                        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0" />
+                                    </svg>
+                                    <span class="played-list__action-label">{% if pg.notifications_on %}{{ t("web.queues.notifications_on_short") }}{% else %}{{ t("web.queues.notifications_label") }}{% endif %}</span>
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if not rows and not games %}
+                <div class="empty">
+                    {% if viewer.my_filter_on %}
+                        {{ t("web.queues.empty_mine") }}
+                    {% else %}
+                        {{ t("web.queues.empty_all", command='<code>/lfg</code>') | safe }}
+                    {% endif %}
+                </div>
             {% else %}
-            {{ t("web.queues.empty_all", command='<code>/lfg</code>') | safe }}
-            {% endif %}
-        </div>
-        {% else %}
-        {% if rows %}
-        {% if viewer.logged_in and played_guilds %}
-        <div class="gallery-divider" role="separator" aria-label="{{ t('web.queues.heading') }}">
-            <span class="gallery-divider__label">{{ t("web.queues.heading") }}</span>
-        </div>
-        {% endif %}
-        <section class="gallery">
-            {% for row in rows %}
-            <article class="queue-card" data-format="{{ row.format }}" data-bracket="{{ row.bracket }}" data-language="{{ row.language }}">
-                <div class="queue-card__header">
-                    <img
-                        class="queue-card__logo"
-                        src="{{ row.logo }}"
-                        alt="{{ row.guild_name }}"
-                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
-                        loading="lazy"
-                    >
-                    <div class="queue-card__heading">
-                        <h2 class="queue-card__server"><a class="queue-card__server-link" href="/g/{{ row.guild_xid }}">{{ row.guild_name or t("web.common.spellbot_server") }}</a></h2>
-                        <div class="queue-card__actions">
-                            <a
-                                class="queue-card__notify"
-                                href="/queues/g/{{ row.guild_xid }}"
-                                aria-label="{{ t('web.queues.setup_notifications_for', name=t('web.common.this_server')) }}"
-                                data-tooltip="{{ t('web.queues.setup_notifications') }}"
-                            >
-                                <svg class="queue-card__notify-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
-                                </svg>
-                            </a>
-                            <button
-                                type="button"
-                                class="queue-card__copy"
-                                data-copy="{{ row.guild_xid }}"
-                                aria-label="{{ t('web.common.copy_server_id') }}"
-                                data-tooltip="{{ t('web.common.copy_server_id') }}"
-                            >
-                                <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4"/>
-                                </svg>
-                                <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                                    <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
-                                </svg>
-                            </button>
+                {% if rows %}
+                    {% if viewer.logged_in and played_guilds %}
+                        <div class="gallery-divider"
+                             role="separator"
+                             aria-label="{{ t('web.queues.heading') }}">
+                            <span class="gallery-divider__label">{{ t("web.queues.heading") }}</span>
                         </div>
+                    {% endif %}
+                    <section class="gallery">
+                        {% for row in rows %}
+                            <article class="queue-card"
+                                     data-format="{{ row.format }}"
+                                     data-bracket="{{ row.bracket }}"
+                                     data-language="{{ row.language }}">
+                                <div class="queue-card__header">
+                                    <img class="queue-card__logo"
+                                         src="{{ row.logo }}"
+                                         alt="{{ row.guild_name }}"
+                                         onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                                         loading="lazy">
+                                    <div class="queue-card__heading">
+                                        <h2 class="queue-card__server"><a class="queue-card__server-link" href="/g/{{ row.guild_xid }}">{{ row.guild_name or t("web.common.spellbot_server") }}</a></h2>
+                                        <div class="queue-card__actions">
+                                            <a class="queue-card__notify"
+                                               href="/queues/g/{{ row.guild_xid }}"
+                                               aria-label="{{ t('web.queues.setup_notifications_for', name=t('web.common.this_server') ) }}"
+                                               data-tooltip="{{ t('web.queues.setup_notifications') }}">
+                                                <svg class="queue-card__notify-icon"
+                                                     viewBox="0 0 24 24"
+                                                     width="16"
+                                                     height="16"
+                                                     aria-hidden="true"
+                                                     focusable="false">
+                                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0" />
+                                                </svg>
+                                            </a>
+                                            <button type="button"
+                                                    class="queue-card__copy"
+                                                    data-copy="{{ row.guild_xid }}"
+                                                    aria-label="{{ t('web.common.copy_server_id') }}"
+                                                    data-tooltip="{{ t('web.common.copy_server_id') }}">
+                                                <svg class="queue-card__copy-icon queue-card__copy-icon--copy"
+                                                     viewBox="0 0 24 24"
+                                                     width="16"
+                                                     height="16"
+                                                     aria-hidden="true"
+                                                     focusable="false">
+                                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4" />
+                                                </svg>
+                                                <svg class="queue-card__copy-icon queue-card__copy-icon--check"
+                                                     viewBox="0 0 24 24"
+                                                     width="16"
+                                                     height="16"
+                                                     aria-hidden="true"
+                                                     focusable="false">
+                                                    <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <dl class="queue-card__meta">
+                                    <div>
+                                        <dt>{{ t("web.field.format") }}</dt>
+                                        <dd>
+                                            {{ row.format }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.bracket") }}</dt>
+                                        <dd>
+                                            {{ row.bracket }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.service") }}</dt>
+                                        <dd>
+                                            {{ row.service }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.language") }}</dt>
+                                        <dd>
+                                            {{ row.language }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.wait") }}</dt>
+                                        <dd>
+                                            {{ row.wait_seconds | wait }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.players") }}</dt>
+                                        <dd>
+                                            <span class="players-badge">{{ row.players }} / {{ row.seats }}</span>
+                                        </dd>
+                                    </div>
+                                </dl>
+                                <a class="queue-card__cta"
+                                   href="{{ row.jump_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    {{ t("web.queues.jump_to_game_arrow") }}
+                                </a>
+                            </article>
+                        {% endfor %}
+                    </section>
+                {% endif %}
+                {% if games %}
+                    <div class="gallery-divider"
+                         role="separator"
+                         aria-label="{{ t('web.queues.recently_started') }}">
+                        <span class="gallery-divider__label">{{ t("web.queues.recently_started") }}</span>
                     </div>
-                </div>
-                <dl class="queue-card__meta">
-                    <div><dt>{{ t("web.field.format") }}</dt><dd>{{ row.format }}</dd></div>
-                    <div><dt>{{ t("web.field.bracket") }}</dt><dd>{{ row.bracket }}</dd></div>
-                    <div><dt>{{ t("web.field.service") }}</dt><dd>{{ row.service }}</dd></div>
-                    <div><dt>{{ t("web.field.language") }}</dt><dd>{{ row.language }}</dd></div>
-                    <div><dt>{{ t("web.field.wait") }}</dt><dd>{{ row.wait_seconds | wait }}</dd></div>
-                    <div>
-                        <dt>{{ t("web.field.players") }}</dt>
-                        <dd><span class="players-badge">{{ row.players }} / {{ row.seats }}</span></dd>
-                    </div>
-                </dl>
-                <a class="queue-card__cta" href="{{ row.jump_url }}" target="_blank" rel="noopener noreferrer">
-                    {{ t("web.queues.jump_to_game_arrow") }}
-                </a>
-            </article>
-            {% endfor %}
-        </section>
-        {% endif %}
-        {% if games %}
-        <div class="gallery-divider" role="separator" aria-label="{{ t('web.queues.recently_started') }}">
-            <span class="gallery-divider__label">{{ t("web.queues.recently_started") }}</span>
-        </div>
-        <section class="gallery gallery--started">
-            {% for game in games %}
-            <article class="queue-card queue-card--started" data-format="{{ game.format }}" data-bracket="{{ game.bracket }}" data-language="{{ game.language }}">
-                <div class="queue-card__header">
-                    <img
-                        class="queue-card__logo"
-                        src="{{ game.logo }}"
-                        alt="{{ game.guild_name }}"
-                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
-                        loading="lazy"
-                    >
-                    <div class="queue-card__heading">
-                        <h2 class="queue-card__server"><a class="queue-card__server-link" href="/g/{{ game.guild_xid }}">{{ game.guild_name or t("web.common.spellbot_server") }}</a></h2>
-                        <div class="queue-card__actions">
-                            <a
-                                class="queue-card__notify"
-                                href="/queues/g/{{ game.guild_xid }}"
-                                aria-label="{{ t('web.queues.setup_notifications_for', name=t('web.common.this_server')) }}"
-                                data-tooltip="{{ t('web.queues.setup_notifications') }}"
-                            >
-                                <svg class="queue-card__notify-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0"/>
-                                </svg>
-                            </a>
-                            <button
-                                type="button"
-                                class="queue-card__copy"
-                                data-copy="{{ game.guild_xid }}"
-                                aria-label="{{ t('web.common.copy_server_id') }}"
-                                data-tooltip="{{ t('web.common.copy_server_id') }}"
-                            >
-                                <svg class="queue-card__copy-icon queue-card__copy-icon--copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4"/>
-                                </svg>
-                                <svg class="queue-card__copy-icon queue-card__copy-icon--check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                                    <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <dl class="queue-card__meta">
-                    <div><dt>{{ t("web.field.format") }}</dt><dd>{{ game.format }}</dd></div>
-                    <div><dt>{{ t("web.field.bracket") }}</dt><dd>{{ game.bracket }}</dd></div>
-                    <div><dt>{{ t("web.field.service") }}</dt><dd>{{ game.service }}</dd></div>
-                    <div><dt>{{ t("web.field.language") }}</dt><dd>{{ game.language }}</dd></div>
-                    <div><dt>{{ t("web.field.started") }}</dt><dd>{{ t("web.queues.started_ago", duration=game.started_seconds_ago | wait) }}</dd></div>
-                    <div>
-                        <dt>{{ t("web.field.players") }}</dt>
-                        <dd><span class="players-badge">{{ game.seats }} / {{ game.seats }}</span></dd>
-                    </div>
-                </dl>
-                <a class="queue-card__cta" href="{{ game.jump_url }}" target="_blank" rel="noopener noreferrer">
-                    {{ t("web.queues.jump_to_channel_arrow") }}
-                </a>
-            </article>
-            {% endfor %}
-        </section>
-        {% endif %}
-        <script>
+                    <section class="gallery gallery--started">
+                        {% for game in games %}
+                            <article class="queue-card queue-card--started"
+                                     data-format="{{ game.format }}"
+                                     data-bracket="{{ game.bracket }}"
+                                     data-language="{{ game.language }}">
+                                <div class="queue-card__header">
+                                    <img class="queue-card__logo"
+                                         src="{{ game.logo }}"
+                                         alt="{{ game.guild_name }}"
+                                         onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                                         loading="lazy">
+                                    <div class="queue-card__heading">
+                                        <h2 class="queue-card__server"><a class="queue-card__server-link" href="/g/{{ game.guild_xid }}">{{ game.guild_name or t("web.common.spellbot_server") }}</a></h2>
+                                        <div class="queue-card__actions">
+                                            <a class="queue-card__notify"
+                                               href="/queues/g/{{ game.guild_xid }}"
+                                               aria-label="{{ t('web.queues.setup_notifications_for', name=t('web.common.this_server') ) }}"
+                                               data-tooltip="{{ t('web.queues.setup_notifications') }}">
+                                                <svg class="queue-card__notify-icon"
+                                                     viewBox="0 0 24 24"
+                                                     width="16"
+                                                     height="16"
+                                                     aria-hidden="true"
+                                                     focusable="false">
+                                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z M10 21a2 2 0 0 0 4 0" />
+                                                </svg>
+                                            </a>
+                                            <button type="button"
+                                                    class="queue-card__copy"
+                                                    data-copy="{{ game.guild_xid }}"
+                                                    aria-label="{{ t('web.common.copy_server_id') }}"
+                                                    data-tooltip="{{ t('web.common.copy_server_id') }}">
+                                                <svg class="queue-card__copy-icon queue-card__copy-icon--copy"
+                                                     viewBox="0 0 24 24"
+                                                     width="16"
+                                                     height="16"
+                                                     aria-hidden="true"
+                                                     focusable="false">
+                                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v12H9z M5 15V3h10v4" />
+                                                </svg>
+                                                <svg class="queue-card__copy-icon queue-card__copy-icon--check"
+                                                     viewBox="0 0 24 24"
+                                                     width="16"
+                                                     height="16"
+                                                     aria-hidden="true"
+                                                     focusable="false">
+                                                    <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <dl class="queue-card__meta">
+                                    <div>
+                                        <dt>{{ t("web.field.format") }}</dt>
+                                        <dd>
+                                            {{ game.format }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.bracket") }}</dt>
+                                        <dd>
+                                            {{ game.bracket }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.service") }}</dt>
+                                        <dd>
+                                            {{ game.service }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.language") }}</dt>
+                                        <dd>
+                                            {{ game.language }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.started") }}</dt>
+                                        <dd>
+                                            {{ t("web.queues.started_ago", duration=game.started_seconds_ago | wait) }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{{ t("web.field.players") }}</dt>
+                                        <dd>
+                                            <span class="players-badge">{{ game.seats }} / {{ game.seats }}</span>
+                                        </dd>
+                                    </div>
+                                </dl>
+                                <a class="queue-card__cta"
+                                   href="{{ game.jump_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    {{ t("web.queues.jump_to_channel_arrow") }}
+                                </a>
+                            </article>
+                        {% endfor %}
+                    </section>
+                {% endif %}
+                <script>
             (function () {
                 var formatSelect = document.getElementById("filter-format");
                 var bracketSelect = document.getElementById("filter-bracket");
@@ -320,10 +410,10 @@
                     });
                 });
             })();
-        </script>
-        {% endif %}
-        {% if viewer.logged_in %}
-        <script>
+                </script>
+            {% endif %}
+            {% if viewer.logged_in %}
+                <script>
             (function () {
                 var mine = document.getElementById("filter-mine");
                 if (!mine) return;
@@ -337,13 +427,12 @@
                     window.location.assign(url.toString());
                 });
             })();
-        </script>
-        {% endif %}
-
-        <footer class="page-footer">
-            <p>{{ t("web.common.powered_by", link='<a href="https://spellbot.io/">SpellBot</a>') | safe }}</p>
-            <span class="updated">{{ t("web.queues.auto_refresh") }}</span>
-        </footer>
-    </div>
-</body>
+                </script>
+            {% endif %}
+            <footer class="page-footer">
+                <p>{{ t("web.common.powered_by", link='<a href="https://spellbot.io/">SpellBot</a>') | safe }}</p>
+                <span class="updated">{{ t("web.queues.auto_refresh") }}</span>
+            </footer>
+        </div>
+    </body>
 </html>
