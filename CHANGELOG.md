@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - More formatting tools.
 - npm Dependabot coverage; vendor the docs site's frontend libraries (jQuery, Bootstrap, popper, Font Awesome) from npm instead of pinned CDN URLs.
 - Trim unused beautiful-jekyll theme features from the docs site: blog posts (post/home layouts, tags, RSS feed, pagination), all comment providers and Staticman, navbar search, MathJax, the minimal layout, and disabled analytics providers (kept gtag). Removed the third-party CDN scripts these pulled in along the way.
+- Use oxfmt to format css files.
+- License checker on npm dependencies.
+- Handle cooldown errors and message-not-found errors.
 
 ## [v21.3.2](https://github.com/lexicalunit/spellbot/releases/tag/v21.3.2) - 2026-06-19
 
