@@ -8,7 +8,7 @@ import time
 from typing import TYPE_CHECKING, Any, cast
 
 import discord
-from discord.app_commands import AppCommandError, ContextMenu, NoPrivateMessage
+from discord.app_commands import AppCommandError, CommandOnCooldown, ContextMenu, NoPrivateMessage
 from discord.app_commands import Command as AppCommand
 from discord.ext.commands import AutoShardedBot
 from discord.ext.commands import Command as ExtCommand
@@ -330,6 +330,12 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
         return await safe_send_user(interaction.user, t("errors.verified_only", locale=locale))
     if isinstance(error, UserVerifiedError):
         return await safe_send_user(interaction.user, t("errors.unverified_only", locale=locale))
+    if isinstance(error, CommandOnCooldown):
+        seconds = max(1, round(error.retry_after))
+        return await safe_send_user(
+            interaction.user,
+            t("errors.cooldown", locale=locale, seconds=seconds),
+        )
 
     add_span_error(error)
     ref = (

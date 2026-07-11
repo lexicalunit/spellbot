@@ -153,6 +153,11 @@ class TestSpellBot:
                 "Only unverified users can do that here.",
                 id="user-verified",
             ),
+            pytest.param(
+                app_commands.CommandOnCooldown(app_commands.Cooldown(1, 60), 25.0),
+                "Please try again in 25s.",
+                id="cooldown",
+            ),
         ],
     )
     async def test_handle_interaction_errors(
