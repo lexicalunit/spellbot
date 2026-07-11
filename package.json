@@ -8,10 +8,11 @@
     "test:watch": "vitest",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "format": "npm run format:js && npm run format:css",
-    "format:js": "oxfmt --write \"**/*.js\"",
-    "format:css": "prettier --write \"**/*.css\" \"**/*.html.j2\"",
-    "format:check": "oxfmt --check \"**/*.js\" && prettier --check \"**/*.css\" \"**/*.html.j2\"",
+    "license-check": "license-checker-evergreen --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;MPL-2.0;CC0-1.0;CC-BY-3.0;(MIT AND CC-BY-3.0);(CC-BY-4.0 AND OFL-1.1 AND MIT);UNLICENSED\"",
+    "format": "npm run format:web && npm run format:jinja",
+    "format:web": "oxfmt --write \"**/*.js\" \"**/*.css\"",
+    "format:jinja": "prettier --write \"**/*.html.j2\"",
+    "format:check": "oxfmt --check \"**/*.js\" \"**/*.css\" && prettier --check \"**/*.html.j2\"",
     "docs:vendor": "node scripts/vendor-docs-assets.mjs"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.9",
+    "license-checker-evergreen": "^6.3.1",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "prettier": "^3.8.4",

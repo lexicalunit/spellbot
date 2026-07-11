@@ -4,6 +4,8 @@
   "ignorePatterns": [
     "docs/assets/js/beautifuljekyll.js",
     "docs/assets/js/staticman.js",
+    "docs/assets/css/beautifuljekyll.css",
+    "docs/assets/css/pygment_highlights.css",
     "docs/assets/vendor/**"
   ]
 }

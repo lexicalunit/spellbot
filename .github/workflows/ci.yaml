@@ -58,7 +58,6 @@ jobs:
               - '.oxlintrc.json'
               - '.oxfmtrc.json'
               - '.prettierrc.json'
-              - '.prettierignore'
               - '.github/workflows/ci.yaml'
             infra-app:
               - 'infrastructure/app/**'
@@ -255,6 +254,9 @@ jobs:
 
       - name: Check formatting (oxfmt + prettier)
         run: npm run format:check
+
+      - name: Check dependency licenses
+        run: npm run license-check
 
       - name: Run Vitest
         run: npm test
