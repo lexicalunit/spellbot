@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, cast
 
 from dateutil import tz
 from ddtrace.trace import tracer
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import TIMESTAMP, delete, func, select, update
+from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_
@@ -47,6 +48,55 @@ async def get(game_id: int) -> GameData | None:
     """Fetch the game data by game id."""
     game: Game | None = await DatabaseSession.get(Game, game_id)
     return await game.to_data() if game else None
+
+
+def report_timestamp(metadata: dict[str, Any] | None) -> datetime | None:
+    """Parse a report's `reported_at` into a datetime, or `None` if absent/invalid."""
+    if not metadata:
+        return None
+    value = metadata.get("reported_at")
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    # Normalize naive timestamps to UTC so aware/naive values are always comparable.
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+@tracer.wrap()
+async def set_metadata(game_id: int, metadata: dict[str, Any]) -> bool:
+    """
+    Store the post-game report metadata for a game, replacing any prior report.
+
+    The store is last-write-wins, but a report that is strictly older than the one
+    already stored is accepted-and-ignored so a delayed write cannot clobber a
+    newer, richer report (both the automatic match-end report and the richer
+    post-game modal report race on this same row). The compare-and-set is done in a
+    single conditional `UPDATE` so it stays atomic under concurrent writes. Returns
+    `True` when the game exists (whether or not the report was applied),
+    `False` when it does not.
+    """
+    new_ts = report_timestamp(metadata)
+    conditions = [Game.id == game_id]
+    if new_ts is not None:
+        # `reported_at` is validated on write, so this cast never sees garbage. A row
+        # with no stored timestamp (NULL) is always overwritten.
+        stored_ts = sql_cast(
+            func.jsonb_extract_path_text(Game.game_metadata, "reported_at"),
+            TIMESTAMP(timezone=True),
+        )
+        conditions.append(or_(stored_ts.is_(None), stored_ts <= new_ts))
+    result = await DatabaseSession.execute(
+        update(Game).where(*conditions).values(game_metadata=metadata),
+    )
+    await DatabaseSession.commit()
+    if result.rowcount:
+        return True
+    # No row was updated: either the game does not exist, or a newer report already
+    # wins. Distinguish so the caller can return 404 vs. accepted-and-ignored.
+    return await DatabaseSession.scalar(select(Game.id).where(Game.id == game_id)) is not None
 
 
 @tracer.wrap()
@@ -156,6 +206,7 @@ async def game_detail_view(game_id: int) -> dict[str, Any] | None:
         "updated_at": to_ms(game.updated_at),
         "started_at": to_ms(game.started_at),
         "deleted_at": to_ms(game.deleted_at),
+        "metadata": game.game_metadata,
         "guild": {
             "xid": guild.xid if guild else game.guild_xid,
             "name": guild.name if guild else None,

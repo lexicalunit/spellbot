@@ -282,6 +282,33 @@ class TestServiceGames:
         assert await games.player_convoke_data(404) == []
 
 
+class TestReportTimestamp:
+    def test_none_metadata(self) -> None:
+        assert games.report_timestamp(None) is None
+
+    def test_empty_metadata(self) -> None:
+        assert games.report_timestamp({}) is None
+
+    def test_missing_reported_at(self) -> None:
+        assert games.report_timestamp({"source": "convoke"}) is None
+
+    def test_non_string_value(self) -> None:
+        assert games.report_timestamp({"reported_at": 123}) is None
+
+    def test_unparseable_value(self) -> None:
+        assert games.report_timestamp({"reported_at": "not-a-timestamp"}) is None
+
+    def test_aware_value(self) -> None:
+        result = games.report_timestamp({"reported_at": "2026-07-11T18:00:00+00:00"})
+        assert result == datetime(2026, 7, 11, 18, 0, tzinfo=UTC)
+
+    def test_naive_value_normalized_to_utc(self) -> None:
+        result = games.report_timestamp({"reported_at": "2026-07-11T18:00:00"})
+        assert result is not None
+        assert result == datetime(2026, 7, 11, 18, 0, tzinfo=UTC)
+        assert result.tzinfo is not None
+
+
 @pytest.mark.asyncio
 class TestServiceGamesBlocked:
     async def test_when_blocker_in_game(self, game: Game) -> None:

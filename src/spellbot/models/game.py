@@ -3,9 +3,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from enum import Enum, auto
 from functools import partial
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, String, select
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import false, text
 
@@ -162,6 +163,17 @@ class Game(Base):
         default="en",
         server_default=text("'en'"),
         doc="The preferred locale for this game",
+    )
+    # The DB column is named `metadata` but SQLAlchemy reserves the `metadata`
+    # attribute on declarative models, so the Python attribute is `game_metadata`.
+    game_metadata = cast(
+        "dict[str, Any] | None",
+        Column(
+            "metadata",
+            JSONB,
+            nullable=True,
+            doc="Post-game report data reported by the game service (e.g. Convoke)",
+        ),
     )
 
     posts = relationship(

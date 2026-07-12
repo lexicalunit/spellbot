@@ -14,6 +14,7 @@ SpellBot has a public API that can be used to access game and user data. As well
 - [Authenticated Endpoints](#authenticated-endpoints)
   - [POST `/api/game/{game}/verify`](#post-apigamegameverify)
   - [POST `/api/game/{game}/record`](#post-apigamegamerecord)
+  - [POST `/api/game/{game}/metadata`](#post-apigamegamemetadata)
 
 ## Public Endpoints
 
@@ -218,6 +219,92 @@ Records the given game as played by the given users and their commanders. This w
 ```
 
 > Note: for compatibility reasons, you can also pass a user name instead of an xid. If the user can be matched to a user in the SpellBot database by that name, processing will continue without error.
+
+#### Response
+
+```json
+{
+  "result": {
+    "success": true
+  }
+}
+```
+
+### POST `/api/game/{game}/metadata`
+
+Stores a post-game report for the given game. This is intended for the game service (e.g. [Convoke](https://commander.online/)) to report back match results that SpellBot's own database does not track, such as the match duration, the winner, each player's commander, and links to external trackers. The report is shown on the game's public detail page.
+
+The request body is a free-form JSON object and is stored (mostly) verbatim, replacing any previously reported metadata for the game. SpellBot's game detail page understands the fields below and renders anything else it is given as-is; all fields are optional.
+
+A few rules are enforced on write:
+
+- If the stored report has a `reported_at` newer than the incoming one, the incoming report is **accepted but ignored** (still returns `success: true`). This keeps a delayed write from clobbering a newer, richer report. Always send a `reported_at`.
+- `players` is capped at 64 entries and `links` at 32 entries; exceeding either is a `400`.
+- Each `links` value must be an `http(s)` URL. Other values (e.g. `javascript:` URIs) are dropped before storage.
+
+> Note: Required API scope: `game`.
+
+#### Request
+
+```json
+{
+  "source": "convoke",
+  "reported_at": "2026-07-11T18:30:00+00:00",
+  "started_at": "2026-07-11T17:45:00+00:00",
+  "ended_at": "2026-07-11T18:27:00+00:00",
+  "duration_minutes": 42,
+  "turns": 12,
+  "winner": {
+    "xid": 1234567890,
+    "name": "Alice",
+    "commander": "Najeela, the Blade Blossom"
+  },
+  "players": [
+    {
+      "xid": 1234567890,
+      "name": "Alice",
+      "commander": "Najeela, the Blade Blossom",
+      "commander_partner": null,
+      "turn_order": 1,
+      "time_minutes": 10,
+      "is_winner": true
+    },
+    {
+      "xid": 9876543210,
+      "name": "Bob",
+      "commander": "Urza, Lord High Artificer",
+      "turn_order": 2,
+      "is_winner": false
+    }
+  ],
+  "links": {
+    "mythic_track": "https://www.mythictrack.com/g/abc123",
+    "playnice": "https://playnicemtg.com/g/xyz789"
+  }
+}
+```
+
+| Field              | Type             | Description                                                            |
+| ------------------ | ---------------- | ---------------------------------------------------------------------- |
+| `source`           | `string`         | The service that produced the report (e.g. `convoke`).                 |
+| `reported_at`      | `string`         | ISO-8601 timestamp of when the report was generated.                   |
+| `started_at`       | `string`         | ISO-8601 timestamp of when the match started.                          |
+| `ended_at`         | `string`         | ISO-8601 timestamp of when the match ended.                            |
+| `duration_minutes` | `number`         | Total match time in minutes.                                           |
+| `turns`            | `number`         | Total number of turns played.                                          |
+| `winner`           | `object`, `null` | The winning player (`xid`, `name`, `commander`), or `null` for a draw. |
+| `players`          | `array`          | Per-player results (see fields below).                                 |
+| `links`            | `object`         | Map of tracker name to URL. Keys are shown title-cased.                |
+
+Each entry in `players` may include:
+
+- `xid` — the player's Discord user ID, when known.
+- `name` — the player's display name.
+- `commander` — the player's commander.
+- `commander_partner` — the player's partner/background commander, when applicable.
+- `turn_order` — the player's seat/turn order (1-based).
+- `time_minutes` — the player's total play time in minutes, when tracked.
+- `is_winner` — `true` for the winning player(s).
 
 #### Response
 

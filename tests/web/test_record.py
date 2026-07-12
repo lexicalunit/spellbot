@@ -1159,6 +1159,69 @@ class TestWebGameDetail:
         resp = await client.get("/game/abc")
         assert resp.status == 404
 
+    async def test_game_detail_renders_post_game_report(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild", show_links=True)
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            game_metadata={
+                "source": "convoke",
+                "duration_minutes": 42,
+                "winner": {"name": "user-1", "commander": "Atraxa"},
+                "players": [
+                    {"name": "user-1", "commander": "Atraxa", "turn_order": 1, "is_winner": True},
+                    {"name": "user-2", "commander": "Kenrith", "turn_order": 2},
+                ],
+                "links": {"mythic_track": "https://mythictrack.com/g/abc"},
+            },
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "Post-Game Report" in text
+        assert "Atraxa" in text
+        assert "Kenrith" in text
+        assert "https://mythictrack.com/g/abc" in text
+        assert "Mythic Track" in text  # link key humanized
+
+    async def test_game_detail_report_does_not_render_unsafe_link(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        """Defense-in-depth: the template must not render a non-http(s) link as an anchor."""
+        guild = factories.guild.create(xid=201, name="guild", show_links=True)
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            guild=guild,
+            channel=channel,
+            game_metadata={
+                "source": "convoke",
+                "links": {
+                    "mythic_track": "https://mythictrack.com/g/abc",
+                    "evil": "javascript:alert(document.cookie)",
+                },
+            },
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "https://mythictrack.com/g/abc" in text
+        assert "javascript:" not in text
+
 
 @pytest.mark.asyncio
 class TestWebGuildDetail:

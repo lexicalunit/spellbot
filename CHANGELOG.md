@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Post-game reporting: a `POST /api/game/{game}/metadata` endpoint lets the game service (e.g. Convoke) report match results — match time, winner, each player's commander, and links to external trackers — which are stored on the game and shown on its public detail page.
 - More formatting tools.
 - npm Dependabot coverage; vendor the docs site's frontend libraries (jQuery, Bootstrap, popper, Font Awesome) from npm instead of pinned CDN URLs.
 - Trim unused beautiful-jekyll theme features from the docs site: blog posts (post/home layouts, tags, RSS feed, pagination), all comment providers and Staticman, navbar search, MathJax, the minimal layout, and disabled analytics providers (kept gtag). Removed the third-party CDN scripts these pulled in along the way.

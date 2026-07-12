@@ -298,3 +298,64 @@ async def game_record_endpoint(request: web.Request) -> web.Response:
         notify_player_tasks = [send_dm(player_xid, embed) for player_xid in player_xids]
         await asyncio.gather(*notify_player_tasks)
         return reply({"success": True})
+
+
+MAX_METADATA_PLAYERS = 64
+MAX_METADATA_LINKS = 32
+
+
+def is_http_url(value: Any) -> bool:
+    return isinstance(value, str) and value.startswith(("http://", "https://"))
+
+
+def sanitize_metadata(payload: dict[str, Any]) -> str | None:
+    """
+    Validate and normalize a post-game report in place.
+
+    Returns an error message when the payload is malformed, or `None` on success.
+    Bounds the `players` and `links` collections so a token cannot store an
+    unbounded blob, and drops any link value that is not an http(s) URL — this
+    prevents `javascript:`/`data:` URIs from becoming stored XSS on the public
+    game detail page, which renders each link as an `<a href>`.
+    """
+    # A present-but-unparseable `reported_at` is rejected so the stored value is always
+    # a valid timestamp — `set_metadata` casts it in SQL for its stale-write guard.
+    if payload.get("reported_at") is not None and services.games.report_timestamp(payload) is None:
+        return "invalid reported_at"
+    players = payload.get("players")
+    if players is not None:
+        if not isinstance(players, list):
+            return "players must be a list"
+        if len(players) > MAX_METADATA_PLAYERS:
+            return "too many players"
+    links = payload.get("links")
+    if links is not None:
+        if not isinstance(links, dict):
+            return "links must be an object"
+        if len(links) > MAX_METADATA_LINKS:
+            return "too many links"
+        payload["links"] = {key: value for key, value in links.items() if is_http_url(value)}
+    return None
+
+
+@routes.post(r"/api/game/{game}/metadata")
+@tracer.wrap(name="rest", resource="game_metadata_endpoint")
+async def game_metadata_endpoint(request: web.Request) -> web.Response:
+    """Store a post-game report for a game (match time, winner, commanders, links, etc.)."""
+    add_span_request_id(generate_request_id())
+    async with db_session_manager():
+        try:
+            game_id = int(request.match_info["game"])
+        except ValueError:
+            return reply(error="Invalid game ID", status=400)
+        try:
+            payload = await request.json()
+        except ValueError:
+            return reply(error="Invalid JSON body", status=400)
+        if not isinstance(payload, dict):
+            return reply(error="Metadata must be a JSON object", status=400)
+        if (error := sanitize_metadata(payload)) is not None:
+            return reply(error=error, status=400)
+        if not await services.games.set_metadata(game_id, payload):
+            return reply(error="Game not found", status=404)
+        return reply({"success": True})

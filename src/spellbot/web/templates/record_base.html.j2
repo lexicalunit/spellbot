@@ -108,6 +108,12 @@
             el.innerHTML = humanize_timestamp(Number(el.innerHTML));
         });
 
+        // ISO-8601 timestamps (e.g. from post-game reports) are formatted from the
+        // string directly rather than a millisecond epoch.
+        Array.from(document.getElementsByClassName('timestamp-iso')).forEach((el) => {
+            el.innerHTML = humanize_timestamp(el.innerHTML.trim());
+        });
+
         // Make `<select multiple>` toggle on plain click instead of requiring
         // Ctrl/Cmd-click. Intercept `mousedown` on each option, suppress the
         // native replace-selection behavior, and flip the option's selected

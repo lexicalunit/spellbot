@@ -39,7 +39,7 @@
                     </td>
                 </tr>
                 {% if game.game_link and can_view_links %}
-                <tr><td>{{ t("web.game.game_link") }}</td><td><a href="{{ game.game_link }}">{{ game.game_link }}</a></td></tr>
+                <tr><td>{{ t("web.game.game_link") }}</td><td>{% if game.game_link.startswith("https://") or game.game_link.startswith("http://") %}<a href="{{ game.game_link }}" rel="noopener">{{ game.game_link }}</a>{% else %}{{ game.game_link }}{% endif %}</td></tr>
                 {% endif %}
                 {% if game.voice_xid and can_view_links %}
                 <tr>
@@ -79,6 +79,68 @@
         </table>
     </div>
 </div>
+
+{% if game.metadata %}
+{% set meta = game.metadata %}
+<div class="section">
+    <h2>{{ t("web.game.report.title") }}</h2>
+    <div class="card">
+        <table>
+            <tbody>
+                {% if meta.source %}<tr><td>{{ t("web.game.report.source") }}</td><td>{{ meta.source }}</td></tr>{% endif %}
+                {% if meta.duration_minutes is not none %}<tr><td>{{ t("web.game.report.duration") }}</td><td>{{ meta.duration_minutes }} {{ t("web.game.report.minutes_suffix") }}</td></tr>{% endif %}
+                {% if meta.turns is not none %}<tr><td>{{ t("web.game.report.turns") }}</td><td>{{ meta.turns }}</td></tr>{% endif %}
+                {% if meta.started_at %}<tr><td>{{ t("web.field.started") }}</td><td class="timestamp-iso">{{ meta.started_at }}</td></tr>{% endif %}
+                {% if meta.ended_at %}<tr><td>{{ t("web.game.report.ended") }}</td><td class="timestamp-iso">{{ meta.ended_at }}</td></tr>{% endif %}
+                {% if meta.winner %}<tr><td>{{ t("web.game.report.winner") }}</td><td>🏆 {{ meta.winner.name | default(t("web.common.unknown_user"), true) }}{% if meta.winner.commander %} — {{ meta.winner.commander }}{% endif %}</td></tr>{% endif %}
+                {% if meta.reported_at %}<tr><td>{{ t("web.game.report.reported") }}</td><td class="timestamp-iso">{{ meta.reported_at }}</td></tr>{% endif %}
+            </tbody>
+        </table>
+    </div>
+    {% if meta.players %}
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t("web.field.user_name") }}</th>
+                    <th>{{ t("web.game.report.commander") }}</th>
+                    <th>{{ t("web.game.report.turn_order") }}</th>
+                    <th>{{ t("web.game.report.play_time") }}</th>
+                    <th>{{ t("web.game.report.result") }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in meta.players %}
+                <tr>
+                    <td data-label="{{ t('web.field.user_name') }}">{{ p.name | default(t("web.common.unknown_user"), true) }}</td>
+                    <td data-label="{{ t('web.game.report.commander') }}">{{ p.commander | default("—", true) }}{% if p.commander_partner %} // {{ p.commander_partner }}{% endif %}</td>
+                    <td data-label="{{ t('web.game.report.turn_order') }}">{{ p.turn_order | default("—", true) }}</td>
+                    <td data-label="{{ t('web.game.report.play_time') }}">{% if p.time_minutes is not none %}{{ p.time_minutes }} {{ t("web.game.report.minutes_suffix") }}{% else %}—{% endif %}</td>
+                    <td data-label="{{ t('web.game.report.result') }}">{% if p.is_winner %}🏆{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% if meta.links %}
+    <div class="card">
+        <table>
+            <tbody>
+                {% for key, url in meta.links.items() %}
+                {% if url and url is string and (url.startswith("https://") or url.startswith("http://")) %}
+                <tr>
+                    <td>{{ key | replace("_", " ") | title }}</td>
+                    <td><a href="{{ url }}" rel="noopener nofollow">{{ url }}</a></td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
 
 {% if game.posts %}
 <div class="section">
