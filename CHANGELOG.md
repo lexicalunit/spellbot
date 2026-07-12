@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.4.0) - 2026-07-12
+
 ### Added
 
 - Post-game reporting: a `POST /api/game/{game}/metadata` endpoint lets the game service (e.g. Convoke) report match results — match time, winner, each player's commander, and links to external trackers — which are stored on the game and shown on its public detail page.
