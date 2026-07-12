@@ -829,3 +829,298 @@ class TestGameRecordEndpoint:
         assert resp.status == 400
         data = await resp.json()
         assert data["error"] == "Tracker not found"
+
+
+@pytest.mark.asyncio
+class TestGameMetadataEndpoint:
+    async def test_game_metadata_success(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2101, name="guild")
+        channel = factories.channel.create(xid=3101, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1101,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+        )
+        token = factories.token.create(key="META1")
+
+        report = {
+            "source": "convoke",
+            "duration_minutes": 42,
+            "winner": {"name": "PlayerOne", "commander": "Atraxa"},
+            "players": [
+                {"name": "PlayerOne", "commander": "Atraxa", "turn_order": 1, "is_winner": True},
+                {"name": "PlayerTwo", "commander": "Kenrith", "turn_order": 2},
+            ],
+            "links": {"mythic_track": "https://mythictrack.com/g/abc"},
+        }
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json=report,
+        )
+        assert resp.status == 200
+        assert await resp.json() == {"result": {"success": True}}
+
+        # The stored report is surfaced on the game detail view.
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert detail["metadata"] == report
+
+    async def test_game_metadata_replaces_prior_report(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2102, name="guild")
+        channel = factories.channel.create(xid=3102, name="channel", guild=guild)
+        game = factories.game.create(id=1102, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META2")
+
+        first = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"source": "convoke", "turns": 5},
+        )
+        assert first.status == 200
+        second = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"source": "convoke", "turns": 9},
+        )
+        assert second.status == 200
+
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert detail["metadata"] == {"source": "convoke", "turns": 9}
+
+    async def test_game_metadata_not_found(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        token = factories.token.create(key="META3")
+        resp = await client.post(
+            "/api/game/99999/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"source": "convoke"},
+        )
+        assert resp.status == 404
+        assert (await resp.json())["error"] == "Game not found"
+
+    async def test_game_metadata_invalid_game_id(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        token = factories.token.create(key="META4")
+        resp = await client.post(
+            "/api/game/not-a-number/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"source": "convoke"},
+        )
+        assert resp.status == 400
+        assert (await resp.json())["error"] == "Invalid game ID"
+
+    async def test_game_metadata_non_object_body(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2103, name="guild")
+        channel = factories.channel.create(xid=3103, name="channel", guild=guild)
+        game = factories.game.create(id=1103, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META5")
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json=["not", "an", "object"],
+        )
+        assert resp.status == 400
+        assert (await resp.json())["error"] == "Metadata must be a JSON object"
+
+    async def test_game_metadata_invalid_json_body(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2109, name="guild")
+        channel = factories.channel.create(xid=3109, name="channel", guild=guild)
+        game = factories.game.create(id=1109, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META_BADJSON")
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={
+                "Authorization": f"Bearer {token.key}",
+                "Content-Type": "application/json",
+            },
+            data="{not valid json",
+        )
+        assert resp.status == 400
+        assert (await resp.json())["error"] == "Invalid JSON body"
+
+    async def test_game_metadata_requires_auth(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2104, name="guild")
+        channel = factories.channel.create(xid=3104, name="channel", guild=guild)
+        game = factories.game.create(id=1104, seats=2, guild=guild, channel=channel)
+        resp = await client.post(f"/api/game/{game.id}/metadata", json={"source": "convoke"})
+        assert resp.status == 401
+
+    async def test_game_metadata_ignores_older_report(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2105, name="guild")
+        channel = factories.channel.create(xid=3105, name="channel", guild=guild)
+        game = factories.game.create(id=1105, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META_TS")
+
+        newer = {"source": "convoke", "reported_at": "2026-07-11T18:30:00+00:00", "turns": 20}
+        older = {"source": "convoke", "reported_at": "2026-07-11T18:00:00+00:00", "turns": 5}
+
+        r1 = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json=newer,
+        )
+        assert r1.status == 200
+        # A strictly-older report is accepted (200) but must not clobber the newer one.
+        r2 = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json=older,
+        )
+        assert r2.status == 200
+        assert await r2.json() == {"result": {"success": True}}
+
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert detail["metadata"] == newer
+
+    async def test_game_metadata_concurrent_writes_newer_wins(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        """The locked compare-and-set must land the newer report for either commit order."""
+        import asyncio  # allow_inline
+
+        guild = factories.guild.create(xid=2108, name="guild")
+        channel = factories.channel.create(xid=3108, name="channel", guild=guild)
+        game = factories.game.create(id=1108, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META_RACE")
+
+        newer = {"source": "convoke", "reported_at": "2026-07-11T18:30:00+00:00", "turns": 20}
+        older = {"source": "convoke", "reported_at": "2026-07-11T18:00:00+00:00", "turns": 5}
+        headers = {"Authorization": f"Bearer {token.key}"}
+
+        r_new, r_old = await asyncio.gather(
+            client.post(f"/api/game/{game.id}/metadata", headers=headers, json=newer),
+            client.post(f"/api/game/{game.id}/metadata", headers=headers, json=older),
+        )
+        assert r_new.status == 200
+        assert r_old.status == 200
+
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert detail["metadata"] == newer
+
+    async def test_game_metadata_drops_unsafe_links(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2106, name="guild")
+        channel = factories.channel.create(xid=3106, name="channel", guild=guild)
+        game = factories.game.create(id=1106, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META_LINKS")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={
+                "source": "convoke",
+                "links": {
+                    "mythic_track": "https://mythictrack.com/g/abc",
+                    "evil": "javascript:alert(document.cookie)",
+                    "sneaky": "data:text/html,<script>alert(1)</script>",
+                    "not_a_string": 42,
+                },
+            },
+        )
+        assert resp.status == 200
+
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert detail["metadata"]["links"] == {"mythic_track": "https://mythictrack.com/g/abc"}
+
+    async def test_game_metadata_rejects_oversized_collections(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2107, name="guild")
+        channel = factories.channel.create(xid=3107, name="channel", guild=guild)
+        game = factories.game.create(id=1107, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META_BIG")
+
+        too_many_players = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"players": [{"name": f"p{i}"} for i in range(65)]},
+        )
+        assert too_many_players.status == 400
+        assert (await too_many_players.json())["error"] == "too many players"
+
+        bad_players = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"players": "not-a-list"},
+        )
+        assert bad_players.status == 400
+        assert (await bad_players.json())["error"] == "players must be a list"
+
+        bad_links = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"links": ["not", "an", "object"]},
+        )
+        assert bad_links.status == 400
+        assert (await bad_links.json())["error"] == "links must be an object"
+
+        too_many_links = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"links": {f"k{i}": "https://x" for i in range(33)}},
+        )
+        assert too_many_links.status == 400
+        assert (await too_many_links.json())["error"] == "too many links"
+
+        bad_ts = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"reported_at": "not-a-timestamp"},
+        )
+        assert bad_ts.status == 400
+        assert (await bad_ts.json())["error"] == "invalid reported_at"
