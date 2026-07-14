@@ -16,7 +16,7 @@
     "docs:vendor": "node scripts/vendor-docs-assets.mjs"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
+    "@fortawesome/fontawesome-free": "^7.3.0",
     "bootstrap": "^5.3.8",
     "jquery": "^4.0.0"
   },
