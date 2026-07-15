@@ -410,8 +410,12 @@ class TestQueuesEndpoint:
         resp = await client.get("/queues")
         assert resp.status == 200
         body = await resp.text()
-        assert 'href="/queues/login"' in body
-        assert "Log in with Discord" in body
+        # A single Log in control lives in the shared header; it routes through the
+        # page-agnostic /login entry point and carries the current page as `next` so
+        # the viewer returns here after auth. The old in-filter login hint is gone.
+        assert 'href="/login?next=/queues"' in body
+        assert ">Log in</a>" in body
+        assert "to filter to your servers" not in body
 
     async def test_my_filter_restricts_rows_and_count(
         self,
@@ -447,6 +451,13 @@ class TestQueuesEndpoint:
 
         mocker.patch(
             "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
+        # The shared site header reads identity from the global nav context
+        # (viewer_auth.get_viewer); in production this is the same session the
+        # handler sees, so mirror it here.
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_viewer",
             AsyncMock(return_value=(me.xid, "Me")),
         )
         resp = await client.get("/queues?my=1")
@@ -707,6 +718,10 @@ class TestPlayedGuildsSection:
             "spellbot.web.api.queues.get_viewer",
             AsyncMock(return_value=(me.xid, "Me")),
         )
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
 
         resp = await client.get("/queues")
         body = await resp.text()
@@ -890,6 +905,10 @@ class TestGuildNotifyEndpoint:
             "spellbot.web.api.queues.get_viewer",
             AsyncMock(return_value=(me.xid, "Me")),
         )
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_viewer",
+            AsyncMock(return_value=(me.xid, "Me")),
+        )
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -899,11 +918,11 @@ class TestGuildNotifyEndpoint:
         assert "Formats" in body
         assert "Brackets" in body
         assert f'action="/queues/g/{guild.xid}/notify"' in body
-        # The header links back to the active queues list, this server's details
-        # page, and the viewer's own records.
-        assert 'class="page-header__user" href="/queues">Active Queues</a>' in body
-        assert f'class="page-header__user" href="/g/{guild.xid}">Server Details</a>' in body
-        assert f'class="page-header__user" href="/u/{me.xid}">My Records</a>' in body
+        # The shared site header links back to the active queues list, this
+        # server's details page, and the viewer's own records.
+        assert 'class="site-nav__link" href="/queues">Active Queues</a>' in body
+        assert f'class="site-nav__link" href="/g/{guild.xid}">Server Details</a>' in body
+        assert f'class="site-nav__link" href="/u/{me.xid}">My Records</a>' in body
         assert "Save preferences" in body
         assert "Do not notify me about games on this server" in body
         # No alert exists yet, so the off toggle should be pre-checked.
@@ -1684,18 +1703,19 @@ class TestQueuesAdminLink:
         resp = await admin_session_client.get("/queues")
         assert resp.status == 200
         body = await resp.text()
-        assert 'class="page-header__admin" href="/admin/dashboard"' in body
+        assert 'class="site-nav__link" href="/admin/dashboard"' in body
         assert "Admin Dashboard" in body
 
     async def test_admin_session_is_logged_in_as_viewer(
         self,
         admin_session_client: WebClient,
     ) -> None:
-        # An admin session is honored as a viewer identity on /queues, but the
-        # viewer logout (a no-op against the admin session) is hidden.
+        # An admin session is honored as a viewer identity on /queues, and logout
+        # is now unified: the header shows a working log-out control that clears the
+        # whole session (viewer + admin) via the page-agnostic /logout endpoint.
         resp = await admin_session_client.get("/queues")
         assert resp.status == 200
         body = await resp.text()
         assert "Logged in as" in body
-        assert 'action="/queues/logout"' not in body
+        assert 'action="/logout?next=' in body
         assert 'class="filters__login"' not in body

@@ -1,16 +1,3 @@
-.page-header__links {
-  margin-left: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-/* On narrow screens the header stacks (see queues.css), so the nav drops below
-   the title and should align to the left edge rather than the right. */
-@media (max-width: 720px) {
-  .page-header__links {
-    margin-left: 0;
-  }
-}
 .notify {
   background: var(--card-bg);
   border: 1px solid var(--border);

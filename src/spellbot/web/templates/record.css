@@ -1,32 +1,9 @@
 /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
    and .container live in base.css, which is included before this file. */
 
-.header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-strong);
-}
-.header > a {
-  display: inline-flex;
-}
-.header img {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-}
-.header .titles {
-  flex: 1;
-  min-width: 0;
-}
-.header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  word-break: break-word;
-}
-.header .subtitle {
+/* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+   detail-page subtitle (which carries page-specific inline content) is styled here. */
+.site-header .subtitle {
   font-size: 0.85rem;
   color: var(--page-muted);
   margin-top: 0.25rem;
@@ -36,27 +13,14 @@
    than the plain-text subtitles on the channel and game pages. Pin their line
    height so every detail page's header (and its divider rule) lands in the same
    spot regardless of subtitle content. */
-.header .subtitle .user-id {
+.site-header .subtitle .user-id {
   display: inline-block;
   line-height: 1.2;
   vertical-align: middle;
 }
-.header .subtitle .copy {
+.site-header .subtitle .copy {
   width: 1.1rem;
   height: 1.1rem;
-}
-.header-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-.header-nav .button {
-  min-width: 0;
-  font-size: 0.8rem;
-  background: var(--card-bg);
-  border-color: var(--border-strong);
-  color: var(--page-text);
 }
 
 .section {

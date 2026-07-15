@@ -45,11 +45,11 @@ SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Gir
     />
 </p>
 
-SpellBot uses [Discord slash commands][slash]. Each command provides its own help documentation that you can view directly within Discord itself before running the command. Take a look and see what's available by typing `/` and browsing the commands for SpellBot!
+Visit **[queues.spellbot.io][queues]**, where you can log in with Discord to browse the games currently queuing across every server, filter them down to just the communities you play in, set up notifications so you're pinged when a game you care about is forming, and look back through your own game history and records.
 
 ## 🔭 Where to Play?
 
-SpellBot helps Discord servers to build communities around playing Magic online. Please check out the following servers to find games and connect with other players. You can also [see live games now][queues] waiting for you to join!
+SpellBot helps Discord servers to build communities around playing Magic online. Please check out the following servers to find games and connect with other players. You can also **[see live games][queues]** waiting for you to join!
 
 <div align="center">
 <!-- SERVERS BEGIN -->
@@ -183,7 +183,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [queues]: https://queues.spellbot.io
 [ruff-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ruff]: https://github.com/astral-sh/ruff
-[slash]: https://discord.com/blog/slash-commands-are-here
 [status-badge]: https://img.shields.io/badge/bot-status-green
 [status]: https://status.spellbot.io
 [tablestream]: https://table-stream.com/

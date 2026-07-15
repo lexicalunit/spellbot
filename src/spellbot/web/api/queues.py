@@ -15,8 +15,7 @@ from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER
 from spellbot.i18n import normalize_locale
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.settings import settings
-from spellbot.web.api.admin_auth import get_admin_user_xid
-from spellbot.web.api.viewer_auth import get_viewer, has_viewer_session
+from spellbot.web.api.viewer_auth import get_viewer
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -139,17 +138,15 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     languages = sorted({r["language"] for r in rows} | {g["language"] for g in games})
     stats = {"active_games": len(raw_rows) + len(raw_games)}
     login_enabled = bool(settings.BOT_APPLICATION_ID and settings.BOT_CLIENT_SECRET)
-    # When the viewer identity is borrowed from an admin session, the `/queues`
-    # logout (which clears only the viewer keys) would be a no-op, so the
-    # template hides it; the admin manages that session from the admin pages.
-    via_admin = viewer_xid is not None and not await has_viewer_session(request)
+    # Login/logout identity is rendered by the shared site header from the global
+    # `nav` context (see web/builder.py); this page-level `viewer` only carries what
+    # the queues filters need beyond that.
     viewer = {
         "xid": viewer_xid,
         "name": viewer_name,
         "logged_in": viewer_xid is not None,
         "login_enabled": login_enabled,
         "my_filter_on": my_filter_on,
-        "via_admin": via_admin,
     }
     context = {
         "rows": rows,
@@ -161,9 +158,6 @@ async def queues_endpoint(request: web.Request) -> web.Response:
         "languages": languages,
         "stats": stats,
         "viewer": viewer,
-        # An admin session (set only after the OAuth callback verified the user
-        # is an admin/owner) gates the link to the admin dashboard.
-        "is_admin": await get_admin_user_xid(request) is not None,
     }
     return aiohttp_jinja2.render_template("queues.html.j2", request, context)
 

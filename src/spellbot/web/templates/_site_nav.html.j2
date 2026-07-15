@@ -1,0 +1,22 @@
+{# Shared site navigation cluster rendered in every public page header.
+   Reads the global `nav` context injected by web/builder.py:nav_context, so the
+   login/logout state stays correct and consistent on every page. Login and logout
+   both route through a single OAuth redirect URI and carry `nav.here` as `next`,
+   so the user returns to the page they were on. #}
+<nav class="site-nav" aria-label="{{ t('web.nav.site_nav_aria') }}">
+    {% if not nav_current == "queues" %}
+    <a class="site-nav__link" href="/queues">{{ t("web.nav.active_queues") }}</a>
+    {% endif %}
+    {% if nav.is_admin %}
+    <a class="site-nav__link" href="/admin/dashboard">{{ t("web.nav.admin_dashboard") }}</a>
+    {% endif %}
+    {% if nav.logged_in %}
+    <a class="site-nav__link" href="/u/{{ nav.xid }}">{{ t("web.nav.my_records") }}</a>
+    <span class="site-nav__identity" title="{{ t('web.nav.logged_in_as', name=nav.name) }}">{{ nav.name }}</span>
+    <form class="site-nav__logout-form" method="post" action="/logout?next={{ nav.here | urlencode }}">
+        <button type="submit" class="site-nav__btn site-nav__btn--logout">{{ t("web.nav.log_out") }}</button>
+    </form>
+    {% elif nav.login_enabled %}
+    <a class="site-nav__btn site-nav__btn--login" href="/login?next={{ nav.here | urlencode }}" rel="nofollow">{{ t("web.nav.log_in") }}</a>
+    {% endif %}
+</nav>

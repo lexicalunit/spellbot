@@ -411,10 +411,12 @@ async def viewer_access(request: web.Request, guild_xid: int) -> tuple[bool, boo
 
 def login_url(request: web.Request) -> str:
     """Build a viewer login URL that returns to the current page after authenticating."""
-    # `next` is validated again where it is consumed (see `viewer_auth`), but sanitize the
-    # current path here too so a hostile request target can never seed an open redirect.
-    next_path = safe_relative_path(request.path_qs) or "/"
-    return f"/queues/login?next={quote(next_path, safe='')}"
+    # Routes through the single, page-agnostic `/login` entry point (one OAuth redirect
+    # URI for the whole site). `next` is validated again where it is consumed (see
+    # `viewer_auth`), but sanitize the current path here too so a hostile request target
+    # can never seed an open redirect. Path only — no query — to match the shared header.
+    next_path = safe_relative_path(request.path) or "/"
+    return f"/login?next={quote(next_path, safe='')}"
 
 
 async def impl(request: web.Request, kind: RecordKind) -> web.Response:
