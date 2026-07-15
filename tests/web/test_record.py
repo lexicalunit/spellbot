@@ -1137,13 +1137,19 @@ class TestWebGameDetail:
         # Anonymous: the Active Queues link shows, the per-user link does not.
         resp = await client.get(f"/game/{game.id}")
         text = await resp.text()
-        assert '<nav class="header-nav">' in text
+        assert '<nav class="site-nav"' in text
         assert 'href="/queues"' in text
         assert "My Records" not in text
 
-        # Logged in: the link to the viewer's own records page also shows.
+        # Logged in: the link to the viewer's own records page also shows. The
+        # shared site header reads identity from the global nav context
+        # (viewer_auth.get_viewer), the same session the handler sees in production.
         mocker.patch(
             "spellbot.web.api.record.get_viewer",
+            AsyncMock(return_value=(777, "Me")),
+        )
+        mocker.patch(
+            "spellbot.web.api.viewer_auth.get_viewer",
             AsyncMock(return_value=(777, "Me")),
         )
         resp = await client.get(f"/game/{game.id}")
@@ -1431,7 +1437,7 @@ class TestWebGuildSettings:
         assert f"/g/{guild.xid}/analytics" not in text
         # Anonymous visitors are offered a login button that returns to this page.
         assert "Log in with Discord" in text
-        assert f"/queues/login?next=%2Fg%2F{guild.xid}" in text
+        assert f"/login?next=%2Fg%2F{guild.xid}" in text
 
     async def test_panel_hidden_for_non_moderator(
         self,
@@ -1650,7 +1656,7 @@ class TestWebGuildAwards:
         guild = factories.guild.create(xid=753, name="guild")
         resp = await client.get(f"/g/{guild.xid}/awards", allow_redirects=False)
         assert resp.status == 302
-        assert "/queues/login" in resp.headers["Location"]
+        assert "/login" in resp.headers["Location"]
 
     async def test_awards_page_404_for_non_integer_guild(
         self,
@@ -2013,7 +2019,7 @@ class TestWebChannelSettings:
         assert "Channel Settings" not in text
         # Anonymous visitors are offered a login button that returns to this page.
         assert "Log in with Discord" in text
-        assert f"/queues/login?next=%2Fg%2F{guild.xid}%2Fc%2F{channel.xid}" in text
+        assert f"/login?next=%2Fg%2F{guild.xid}%2Fc%2F{channel.xid}" in text
 
     async def test_panel_visible_for_moderator(
         self,
@@ -2528,11 +2534,11 @@ class TestParseChannelSettings:
 class TestLoginUrl:
     def test_returns_to_safe_relative_path(self) -> None:
         request = MagicMock()
-        request.path_qs = "/g/1/audit?page=2"
-        assert record.login_url(request) == "/queues/login?next=%2Fg%2F1%2Faudit%3Fpage%3D2"
+        request.path = "/g/1/audit"
+        assert record.login_url(request) == "/login?next=%2Fg%2F1%2Faudit"
 
     def test_hostile_path_falls_back_to_root(self) -> None:
         # A protocol-relative request target must not be reflected into `next`.
         request = MagicMock()
-        request.path_qs = "//evil.example/x"
-        assert record.login_url(request) == "/queues/login?next=%2F"
+        request.path = "//evil.example/x"
+        assert record.login_url(request) == "/login?next=%2F"

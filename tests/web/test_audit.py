@@ -74,7 +74,7 @@ class TestAuditPageAccess:
         guild = factories.guild.create(xid=201, name="guild")
         resp = await client.get(f"/g/{guild.xid}/audit", allow_redirects=False)
         assert resp.status == 302
-        assert "/queues/login" in resp.headers["Location"]
+        assert "/login" in resp.headers["Location"]
 
     async def test_logged_in_non_moderator_forbidden(
         self,

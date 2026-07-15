@@ -103,6 +103,10 @@ async def has_viewer_session(request: web.Request) -> bool:
     return isinstance(session.get(VIEWER_XID_KEY), int)
 
 
+# Both the page-agnostic `/login` and the legacy `/queues/login` entry points share
+# a single Discord OAuth redirect URI, so adding a login control to a new page never
+# requires registering another redirect URL — the `next` param carries the return path.
+@routes.get("/login")
 @routes.get("/queues/login")
 async def viewer_login(request: web.Request) -> web.StreamResponse:
     """Redirect the user to Discord's OAuth2 authorize page (public viewer flow)."""
@@ -176,11 +180,21 @@ async def viewer_oauth_callback(request: web.Request) -> web.StreamResponse:
     return web.HTTPFound(next_path or VIEWER_REDIRECT_AFTER_LOGIN)
 
 
+@routes.post("/logout")
 @routes.post("/queues/logout")
 async def viewer_logout(request: web.Request) -> web.StreamResponse:
-    """Clear the viewer session without disturbing any concurrent admin session."""
+    """
+    Log the user fully out, from any public page.
+
+    Because a single session cookie holds both the viewer keys and — for admins/owner
+    who logged in through the public flow — the admin keys, clearing only the viewer
+    keys would leave `get_viewer`'s admin fallback still authenticated (the identity
+    would silently persist and the logout control would vanish). Invalidating the whole
+    session is the one behavior that matches "log out": one identity, one logout.
+
+    Returns the user to a safe `next` path when given, else the queues page.
+    """
     session = await get_session(request)
-    session.pop(VIEWER_XID_KEY, None)
-    session.pop(VIEWER_NAME_KEY, None)
-    session.pop(VIEWER_STATE_KEY, None)
-    return web.HTTPFound(VIEWER_REDIRECT_AFTER_LOGOUT)
+    session.invalidate()
+    next_path = safe_relative_path(request.query.get("next"))
+    return web.HTTPFound(next_path or VIEWER_REDIRECT_AFTER_LOGOUT)

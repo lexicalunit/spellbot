@@ -10,9 +10,10 @@ from subprocess import getoutput, run
 from typing import TYPE_CHECKING, cast
 
 import pytest
+import yaml
 from git.repo import Repo
 
-from . import REPO_ROOT, SRC_DIRS
+from . import REPO_ROOT, SRC_DIRS, SRC_ROOT
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -93,6 +94,153 @@ class TestCodebase:
         out = proc.stdout.decode("utf-8")
         err = proc.stderr.decode("utf-8")
         assert exitcode == 0, f"vulture found dead code:\n{out}\n{err}"
+
+    def test_no_unused_translation_keys(self) -> None:  # pragma: no cover
+        """
+        Checks that every key in `en.yaml` is referenced somewhere in the codebase.
+
+        Flattens the English catalog into dotted keys, then confirms each appears in the
+        source tree. Two shapes need special handling:
+
+        - Pluralization groups (a mapping whose children are exactly plural forms like
+          `{one, many, other}`) collapse to their parent, since that parent is the key
+          code actually passes to `t(..., count=n)` — the plural leaves are never named.
+        - Keys reached only through an f-string prefix (e.g. `t(f"service.{...}")`) can't
+          be seen statically, so the whole prefix is treated as used.
+
+        A failure means the key is either dead (delete it from every `translations/*.yaml`)
+        or built dynamically in a way this check can't see (extend the detection below).
+        """
+        plural_forms = {"zero", "one", "two", "few", "many", "other"}
+        catalog = yaml.safe_load((SRC_ROOT / "spellbot" / "translations" / "en.yaml").read_text())
+        root = next(iter(catalog.values()))  # unwrap the top-level locale key (`en:`)
+
+        keys: list[str] = []
+
+        def collect(node: object, prefix: str) -> None:
+            if isinstance(node, dict):
+                children = set(node.keys())
+                if children and children <= plural_forms:
+                    keys.append(prefix)  # plural group -> parent is the referenced key
+                    return
+                for name, value in node.items():
+                    collect(value, f"{prefix}.{name}" if prefix else str(name))
+            else:
+                keys.append(prefix)
+
+        collect(root, "")
+
+        # Concatenate the source tree (excluding the translation catalogs themselves).
+        scan_suffixes = {".py", ".j2", ".js", ".html", ".css", ".txt", ".md"}
+        blob = "\n".join(
+            path.read_text(encoding="utf-8", errors="ignore")
+            for src_dir in SRC_DIRS
+            for path in src_dir.rglob("*")
+            if path.is_file() and "translations" not in path.parts and path.suffix in scan_suffixes
+        )
+
+        dynamic_prefixes = set(re.findall(r"""t\(\s*f["']([a-z0-9_.]+)\{""", blob))
+        unused = sorted(
+            key
+            for key in keys
+            if key not in blob and not any(key.startswith(p) for p in dynamic_prefixes)
+        )
+        assert not unused, (
+            "these en.yaml keys are referenced nowhere; delete them from every "
+            "translations/*.yaml (or extend dynamic-key detection):\n" + "\n".join(unused)
+        )
+
+    def test_translation_locales_match_en(self) -> None:  # pragma: no cover
+        """
+        Checks that every `translations/<locale>.yaml` defines exactly the keys `en.yaml` does.
+
+        `en` is the source of truth and the runtime fallback, so any locale that is missing a
+        key silently falls back to English, and any extra key is dead weight that no lookup will
+        ever reach. Enforcing an exact 1-to-1 key set keeps every catalog structurally in lockstep.
+        """
+        translations = SRC_ROOT / "spellbot" / "translations"
+
+        def key_set(path: Path) -> set[str]:
+            catalog = yaml.safe_load(path.read_text())
+            root = next(iter(catalog.values()))  # unwrap the top-level locale key
+            found: set[str] = set()
+
+            def flatten(node: object, prefix: str) -> None:
+                if isinstance(node, dict):
+                    for name, value in node.items():
+                        flatten(value, f"{prefix}.{name}" if prefix else str(name))
+                else:
+                    found.add(prefix)
+
+            flatten(root, "")
+            return found
+
+        en_keys = key_set(translations / "en.yaml")
+        problems: list[str] = []
+        for path in sorted(translations.glob("*.yaml")):
+            if path.name == "en.yaml":
+                continue
+            keys = key_set(path)
+            missing = sorted(en_keys - keys)
+            extra = sorted(keys - en_keys)
+            if missing or extra:
+                problems.append(f"{path.name}: missing={missing} extra={extra}")
+        assert not problems, "locale catalogs must match en.yaml key-for-key:\n" + "\n".join(
+            problems
+        )
+
+    def test_translation_values_are_consistent_by_source_string(self) -> None:  # pragma: no cover
+        """
+        Checks that keys sharing an English value also share one translation in every locale.
+
+        The English string is the identity of a piece of text: if two keys read the same in
+        `en.yaml` they mean the same thing, so a locale must not translate them differently
+        (e.g. `game.field.bracket` and `web.field.bracket` are both "Bracket" and must render
+        the same Commander power-tier word — one input value, one translation per language).
+
+        Pluralization forms are exempt: `many` and `other` frequently coincide in English yet
+        are distinct grammatical categories that legitimately diverge in languages like Polish,
+        so leaf keys whose final segment is a plural form are left out of the grouping.
+        """
+        plural_forms = {"zero", "one", "two", "few", "many", "other"}
+        translations = SRC_ROOT / "spellbot" / "translations"
+
+        def flatten(path: Path) -> dict[str, str]:
+            catalog = yaml.safe_load(path.read_text())
+            root = next(iter(catalog.values()))
+            out: dict[str, str] = {}
+
+            def walk(node: object, prefix: str) -> None:
+                if isinstance(node, dict):
+                    for name, value in node.items():
+                        walk(value, f"{prefix}.{name}" if prefix else str(name))
+                elif prefix.rsplit(".", 1)[-1] not in plural_forms:
+                    out[prefix] = str(node)
+
+            walk(root, "")
+            return out
+
+        # Group English keys by their shared source string; only groups with >1 key matter.
+        english = flatten(translations / "en.yaml")
+        groups: dict[str, list[str]] = {}
+        for key, value in english.items():
+            groups.setdefault(value, []).append(key)
+        shared = [keys for keys in groups.values() if len(keys) > 1]
+
+        problems: list[str] = []
+        for path in sorted(translations.glob("*.yaml")):
+            catalog = flatten(path)
+            for keys in shared:
+                rendered = {catalog[k] for k in keys if k in catalog}
+                if len(rendered) > 1:
+                    problems.append(
+                        f"{path.name}: {sorted(keys)} share an English value but render as "
+                        f"{sorted(rendered)}"
+                    )
+        assert not problems, (
+            "keys with the same English value must share one translation per locale:\n"
+            + "\n".join(problems)
+        )
 
     def test_pyproject_dependencies(self) -> None:  # pragma: no cover
         """Checks that pyproject.toml dependencies are sorted."""

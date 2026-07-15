@@ -30,6 +30,7 @@ from spellbot.web.api import (
     status,
     viewer_auth,
 )
+from spellbot.web.api.oauth import safe_relative_path
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
@@ -73,7 +74,31 @@ async def i18n_context_processor(request: web.Request) -> dict[str, object]:
     def translate(key: str, **kwargs: object) -> str:
         return t(key, locale=locale, **kwargs)
 
-    return {"lang": locale, "t": translate}
+    return {"lang": locale, "t": translate, "nav": await nav_context(request)}
+
+
+async def nav_context(request: web.Request) -> dict[str, object]:
+    """
+    Build the shared site-header identity for the login/logout control.
+
+    Exposing this globally (rather than threading it through each handler) is what
+    lets the one shared header render a correct login/logout state on every public
+    page. The `here` value carries the current path so both flows return the user to
+    the page they were on, all through a single OAuth redirect URI.
+    """
+    viewer_xid, viewer_name = await viewer_auth.get_viewer(request)
+    is_admin = await admin_auth.get_admin_user_xid(request) is not None
+    # Return-to path only (no query string): enough to send the viewer back to the
+    # page they logged in from, without reflecting arbitrary query params into the page.
+    here = safe_relative_path(request.path)
+    return {
+        "logged_in": viewer_xid is not None,
+        "xid": viewer_xid,
+        "name": viewer_name,
+        "is_admin": is_admin,
+        "login_enabled": bool(settings.BOT_APPLICATION_ID and settings.BOT_CLIENT_SECRET),
+        "here": here or "/queues",
+    }
 
 
 @web.middleware

@@ -1,50 +1,9 @@
 /* Active Queues + Notification Preferences pages. Shared reset, tokens, body,
    links, and .container live in base.css, which is included before this file. */
 
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-strong);
-}
-.page-header a {
-  display: inline-flex;
-}
-.page-header img {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-}
-.page-header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--page-text);
-}
-.page-header__admin,
-.page-header__admin:link,
-.page-header__admin:visited,
-.page-header__user,
-.page-header__user:link,
-.page-header__user:visited {
-  align-self: center;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: var(--card-bg);
-  color: var(--page-text);
-  font-size: 0.8rem;
-  white-space: nowrap;
-}
-.page-header__admin:hover,
-.page-header__user:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  filter: none;
-}
+/* The shared header/nav layout lives in base.css (`.site-header` / `.site-nav`).
+   Only the queues-specific active-games badge is styled here. */
 .page-header__stat {
-  margin-left: auto;
   align-self: flex-end;
   display: flex;
   align-items: baseline;
@@ -99,48 +58,6 @@
 .filters__mine input {
   accent-color: var(--brand-purple);
   cursor: pointer;
-}
-.filters__identity {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  color: var(--page-muted);
-  font-size: 0.75rem;
-}
-.filters__identity-name strong {
-  color: var(--text);
-  font-weight: 600;
-}
-.filters__logout-form {
-  display: inline;
-}
-.filters__logout {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  font-size: 0.75rem;
-  color: var(--link);
-  cursor: pointer;
-}
-.filters__logout:hover {
-  color: var(--link-hover);
-}
-.filters__login {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  color: var(--link);
-  font-size: 0.85rem;
-}
-.filters__login:hover {
-  background: var(--card-bg-hover);
-  color: var(--link-hover);
 }
 .filters__field {
   display: flex;
@@ -237,17 +154,7 @@
   .played-list {
     width: 100%;
   }
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-  .page-header .page-header__admin,
-  .page-header .page-header__user {
-    align-self: flex-start;
-  }
   .page-header__stat {
-    margin-left: 0;
     align-self: flex-start;
     margin-bottom: 0;
   }

@@ -73,7 +73,7 @@ class TestWebAnalyticsShell:
         # No signature and no logged-in session: bounce to login like the settings/audit pages.
         resp = await client.get("/g/201/analytics", allow_redirects=False)
         assert resp.status == 302
-        assert "/queues/login" in resp.headers["Location"]
+        assert "/login" in resp.headers["Location"]
 
     async def test_analytics_shell_expired_signature_redirected_to_login(
         self,
@@ -88,7 +88,7 @@ class TestWebAnalyticsShell:
         mocker.patch("spellbot.utils.time.time", return_value=2000.0)
         resp = await client.get(path, allow_redirects=False)
         assert resp.status == 302
-        assert "/queues/login" in resp.headers["Location"]
+        assert "/login" in resp.headers["Location"]
 
     async def test_analytics_shell_invalid_signature_redirected_to_login(
         self,
@@ -99,7 +99,7 @@ class TestWebAnalyticsShell:
             allow_redirects=False,
         )
         assert resp.status == 302
-        assert "/queues/login" in resp.headers["Location"]
+        assert "/login" in resp.headers["Location"]
 
     async def test_analytics_shell_logged_in_non_moderator_forbidden(
         self,

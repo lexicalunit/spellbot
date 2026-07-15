@@ -62,3 +62,119 @@ a:hover {
   max-width: 1200px;
   margin: 0 auto;
 }
+
+/* Shared site header + navigation, used by every public page (queues, record
+   pages, guild notify) so they read as one cohesive site. Page-specific extras
+   (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-strong);
+}
+.site-header__home {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.site-header__logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: block;
+}
+.site-header__titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.site-header__title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  word-break: break-word;
+  line-height: 1.2;
+}
+.site-header__subtitle {
+  font-size: 0.85rem;
+  color: var(--page-muted);
+  margin-top: 0.25rem;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+.site-nav__link,
+.site-nav__link:link,
+.site-nav__link:visited,
+.site-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--card-bg);
+  color: var(--page-text);
+  white-space: nowrap;
+}
+.site-nav__link:hover,
+.site-nav__btn:hover {
+  background: var(--card-bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.site-nav__btn {
+  cursor: pointer;
+  font-family: inherit;
+}
+.site-nav__btn--login,
+.site-nav__btn--login:link,
+.site-nav__btn--login:visited {
+  background: var(--brand-purple);
+  border-color: var(--brand-purple-dark);
+  color: #fff;
+}
+.site-nav__btn--login:hover {
+  background: var(--brand-purple-dark);
+  border-color: var(--brand-purple-dark);
+  color: #fff;
+}
+.site-nav__btn--logout {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+.site-nav__btn--logout:hover {
+  background: var(--danger-bg-hover);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+.site-nav__identity {
+  font-size: 0.8rem;
+  color: var(--muted);
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-nav__logout-form {
+  margin: 0;
+  display: inline-flex;
+}
+
+@media (max-width: 640px) {
+  .site-header {
+    flex-wrap: wrap;
+  }
+  .site-nav {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+}

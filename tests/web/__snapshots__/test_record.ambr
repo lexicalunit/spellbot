@@ -76,10 +76,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -87,24 +88,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -114,27 +207,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -593,12 +673,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>Game SB#1</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">Game SB#1</h1>
                   
   <div class="subtitle">
       STARTED &middot; Modern &middot; 2 seats
@@ -607,11 +687,17 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/game/1" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
@@ -933,10 +1019,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -944,24 +1031,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -971,27 +1150,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -1450,12 +1616,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>guild</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">guild</h1>
                   
   <div class="subtitle">
       <a href="/queues/g/201">Notification preferences</a>
@@ -1465,18 +1631,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/g/201" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Moderators can manage this server&#39;s settings here.
-              <a href="/queues/login?next=%2Fg%2F201" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fg%2F201" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>
@@ -1727,10 +1899,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -1738,24 +1911,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -1765,27 +2030,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -2244,12 +2496,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>Channel Records: #channel</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">Channel Records: #channel</h1>
                   
   <div class="subtitle">
       <a href="/g/201">guild</a>
@@ -2257,18 +2509,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/g/201/c/301" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Moderators can manage this channel&#39;s settings here.
-              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>
@@ -2726,10 +2984,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -2737,24 +2996,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -2764,27 +3115,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -3243,12 +3581,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>Channel Records: #channel</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">Channel Records: #channel</h1>
                   
   <div class="subtitle">
       <a href="/g/201">guild</a>
@@ -3256,18 +3594,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/g/201/c/101" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Moderators can manage this channel&#39;s settings here.
-              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F101" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fg%2F201%2Fc%2F101" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>
@@ -3582,10 +3926,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -3593,24 +3938,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -3620,27 +4057,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -4099,12 +4523,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>Channel Records: #channel</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">Channel Records: #channel</h1>
                   
   <div class="subtitle">
       <a href="/g/201">guild</a>
@@ -4112,18 +4536,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/g/201/c/301" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Moderators can manage this channel&#39;s settings here.
-              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>
@@ -4581,10 +5011,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -4592,24 +5023,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -4619,27 +5142,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -5098,12 +5608,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>Channel Records: #channel</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">Channel Records: #channel</h1>
                   
   <div class="subtitle">
       <a href="/g/201">guild</a>
@@ -5111,18 +5621,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/g/201/c/301" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Moderators can manage this channel&#39;s settings here.
-              <a href="/queues/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fg%2F201%2Fc%2F301" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>
@@ -5580,10 +6096,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -5591,24 +6108,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -5618,27 +6227,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -6097,12 +6693,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>User Records: user:1</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">User Records: user:1</h1>
                   
   <div class="subtitle">
       <span class="id-copy">
@@ -6112,18 +6708,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/u/101" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Log in to view and manage your own block list.
-              <a href="/queues/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>
@@ -6588,10 +7190,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -6599,24 +7202,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -6626,27 +7321,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -7105,12 +7787,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>User Records: user</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">User Records: user</h1>
                   
   <div class="subtitle">
       <span class="id-copy">
@@ -7120,18 +7802,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/u/101" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Log in to view and manage your own block list.
-              <a href="/queues/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>
@@ -7451,10 +8139,11 @@
     max-width: 1200px;
     margin: 0 auto;
   }
-          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
-     and .container live in base.css, which is included before this file. */
   
-  .header {
+  /* Shared site header + navigation, used by every public page (queues, record
+     pages, guild notify) so they read as one cohesive site. Page-specific extras
+     (e.g. the queues active-games badge) layer on top via their own stylesheet. */
+  .site-header {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -7462,24 +8151,116 @@
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-strong);
   }
-  .header > a {
+  .site-header__home {
     display: inline-flex;
+    flex: 0 0 auto;
   }
-  .header img {
+  .site-header__logo {
     width: 64px;
     height: 64px;
     border-radius: 50%;
+    display: block;
   }
-  .header .titles {
-    flex: 1;
+  .site-header__titles {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .header h1 {
+  .site-header__title {
     font-size: 1.75rem;
     font-weight: 600;
     word-break: break-word;
+    line-height: 1.2;
   }
-  .header .subtitle {
+  .site-header__subtitle {
+    font-size: 0.85rem;
+    color: var(--page-muted);
+    margin-top: 0.25rem;
+  }
+  
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  .site-nav__link,
+  .site-nav__link:link,
+  .site-nav__link:visited,
+  .site-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--page-text);
+    white-space: nowrap;
+  }
+  .site-nav__link:hover,
+  .site-nav__btn:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .site-nav__btn {
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .site-nav__btn--login,
+  .site-nav__btn--login:link,
+  .site-nav__btn--login:visited {
+    background: var(--brand-purple);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--login:hover {
+    background: var(--brand-purple-dark);
+    border-color: var(--brand-purple-dark);
+    color: #fff;
+  }
+  .site-nav__btn--logout {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__btn--logout:hover {
+    background: var(--danger-bg-hover);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+  }
+  .site-nav__identity {
+    font-size: 0.8rem;
+    color: var(--muted);
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-nav__logout-form {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  @media (max-width: 640px) {
+    .site-header {
+      flex-wrap: wrap;
+    }
+    .site-nav {
+      flex-basis: 100%;
+      justify-content: flex-start;
+    }
+  }
+          /* Detail pages (guild, channel, user, game). Shared reset, tokens, body, links,
+     and .container live in base.css, which is included before this file. */
+  
+  /* The shared `.site-header` / `.site-nav` layout lives in base.css. Only the
+     detail-page subtitle (which carries page-specific inline content) is styled here. */
+  .site-header .subtitle {
     font-size: 0.85rem;
     color: var(--page-muted);
     margin-top: 0.25rem;
@@ -7489,27 +8270,14 @@
      than the plain-text subtitles on the channel and game pages. Pin their line
      height so every detail page's header (and its divider rule) lands in the same
      spot regardless of subtitle content. */
-  .header .subtitle .user-id {
+  .site-header .subtitle .user-id {
     display: inline-block;
     line-height: 1.2;
     vertical-align: middle;
   }
-  .header .subtitle .copy {
+  .site-header .subtitle .copy {
     width: 1.1rem;
     height: 1.1rem;
-  }
-  .header-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  .header-nav .button {
-    min-width: 0;
-    font-size: 0.8rem;
-    background: var(--card-bg);
-    border-color: var(--border-strong);
-    color: var(--page-text);
   }
   
   .section {
@@ -7968,12 +8736,12 @@
   </head>
   <body>
       <div class="container">
-          <div class="header">
-              <a href="https://spellbot.io/">
-                  <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+          <header class="site-header">
+              <a class="site-header__home" href="https://spellbot.io/">
+                  <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
               </a>
-              <div class="titles">
-                  <h1>User Records: user:1</h1>
+              <div class="site-header__titles">
+                  <h1 class="site-header__title">User Records: user:1</h1>
                   
   <div class="subtitle">
       <span class="id-copy">
@@ -7983,18 +8751,24 @@
   </div>
   
               </div>
-              <nav class="header-nav">
-                  <a href="/queues" class="button">Active Queues</a>
-                  
-              </nav>
-          </div>
+              
+  <nav class="site-nav" aria-label="Site navigation">
+      
+      <a class="site-nav__link" href="/queues">Active Queues</a>
+      
+      
+      
+      <a class="site-nav__btn site-nav__btn--login" href="/login?next=/u/101" rel="nofollow">Log in</a>
+      
+  </nav>
+          </header>
   
           
   <div class="section">
       <div class="card">
           <p class="login-prompt">
               Log in to view and manage your own block list.
-              <a href="/queues/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
+              <a href="/login?next=%2Fu%2F101" class="button">Log in with Discord</a>
           </p>
       </div>
   </div>

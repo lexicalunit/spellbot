@@ -47,6 +47,22 @@ def block_external_moderation(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.fixture(autouse=True)
+def configure_oauth_credentials(mocker: MockerFixture) -> None:
+    """
+    Pin the Discord OAuth credentials so login state is deterministic across environments.
+
+    The shared site header shows a "Log in" control only when `BOT_APPLICATION_ID` and
+    `BOT_CLIENT_SECRET` are set (`login_enabled`). A developer's local `.env` provides
+    them but CI does not, so rendered pages — and their HTML snapshots — would otherwise
+    differ between the two. Pinning both to fixed test values keeps every page render (and
+    every snapshot) stable. Tests that exercise the "not configured" path patch them back
+    to `None` themselves.
+    """
+    mocker.patch.object(runtime_settings, "BOT_APPLICATION_ID", "appid-1")
+    mocker.patch.object(runtime_settings, "BOT_CLIENT_SECRET", "secret-1")
+
+
 def make_owner_httpx_client() -> MagicMock:
     """Mock `httpx.AsyncClient` for an OAuth flow identifying the owner (xid=42)."""
     inner = MagicMock()

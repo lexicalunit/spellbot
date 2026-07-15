@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added tests for i18n configuration files.
+
+### Changed
+
+- More unified style across the website.
+
+### Fixed
+
+- Fixed logout for admin users.
+
 ## [v21.4.1](https://github.com/lexicalunit/spellbot/releases/tag/v21.4.1) - 2026-07-14
 
 ### Changed

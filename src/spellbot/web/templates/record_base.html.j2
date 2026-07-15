@@ -15,19 +15,16 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <a href="https://spellbot.io/">
-                <img alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+        <header class="site-header">
+            <a class="site-header__home" href="https://spellbot.io/">
+                <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
             </a>
-            <div class="titles">
-                <h1>{% block heading %}SpellBot{% endblock %}</h1>
+            <div class="site-header__titles">
+                <h1 class="site-header__title">{% block heading %}SpellBot{% endblock %}</h1>
                 {% block subtitle %}{% endblock %}
             </div>
-            <nav class="header-nav">
-                <a href="/queues" class="button">{{ t("web.nav.active_queues") }}</a>
-                {% if viewer_xid %}<a href="/u/{{ viewer_xid }}" class="button">{{ t("web.nav.my_records") }}</a>{% endif %}
-            </nav>
-        </div>
+            {% include "_site_nav.html.j2" %}
+        </header>
 
         {% block content %}{% endblock %}
 
