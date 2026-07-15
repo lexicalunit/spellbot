@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_LOCALES = ["de", "en", "es", "fr", "it", "ja", "pt"]
 RETRY_ATTEMPTS = 3
-TIMEOUT_S = 1
+TIMEOUT_S = 3
 
 
 class ConvokeGameTypes(Enum):

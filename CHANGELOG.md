@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Changed the Convoke API timeout to 3 seconds.
+
 ## [v21.4.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.4.0) - 2026-07-12
 
 ### Added
