@@ -10,12 +10,13 @@ if TYPE_CHECKING:
 
 
 class Theme(StrEnum):
-    DEFAULT = "default"
-    PRIDE = "pride"
-    BLACK_HISTORY = "black"
-    TRANS = "trans"
     AUTISM = "autism"
+    BLACK_HISTORY = "black"
     CONVOKE = "convoke"
+    DEFAULT = "default"
+    DISABILITY = "disability"
+    PRIDE = "pride"
+    TRANS = "trans"
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,9 @@ THEME_CONFIGS: dict[Theme, ThemeConfig] = {
     ),
     Theme.TRANS: ThemeConfig(Theme.TRANS, f"{THEME_ASSET_BASE}/logos/spellbot-trans.png"),
     Theme.AUTISM: ThemeConfig(Theme.AUTISM, f"{THEME_ASSET_BASE}/logos/spellbot-autistic.png"),
+    Theme.DISABILITY: ThemeConfig(
+        Theme.DISABILITY, f"{THEME_ASSET_BASE}/logos/spellbot-disability.png"
+    ),
     Theme.CONVOKE: ThemeConfig(Theme.CONVOKE, f"{THEME_ASSET_BASE}/servers/convoke.png"),
 }
 
@@ -67,6 +71,11 @@ def is_trans(guild_xid: int | None, now: datetime) -> bool:
     return now.month == 11 or (now.month == 3 and now.day == 31)
 
 
+def is_disability(guild_xid: int | None, now: datetime) -> bool:
+    """Disability Pride Month (July)."""
+    return now.month == 7
+
+
 def is_autism_awareness(guild_xid: int | None, now: datetime) -> bool:
     """World Autism Awareness Day (April 2)."""
     return now.month == 4 and now.day == 2
@@ -83,6 +92,7 @@ THEME_RULES: tuple[ThemeRule, ...] = (
     ThemeRule(Theme.AUTISM, is_autism_awareness),
     ThemeRule(Theme.TRANS, is_trans),
     ThemeRule(Theme.PRIDE, is_pride),
+    ThemeRule(Theme.DISABILITY, is_disability),
     ThemeRule(Theme.BLACK_HISTORY, is_black_history),
 )
 

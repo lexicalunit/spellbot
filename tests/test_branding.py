@@ -11,6 +11,7 @@ from spellbot.branding import (
     get_thumb_url,
     is_autism_awareness,
     is_black_history,
+    is_disability,
     is_pride,
     is_trans,
 )
@@ -71,14 +72,18 @@ class TestThemeMatchers:
         april_3 = datetime(2024, 4, 3, tzinfo=UTC)
         assert is_autism_awareness(None, april_3) is False
 
+    def test_is_disability_pirde_in_july(self) -> None:
+        july = datetime(2024, 7, 3, tzinfo=UTC)
+        assert is_disability(None, july) is True
+
 
 class TestGetTheme:
     def test_default_theme_on_regular_day(self) -> None:
-        july = datetime(2024, 7, 15, tzinfo=UTC)
+        july = datetime(2024, 8, 15, tzinfo=UTC)
         assert get_theme(12345, july) == Theme.DEFAULT
 
     def test_default_theme_with_none_guild(self) -> None:
-        july = datetime(2024, 7, 15, tzinfo=UTC)
+        july = datetime(2024, 8, 15, tzinfo=UTC)
         assert get_theme(None, july) == Theme.DEFAULT
 
     def test_convoke_guild_override(self) -> None:
@@ -120,7 +125,7 @@ class TestGetTheme:
 
 class TestGetThumbUrl:
     def test_returns_default_thumb_url(self) -> None:
-        july = datetime(2024, 7, 15, tzinfo=UTC)
+        july = datetime(2024, 8, 15, tzinfo=UTC)
         url = get_thumb_url(12345, july)
         assert url == THEME_CONFIGS[Theme.DEFAULT].thumb_url
 
