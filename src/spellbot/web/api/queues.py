@@ -372,6 +372,7 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
             if wants_json(request):
                 return web.json_response({"ok": False, "error": "invalid_input"}, status=400)
             return web.Response(status=400)
+        await services.users.ensure_exists(viewer_xid)
         saved = await services.alerts.upsert(
             guild_xid,
             viewer_xid,

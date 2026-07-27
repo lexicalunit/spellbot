@@ -1064,6 +1064,31 @@ class TestGuildNotifySaveEndpoint:
         assert saved.formats == [1]
         assert saved.brackets == [2]
 
+    async def test_persists_when_viewer_has_no_user_row(
+        self,
+        client: WebClient,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=983_003, name="No User Guild", icon="n.png")
+        viewer_xid = 883_003
+        mocker.patch(
+            "spellbot.web.api.queues.get_viewer",
+            AsyncMock(return_value=(viewer_xid, "Me")),
+        )
+
+        resp = await client.post(
+            f"/queues/g/{guild.xid}/notify",
+            data={"formats": ["1"], "brackets": ["2"]},
+            allow_redirects=False,
+        )
+        assert resp.status == 302
+
+        saved = await alerts.get_for_user_guild(guild.xid, viewer_xid)
+        assert saved is not None
+        assert saved.formats == [1]
+        assert saved.brackets == [2]
+
     async def test_returns_json_for_ajax_request(
         self,
         client: WebClient,

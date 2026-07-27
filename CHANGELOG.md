@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix FK issue when a user logs into SpellBot without ever having used the bot before.
+
 ## [v21.6.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.6.0) - 2026-07-19
 
 ### Added
