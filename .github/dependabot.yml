@@ -55,6 +55,10 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+      # init and analyze must always be on the same version, so bump them together
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
 
   - package-ecosystem: "docker"
     directory: "/"
