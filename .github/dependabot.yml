@@ -18,6 +18,22 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+      # major bumps stay ungrouped so they can be reviewed one at a time;
+      # prod and dev are split so each PR keeps its own commit-message prefix
+      backend:
+        dependency-type: "production"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      backend-dev:
+        dependency-type: "development"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "npm"
     directory: "/"
@@ -37,6 +53,22 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+      # major bumps stay ungrouped so they can be reviewed one at a time;
+      # prod and dev are split so each PR keeps its own commit-message prefix
+      frontend:
+        dependency-type: "production"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      frontend-dev:
+        dependency-type: "development"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
