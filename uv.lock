@@ -436,14 +436,14 @@ wheels = [
 
 [[package]]
 name = "datadog"
-version = "0.52.1"
+version = "0.52.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a9/e6/ec5e4b4dbecd63cecae94009ef6dde9ab421d7d0022e6027586cc3776921/datadog-0.52.1.tar.gz", hash = "sha256:44c6deb563c4522dba206fba2e2bb93d3b04113c40191851ba3a241d82b5fd0b", size = 368037, upload-time = "2025-07-31T15:49:43.425Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/44/3a285d5964203e414d89c3f41f1aeb71f9b8f17a8fc19ad18e1df5e65b4e/datadog-0.52.2.tar.gz", hash = "sha256:a74b1704ce37f3d9a0c36b1a87127c45032171726a01960bd210a549f1400849", size = 374430, upload-time = "2026-06-25T08:15:19.024Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/19/e0e39f10169ca3e37fa6b5be2f6d1c729c92d677f1bd21ad6d448df8bec8/datadog-0.52.1-py2.py3-none-any.whl", hash = "sha256:b8c92cd761618ee062f114171067e4c400d48c9f0dad16cb285042439d9d5d4e", size = 129952, upload-time = "2025-07-31T15:49:41.8Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/54/6df7d5b1563504374ca676b45ff0370fad98190a3a0747eff98a7599e8c8/datadog-0.52.2-py2.py3-none-any.whl", hash = "sha256:60fcc90ee7be3b767af878de4d5a6774a80c386cde1f15e900e66e42d2c6aaf9", size = 137083, upload-time = "2026-06-25T08:15:17.708Z" },
 ]
 
 [[package]]
