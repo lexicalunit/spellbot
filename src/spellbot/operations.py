@@ -19,6 +19,7 @@ from .utils import (
     CANT_SEND_CODE,
     MISSING_ACCESS_CODE,
     NO_MUTUAL_GUILDS_CODE,
+    UNKNOWN_CHANNEL_CODE,
     UNKNOWN_INTERACTION_CODE,
     UNKNOWN_MESSAGE_CODE,
     bot_can_delete_channel,
@@ -262,6 +263,10 @@ async def safe_fetch_guild(
     )
 
 
+def is_unknown_channel(ex: BaseException) -> bool:
+    return isinstance(ex, NotFound) and getattr(ex, "code", None) == UNKNOWN_CHANNEL_CODE
+
+
 @tracer.wrap()
 async def safe_fetch_text_channel(
     client: discord.Client,
@@ -283,8 +288,15 @@ async def safe_fetch_text_channel(
         logger.warning("in guild %s, no permissions to read messages", guild_xid)
         return None
 
-    fetched = await safe_call(
+    _, fetched = await safe_call_with_expected(
         lambda: client.fetch_channel(channel_xid),
+        [
+            ExpectedError(
+                is_unknown_channel,
+                "unknown_channel",
+                "unknown channel %(channel_xid)s in guild %(guild_xid)s (already deleted)",
+            ),
+        ],
         "in guild %(guild_xid)s, could not fetch channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,

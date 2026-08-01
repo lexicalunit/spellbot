@@ -36,7 +36,7 @@ from spellbot.operations import (
     safe_update_embed,
     safe_update_embed_origin,
 )
-from spellbot.utils import CANT_SEND_CODE, NO_MUTUAL_GUILDS_CODE
+from spellbot.utils import CANT_SEND_CODE, NO_MUTUAL_GUILDS_CODE, UNKNOWN_CHANNEL_CODE
 from tests.mocks import build_message, mock_client
 
 if TYPE_CHECKING:
@@ -252,6 +252,40 @@ class TestOperationsFetchTextChannel:
         monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
         bad_guild.me = None
         assert await safe_fetch_text_channel(client, ANY, dpy_channel.id) is None
+
+    async def test_unknown_channel(
+        self,
+        dpy_channel: discord.TextChannel,
+        dpy_guild: discord.Guild,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        caplog.set_level(logging.INFO)
+        client = mock_client(channels=[dpy_channel], guilds=[dpy_guild])
+        monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
+        error = discord.errors.NotFound(MagicMock(), {"code": UNKNOWN_CHANNEL_CODE})
+        monkeypatch.setattr(client, "fetch_channel", AsyncMock(side_effect=error))
+
+        assert await safe_fetch_text_channel(client, dpy_guild.id, dpy_channel.id) is None
+
+        assert "already deleted" in caplog.text
+        assert not [record for record in caplog.records if record.levelno >= logging.WARNING]
+
+    async def test_not_found_other_code(
+        self,
+        dpy_channel: discord.TextChannel,
+        dpy_guild: discord.Guild,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        client = mock_client(channels=[dpy_channel], guilds=[dpy_guild])
+        monkeypatch.setattr(client, "get_channel", MagicMock(return_value=None))
+        error = discord.errors.NotFound(MagicMock(), {"code": 99999})
+        monkeypatch.setattr(client, "fetch_channel", AsyncMock(side_effect=error))
+
+        assert await safe_fetch_text_channel(client, dpy_guild.id, dpy_channel.id) is None
+
+        assert "could not fetch channel" in caplog.text
 
 
 @pytest.mark.asyncio

@@ -56,6 +56,10 @@ UNKNOWN_INTERACTION_CODE = 10062
 # This can happen when the message was deleted before we could edit it.
 UNKNOWN_MESSAGE_CODE = 10008
 
+# Discord API error code indicating that the channel no longer exists.
+# This can happen when the channel was deleted before we could fetch it.
+UNKNOWN_CHANNEL_CODE = 10003
+
 # Discord API error code indicating that the interaction has already been acknowledged.
 # This can happen when we try to defer an interaction that was already responded to.
 ALREADY_ACKNOWLEDGED_CODE = 40060
