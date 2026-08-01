@@ -1600,7 +1600,7 @@ wheels = [
 
 [[package]]
 name = "spellbot"
-version = "21.6.1"
+version = "21.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },

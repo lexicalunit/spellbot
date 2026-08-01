@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.6.2](https://github.com/lexicalunit/spellbot/releases/tag/v21.6.2) - 2026-08-01
+
 ### Fixed
 
 - Don't trigger PD alert for "unknown channel" errors.
