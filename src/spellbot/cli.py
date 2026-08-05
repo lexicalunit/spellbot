@@ -50,7 +50,7 @@ from .tracing import configure_tracing
     "--disable-tasks",
     default=False,
     is_flag=True,
-    help="Don't run background tasks",
+    help="Don't run periodic background tasks",
 )
 @click.option(
     "-a",

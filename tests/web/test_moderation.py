@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 
-from spellbot.web.api import moderation
+from spellbot.web.api import discord_api, moderation
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -41,26 +41,28 @@ def member_response(role_ids: list[str], *, status_code: int = 200) -> MagicMock
 @pytest.fixture(autouse=True)
 def reset_moderation_cache(mocker: MockerFixture) -> None:
     moderation.mod_cache.clear()
+    discord_api.cache_clear()
     mocker.patch.object(moderation.settings, "BOT_TOKEN", "bot-token")
+    mocker.patch.object(discord_api.settings, "BOT_TOKEN", "bot-token")
 
 
 @pytest.mark.asyncio
 class TestViewerIsModerator:
     async def test_returns_false_without_bot_token(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(moderation.settings, "BOT_TOKEN", None)
+        mocker.patch.object(discord_api.settings, "BOT_TOKEN", None)
         assert await moderation.viewer_is_moderator(1, 100) is False
 
     async def test_bot_owner_moderates_every_guild(self, mocker: MockerFixture) -> None:
         # The owner is not a member of the guild, yet OWNER_XID overrides everything
         # without any Discord API round-trip.
         mocker.patch.object(moderation.settings, "OWNER_XID", 42)
-        client = mocker.patch.object(moderation.httpx, "AsyncClient")
+        client = mocker.patch.object(discord_api.httpx, "AsyncClient")
         assert await moderation.viewer_is_moderator(42, 100) is True
         client.assert_not_called()
 
     async def test_guild_owner_is_moderator(self, mocker: MockerFixture) -> None:
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("1", []), member_response([])],
@@ -71,7 +73,7 @@ class TestViewerIsModerator:
     async def test_administrator_permission_is_moderator(self, mocker: MockerFixture) -> None:
         roles = [{"id": "500", "name": "Staff", "permissions": str(0x8)}]
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("2", roles), member_response(["500"])],
@@ -82,7 +84,7 @@ class TestViewerIsModerator:
     async def test_ban_members_permission_is_moderator(self, mocker: MockerFixture) -> None:
         roles = [{"id": "500", "name": "Staff", "permissions": str(0x4)}]
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("2", roles), member_response(["500"])],
@@ -93,7 +95,7 @@ class TestViewerIsModerator:
     async def test_mod_prefix_role_is_moderator(self, mocker: MockerFixture) -> None:
         roles = [{"id": "500", "name": "Moderator Team", "permissions": "0"}]
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("2", roles), member_response(["500"])],
@@ -104,7 +106,7 @@ class TestViewerIsModerator:
     async def test_plain_member_is_not_moderator(self, mocker: MockerFixture) -> None:
         roles = [{"id": "500", "name": "Members", "permissions": "0"}]
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("2", roles), member_response(["500"])],
@@ -114,7 +116,7 @@ class TestViewerIsModerator:
 
     async def test_non_member_is_not_moderator(self, mocker: MockerFixture) -> None:
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("2", []), member_response([], status_code=404)],
@@ -128,23 +130,24 @@ class TestViewerIsModerator:
         cm = MagicMock()
         cm.__aenter__ = AsyncMock(return_value=inner)
         cm.__aexit__ = AsyncMock(return_value=None)
-        mocker.patch.object(moderation.httpx, "AsyncClient", return_value=cm)
+        mocker.patch.object(discord_api.httpx, "AsyncClient", return_value=cm)
         assert await moderation.viewer_is_moderator(1, 100) is False
 
     async def test_result_is_cached(self, mocker: MockerFixture) -> None:
         client = make_httpx_client([guild_response("1", []), member_response([])])
-        factory = mocker.patch.object(moderation.httpx, "AsyncClient", return_value=client)
+        factory = mocker.patch.object(discord_api.httpx, "AsyncClient", return_value=client)
         assert await moderation.viewer_is_moderator(1, 100) is True
+        calls_after_first = factory.call_count
         # A second call for the same viewer/guild must not hit the REST API again.
         assert await moderation.viewer_is_moderator(1, 100) is True
-        assert factory.call_count == 1
+        assert factory.call_count == calls_after_first
 
     async def test_role_not_held_by_member_is_skipped(self, mocker: MockerFixture) -> None:
         # The guild has an admin role, but the member does not hold it, so it must be
         # skipped and the member is not a moderator.
         roles = [{"id": "999", "name": "Admins", "permissions": str(0x8)}]
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("2", roles), member_response(["500"])],
@@ -157,7 +160,7 @@ class TestViewerIsModerator:
         # contributes no permissions, so a plainly-named role is not a moderator.
         roles = [{"id": "500", "name": "Members", "permissions": None}]
         mocker.patch.object(
-            moderation.httpx,
+            discord_api.httpx,
             "AsyncClient",
             return_value=make_httpx_client(
                 [guild_response("2", roles), member_response(["500"])],

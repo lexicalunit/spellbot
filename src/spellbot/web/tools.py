@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, cast
 
-from spellbot.redis_client import get_redis
+from spellbot.redis_client import get_redis, log_redis_failure
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ async def rate_limited(request: web.Request, key: str | None = None) -> bool:
             "Awaitable[str]",
             redis.eval(RATE_LIMIT_SCRIPT, 1, key, str(TIME_WINDOW)),
         )
-    except Exception:
-        logger.warning("redis error in rate limiter", exc_info=True)
+    except Exception as ex:
+        log_redis_failure(logger, "rate limiter", ex)
         return False
     return int(resp) > RATE_LIMIT

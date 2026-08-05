@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added a `/play` page where members can create, join, and leave games from the website, as an alternative to Discord commands and buttons when interactions aren't being delivered.
+- Added a per-server `web_games` setting (on by default) to turn website-initiated games off.
+
+### Changed
+
+- An unreachable Redis now logs one concise warning instead of a full stack trace, in the rate limiter, DM limiter, and shard status. These paths already fail open, so a traceback misrepresented a recoverable condition and repeated on every request.
+
 ## [v21.6.2](https://github.com/lexicalunit/spellbot/releases/tag/v21.6.2) - 2026-08-01
 
 ### Fixed

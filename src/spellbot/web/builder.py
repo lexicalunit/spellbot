@@ -24,6 +24,7 @@ from spellbot.web.api import (
     audit,
     dashboard,
     ping,
+    play,
     queues,
     record,
     rest,
@@ -51,6 +52,7 @@ ALL_ROUTES = [
     dashboard.routes,
     queues.routes,
     viewer_auth.routes,
+    play.routes,
 ]
 
 

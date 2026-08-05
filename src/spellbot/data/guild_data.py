@@ -28,5 +28,6 @@ class GuildData:
     locale: str = "en"
     icon: str | None = None
     promote: bool = True
+    web_games: bool = True
     channels: list[ChannelData] = field(default_factory=list)
     awards: list[GuildAwardData] = field(default_factory=list)

@@ -11,6 +11,9 @@
     <a class="site-nav__link" href="/admin/dashboard">{{ t("web.nav.admin_dashboard") }}</a>
     {% endif %}
     {% if nav.logged_in %}
+    {% if not nav_current == "play" %}
+    <a class="site-nav__link" href="/play">{{ t("web.play.heading") }}</a>
+    {% endif %}
     <a class="site-nav__link" href="/u/{{ nav.xid }}">{{ t("web.nav.my_records") }}</a>
     <span class="site-nav__identity" title="{{ t('web.nav.logged_in_as', name=nav.name) }}">{{ nav.name }}</span>
     <form class="site-nav__logout-form" method="post" action="/logout?next={{ nav.here | urlencode }}">

@@ -5,7 +5,7 @@ from typing import Any
 
 from sqlalchemy import case, func, select
 
-from spellbot.database import DatabaseSession
+from spellbot.database import DatabaseSession, any_of
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, Game, Guild, GuildMember, Play, Post, Queue
 
@@ -211,16 +211,21 @@ async def viewer_played_guilds(
     user_xid: int,
     *,
     played_within: timedelta | None = None,
+    require_promote: bool = True,
 ) -> list[dict[str, Any]]:
     """
     Return the guilds the given user has played at least one game in.
 
     Each row carries the guild name, locale, cached icon, a count of plays in
-    that guild, and the earliest and latest play timestamps. Banned and
-    unpromoted guilds are excluded. When `played_within` is provided, guilds
-    whose most recent play is older than the window are excluded (the
-    aggregated counts and timestamps still cover the full history). Results
-    are ordered by most-recent play first.
+    that guild, and the earliest and latest play timestamps. Banned guilds are
+    always excluded. When `played_within` is provided, guilds whose most recent
+    play is older than the window are excluded (the aggregated counts and
+    timestamps still cover the full history). Results are ordered by
+    most-recent play first.
+
+    `require_promote` also excludes guilds that have opted out of being advertised
+    publicly. Pass False when listing a viewer's *own* servers back to them — opting
+    out of advertising is not the same as hiding a server from the people in it.
     """
     games_played = func.count(Play.game_id).label("games_played")  # type: ignore
     first_played_at = func.min(Play.created_at).label("first_played_at")
@@ -241,7 +246,6 @@ async def viewer_played_guilds(
         .where(
             Play.user_xid == user_xid,
             Guild.banned.is_(False),
-            Guild.promote.is_(True),
         )
         .group_by(
             Game.guild_xid,
@@ -251,6 +255,8 @@ async def viewer_played_guilds(
         )
         .order_by(last_played_at.desc())
     )
+    if require_promote:
+        stmt = stmt.where(Guild.promote.is_(True))
     if played_within is not None:
         cutoff = datetime.now(tz=UTC) - played_within
         stmt = stmt.having(last_played_at >= cutoff)
@@ -308,6 +314,79 @@ async def viewer_played_channels(
         {
             "channel_xid": int(row[0]),
             "channel_name": row[1] or "",
+        }
+        for row in rows
+    ]
+
+
+async def pending_games_in_channels(
+    guild_xid: int,
+    channel_xids: list[int],
+    *,
+    viewer_xid: int,
+) -> list[dict[str, Any]]:
+    """
+    Return the pending games in the given channels, for the website's join list.
+
+    Each row carries what the join UI needs to describe a game and decide whether to
+    offer a Join or a Leave button: format/bracket/service labels, seat counts, how long
+    it has been waiting, and whether `viewer_xid` is already queued in it.
+    """
+    if not channel_xids:
+        return []
+    players_col = func.count(Queue.user_xid).label("players")
+    joined_col = func.bool_or(Queue.user_xid == viewer_xid).label("joined")
+    stmt = (
+        select(
+            Game.id,
+            Game.channel_xid,  # type: ignore
+            Channel.name.label("channel_name"),
+            FORMAT_LABEL,
+            BRACKET_LABEL,
+            SERVICE_LABEL,
+            Game.seats,  # type: ignore
+            Game.rules,
+            Game.created_at,
+            players_col,
+            joined_col,
+        )
+        .select_from(Game)
+        .join(Queue, Queue.game_id == Game.id)
+        .join(Channel, Channel.xid == Game.channel_xid)  # type: ignore
+        .where(
+            Game.guild_xid == guild_xid,
+            any_of(Game.channel_xid, channel_xids),  # type: ignore
+            Game.started_at.is_(None),
+            Game.deleted_at.is_(None),
+        )
+        .group_by(
+            Game.id,
+            Game.channel_xid,  # type: ignore
+            Channel.name,
+            Game.format,  # type: ignore
+            Game.bracket,  # type: ignore
+            Game.service,  # type: ignore
+            Game.seats,  # type: ignore
+            Game.rules,
+            Game.created_at,
+        )
+        .order_by(Game.created_at.desc())
+    )
+    rows = (await DatabaseSession.execute(stmt)).all()
+    now = datetime.now(UTC)
+    return [
+        {
+            "game_id": int(row[0]),
+            "channel_xid": int(row[1]),
+            "channel_name": row[2] or "",
+            "format": row[3],
+            "bracket": row[4],
+            "service": row[5],
+            "seats": int(row[6]),
+            "rules": row[7],
+            "players": int(row[9]),
+            "joined": bool(row[10]),
+            "wait_seconds": max(0, int((now - row[8].replace(tzinfo=UTC)).total_seconds())),
         }
         for row in rows
     ]

@@ -14,6 +14,7 @@ from . import (
     users,
     verifies,
     watches,
+    web_actions,
 )
 from .awards import NewAward
 
@@ -32,4 +33,5 @@ __all__ = [
     "users",
     "verifies",
     "watches",
+    "web_actions",
 ]

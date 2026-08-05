@@ -5,7 +5,7 @@ import secrets
 import time
 from typing import TYPE_CHECKING, Literal, cast
 
-from spellbot.redis_client import get_redis
+from spellbot.redis_client import get_redis, log_redis_failure
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -82,7 +82,7 @@ async def try_consume_dm_slot(kind: DMKind) -> bool:
                 member,
             ),
         )
-    except Exception:
-        logger.warning("redis error in dm rate limiter", exc_info=True)
+    except Exception as ex:
+        log_redis_failure(logger, "dm rate limiter", ex)
         return False
     return int(result) == 1

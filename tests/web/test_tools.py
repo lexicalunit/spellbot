@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from spellbot import redis_client
 from spellbot.redis_client import close_redis
@@ -95,6 +97,29 @@ class TestRateLimited:
             result = await rate_limited(request)
             # Should return False on error (fail open)
             assert result is False
+
+    async def test_unreachable_redis_logs_without_a_traceback(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """A Redis that simply is not running must not look like an unhandled fault."""
+        request = MagicMock()
+        request.remote = "192.168.1.1"
+
+        mock_redis = AsyncMock()
+        mock_redis.eval = AsyncMock(
+            side_effect=RedisConnectionError("Error 61 connecting to localhost:6380."),
+        )
+
+        with (
+            patch.object(settings, "REDIS_URL", "redis://localhost"),
+            patch("spellbot.redis_client.aioredis.from_url", AsyncMock(return_value=mock_redis)),
+            caplog.at_level(logging.DEBUG),
+        ):
+            assert await rate_limited(request) is False
+
+        assert [r.exc_info for r in caplog.records] == [None]
+        assert "rate limiter unavailable" in caplog.records[0].getMessage()
 
     async def test_client_is_reused(self) -> None:
         """Repeated calls share a single Redis client (from_url called once)."""

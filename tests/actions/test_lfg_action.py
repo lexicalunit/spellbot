@@ -593,7 +593,7 @@ class TestLookingForGameAction:
         mock_role.name = "Regular Role"
         mock_guild = MagicMock(spec=discord.Guild)
         mock_guild.roles = [mock_role]
-        mocker.patch.object(action.interaction, "guild", mock_guild)
+        mocker.patch.object(action, "guild", mock_guild)
 
         watch_stub = mocker.patch.object(services.games, "watch_notes", AsyncMock())
 
@@ -613,7 +613,7 @@ class TestLookingForGameAction:
         mock_role.name = f"{settings.MOD_PREFIX}Admin"
         mock_guild = MagicMock(spec=discord.Guild)
         mock_guild.roles = [mock_role]
-        mocker.patch.object(action.interaction, "guild", mock_guild)
+        mocker.patch.object(action, "guild", mock_guild)
         mocker.patch.object(services.games, "watch_notes", AsyncMock(return_value={}))
 
         send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
@@ -636,7 +636,7 @@ class TestLookingForGameAction:
         mock_role.members = [mock_member]
         mock_guild = MagicMock(spec=discord.Guild)
         mock_guild.roles = [mock_role]
-        mocker.patch.object(action.interaction, "guild", mock_guild)
+        mocker.patch.object(action, "guild", mock_guild)
 
         game_data = create_mock_game(game_id=1)
         game_data.posts = [
@@ -1105,10 +1105,11 @@ class TestLookingForGameAction:
 
         await action.execute_start()
 
+        # No `ephemeral` kwarg: this is a DM, and `Messageable.send` has no such
+        # parameter — passing it raised `TypeError` before the send ever happened.
         stub.assert_called_once_with(
             discord_user,
             "Please run this command in the same channel as your game.",
-            ephemeral=True,
         )
 
     async def test_execute_start_no_channel(
@@ -1125,10 +1126,11 @@ class TestLookingForGameAction:
 
         await action.execute_start()
 
+        # No `ephemeral` kwarg: this is a DM, and `Messageable.send` has no such
+        # parameter — passing it raised `TypeError` before the send ever happened.
         stub.assert_called_once_with(
             discord_user,
             "Please run this command in the same channel as your game.",
-            ephemeral=True,
         )
 
     async def test_execute_start_not_waiting(

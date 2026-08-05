@@ -22,6 +22,7 @@ class TestWebEditable:
             "voice_create",
             "use_max_bitrate",
             "suggest_voice_category",
+            "web_games",
             "enable_mythic_track",
         }
         # Owner-only / internal columns are never marked editable.

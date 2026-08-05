@@ -52,7 +52,7 @@ def format_wait(seconds: int) -> str:
     return f"{hours}h {minutes}m"
 
 
-async def _resolve_icons(rows: list[dict[str, Any]]) -> dict[int, str | None]:
+async def resolve_icons(rows: list[dict[str, Any]]) -> dict[int, str | None]:
     """Return a `{guild_xid: icon_url}` map, backfilling missing entries from Discord."""
     now = datetime.now(UTC)
     candidates = {row["guild_xid"] for row in rows if not row.get("guild_icon")}
@@ -102,7 +102,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
             if viewer_xid is not None
             else set()
         )
-        backfilled = await _resolve_icons(raw_rows + raw_games + raw_played_guilds)
+        backfilled = await resolve_icons(raw_rows + raw_games + raw_played_guilds)
     rows = [
         {
             **row,
@@ -176,7 +176,7 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
             STARTED_GAMES_WINDOW,
             only_mythic_track=only_mythic_track,
         )
-        backfilled = await _resolve_icons(raw_rows + raw_games)
+        backfilled = await resolve_icons(raw_rows + raw_games)
     queues = [
         {
             "guild_xid": row["guild_xid"],
@@ -255,7 +255,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         guild = await services.queues.guild_summary(guild_xid)
         if guild is None:
             return web.Response(status=404)
-        backfilled = await _resolve_icons([guild])
+        backfilled = await resolve_icons([guild])
         # Fetch soft-deleted alerts too so the viewer's prior preferences can be
         # re-displayed (and restored on save) after they previously turned
         # notifications off for this guild.

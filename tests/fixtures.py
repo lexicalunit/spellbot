@@ -52,6 +52,7 @@ from tests.factories import (
     UserFactory,
     VerifyFactory,
     WatchFactory,
+    WebActionFactory,
 )
 from tests.mocks import build_author, build_channel, build_guild, build_interaction, build_message
 
@@ -148,6 +149,7 @@ class Factories:
     verify = VerifyFactory
     watch = WatchFactory
     token = TokenFactory
+    web_action = WebActionFactory
 
 
 @pytest_asyncio.fixture()
@@ -202,6 +204,7 @@ async def session_context(
         UserFactory._meta.sqlalchemy_session = sync_session  # type: ignore
         VerifyFactory._meta.sqlalchemy_session = sync_session  # type: ignore
         WatchFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        WebActionFactory._meta.sqlalchemy_session = sync_session  # type: ignore
 
         def cleanup_session() -> None:
             async def finalizer() -> None:

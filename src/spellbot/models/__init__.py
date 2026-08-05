@@ -43,6 +43,12 @@ from .token import Token  # noqa: E402
 from .user import User  # noqa: E402
 from .verify import Verify  # noqa: E402
 from .watch import Watch  # noqa: E402
+from .web_action import (  # noqa: E402
+    WebAction,
+    WebActionError,
+    WebActionKind,
+    WebActionStatus,
+)
 
 
 class HasTable(Protocol):
@@ -87,6 +93,10 @@ __all__ = [
     "UserAward",
     "Verify",
     "Watch",
+    "WebAction",
+    "WebActionError",
+    "WebActionKind",
+    "WebActionStatus",
     "create_all",
     "generate_pin",
     "import_models",

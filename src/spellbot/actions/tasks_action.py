@@ -13,16 +13,27 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager, rollback_session
+from spellbot.errors import (
+    GuildBannedError,
+    SpellBotError,
+    UserBannedError,
+    UserUnverifiedError,
+    UserVerifiedError,
+)
 from spellbot.metrics import (
     add_span_error,
     add_span_request_id,
     generate_request_id,
     setup_ignored_errors,
 )
+from spellbot.models import WebActionError, WebActionKind
 from spellbot.operations import (
     bot_can_delete_channel,
+    bot_can_send_messages,
     safe_delete_channel,
     safe_delete_message,
+    safe_fetch_guild,
+    safe_fetch_member,
     safe_fetch_text_channel,
     safe_fetch_user,
     safe_get_partial_message,
@@ -32,6 +43,7 @@ from spellbot.operations import (
 from spellbot.settings import settings
 
 from .base_action import handle_exception
+from .web_action import WebLeaveAction, WebLookingForGameAction
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -39,9 +51,23 @@ if TYPE_CHECKING:
     from discord.channel import VoiceChannel
 
     from spellbot import SpellBot
-    from spellbot.data import GameData
+    from spellbot.data import GameData, WebActionData
 
 logger = logging.getLogger(__name__)
+
+# Rejections raised by `upsert_request_objects` map to stable codes the website turns
+# into translated text. Note the counter-intuitive pair: `UserVerifiedError` is raised
+# when a *verified* user acts in an unverified-only channel, and vice versa.
+WEB_ACTION_ERRORS: dict[type[Exception], str] = {
+    GuildBannedError: WebActionError.GUILD_BANNED.value,
+    UserBannedError: WebActionError.USER_BANNED.value,
+    UserVerifiedError: WebActionError.CHANNEL_UNVERIFIED_ONLY.value,
+    UserUnverifiedError: WebActionError.CHANNEL_VERIFIED_ONLY.value,
+}
+
+# Permissions a member must hold in a channel for us to act there on their behalf. This
+# mirrors what Discord itself would require of them to run `/lfg` and press the buttons.
+REQUIRED_MEMBER_PERMISSIONS = ("view_channel", "send_messages", "use_application_commands")
 
 
 class VoiceChannelFilterer:
@@ -220,6 +246,144 @@ class TasksAction:
             add_span_error(e)
             logger.exception("error: exception in background task")
             await rollback_session()
+
+    async def process_web_actions(self) -> None:
+        """Carry out game requests made from the SpellBot website."""
+        logger.info("starting task process_web_actions")
+        try:
+            expired = await services.web_actions.expire_stale(
+                timedelta(minutes=settings.WEB_ACTIONS_MAX_AGE_M),
+                WebActionError.EXPIRED.value,
+            )
+            if expired:
+                logger.warning("expired %s stale web action(s)", expired)
+            guild_xids = [guild.id for guild in self.bot.guilds]
+            actions = await services.web_actions.claim(
+                guild_xids,
+                limit=settings.WEB_ACTIONS_BATCH,
+            )
+            for action_data in actions:
+                await self.process_web_action(action_data)
+        except BaseException as e:  # Catch EVERYTHING so tasks don't die
+            add_span_error(e)
+            logger.exception("error: exception in background task")
+            await rollback_session()
+
+    async def process_web_action(self, action_data: WebActionData) -> None:
+        """Carry out one website request, recording its outcome for the website."""
+        logger.info("processing web action %s (%s)", action_data.id, action_data.kind)
+        try:
+            error_code, game_id, notices = await self.run_web_action(action_data)
+        except tuple(WEB_ACTION_ERRORS) as ex:
+            error_code, game_id, notices = WEB_ACTION_ERRORS[type(ex)], None, []
+        except SpellBotError:
+            logger.warning("web action %s rejected", action_data.id, exc_info=True)
+            error_code, game_id, notices = WebActionError.REJECTED.value, None, []
+        except BaseException as e:  # Catch EVERYTHING so tasks don't die
+            add_span_error(e)
+            logger.exception("error: exception while processing web action")
+            await rollback_session()
+            error_code, game_id, notices = WebActionError.INTERNAL_ERROR.value, None, []
+        await services.web_actions.resolve(
+            action_data.id,
+            error_code=error_code,
+            game_id=game_id,
+            notices=notices,
+        )
+
+    async def run_web_action(
+        self,
+        action_data: WebActionData,
+    ) -> tuple[str | None, int | None, list[str]]:
+        """
+        Run one website request, returning `(error_code, game_id, notices)`.
+
+        The permission checks here are the authoritative ones. The website performs its
+        own checks before accepting the request, but it reads Discord over REST and its
+        answer can be minutes stale; by the time we get here the user may have been
+        kicked, banned, or had the channel revoked. This runs against the live gateway
+        state, immediately before we act.
+        """
+        guild = await safe_fetch_guild(self.bot, action_data.guild_xid)
+        if guild is None:
+            return WebActionError.GUILD_UNAVAILABLE.value, None, []
+
+        guild_data = await services.guilds.get(action_data.guild_xid)
+        if guild_data is not None and not guild_data.web_games:
+            return WebActionError.WEB_GAMES_DISABLED.value, None, []
+
+        channel = await safe_fetch_text_channel(
+            self.bot,
+            action_data.guild_xid,
+            action_data.channel_xid,
+        )
+        if channel is None:
+            return WebActionError.CHANNEL_UNAVAILABLE.value, None, []
+
+        member = await safe_fetch_member(guild, action_data.user_xid)
+        if member is None:
+            return WebActionError.NOT_A_MEMBER.value, None, []
+
+        perms = channel.permissions_for(member)
+        if not all(getattr(perms, name, False) for name in REQUIRED_MEMBER_PERMISSIONS):
+            return WebActionError.MISSING_PERMISSIONS.value, None, []
+
+        if not bot_can_send_messages(channel):
+            return WebActionError.BOT_MISSING_PERMISSIONS.value, None, []
+
+        # Serialize against the Discord command and button paths, which take the same
+        # lock. Without this a website join and a button click on the same game can race
+        # through `add_player` and over-seat it.
+        async with self.bot.guild_lock(guild.id):
+            if action_data.kind == WebActionKind.LEAVE.value:
+                return await self.run_web_leave(action_data, guild, channel, member)
+            return await self.run_web_lfg(action_data, guild, channel, member)
+
+    async def run_web_lfg(
+        self,
+        action_data: WebActionData,
+        guild: discord.Guild,
+        channel: discord.TextChannel,
+        member: discord.Member,
+    ) -> tuple[str | None, int | None, list[str]]:
+        params = action_data.params
+        joining = action_data.kind == WebActionKind.JOIN.value
+        async with WebLookingForGameAction.create_for_web(
+            self.bot,
+            actor=member,
+            guild=guild,
+            channel=channel,
+            locale=action_data.locale,
+            request_id=f"web-action-{action_data.id}",
+        ) as action:
+            await action.execute(
+                friends=params.get("friends"),
+                seats=params.get("seats"),
+                rules=params.get("rules"),
+                format=params.get("format"),
+                bracket=params.get("bracket"),
+                service=params.get("service"),
+                game_id=action_data.game_id if joining else None,
+            )
+            return None, action.game_id, action.notices
+
+    async def run_web_leave(
+        self,
+        action_data: WebActionData,
+        guild: discord.Guild,
+        channel: discord.TextChannel,
+        member: discord.Member,
+    ) -> tuple[str | None, int | None, list[str]]:
+        async with WebLeaveAction.create_for_web(
+            self.bot,
+            actor=member,
+            guild=guild,
+            channel=channel,
+            locale=action_data.locale,
+            request_id=f"web-action-{action_data.id}",
+        ) as action:
+            await action.execute()
+            return None, action_data.game_id, action.notices
 
     async def notify_games(self, game_data_list: list[GameData]) -> None:
         for game_data in game_data_list:

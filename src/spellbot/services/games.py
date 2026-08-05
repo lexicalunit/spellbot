@@ -117,6 +117,27 @@ async def get_by_message_xid(message_xid: int) -> GameData | None:
     return await game.to_data() if game else None
 
 
+@tracer.wrap()
+async def get_joinable(game_id: int, *, guild_xid: int, channel_xid: int) -> GameData | None:
+    """
+    Fetch a live game by id, scoped to the guild and channel it belongs to.
+
+    Used by the website's join flow, where the game id comes from the request rather
+    than from a Discord message the bot itself posted. Unlike `get`, this refuses
+    deleted games and games outside the given channel, so a hand-edited id can not
+    reach a game the viewer was never shown.
+    """
+    stmt = select(Game).where(
+        Game.id == game_id,
+        Game.guild_xid == guild_xid,
+        Game.channel_xid == channel_xid,  # type: ignore
+        Game.deleted_at.is_(None),
+    )
+    result = await DatabaseSession.execute(stmt)
+    game: Game | None = result.scalar_one_or_none()
+    return await game.to_data() if game else None
+
+
 def to_ms(dt: datetime | None) -> float | None:
     """Convert a naive UTC datetime to millis since epoch, or `None`."""
     if dt is None:

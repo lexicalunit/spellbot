@@ -20,6 +20,7 @@ from spellbot.data.token_data import TokenData
 from spellbot.data.user_data import PlayerDataDict, UserData
 from spellbot.data.verify_data import VerifyData
 from spellbot.data.watch_data import WatchData
+from spellbot.data.web_action_data import WebActionData
 
 __all__ = [
     "AlertData",
@@ -42,4 +43,5 @@ __all__ = [
     "UserData",
     "VerifyData",
     "WatchData",
+    "WebActionData",
 ]

@@ -48,5 +48,6 @@ class TestModelGuild:
             "locale": guild.locale,
             "icon": guild.icon,
             "promote": guild.promote,
+            "web_games": guild.web_games,
             "xid": guild.xid,
         }

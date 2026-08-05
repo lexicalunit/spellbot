@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from packaging.version import parse as parse_version
 
 from spellbot import __version__
-from spellbot.redis_client import get_redis
+from spellbot.redis_client import get_redis, log_redis_failure
 
 from .settings import settings
 
@@ -137,8 +137,8 @@ async def update_shard_status(bot: SpellBot) -> None:
 
         logger.debug("Updated shard status for %d shards", shard_count)
 
-    except Exception:
-        logger.warning("Failed to update shard status in Redis", exc_info=True)
+    except Exception as ex:
+        log_redis_failure(logger, "shard status update", ex)
 
 
 async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object] | None]:
@@ -174,7 +174,7 @@ async def get_all_shard_statuses() -> tuple[list[ShardStatus], dict[str, object]
             ),
         )
 
-    except Exception:
-        logger.warning("Failed to get shard statuses from Redis", exc_info=True)
+    except Exception as ex:
+        log_redis_failure(logger, "shard status lookup", ex)
         return [], None
     return statuses, metadata

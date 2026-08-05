@@ -35,14 +35,18 @@ def block_external_moderation(mocker: MockerFixture) -> None:
     """
     Default web page/endpoint handlers to a non-moderator viewer.
 
-    The guild and channel handlers resolve moderator status via the Discord REST API
-    (`viewer_is_moderator`). Without this, any test that renders those pages with an
+    The guild, channel, and play handlers resolve moderator status via the Discord REST
+    API (`viewer_is_moderator`). Without this, any test that renders those pages with an
     authenticated session (e.g. `owner_client`) would make a real network call. Tests
     that need a moderator override this with `mod_client` or an explicit patch; the
     real resolver is exercised directly in `test_moderation.py`.
     """
     mocker.patch(
         "spellbot.web.api.record.viewer_is_moderator",
+        AsyncMock(return_value=False),
+    )
+    mocker.patch(
+        "spellbot.web.api.play.viewer_is_moderator",
         AsyncMock(return_value=False),
     )
 

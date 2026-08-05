@@ -1,0 +1,288 @@
+/* Styles for the /play pages, where a logged-in member creates and joins games from
+   the website. Layered on top of base.css and queues.css, which supply the design
+   tokens, the site header, and the .empty / .page-footer primitives. */
+
+.play__intro {
+  color: var(--page-muted);
+  margin: 0 0 1.25rem;
+}
+
+/* Server list (/play) */
+
+.play__servers {
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.play__server {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.play__server-logo,
+.play__guild-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.play__server-titles,
+.play__guild-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.play__server-name,
+.play__guild-name {
+  font-size: 1.05rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play__server-sub,
+.play__guild-sub {
+  color: var(--page-muted);
+  font-size: 0.85rem;
+}
+
+.play__server-btn {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  background: var(--brand-purple);
+  color: var(--page-text) !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.play__server-btn:hover {
+  background: var(--brand-purple-dark);
+}
+
+.play__server-off {
+  flex: 0 0 auto;
+  color: var(--page-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Guild page (/play/g/{guild}) */
+
+.play__guild {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.play__section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.25rem;
+}
+
+.play__section-title {
+  font-size: 1.05rem;
+  margin-bottom: 0.35rem;
+}
+
+.play__hint {
+  color: var(--page-muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.9rem;
+}
+
+/* Create form */
+
+.play__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.play__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.play__field--wide {
+  grid-column: 1 / -1;
+}
+
+.play__label {
+  font-size: 0.8rem;
+  color: var(--page-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.play__field select,
+.play__field input {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--page-bg);
+  color: var(--page-text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.play__field select:focus-visible,
+.play__field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.play__field option:disabled {
+  color: var(--page-muted);
+}
+
+/* Buttons */
+
+.play__btn {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--card-bg-hover);
+  color: var(--page-text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.play__btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.play__btn:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.play__btn--primary {
+  background: var(--brand-purple);
+  border-color: var(--brand-purple);
+}
+.play__btn--primary:hover:not(:disabled) {
+  background: var(--brand-purple-dark);
+}
+
+.play__btn--danger {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+.play__btn--danger:hover:not(:disabled) {
+  background: var(--danger-bg-hover);
+}
+
+/* Joinable games */
+
+.play__games {
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.play__game {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  background: var(--page-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.play__game-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.play__game-format {
+  font-weight: 600;
+}
+
+.play__game-bracket,
+.play__game-channel {
+  color: var(--page-muted);
+  font-size: 0.85rem;
+}
+
+.play__game-meta {
+  grid-column: 1;
+  display: flex;
+  gap: 0.75rem;
+  color: var(--page-muted);
+  font-size: 0.8rem;
+}
+
+.play__game-rules {
+  grid-column: 1 / -1;
+  color: var(--page-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.play__game .play__btn {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+/* Toast */
+
+.play__toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  max-width: min(90vw, 34rem);
+  padding: 0.7rem 1.1rem;
+  border-radius: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+  z-index: 20;
+}
+
+.play__toast--error {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+@media (max-width: 640px) {
+  .play__server {
+    flex-wrap: wrap;
+  }
+  .play__form {
+    grid-template-columns: 1fr;
+  }
+  .play__game {
+    grid-template-columns: 1fr;
+  }
+  .play__game .play__btn {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

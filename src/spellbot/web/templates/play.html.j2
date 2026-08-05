@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{{ t("web.play.title") }}</title>
+    <meta name="description" content="{{ t('web.play.meta_description') }}">
+    <meta name="theme-color" content="#1a202c">
+    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+    <style>
+        {% include "base.css" %}
+        {% include "queues.css" %}
+        {% include "play.css" %}
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% set nav_current = "play" %}
+        <header class="site-header">
+            <a class="site-header__home" href="https://spellbot.io/">
+                <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+            </a>
+            <div class="site-header__titles">
+                <h1 class="site-header__title">{{ t("web.play.heading") }}</h1>
+            </div>
+            {% include "_site_nav.html.j2" %}
+        </header>
+
+        <p class="play__intro">{{ t("web.play.intro") }}</p>
+
+        {% if not guilds %}
+        <p class="empty">{{ t("web.play.no_servers") }}</p>
+        {% else %}
+        <ul class="play__servers">
+            {% for guild in guilds %}
+            <li class="play__server">
+                <img
+                    class="play__server-logo"
+                    src="{{ guild.logo }}"
+                    alt="{{ guild.guild_name }}"
+                    onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                    loading="lazy"
+                >
+                <div class="play__server-titles">
+                    <h2 class="play__server-name">{{ guild.guild_name or t("web.common.spellbot_server") }}</h2>
+                    <p class="play__server-sub">
+                        {{ t("web.play.games_played", count=guild.games_played) }}
+                    </p>
+                </div>
+                {% if guild.web_games %}
+                <a class="play__server-btn" href="/play/g/{{ guild.guild_xid }}">{{ t("web.play.open_server") }}</a>
+                {% else %}
+                <span class="play__server-off" title="{{ t('web.play.server_disabled_hint') }}">{{ t("web.play.server_disabled") }}</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <footer class="page-footer">
+            {{ t("web.common.powered_by", link='<a href="https://spellbot.io/">SpellBot</a>') | safe }}
+        </footer>
+    </div>
+</body>
+</html>

@@ -82,6 +82,9 @@ class TasksCog(commands.Cog):  # pragma: no cover
         self._shard_status_task: asyncio.Task[None] | None = None
         self._patreon_sync_task: asyncio.Task[None] | None = None
 
+        if not running_in_pytest():
+            self.process_web_actions.start()
+
         if not running_in_pytest() and not bot.disable_tasks:
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
@@ -143,6 +146,22 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @notify_pending_games.before_loop
     async def before_notify_pending_games(self) -> None:
+        await wait_until_ready(self.bot)
+
+    ###############################################
+    # Carry out game requests made from the website
+    ###############################################
+    @tasks.loop(seconds=settings.WEB_ACTIONS_LOOP_S)
+    async def process_web_actions(self) -> None:
+        try:
+            with tracer.trace(name="command", resource="process_web_actions"):
+                async with TasksAction.create(self.bot) as action:
+                    await action.process_web_actions()
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task cog")
+
+    @process_web_actions.before_loop
+    async def before_process_web_actions(self) -> None:
         await wait_until_ready(self.bot)
 
 

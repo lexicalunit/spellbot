@@ -127,6 +127,16 @@ class Guild(Base):
         server_default=true(),
         doc="If true, this guild may be advertised on public SpellBot pages",
     )
+    web_games = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+        doc=web_editable(
+            "When enabled, members may create and join this server's games "
+            "from the SpellBot website as well as from Discord.",
+        ),
+    )
 
     games = relationship(
         "Game",
@@ -178,4 +188,5 @@ class Guild(Base):
             locale=self.locale,  # type: ignore
             icon=self.icon,  # type: ignore
             promote=self.promote,  # type: ignore
+            web_games=self.web_games,  # type: ignore
         )

@@ -4,10 +4,9 @@ import logging
 import time
 from typing import Final
 
-import httpx
-
 from spellbot.settings import settings
 from spellbot.utils import is_moderator
+from spellbot.web.api import discord_api
 
 logger = logging.getLogger(__name__)
 
@@ -58,33 +57,17 @@ async def viewer_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
 
 
 async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
-    if not settings.BOT_TOKEN:
-        return False
-    headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            guild_resp = await client.get(
-                f"https://discord.com/api/v10/guilds/{guild_xid}",
-                headers=headers,
-            )
-            guild_resp.raise_for_status()
-            member_resp = await client.get(
-                f"https://discord.com/api/v10/guilds/{guild_xid}/members/{viewer_xid}",
-                headers=headers,
-            )
-            if member_resp.status_code == 404:
-                return False  # the viewer is not a member of this guild
-            member_resp.raise_for_status()
-    except httpx.HTTPError:
+    guild = await discord_api.get_guild(guild_xid)
+    if guild is None:
         logger.warning(
             "could not resolve moderator status for viewer %s in guild %s",
             viewer_xid,
             guild_xid,
         )
         return False
-
-    guild = guild_resp.json()
-    member = member_resp.json()
+    member = await discord_api.get_member(guild_xid, viewer_xid)
+    if member is None:
+        return False  # the viewer is not a member of this guild
 
     owner_id = guild.get("owner_id")
     is_guild_owner = owner_id is not None and int(owner_id) == viewer_xid

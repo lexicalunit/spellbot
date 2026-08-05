@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{{ t("web.play.guild_title", name=guild.guild_name or t("web.common.spellbot_server")) }}</title>
+    <meta name="description" content="{{ t('web.play.meta_description') }}">
+    <meta name="theme-color" content="#1a202c">
+    <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+    <style>
+        {% include "base.css" %}
+        {% include "queues.css" %}
+        {% include "play.css" %}
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% set nav_current = "play" %}
+        <header class="site-header">
+            <a class="site-header__home" href="https://spellbot.io/">
+                <img class="site-header__logo" alt="SpellBot" src="https://spellbot.io/assets/img/avatar-icon.png">
+            </a>
+            <div class="site-header__titles">
+                <h1 class="site-header__title">{{ t("web.play.heading") }}</h1>
+            </div>
+            <nav class="site-nav" aria-label="{{ t('web.nav.server_nav_aria') }}">
+                <a class="site-nav__link" href="/play">{{ t("web.play.all_servers") }}</a>
+                <a class="site-nav__link" href="/g/{{ guild.guild_xid }}">{{ t("web.nav.server_details") }}</a>
+            </nav>
+            {% include "_site_nav.html.j2" %}
+        </header>
+
+        <section class="play__guild">
+            <img
+                class="play__guild-logo"
+                src="{{ guild.logo }}"
+                alt="{{ guild.guild_name }}"
+                onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                loading="lazy"
+            >
+            <div class="play__guild-titles">
+                <h2 class="play__guild-name">{{ guild.guild_name or t("web.common.spellbot_server") }}</h2>
+                <p class="play__guild-sub">{{ t("web.play.guild_sub") }}</p>
+            </div>
+        </section>
+
+        {% if not guild.web_games %}
+        <p class="empty">{{ t("web.play.server_disabled_hint") }}</p>
+        {% elif not channels %}
+        <p class="empty">{{ t("web.play.no_channels") }}</p>
+        {% else %}
+
+        <section class="play__section">
+            <h3 class="play__section-title">{{ t("web.play.create_heading") }}</h3>
+            <p class="play__hint">{{ t("web.play.create_hint") }}</p>
+
+            <form class="play__form" id="create-form">
+                <label class="play__field">
+                    <span class="play__label">{{ t("web.field.channel") }}</span>
+                    <select name="channel" id="create-channel">
+                        {% for channel in channels %}
+                        <option
+                            value="{{ channel.channel_xid }}"
+                            data-format="{{ channel.default_format }}"
+                            data-bracket="{{ channel.default_bracket or '' }}"
+                            data-service="{{ channel.default_service }}"
+                            data-seats="{{ channel.default_seats }}"
+                            {% if channel.blocked %}disabled{% endif %}
+                        >
+                            #{{ channel.channel_name or channel.channel_xid }}{% if channel.blocked %} — {{ channel.blocked_label }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label class="play__field">
+                    <span class="play__label">{{ t("web.field.format") }}</span>
+                    <select name="format" id="create-format">
+                        {% for choice in format_choices %}
+                        <option value="{{ choice.value }}">{{ choice.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label class="play__field">
+                    <span class="play__label">{{ t("web.field.bracket") }}</span>
+                    <select name="bracket" id="create-bracket">
+                        {% for choice in bracket_choices %}
+                        <option value="{{ choice.value }}">{{ choice.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label class="play__field">
+                    <span class="play__label">{{ t("web.field.service") }}</span>
+                    <select name="service" id="create-service">
+                        {% for choice in service_choices %}
+                        <option value="{{ choice.value }}">{{ choice.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label class="play__field">
+                    <span class="play__label">{{ t("web.field.seats") }}</span>
+                    <input
+                        type="number"
+                        name="seats"
+                        id="create-seats"
+                        min="{{ min_seats }}"
+                        max="{{ max_seats }}"
+                        step="1"
+                    >
+                </label>
+
+                <label class="play__field play__field--wide">
+                    <span class="play__label">{{ t("web.game.rules") }}</span>
+                    <input
+                        type="text"
+                        name="rules"
+                        id="create-rules"
+                        maxlength="{{ max_rules_length }}"
+                        placeholder="{{ t('web.play.rules_placeholder') }}"
+                    >
+                </label>
+
+                <button type="submit" class="play__btn play__btn--primary" id="create-submit">
+                    {{ t("web.play.create_button") }}
+                </button>
+            </form>
+        </section>
+
+        <section class="play__section">
+            <h3 class="play__section-title">{{ t("web.play.join_heading") }}</h3>
+            {% if not games %}
+            <p class="empty">{{ t("web.play.no_games") }}</p>
+            {% else %}
+            <ul class="play__games">
+                {% for game in games %}
+                <li class="play__game" data-game-id="{{ game.game_id }}">
+                    <div class="play__game-main">
+                        <span class="play__game-format">{{ game.format }}</span>
+                        {% if game.bracket and game.bracket != "None" %}
+                        <span class="play__game-bracket">{{ game.bracket }}</span>
+                        {% endif %}
+                        <span class="play__game-channel">#{{ game.channel_name or game.channel_xid }}</span>
+                    </div>
+                    <div class="play__game-meta">
+                        <span class="play__game-seats">{{ t("web.play.seats_filled", players=game.players, seats=game.seats) }}</span>
+                        <span class="play__game-wait">{{ game.wait_seconds | wait }}</span>
+                    </div>
+                    {% if game.rules %}
+                    <p class="play__game-rules">{{ game.rules }}</p>
+                    {% endif %}
+                    {% if game.joined %}
+                    <button type="button" class="play__btn play__btn--danger" data-action="leave" data-game-id="{{ game.game_id }}">
+                        {{ t("button.leave") }}
+                    </button>
+                    {% else %}
+                    <button type="button" class="play__btn" data-action="join" data-game-id="{{ game.game_id }}">
+                        {{ t("web.play.join_button") }}
+                    </button>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <div class="play__toast" id="play-toast" role="status" aria-live="polite" hidden></div>
+
+        <footer class="page-footer">
+            {{ t("web.common.powered_by", link='<a href="https://spellbot.io/">SpellBot</a>') | safe }}
+        </footer>
+    </div>
+
+    <script>
+        (function () {
+            var GUILD_XID = {{ guild.guild_xid | tojson }};
+            var I18N = {
+                working: {{ t("web.play.js_working") | tojson }},
+                failed: {{ t("web.play.js_failed") | tojson }},
+                timeout: {{ t("web.play.js_timeout") | tojson }},
+                created: {{ t("web.play.js_created") | tojson }},
+                joined: {{ t("web.play.js_joined") | tojson }},
+                left: {{ t("web.play.js_left") | tojson }},
+                errors: {{ errors | tojson }},
+            };
+            // How long to wait on the bot before giving up. The bot polls for work every
+            // couple of seconds, so anything beyond this means it is not running.
+            var POLL_INTERVAL_MS = 1000;
+            var POLL_TIMEOUT_MS = 90000;
+
+            var toast = document.getElementById("play-toast");
+            var toastTimer = null;
+
+            function showToast(message, isError) {
+                if (!toast) return;
+                toast.textContent = message;
+                toast.hidden = false;
+                toast.classList.toggle("play__toast--error", !!isError);
+                if (toastTimer) window.clearTimeout(toastTimer);
+                toastTimer = window.setTimeout(function () { toast.hidden = true; }, 8000);
+            }
+
+            function describeError(code) {
+                return I18N.errors[code] || I18N.failed;
+            }
+
+            function setBusy(busy) {
+                var controls = document.querySelectorAll(".play__btn");
+                for (var i = 0; i < controls.length; i++) {
+                    controls[i].disabled = busy;
+                }
+            }
+
+            function pollAction(actionId, successMessage) {
+                var deadline = Date.now() + POLL_TIMEOUT_MS;
+                function tick() {
+                    if (Date.now() > deadline) {
+                        setBusy(false);
+                        showToast(I18N.timeout, true);
+                        return;
+                    }
+                    fetch("/play/action/" + actionId + ".json", {
+                        credentials: "same-origin",
+                        headers: { "Accept": "application/json" },
+                    }).then(function (resp) {
+                        return resp.json();
+                    }).then(function (data) {
+                        if (data.status === "pending" || data.status === "running") {
+                            window.setTimeout(tick, POLL_INTERVAL_MS);
+                            return;
+                        }
+                        setBusy(false);
+                        if (data.status === "error") {
+                            showToast(describeError(data.error), true);
+                            return;
+                        }
+                        var message = successMessage;
+                        if (data.notices && data.notices.length) {
+                            message = data.notices.join(" ");
+                        }
+                        showToast(message, false);
+                        // The channel post is the source of truth; reload so the page
+                        // reflects whatever the bot actually did.
+                        window.setTimeout(function () { window.location.reload(); }, 1500);
+                    }).catch(function () {
+                        setBusy(false);
+                        showToast(I18N.failed, true);
+                    });
+                }
+                window.setTimeout(tick, POLL_INTERVAL_MS);
+            }
+
+            function submitAction(url, body, successMessage) {
+                setBusy(true);
+                showToast(I18N.working, false);
+                fetch(url, {
+                    method: "POST",
+                    body: body,
+                    credentials: "same-origin",
+                    headers: { "Accept": "application/json" },
+                }).then(function (resp) {
+                    return resp.json().then(function (data) {
+                        return { ok: resp.ok, data: data };
+                    });
+                }).then(function (result) {
+                    if (!result.ok || !result.data.ok) {
+                        setBusy(false);
+                        showToast(describeError(result.data.error), true);
+                        return;
+                    }
+                    pollAction(result.data.action_id, successMessage);
+                }).catch(function () {
+                    setBusy(false);
+                    showToast(I18N.failed, true);
+                });
+            }
+
+            var createForm = document.getElementById("create-form");
+            var channelSelect = document.getElementById("create-channel");
+
+            function applyChannelDefaults() {
+                if (!channelSelect) return;
+                var option = channelSelect.options[channelSelect.selectedIndex];
+                if (!option) return;
+                var format = document.getElementById("create-format");
+                var bracket = document.getElementById("create-bracket");
+                var service = document.getElementById("create-service");
+                var seats = document.getElementById("create-seats");
+                if (format && option.dataset.format) format.value = option.dataset.format;
+                if (bracket && option.dataset.bracket) bracket.value = option.dataset.bracket;
+                if (service && option.dataset.service) service.value = option.dataset.service;
+                if (seats && option.dataset.seats) seats.value = option.dataset.seats;
+            }
+
+            if (channelSelect) {
+                channelSelect.addEventListener("change", applyChannelDefaults);
+                applyChannelDefaults();
+            }
+
+            if (createForm) {
+                createForm.addEventListener("submit", function (event) {
+                    event.preventDefault();
+                    if (!channelSelect || !channelSelect.value) return;
+                    var data = new FormData(createForm);
+                    data.delete("channel");
+                    submitAction(
+                        "/play/g/" + GUILD_XID + "/c/" + channelSelect.value + "/create",
+                        data,
+                        I18N.created
+                    );
+                });
+            }
+
+            document.addEventListener("click", function (event) {
+                var button = event.target.closest ? event.target.closest("[data-action]") : null;
+                if (!button) return;
+                var action = button.getAttribute("data-action");
+                var gameId = button.getAttribute("data-game-id");
+                if (!gameId || (action !== "join" && action !== "leave")) return;
+                event.preventDefault();
+                submitAction(
+                    "/play/game/" + gameId + "/" + action,
+                    new FormData(),
+                    action === "join" ? I18N.joined : I18N.left
+                );
+            });
+        })();
+    </script>
+</body>
+</html>

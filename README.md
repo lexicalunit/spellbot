@@ -47,6 +47,8 @@ SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Gir
 
 Visit **[queues.spellbot.io][queues]**, where you can log in with Discord to browse the games currently queuing across every server, filter them down to just the communities you play in, set up notifications so you're pinged when a game you care about is forming, and look back through your own game history and records.
 
+You can also **start and join games from the website** on the Play page. It works in any channel you've already played in, and SpellBot posts to Discord exactly as if you'd used `/lfg`: Same game post, same Join button, same DMs.
+
 ## 🔭 Where to Play?
 
 SpellBot helps Discord servers to build communities around playing Magic online. Please check out the following servers to find games and connect with other players. You can also **[see live games][queues]** waiting for you to join!

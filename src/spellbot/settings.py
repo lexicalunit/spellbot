@@ -109,6 +109,13 @@ class Settings(BaseSettings):
     SHARD_STATUS_UPDATE_INTERVAL_S: int = 30
     NOTIFY_GAMES_LOOP_M: int = 1
     NOTIFY_GAMES_DELAY_M: int = 5
+    # How often the bot picks up game requests made from the website. Kept short: a
+    # user is watching a spinner while this runs.
+    WEB_ACTIONS_LOOP_S: int = 2
+    WEB_ACTIONS_BATCH: int = 10
+    # Requests still unfinished after this long are failed, so a request made while the
+    # bot is down resolves on the website instead of spinning forever.
+    WEB_ACTIONS_MAX_AGE_M: int = 5
 
     # DM rate limiting (self-imposed to stay well within Discord's informal
     # bot-DM ceiling; counters are kept in Redis via a sliding window).

@@ -8,6 +8,7 @@ from .record_action import RecordAction
 from .tasks_action import TasksAction
 from .verify_action import VerifyAction
 from .watch_action import WatchAction
+from .web_action import WebLeaveAction, WebLookingForGameAction
 
 __all__ = [
     "AdminAction",
@@ -18,4 +19,6 @@ __all__ = [
     "TasksAction",
     "VerifyAction",
     "WatchAction",
+    "WebLeaveAction",
+    "WebLookingForGameAction",
 ]

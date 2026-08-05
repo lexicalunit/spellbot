@@ -246,6 +246,32 @@ async def safe_fetch_user(
 
 
 @tracer.wrap()
+async def safe_fetch_member(
+    guild: discord.Guild,
+    user_xid: int,
+) -> discord.Member | None:
+    """
+    Resolve a guild member, or `None` when they are not in the guild.
+
+    A `None` here is meaningful, not just a failure: it is how we learn that someone
+    has been kicked or banned since they last played. Unlike `safe_fetch_user`, this
+    carries the member's roles, which is what channel permission checks need.
+    """
+    if span := tracer.current_span():  # pragma: no cover
+        span.set_tags({"guild_xid": str(guild.id), "user_xid": str(user_xid)})
+
+    if member := guild.get_member(user_xid):
+        return member
+
+    return await safe_call(
+        lambda: guild.fetch_member(user_xid),
+        "in guild %(guild_xid)s, could not fetch member %(user_xid)s",
+        guild_xid=guild.id,
+        user_xid=user_xid,
+    )
+
+
+@tracer.wrap()
 async def safe_fetch_guild(
     client: discord.Client,
     guild_xid: int,

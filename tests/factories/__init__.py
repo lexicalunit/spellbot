@@ -14,6 +14,7 @@ from .token import TokenFactory
 from .user import UserFactory
 from .verify import VerifyFactory
 from .watch import WatchFactory
+from .web_action import WebActionFactory
 
 __all__ = [
     "AlertFactory",
@@ -31,4 +32,5 @@ __all__ = [
     "UserFactory",
     "VerifyFactory",
     "WatchFactory",
+    "WebActionFactory",
 ]
