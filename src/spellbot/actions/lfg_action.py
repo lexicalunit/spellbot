@@ -13,7 +13,7 @@ from ddtrace.trace import tracer
 from spellbot import services
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.i18n import guild_locale, t, user_locale
-from spellbot.integrations import playgroup_live
+from spellbot.integrations import convoke, playgroup_live
 from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
 from spellbot.operations import (
     VoiceChannelSuggestion,
@@ -129,6 +129,8 @@ class LookingForGameAction(BaseAction):
         bracket: int,
         service: int,
         message_xid: int | None,
+        war_id: str | None = None,
+        war_title: str | None = None,
     ) -> tuple[bool | None, GameData | None]:
         """Return True if the game is new, False if existing, or None of user can not join."""
         assert self.guild
@@ -155,6 +157,8 @@ class LookingForGameAction(BaseAction):
                 blind=bool(self.channel_data.blind_games),
                 to_mode=bool(self.channel_data.to_mode),
                 locale=guild_locale(self.guild),
+                war_id=war_id,
+                war_title=war_title,
             )
             return new, game
 
@@ -273,6 +277,73 @@ class LookingForGameAction(BaseAction):
         )
         await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=False)
 
+    async def resolve_guild_war_lfg(
+        self,
+        guild_war: str | None,
+        *,
+        origin: bool,
+        service: int | None,
+        seats: int | None,
+        locale: str,
+    ) -> tuple[str | None, str | None, int | None, int | None] | None:
+        """
+        Resolve optional /lfg guild_war into Convoke war fields.
+
+        Returns (war_id, war_title, service, seats), or None when an error reply
+        was already sent to the user.
+        """
+        if not guild_war or origin:
+            return None, None, service, seats
+
+        if service is not None and service != GameService.CONVOKE.value:
+            await safe_followup_channel(
+                self.interaction,
+                t("lfg.guild_war_convoke_only", locale=locale),
+            )
+            return None
+
+        live_war = await convoke.resolve_live_guild_war(guild_war.strip())
+        if live_war is None:
+            await safe_followup_channel(
+                self.interaction,
+                t("lfg.guild_war_invalid", locale=locale),
+            )
+            return None
+
+        if seats is not None and (seats < 2 or seats > 8):
+            await safe_followup_channel(
+                self.interaction,
+                t("lfg.guild_war_seats", locale=locale),
+            )
+            return None
+
+        return live_war["id"], live_war["title"], GameService.CONVOKE.value, seats or 4
+
+    async def ensure_guild_war_game_options(
+        self,
+        war_id: str | None,
+        *,
+        actual_seats: int,
+        actual_service: int,
+        locale: str,
+    ) -> bool:
+        """Return False when an error reply was already sent for Guild War constraints."""
+        if war_id is None:
+            return True
+        if actual_seats < 2 or actual_seats > 8:
+            await safe_followup_channel(
+                self.interaction,
+                t("lfg.guild_war_seats", locale=locale),
+            )
+            return False
+        if actual_service != GameService.CONVOKE.value:
+            await safe_followup_channel(
+                self.interaction,
+                t("lfg.guild_war_convoke_only", locale=locale),
+            )
+            return False
+        return True
+
     @tracer.wrap()
     async def execute(  # noqa: C901
         self,
@@ -283,6 +354,7 @@ class LookingForGameAction(BaseAction):
         bracket: int | None = None,
         service: int | None = None,
         message_xid: int | None = None,
+        guild_war: str | None = None,
     ) -> None:
         locale = guild_locale(self.guild)
         if not self.guild or not self.channel:
@@ -297,11 +369,29 @@ class LookingForGameAction(BaseAction):
         # False if user issued a /lfg command in chat.
         origin = bool(message_xid is not None)
 
+        resolved = await self.resolve_guild_war_lfg(
+            guild_war,
+            origin=origin,
+            service=service,
+            seats=seats,
+            locale=locale,
+        )
+        if resolved is None:
+            return None
+        war_id, war_title, service, seats = resolved
+
         actual_friends: str = await self.get_friends(friends)
         actual_format: int = await self.get_format(format)
         actual_bracket: int = await self.get_bracket(actual_format, bracket)
         actual_service: int = await self.get_service(service)
         actual_seats: int = await self.get_seats(actual_format, actual_service, seats)
+        if not await self.ensure_guild_war_game_options(
+            war_id,
+            actual_seats=actual_seats,
+            actual_service=actual_service,
+            locale=locale,
+        ):
+            return None
         rules = None if not rules else rules[:MAX_RULES_LENGTH]
 
         assert self.user_data
@@ -335,6 +425,8 @@ class LookingForGameAction(BaseAction):
             actual_bracket,
             actual_service,
             message_xid,
+            war_id=war_id,
+            war_title=war_title,
         )
         if new is None:
             return None

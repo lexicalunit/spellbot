@@ -21,6 +21,7 @@ sv:
       jump_to_post: "Du kan också [gå till det ursprungliga spelinlägget](%{link}) i <#%{channel_id}>."
     field:
       rules: "⚠️ Ytterligare regler:"
+      guild_war: "⚔️ Gildekrig"
       players: "Spelare"
       players_hidden_one: "**%{count} spelarnamn är dolt**"
       players_hidden_many: "**%{count} spelarnamn är dolda**"
@@ -60,6 +61,9 @@ sv:
     already_in_channel: "Du är redan med i ett spel i denna kanal."
     too_many_pending: "Du har för många pågående spel för att kunna delta i ett nytt just nu."
     too_many_friends: "Du nämnde för många spelare."
+    guild_war_convoke_only: "Gildekrigsmatcher måste använda Convoke. Välj Convoke (eller lämna tjänsten ovald) och försök igen."
+    guild_war_invalid: "Den gildekrigen är inte tillgänglig. Använd autokomplettering för att välja ett aktivt krig."
+    guild_war_seats: "Gildekrigsmatcher behöver mellan 2 och 8 platser."
     cannot_join: "Du kan inte gå med i detta spel."
     game_started: "Tyvärr, det spelet har redan börjat."
     game_full: "Tyvärr, det spelet är redan fullt."

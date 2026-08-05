@@ -11,6 +11,7 @@ from discord.ext import commands
 
 from spellbot.actions.lfg_action import LookingForGameAction
 from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
+from spellbot.integrations import convoke
 from spellbot.metrics import add_span_context
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
@@ -20,6 +21,27 @@ if TYPE_CHECKING:
     from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
+
+
+async def guild_war_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[Choice[str]]:
+    """Autocomplete live Convoke Guild Wars for /lfg."""
+    del interaction  # unused; signature required by discord.py
+    wars = await convoke.get_live_guild_wars()
+    needle = current.strip().lower()
+    choices: list[Choice[str]] = []
+    for war in wars:
+        label = war["title"]
+        if needle and needle not in label.lower() and needle not in war["slug"].lower():
+            continue
+        # Discord choice names max out at 100 characters.
+        name = label if len(label) <= 100 else f"{label[:97]}..."
+        choices.append(Choice(name=name, value=war["id"]))
+        if len(choices) >= 25:
+            break
+    return choices
 
 
 @for_all_callbacks(app_commands.check(is_guild))
@@ -56,6 +78,10 @@ class LookingForGameCog(commands.Cog):
     @app_commands.choices(
         bracket=[Choice(name=str(bracket), value=bracket.value) for bracket in GAME_BRACKET_ORDER],
     )
+    @app_commands.describe(
+        guild_war="Tag this Convoke game as a live Guild War match.",
+    )
+    @app_commands.autocomplete(guild_war=guild_war_autocomplete)
     @tracer.wrap(name="interaction", resource="lfg")
     async def lfg(
         self,
@@ -66,6 +92,7 @@ class LookingForGameCog(commands.Cog):
         service: int | None = None,
         format: int | None = None,
         bracket: int | None = None,
+        guild_war: str | None = None,
     ) -> None:
         assert interaction.guild is not None
         add_span_context(interaction)
@@ -82,6 +109,7 @@ class LookingForGameCog(commands.Cog):
                 format=format,
                 bracket=bracket,
                 service=service,
+                guild_war=guild_war,
             )
 
     @app_commands.command(name="rematch", description="Play another game with the last group.")

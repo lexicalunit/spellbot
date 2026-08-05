@@ -128,6 +128,73 @@ class TestFetchConvokeLink:
         assert payload["bracketLevel"] == "B2"  # BRACKET_2.value (3) -> B{3-1} = B2
 
     @pytest.mark.asyncio
+    async def test_fetch_convoke_link_with_guild_war(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"url": "https://convoke.gg/game/war"}
+        mock_client.post = AsyncMock(return_value=mock_response)
+
+        war_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        game = create_mock_game(
+            game_id=7,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
+            war_id=war_id,
+            war_title="Summer Clash",
+        )
+
+        with (
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
+            patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
+        ):
+            result = await fetch_convoke_link(mock_client, game, pins=None)
+
+        assert result == {"url": "https://convoke.gg/game/war"}
+        payload = mock_client.post.call_args.kwargs["json"]
+        assert payload["warId"] == war_id
+        assert "warPodMode" not in payload
+
+    @pytest.mark.asyncio
+    async def test_fetch_live_guild_wars(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "wars": [
+                {
+                    "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                    "title": "Summer Clash",
+                    "slug": "summer-clash",
+                    "status": "active",
+                    "participants": [{"communityId": 1}, {"communityId": 2}],
+                },
+            ],
+        }
+        mock_client.get = AsyncMock(return_value=mock_response)
+
+        with patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"):
+            wars = await convoke_module.fetch_live_guild_wars(mock_client)
+
+        assert wars == [
+            {
+                "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                "title": "Summer Clash",
+                "slug": "summer-clash",
+                "status": "active",
+            },
+        ]
+        assert mock_client.get.call_args.args[0] == "https://api.convoke.gg/guild-wars/live"
+
+    @pytest.mark.asyncio
     async def test_fetch_convoke_link_with_precons(self) -> None:
         mock_client = MagicMock(spec=httpx.AsyncClient)
         mock_response = MagicMock()

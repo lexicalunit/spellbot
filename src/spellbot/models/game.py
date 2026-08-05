@@ -150,6 +150,17 @@ class Game(Base):
     password = Column(String(255), nullable=True, doc="The password for this game")
     voice_invite_link = Column(String(255), doc="The voice channel invite link for this game")
     rules = Column(String(255), nullable=True, index=True, doc="Additional rules for this game")
+    war_id = Column(
+        String(36),
+        nullable=True,
+        index=True,
+        doc="Convoke Guild War UUID when this game is tagged as a war match",
+    )
+    war_title = Column(
+        String(160),
+        nullable=True,
+        doc="Cached Convoke Guild War title for embeds",
+    )
     blind = Column(
         Boolean,
         nullable=False,
@@ -255,6 +266,8 @@ class Game(Base):
             game_link=self.game_link,  # type: ignore
             password=self.password,  # type: ignore
             rules=self.rules,  # type: ignore
+            war_id=self.war_id,  # type: ignore
+            war_title=self.war_title,  # type: ignore
             blind=self.blind,  # type: ignore
             locale=self.locale,  # type: ignore
             players=[player.to_data() for player in players],

@@ -21,6 +21,7 @@ de:
       jump_to_post: "Sie können auch [zum ursprünglichen Spiel-Beitrag in <#%{channel_id}> springen](%{link})."
     field:
       rules: "⚠️ Zusätzliche Regeln:"
+      guild_war: "⚔️ Gildenkrieg"
       players: "Spieler"
       players_hidden_one: "**%{count} Spielername ist ausgeblendet**"
       players_hidden_many: "**%{count} Spielername sind ausgeblendet**"
@@ -60,6 +61,9 @@ de:
     already_in_channel: "Sie sind bereits in einem anstehenden Spiel in diesem Kanal."
     too_many_pending: "Sie sind in zu vielen anstehenden Spielen, um zu diesem Zeitpunkt einem anderen beizutreten."
     too_many_friends: "Sie haben zu viele Spieler erwähnt."
+    guild_war_convoke_only: "Gildenkriegs-Spiele müssen Convoke verwenden. Wählen Sie Convoke (oder lassen Sie den Dienst unausgewählt) und versuchen Sie es erneut."
+    guild_war_invalid: "Dieser Gildenkrieg ist nicht verfügbar. Nutzen Sie die Autovervollständigung, um einen laufenden Krieg auszuwählen."
+    guild_war_seats: "Gildenkriegs-Spiele benötigen zwischen 2 und 8 Plätzen."
     cannot_join: "Sie können diesem Spiel nicht beitreten."
     game_started: "Dieses Spiel hat leider bereits begonnen."
     game_full: "Dieses Spiel ist leider bereits voll."

@@ -21,6 +21,7 @@ fi:
       jump_to_post: "Voit myös [siirtyä alkuperäiseen pelijulkaisuun](%{link}) kohteessa <#%{channel_id}>."
     field:
       rules: "⚠️ Muita sääntöjä:"
+      guild_war: "⚔️ Kiltasota"
       players: "Pelaajat"
       players_hidden_one: "**%{count} pelaajan nimi on piilotettu**"
       players_hidden_many: "**%{count} pelaajan nimet on piilotettu**"
@@ -60,6 +61,9 @@ fi:
     already_in_channel: "Olet jo pelissä tällä kanavalla."
     too_many_pending: "Sinulla on liian monta avointa peliä, etkä voi liittyä uuteen peliin juuri nyt."
     too_many_friends: "Mainitsit liian monta pelaajaa."
+    guild_war_convoke_only: "Kiltasotaotteluiden on käytettävä Convokea. Valitse Convoke (tai jätä palvelu asettamatta) ja yritä uudelleen."
+    guild_war_invalid: "Tuo kiltasota ei ole saatavilla. Käytä automaattista täydennystä valitaksesi aktiivisen sodan."
+    guild_war_seats: "Kiltasotaottelut tarvitsevat 2–8 paikkaa."
     cannot_join: "Et voi liittyä tähän peliin."
     game_started: "Pahoittelut, tämä peli on jo alkanut."
     game_full: "Pahoittelut, tämä peli on jo täynnä."

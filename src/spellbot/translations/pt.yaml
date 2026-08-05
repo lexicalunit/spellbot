@@ -21,6 +21,7 @@ pt:
       jump_to_post: "Também pode [aceder à publicação original do jogo](%{link}) em <#%{channel_id}>."
     field:
       rules: "⚠️ Regras adicionais:"
+      guild_war: "⚔️ Guerra de guildas"
       players: "Jogadores"
       players_hidden_one: "**%{count} nome de jogador está oculto**"
       players_hidden_many: "**%{count} nomes de jogadores estão ocultos**"
@@ -60,6 +61,9 @@ pt:
     already_in_channel: "Já está num jogo deste canal."
     too_many_pending: "Está em demasiados jogos pendentes para se juntar a outro agora."
     too_many_friends: "Mencionou demasiados jogadores."
+    guild_war_convoke_only: "As partidas de guerra de guildas têm de usar o Convoke. Escolha Convoke (ou deixe o serviço por definir) e tente novamente."
+    guild_war_invalid: "Essa guerra de guildas não está disponível. Use a conclusão automática para escolher uma guerra ativa."
+    guild_war_seats: "As partidas de guerra de guildas precisam de entre 2 e 8 lugares."
     cannot_join: "Não se pode juntar a este jogo."
     game_started: "Lamentamos, esse jogo já começou."
     game_full: "Lamentamos, esse jogo já está cheio."

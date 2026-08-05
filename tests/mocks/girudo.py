@@ -229,6 +229,8 @@ def create_mock_game(
         game_link=None,
         password=None,
         rules=None,
+        war_id=kwargs.get("war_id"),
+        war_title=kwargs.get("war_title"),
         blind=False,
         players=[],
         posts=[],

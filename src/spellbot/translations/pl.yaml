@@ -21,6 +21,7 @@ pl:
       jump_to_post: "Możesz również [przejść do oryginalnego posta](%{link}) w kanale <#%{channel_id}>."
     field:
       rules: "⚠️ Dodatkowe zasady:"
+      guild_war: "⚔️ Wojna gildii"
       players: "Gracze"
       players_hidden_one: "**Nazwa %{count} gracza jest ukryta**"
       players_hidden_many: "**Nazwy %{count} graczy są ukryte**"
@@ -60,6 +61,9 @@ pl:
     already_in_channel: "Jesteś już w meczu na tym kanale."
     too_many_pending: "Jesteś w zbyt wielu oczekujących meczach, aby dołączyć teraz do kolejnego."
     too_many_friends: "Wspomniałeś(-aś) o zbyt wielu graczach."
+    guild_war_convoke_only: "Mecze wojny gildii muszą korzystać z Convoke. Wybierz Convoke (lub pozostaw usługę niewybraną) i spróbuj ponownie."
+    guild_war_invalid: "Ta wojna gildii jest niedostępna. Użyj autouzupełniania, aby wybrać aktywną wojnę."
+    guild_war_seats: "Mecze wojny gildii wymagają od 2 do 8 miejsc."
     cannot_join: "Nie możesz dołączyć do tego meczu."
     game_started: "Niestety ten mecz już się rozpoczął."
     game_full: "Niestety ten mecz jest już pełny."

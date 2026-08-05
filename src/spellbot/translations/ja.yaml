@@ -21,6 +21,7 @@ ja:
       jump_to_post: "また、[元のゲーム投稿に移動](%{link})して、<#%{channel_id}>で確認することもできます。"
     field:
       rules: "⚠️ 追加ルール："
+      guild_war: "⚔️ ギルド戦争"
       players: "プレイヤー"
       players_hidden_one: "**%{count}人のプレイヤー名が非表示です**"
       players_hidden_many: "**%{count}人のプレイヤー名が非表示です**"
@@ -60,6 +61,9 @@ ja:
     already_in_channel: "すでにこのチャンネルのゲームに参加しています。"
     too_many_pending: "現在、保留中のゲームが多すぎるため、別のゲームには参加できません。"
     too_many_friends: "メンションしたプレイヤーが多すぎます。"
+    guild_war_convoke_only: "ギルド戦争のマッチはConvokeを使う必要があります。Convokeを選ぶか、サービスを未設定のままにして、もう一度お試しください。"
+    guild_war_invalid: "そのギルド戦争は利用できません。オートコンプリートで開催中の戦争を選んでください。"
+    guild_war_seats: "ギルド戦争のマッチには2〜8席が必要です。"
     cannot_join: "このゲームには参加できません。"
     game_started: "申し訳ありませんが、そのゲームはすでに始まっています。"
     game_full: "申し訳ありませんが、そのゲームはすでに満員です。"

@@ -54,6 +54,8 @@ class GameData:
     game_link: str | None
     password: str | None
     rules: str | None
+    war_id: str | None
+    war_title: str | None
     blind: bool
     players: list[UserData] = field(default_factory=list)
     posts: list[PostData] = field(default_factory=list)
@@ -200,6 +202,12 @@ class GameData:
             embed.add_field(
                 name=t("game.field.rules", locale=locale),
                 value=self.rules,
+                inline=False,
+            )
+        if self.war_id and self.war_title:
+            embed.add_field(
+                name=t("game.field.guild_war", locale=locale),
+                value=self.war_title,
                 inline=False,
             )
         if self.blind and not dm:
