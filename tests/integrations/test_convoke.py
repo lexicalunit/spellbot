@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -14,6 +15,9 @@ from spellbot.integrations.convoke import (
     generate_link,
 )
 from tests.mocks import create_mock_game
+
+if TYPE_CHECKING:
+    from contextlib import AbstractContextManager
 
 
 class TestConvokeGameFormat:
@@ -126,6 +130,73 @@ class TestFetchConvokeLink:
         assert result == {"url": "https://convoke.gg/game/456"}
         payload = mock_client.post.call_args.kwargs["json"]
         assert payload["bracketLevel"] == "B2"  # BRACKET_2.value (3) -> B{3-1} = B2
+
+    @pytest.mark.asyncio
+    async def test_fetch_convoke_link_with_guild_war(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"url": "https://convoke.gg/game/war"}
+        mock_client.post = AsyncMock(return_value=mock_response)
+
+        war_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        game = create_mock_game(
+            game_id=7,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
+            war_id=war_id,
+            war_title="Summer Clash",
+        )
+
+        with (
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
+            patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
+        ):
+            result = await fetch_convoke_link(mock_client, game, pins=None)
+
+        assert result == {"url": "https://convoke.gg/game/war"}
+        payload = mock_client.post.call_args.kwargs["json"]
+        assert payload["warId"] == war_id
+        assert "warPodMode" not in payload
+
+    @pytest.mark.asyncio
+    async def test_fetch_live_guild_wars(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "wars": [
+                {
+                    "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                    "title": "Summer Clash",
+                    "slug": "summer-clash",
+                    "status": "active",
+                    "participants": [{"communityId": 1}, {"communityId": 2}],
+                },
+            ],
+        }
+        mock_client.get = AsyncMock(return_value=mock_response)
+
+        with patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"):
+            wars = await convoke_module.fetch_live_guild_wars(mock_client)
+
+        assert wars == [
+            {
+                "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                "title": "Summer Clash",
+                "slug": "summer-clash",
+                "status": "active",
+            },
+        ]
+        assert mock_client.get.call_args.args[0] == "https://api.convoke.gg/guild-wars/live"
 
     @pytest.mark.asyncio
     async def test_fetch_convoke_link_with_precons(self) -> None:
@@ -440,3 +511,127 @@ class TestGenerateLink:
             result = await generate_link(game, pins=None)
 
         assert result == (None, None)
+
+
+def war_response(payload: object) -> MagicMock:
+    resp = MagicMock()
+    resp.raise_for_status = MagicMock()
+    resp.json.return_value = payload
+    return resp
+
+
+def war_client(payload: object) -> MagicMock:
+    client = MagicMock(spec=httpx.AsyncClient)
+    client.get = AsyncMock(return_value=war_response(payload))
+    return client
+
+
+WAR_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
+
+@pytest.mark.asyncio
+class TestFetchLiveGuildWars:
+    """Covers how a Convoke Guild War payload is parsed, including malformed shapes."""
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            pytest.param([], id="not_an_object"),
+            pytest.param({}, id="no_wars_key"),
+            pytest.param({"wars": None}, id="wars_is_null"),
+            pytest.param({"wars": "nope"}, id="wars_is_a_string"),
+        ],
+    )
+    async def test_a_payload_we_do_not_recognize_yields_nothing(self, payload: object) -> None:
+        # Autocomplete must degrade to an empty list rather than raising inside
+        # Discord's UI if Convoke ever changes this response shape.
+        assert await convoke_module.fetch_live_guild_wars(war_client(payload)) == []
+
+    async def test_rows_that_are_not_objects_are_skipped(self) -> None:
+        payload = {"wars": ["nope", 42, {"id": WAR_ID, "title": "Summer Clash"}]}
+        wars = await convoke_module.fetch_live_guild_wars(war_client(payload))
+        assert [war["id"] for war in wars] == [WAR_ID]
+
+    @pytest.mark.parametrize(
+        "row",
+        [
+            pytest.param({"title": "Summer Clash"}, id="missing_id"),
+            pytest.param({"id": WAR_ID}, id="missing_title"),
+            pytest.param({"id": 42, "title": "Summer Clash"}, id="non_string_id"),
+            pytest.param({"id": WAR_ID, "title": 42}, id="non_string_title"),
+        ],
+    )
+    async def test_rows_without_a_usable_id_and_title_are_skipped(self, row: object) -> None:
+        # Both are required: the id is what gets stored on the game, and the title is
+        # the only thing a player sees in autocomplete.
+        assert await convoke_module.fetch_live_guild_wars(war_client({"wars": [row]})) == []
+
+    async def test_a_missing_slug_falls_back_to_the_id(self) -> None:
+        payload = {"wars": [{"id": WAR_ID, "title": "Summer Clash"}]}
+        wars = await convoke_module.fetch_live_guild_wars(war_client(payload))
+        assert wars == [
+            {"id": WAR_ID, "title": "Summer Clash", "slug": WAR_ID, "status": "active"},
+        ]
+
+    async def test_a_non_string_status_falls_back_to_active(self) -> None:
+        payload = {"wars": [{"id": WAR_ID, "title": "Summer Clash", "slug": "sc", "status": 7}]}
+        wars = await convoke_module.fetch_live_guild_wars(war_client(payload))
+        assert wars[0]["status"] == "active"
+
+
+@pytest.mark.asyncio
+class TestGetLiveGuildWars:
+    async def test_returns_parsed_wars(self) -> None:
+        payload = {"wars": [{"id": WAR_ID, "title": "Summer Clash", "slug": "summer-clash"}]}
+        client = war_client(payload)
+        cm = MagicMock()
+        cm.__aenter__ = AsyncMock(return_value=client)
+        cm.__aexit__ = AsyncMock(return_value=None)
+
+        with patch.object(convoke_module.httpx, "AsyncClient", return_value=cm):
+            wars = await convoke_module.get_live_guild_wars()
+
+        assert [war["id"] for war in wars] == [WAR_ID]
+
+    async def test_an_unreachable_convoke_yields_nothing(self) -> None:
+        # `/war` autocomplete calls this on every keystroke, so a Convoke outage must
+        # not surface as an error to the user.
+        client = MagicMock(spec=httpx.AsyncClient)
+        client.get = AsyncMock(side_effect=httpx.ConnectError("boom"))
+        cm = MagicMock()
+        cm.__aenter__ = AsyncMock(return_value=client)
+        cm.__aexit__ = AsyncMock(return_value=None)
+
+        with patch.object(convoke_module.httpx, "AsyncClient", return_value=cm):
+            assert await convoke_module.get_live_guild_wars() == []
+
+
+@pytest.mark.asyncio
+class TestResolveLiveGuildWar:
+    def patch_wars(self, wars: list[dict[str, str]]) -> AbstractContextManager[AsyncMock]:
+        return patch.object(
+            convoke_module,
+            "get_live_guild_wars",
+            AsyncMock(return_value=wars),
+        )
+
+    async def test_matches_by_id(self) -> None:
+        war = {"id": WAR_ID, "title": "Summer Clash", "slug": "summer-clash", "status": "active"}
+        with self.patch_wars([war]):
+            assert await convoke_module.resolve_live_guild_war(WAR_ID) == war
+
+    async def test_matches_by_slug(self) -> None:
+        # Autocomplete submits the id, but someone typing the command by hand is far
+        # more likely to have the slug from a Convoke URL.
+        war = {"id": WAR_ID, "title": "Summer Clash", "slug": "summer-clash", "status": "active"}
+        with self.patch_wars([war]):
+            assert await convoke_module.resolve_live_guild_war("summer-clash") == war
+
+    async def test_an_unknown_war_is_none(self) -> None:
+        war = {"id": WAR_ID, "title": "Summer Clash", "slug": "summer-clash", "status": "active"}
+        with self.patch_wars([war]):
+            assert await convoke_module.resolve_live_guild_war("winter-clash") is None
+
+    async def test_no_live_wars_is_none(self) -> None:
+        with self.patch_wars([]):
+            assert await convoke_module.resolve_live_guild_war(WAR_ID) is None

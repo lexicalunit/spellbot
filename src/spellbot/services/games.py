@@ -199,6 +199,8 @@ async def game_detail_view(game_id: int) -> dict[str, Any] | None:
         "locale": game.locale,
         "blind": game.blind,
         "rules": game.rules,
+        "war_id": game.war_id,
+        "war_title": game.war_title,
         "game_link": game.game_link,
         "voice_xid": game.voice_xid,
         "voice_invite_link": game.voice_invite_link,
@@ -361,6 +363,8 @@ async def upsert(
     create_new: bool = False,
     blind: bool = False,
     to_mode: bool = False,
+    war_id: str | None = None,
+    war_title: str | None = None,
 ) -> tuple[bool, GameData]:
     """Create or update a new game matching the given criteria."""
     existing_game: Game | None = None
@@ -376,6 +380,7 @@ async def upsert(
             bracket=bracket,
             service=service,
             to_mode=to_mode,
+            war_id=war_id,
         )
 
     new: bool
@@ -394,6 +399,8 @@ async def upsert(
             service=service,
             blind=blind,
             locale=locale,
+            war_id=war_id,
+            war_title=war_title,
         )
         DatabaseSession.add(game)
         await DatabaseSession.commit()
@@ -433,10 +440,11 @@ async def _find_existing(
     bracket: int,
     service: int,
     to_mode: bool = False,
+    war_id: str | None = None,
 ) -> Game | None:
     """Find a suitable existing game with the given criteria if one exists."""
     required_seats = 1 + len(friends)
-
+    war_filter = Game.war_id == war_id if war_id is not None else Game.war_id.is_(None)
     player_count = count(Queue.user_xid).over(partition_by=Game.id)
     inner = (
         select(
@@ -454,6 +462,7 @@ async def _find_existing(
                 Game.format == format,  # type: ignore
                 Game.bracket == bracket,  # type: ignore
                 Game.service == service,  # type: ignore
+                war_filter,
                 Game.status == GameStatus.PENDING.value,  # type: ignore
                 Game.deleted_at.is_(None),
             ),

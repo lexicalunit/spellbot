@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import discord
 import pytest
@@ -10,8 +10,10 @@ from sqlalchemy import func, select, update
 
 from spellbot.actions import lfg_action
 from spellbot.cogs import LookingForGameCog
+from spellbot.cogs.lfg_cog import guild_war_autocomplete
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
+from spellbot.integrations import convoke
 from spellbot.models import Channel, Game, GameStatus, Guild, Queue, User
 from spellbot.views import GameView
 from tests.fixtures import Factories, run_command
@@ -19,6 +21,8 @@ from tests.mocks import mock_discord_object, mock_operations
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
     from spellbot.settings import Settings
@@ -647,3 +651,202 @@ class TestCogLookingForGameJoinButton:
             await view.join(interaction)
 
             lfg_action.safe_update_embed_origin.assert_not_called()
+
+
+WAR_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+WAR_TITLE = "Summer Clash"
+
+
+def live_war(
+    war_id: str = WAR_ID,
+    title: str = WAR_TITLE,
+    slug: str = "summer-clash",
+) -> dict[str, str]:
+    return {"id": war_id, "title": title, "slug": slug, "status": "active"}
+
+
+@pytest.mark.asyncio
+class TestCogWar:
+    async def test_war_creates_a_game_tagged_with_the_war(
+        self,
+        cog: LookingForGameCog,
+        channel: Channel,
+        interaction: discord.Interaction,
+        guild: Guild,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.integrations.convoke.resolve_live_guild_war",
+            AsyncMock(return_value=live_war()),
+        )
+        with mock_operations(lfg_action):
+            message = MagicMock(spec=discord.Message)
+            message.id = 123
+            lfg_action.safe_followup_channel.return_value = message
+
+            await run_command(cog.war, interaction, war=WAR_ID)
+
+        game = (
+            (
+                await DatabaseSession.execute(
+                    select(Game)
+                    .where(
+                        Game.guild_xid == guild.xid,
+                        Game.channel_xid == channel.xid,  # type: ignore
+                    )
+                    .order_by(Game.id.desc()),
+                )
+            )
+            .scalars()
+            .first()
+        )
+        assert game is not None
+        assert game.war_id == WAR_ID
+        assert game.war_title == WAR_TITLE
+
+    async def test_war_forces_convoke_over_a_channel_default(
+        self,
+        cog: LookingForGameCog,
+        add_channel: Callable[..., Channel],
+        interaction: discord.Interaction,
+        guild: Guild,
+        mocker: MockerFixture,
+    ) -> None:
+        # Guild Wars only exist on Convoke, so `/war` must win over a channel that
+        # defaults to some other service rather than failing the request.
+        add_channel(xid=interaction.channel_id, default_service=GameService.COCKATRICE.value)
+        mocker.patch(
+            "spellbot.integrations.convoke.resolve_live_guild_war",
+            AsyncMock(return_value=live_war()),
+        )
+        with mock_operations(lfg_action):
+            message = MagicMock(spec=discord.Message)
+            message.id = 123
+            lfg_action.safe_followup_channel.return_value = message
+
+            await run_command(cog.war, interaction, war=WAR_ID)
+
+        game = (await DatabaseSession.execute(select(Game))).scalars().one()
+        assert game.service == GameService.CONVOKE.value
+        assert game.war_id == WAR_ID
+
+    async def test_war_with_an_unknown_war_creates_no_game(
+        self,
+        cog: LookingForGameCog,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.integrations.convoke.resolve_live_guild_war",
+            AsyncMock(return_value=None),
+        )
+        with mock_operations(lfg_action):
+            await run_command(cog.war, interaction, war="not-a-real-war")
+
+            reply = lfg_action.safe_followup_channel.call_args.args[1]
+            assert "not available" in reply
+
+        assert (await DatabaseSession.execute(select(func.count(Game.id)))).scalar_one() == 0
+
+    async def test_lfg_no_longer_takes_a_guild_war(self, cog: LookingForGameCog) -> None:
+        # Guild Wars moved to their own command; leaving the option on `/lfg` would be
+        # a second, harder-to-type way to do the same thing.
+        assert "guild_war" not in {param.name for param in cog.lfg.parameters}
+        assert "war" in {param.name for param in cog.war.parameters}
+
+    async def test_war_only_offers_seat_counts_a_war_can_hold(
+        self,
+        cog: LookingForGameCog,
+    ) -> None:
+        seats = next(param for param in cog.war.parameters if param.name == "seats")
+        offered = [choice.value for choice in seats.choices]
+        assert offered == list(range(convoke.MIN_WAR_SEATS, convoke.MAX_WAR_SEATS + 1))
+
+    async def test_war_does_not_offer_a_service(self, cog: LookingForGameCog) -> None:
+        assert "service" not in {param.name for param in cog.war.parameters}
+
+
+@pytest.mark.asyncio
+class TestGuildWarAutocomplete:
+    async def test_lists_every_live_war_when_nothing_is_typed(
+        self,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.integrations.convoke.get_live_guild_wars",
+            AsyncMock(return_value=[live_war(), live_war("id-2", "Winter Clash", "winter-clash")]),
+        )
+        choices = await guild_war_autocomplete(interaction, "")
+        assert [(c.name, c.value) for c in choices] == [
+            (WAR_TITLE, WAR_ID),
+            ("Winter Clash", "id-2"),
+        ]
+
+    async def test_filters_by_title(
+        self,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.integrations.convoke.get_live_guild_wars",
+            AsyncMock(return_value=[live_war(), live_war("id-2", "Winter Clash", "winter-clash")]),
+        )
+        choices = await guild_war_autocomplete(interaction, "  WINTER ")
+        assert [c.value for c in choices] == ["id-2"]
+
+    async def test_filters_by_slug(
+        self,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        # The slug is what shows up in Convoke URLs, so someone pasting one should
+        # still find their war.
+        mocker.patch(
+            "spellbot.integrations.convoke.get_live_guild_wars",
+            AsyncMock(return_value=[live_war(), live_war("id-2", "Winter Clash", "winter-clash")]),
+        )
+        choices = await guild_war_autocomplete(interaction, "summer-cl")
+        assert [c.value for c in choices] == [WAR_ID]
+
+    async def test_truncates_names_over_the_discord_limit(
+        self,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.integrations.convoke.get_live_guild_wars",
+            AsyncMock(return_value=[live_war(title="W" * 200)]),
+        )
+        choices = await guild_war_autocomplete(interaction, "")
+        assert len(choices[0].name) == 100
+        assert choices[0].name.endswith("...")
+        # The value is the war id, so truncating the label never breaks selection.
+        assert choices[0].value == WAR_ID
+
+    async def test_caps_at_the_discord_choice_limit(
+        self,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.integrations.convoke.get_live_guild_wars",
+            AsyncMock(
+                return_value=[live_war(f"id-{i}", f"War {i}", f"war-{i}") for i in range(40)],
+            ),
+        )
+        choices = await guild_war_autocomplete(interaction, "")
+        assert len(choices) == 25
+
+    async def test_an_unreachable_convoke_offers_nothing(
+        self,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        # `get_live_guild_wars` swallows failures and returns []; autocomplete must
+        # degrade to an empty list rather than erroring inside Discord's UI.
+        mocker.patch(
+            "spellbot.integrations.convoke.get_live_guild_wars",
+            AsyncMock(return_value=[]),
+        )
+        assert await guild_war_autocomplete(interaction, "summer") == []

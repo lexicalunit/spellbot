@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import httpx
 
@@ -28,6 +28,21 @@ class ConvokeGameTypes(Enum):
     Planechase = "planechase-commander"
     Horde = "horde-commander"
     Other = "other"
+
+
+class LiveGuildWar(TypedDict):
+    id: str
+    title: str
+    slug: str
+    status: str
+
+
+# Seat bounds Convoke enforces on Guild War matches. These are the single source of
+# truth for the `/war` seat choices, the validation in `LookingForGameAction`, and the
+# error message shown when a channel's default seat count falls outside them.
+MIN_WAR_SEATS = 2
+MAX_WAR_SEATS = 8
+DEFAULT_WAR_SEATS = 4
 
 
 def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
@@ -56,6 +71,57 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
             return ConvokeGameTypes.Other
 
 
+async def fetch_live_guild_wars(client: httpx.AsyncClient) -> list[LiveGuildWar]:
+    """Return Guild Wars currently open for matchmaking on Convoke."""
+    endpoint = f"{settings.CONVOKE_ROOT}/guild-wars/live"
+    headers = {"user-agent": f"spellbot/{__version__}"}
+    resp = await client.get(endpoint, headers=headers)
+    resp.raise_for_status()
+    data = resp.json()
+    wars_raw = data.get("wars") if isinstance(data, dict) else None
+    if not isinstance(wars_raw, list):
+        return []
+
+    wars: list[LiveGuildWar] = []
+    for row in wars_raw:
+        if not isinstance(row, dict):
+            continue
+        war_id = row.get("id")
+        title = row.get("title")
+        slug = row.get("slug")
+        status = row.get("status")
+        if not isinstance(war_id, str) or not isinstance(title, str):
+            continue
+        wars.append(
+            {
+                "id": war_id,
+                "title": title,
+                "slug": slug if isinstance(slug, str) else war_id,
+                "status": status if isinstance(status, str) else "active",
+            },
+        )
+    return wars
+
+
+async def get_live_guild_wars() -> list[LiveGuildWar]:
+    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        try:
+            return await fetch_live_guild_wars(client)
+        except Exception as ex:
+            add_span_error(ex)
+            logger.exception("Failed to fetch live Convoke Guild Wars")
+            return []
+
+
+async def resolve_live_guild_war(war_id: str) -> LiveGuildWar | None:
+    wars = await get_live_guild_wars()
+    for war in wars:
+        if war["id"] == war_id or war["slug"] == war_id:
+            return war
+    return None
+
+
 async def fetch_convoke_link(
     client: httpx.AsyncClient,
     game_data: GameData,
@@ -70,7 +136,7 @@ async def fetch_convoke_link(
         if game_data.locale.startswith(supported_locale):
             game_language = supported_locale
             break
-    payload = {
+    payload: dict[str, Any] = {
         "isPublic": False,
         "name": name,
         "spellbotGameId": str(game_data.id),
@@ -87,6 +153,9 @@ async def fetch_convoke_link(
         payload["bracketLevel"] = f"B{game_data.bracket - 1}"
     if game_data.format == GameFormat.PRE_CONS.value:
         payload["bracketLevel"] = "PRECON"  # Convoke uses Bracket to indicate "pre-cons"
+    if game_data.war_id:
+        # Open seating: Convoke infers guild splits from who sits.
+        payload["warId"] = game_data.war_id
     headers = {
         "user-agent": f"spellbot/{__version__}",
         "x-api-key": settings.CONVOKE_API_KEY,
