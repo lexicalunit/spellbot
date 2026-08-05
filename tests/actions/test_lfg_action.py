@@ -11,6 +11,7 @@ from spellbot import services
 from spellbot.actions import LookingForGameAction
 from spellbot.data import PostData
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.integrations import convoke
 from spellbot.operations import VoiceChannelSuggestion
 from spellbot.services.awards import NewAward
 from spellbot.settings import settings
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
+    from spellbot.integrations.convoke import LiveGuildWar
     from spellbot.models import User
 
 from datetime import UTC, datetime
@@ -1289,3 +1291,223 @@ class TestLookingForGameAction:
         await action.execute(format=GameFormat.COMMANDER.value)
 
         other_ids_stub.assert_not_called()
+
+
+WAR_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+WAR_TITLE = "Summer Clash"
+LIVE_WAR: LiveGuildWar = {
+    "id": WAR_ID,
+    "title": WAR_TITLE,
+    "slug": "summer-clash",
+    "status": "active",
+}
+
+
+@pytest.mark.asyncio
+class TestLookingForGameActionGuildWar:
+    """Covers the Convoke Guild War branches of `/war`."""
+
+    def patch_resolver(self, mocker: MockerFixture, war: LiveGuildWar | None) -> AsyncMock:
+        stub = AsyncMock(return_value=war)
+        mocker.patch("spellbot.integrations.convoke.resolve_live_guild_war", stub)
+        return stub
+
+    async def test_no_war_passes_options_through_untouched(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
+        # `/lfg` still goes through this method, so a request with no war must be
+        # returned exactly as it came in.
+        result = await action.resolve_guild_war(
+            None,
+            origin=False,
+            service=GameService.X_MAGE.value,
+            seats=6,
+            locale="en",
+        )
+        assert result == (None, None, GameService.X_MAGE.value, 6)
+
+    async def test_join_button_ignores_the_war(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        # Joining an existing game resolves the war from the game itself, so a click
+        # must not re-resolve it (which would cost a Convoke round-trip per click).
+        stub = self.patch_resolver(mocker, LIVE_WAR)
+        result = await action.resolve_guild_war(
+            WAR_ID,
+            origin=True,
+            service=None,
+            seats=None,
+            locale="en",
+        )
+        assert result == (None, None, None, None)
+        stub.assert_not_called()
+
+    async def test_resolves_a_live_war_and_forces_convoke(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        self.patch_resolver(mocker, LIVE_WAR)
+        result = await action.resolve_guild_war(
+            WAR_ID,
+            origin=False,
+            service=None,
+            seats=None,
+            locale="en",
+        )
+        assert result == (
+            WAR_ID,
+            WAR_TITLE,
+            GameService.CONVOKE.value,
+            convoke.DEFAULT_WAR_SEATS,
+        )
+
+    async def test_the_war_id_is_stripped_before_resolving(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        stub = self.patch_resolver(mocker, LIVE_WAR)
+        await action.resolve_guild_war(
+            f"  {WAR_ID}  ",
+            origin=False,
+            service=None,
+            seats=None,
+            locale="en",
+        )
+        stub.assert_awaited_once_with(WAR_ID)
+
+    async def test_explicit_seats_are_kept(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        self.patch_resolver(mocker, LIVE_WAR)
+        result = await action.resolve_guild_war(
+            WAR_ID,
+            origin=False,
+            service=None,
+            seats=6,
+            locale="en",
+        )
+        assert result is not None
+        assert result[3] == 6
+
+    async def test_a_war_is_always_a_convoke_game(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        # Guild Wars only exist on Convoke, so any other service is overridden rather
+        # than rejected — `/war` never offers the choice in the first place.
+        self.patch_resolver(mocker, LIVE_WAR)
+
+        result = await action.resolve_guild_war(
+            WAR_ID,
+            origin=False,
+            service=GameService.X_MAGE.value,
+            seats=None,
+            locale="en",
+        )
+
+        assert result is not None
+        assert result[2] == GameService.CONVOKE.value
+
+    async def test_an_unknown_war_is_rejected(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        reply = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        self.patch_resolver(mocker, None)
+
+        result = await action.resolve_guild_war(
+            "not-a-real-war",
+            origin=False,
+            service=None,
+            seats=None,
+            locale="en",
+        )
+
+        assert result is None
+        assert "not available" in reply.call_args.args[1]
+
+    @pytest.mark.parametrize(
+        "seats",
+        [
+            pytest.param(convoke.MIN_WAR_SEATS - 1, id="below_min"),
+            pytest.param(convoke.MAX_WAR_SEATS + 1, id="above_max"),
+        ],
+    )
+    async def test_out_of_range_seats_are_rejected(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+        seats: int,
+    ) -> None:
+        reply = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        self.patch_resolver(mocker, LIVE_WAR)
+
+        result = await action.resolve_guild_war(
+            WAR_ID,
+            origin=False,
+            service=None,
+            seats=seats,
+            locale="en",
+        )
+
+        assert result is None
+        # The bounds in the message come from the constants, so they can not drift.
+        assert (
+            f"between {convoke.MIN_WAR_SEATS} and {convoke.MAX_WAR_SEATS} seats"
+            in reply.call_args.args[1]
+        )
+
+    async def test_boundary_seats_are_accepted(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        self.patch_resolver(mocker, LIVE_WAR)
+        for seats in (convoke.MIN_WAR_SEATS, convoke.MAX_WAR_SEATS):
+            result = await action.resolve_guild_war(
+                WAR_ID,
+                origin=False,
+                service=None,
+                seats=seats,
+                locale="en",
+            )
+            assert result is not None, seats
+
+    async def test_execute_stops_before_creating_a_game_for_an_unknown_war(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        self.patch_resolver(mocker, None)
+        upsert = mocker.patch.object(action, "upsert_game", AsyncMock())
+
+        await action.execute(guild_war="not-a-real-war")
+
+        upsert.assert_not_called()
+
+    async def test_execute_passes_war_fields_to_upsert(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        self.patch_resolver(mocker, LIVE_WAR)
+        mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
+        upsert = mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(None, None)))
+
+        await action.execute(guild_war=WAR_ID)
+
+        assert upsert.await_args is not None
+        assert upsert.await_args.kwargs["war_id"] == WAR_ID
+        assert upsert.await_args.kwargs["war_title"] == WAR_TITLE

@@ -22,6 +22,7 @@
                 <tr><td>{{ t("web.field.locale") }}</td><td>{{ game.locale }}</td></tr>
                 <tr><td>{{ t("web.game.blind") }}</td><td>{{ t("web.common.yes_label") if game.blind else t("web.common.no_label") }}</td></tr>
                 {% if game.rules %}<tr><td>{{ t("web.game.rules") }}</td><td>{{ game.rules }}</td></tr>{% endif %}
+                {% if game.war_id %}<tr><td>{{ t("web.game.guild_war") }}</td><td>{% if game.war_title %}{{ game.war_title }} {% endif %}<span class="user-id">{{ game.war_id }}</span></td></tr>{% endif %}
                 <tr>
                     <td>{{ t("web.field.guild") }}</td>
                     <td>

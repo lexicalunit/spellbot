@@ -721,3 +721,147 @@ class TestGamesPendingNotification:
         result = await games.games_pending_notification()
 
         assert result == []
+
+
+WAR_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+OTHER_WAR_ID = "11111111-2222-3333-4444-555555555555"
+
+
+@pytest.mark.asyncio
+class TestServiceGamesGuildWar:
+    """Covers how Guild War games are stored and matched against each other."""
+
+    async def upsert_war_game(
+        self,
+        guild: Guild,
+        channel: Channel,
+        author_xid: int,
+        *,
+        war_id: str | None,
+        war_title: str | None = None,
+    ) -> tuple[bool, int]:
+        new, game_data = await games.upsert(
+            guild_xid=guild.xid,
+            channel_xid=channel.xid,
+            author_xid=author_xid,
+            friends=[],
+            seats=4,
+            rules=None,
+            format=GameFormat.COMMANDER.value,
+            bracket=GameBracket.NONE.value,
+            service=GameService.CONVOKE.value,
+            locale="en",
+            war_id=war_id,
+            war_title=war_title,
+        )
+        return new, game_data.id
+
+    async def test_war_fields_are_persisted(
+        self,
+        guild: Guild,
+        channel: Channel,
+        user: User,
+    ) -> None:
+        new, game_id = await self.upsert_war_game(
+            guild,
+            channel,
+            user.xid,  # type: ignore
+            war_id=WAR_ID,
+            war_title="Summer Clash",
+        )
+        assert new
+
+        DatabaseSession.expire_all()
+        game = await DatabaseSession.get(Game, game_id)
+        assert game is not None
+        assert game.war_id == WAR_ID
+        assert game.war_title == "Summer Clash"
+
+    async def test_a_war_game_joins_a_matching_war_game(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        first = UserFactory.create(xid=201)
+        second = UserFactory.create(xid=202)
+        _, first_id = await self.upsert_war_game(
+            guild,
+            channel,
+            first.xid,
+            war_id=WAR_ID,
+            war_title="Summer Clash",
+        )
+
+        new, second_id = await self.upsert_war_game(guild, channel, second.xid, war_id=WAR_ID)
+
+        assert not new
+        assert second_id == first_id
+
+    async def test_a_war_game_does_not_absorb_a_plain_game(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        # Someone who ran `/lfg` did not sign up for a Guild War match, so a `/war`
+        # request must start its own game rather than joining theirs.
+        plain = UserFactory.create(xid=203)
+        warrior = UserFactory.create(xid=204)
+        _, plain_id = await self.upsert_war_game(guild, channel, plain.xid, war_id=None)
+
+        new, war_id_game = await self.upsert_war_game(
+            guild,
+            channel,
+            warrior.xid,
+            war_id=WAR_ID,
+            war_title="Summer Clash",
+        )
+
+        assert new
+        assert war_id_game != plain_id
+
+    async def test_a_plain_game_does_not_absorb_a_war_game(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        # And the reverse: `/lfg` must not silently drop someone into a war match.
+        warrior = UserFactory.create(xid=205)
+        plain = UserFactory.create(xid=206)
+        _, war_game_id = await self.upsert_war_game(
+            guild,
+            channel,
+            warrior.xid,
+            war_id=WAR_ID,
+            war_title="Summer Clash",
+        )
+
+        new, plain_id = await self.upsert_war_game(guild, channel, plain.xid, war_id=None)
+
+        assert new
+        assert plain_id != war_game_id
+
+    async def test_different_wars_do_not_share_a_game(
+        self,
+        guild: Guild,
+        channel: Channel,
+    ) -> None:
+        first = UserFactory.create(xid=207)
+        second = UserFactory.create(xid=208)
+        _, first_id = await self.upsert_war_game(
+            guild,
+            channel,
+            first.xid,
+            war_id=WAR_ID,
+            war_title="Summer Clash",
+        )
+
+        new, second_id = await self.upsert_war_game(
+            guild,
+            channel,
+            second.xid,
+            war_id=OTHER_WAR_ID,
+            war_title="Winter Clash",
+        )
+
+        assert new
+        assert second_id != first_id

@@ -199,6 +199,8 @@ async def game_detail_view(game_id: int) -> dict[str, Any] | None:
         "locale": game.locale,
         "blind": game.blind,
         "rules": game.rules,
+        "war_id": game.war_id,
+        "war_title": game.war_title,
         "game_link": game.game_link,
         "voice_xid": game.voice_xid,
         "voice_invite_link": game.voice_invite_link,
@@ -442,9 +444,7 @@ async def _find_existing(
 ) -> Game | None:
     """Find a suitable existing game with the given criteria if one exists."""
     required_seats = 1 + len(friends)
-
     war_filter = Game.war_id == war_id if war_id is not None else Game.war_id.is_(None)
-
     player_count = count(Queue.user_xid).over(partition_by=Game.id)
     inner = (
         select(

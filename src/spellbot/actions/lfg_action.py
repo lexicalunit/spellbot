@@ -277,7 +277,19 @@ class LookingForGameAction(BaseAction):
         )
         await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=False)
 
-    async def resolve_guild_war_lfg(
+    async def reply_guild_war_seats(self, locale: str) -> None:
+        """Tell the user a Guild War game can not be seated the way they asked."""
+        await safe_followup_channel(
+            self.interaction,
+            t(
+                "lfg.guild_war_seats",
+                locale=locale,
+                min=convoke.MIN_WAR_SEATS,
+                max=convoke.MAX_WAR_SEATS,
+            ),
+        )
+
+    async def resolve_guild_war(
         self,
         guild_war: str | None,
         *,
@@ -287,20 +299,17 @@ class LookingForGameAction(BaseAction):
         locale: str,
     ) -> tuple[str | None, str | None, int | None, int | None] | None:
         """
-        Resolve optional /lfg guild_war into Convoke war fields.
+        Resolve the optional `/war` guild war into Convoke war fields.
 
         Returns (war_id, war_title, service, seats), or None when an error reply
-        was already sent to the user.
+        was already sent to the user. Guild Wars only exist on Convoke, so a war game
+        always comes back as a Convoke game whatever service was asked for, seated
+        within the bounds Convoke allows. Since the seat count returned here is always
+        in range, nothing downstream needs to re-check it — `get_seats` can only shrink
+        it further, and a war game never falls back to the channel's default seats.
         """
         if not guild_war or origin:
             return None, None, service, seats
-
-        if service is not None and service != GameService.CONVOKE.value:
-            await safe_followup_channel(
-                self.interaction,
-                t("lfg.guild_war_convoke_only", locale=locale),
-            )
-            return None
 
         live_war = await convoke.resolve_live_guild_war(guild_war.strip())
         if live_war is None:
@@ -310,39 +319,16 @@ class LookingForGameAction(BaseAction):
             )
             return None
 
-        if seats is not None and (seats < 2 or seats > 8):
-            await safe_followup_channel(
-                self.interaction,
-                t("lfg.guild_war_seats", locale=locale),
-            )
+        if seats is not None and not convoke.MIN_WAR_SEATS <= seats <= convoke.MAX_WAR_SEATS:
+            await self.reply_guild_war_seats(locale)
             return None
 
-        return live_war["id"], live_war["title"], GameService.CONVOKE.value, seats or 4
-
-    async def ensure_guild_war_game_options(
-        self,
-        war_id: str | None,
-        *,
-        actual_seats: int,
-        actual_service: int,
-        locale: str,
-    ) -> bool:
-        """Return False when an error reply was already sent for Guild War constraints."""
-        if war_id is None:
-            return True
-        if actual_seats < 2 or actual_seats > 8:
-            await safe_followup_channel(
-                self.interaction,
-                t("lfg.guild_war_seats", locale=locale),
-            )
-            return False
-        if actual_service != GameService.CONVOKE.value:
-            await safe_followup_channel(
-                self.interaction,
-                t("lfg.guild_war_convoke_only", locale=locale),
-            )
-            return False
-        return True
+        return (
+            live_war["id"],
+            live_war["title"],
+            GameService.CONVOKE.value,
+            seats or convoke.DEFAULT_WAR_SEATS,
+        )
 
     @tracer.wrap()
     async def execute(  # noqa: C901
@@ -369,7 +355,7 @@ class LookingForGameAction(BaseAction):
         # False if user issued a /lfg command in chat.
         origin = bool(message_xid is not None)
 
-        resolved = await self.resolve_guild_war_lfg(
+        resolved = await self.resolve_guild_war(
             guild_war,
             origin=origin,
             service=service,
@@ -385,13 +371,6 @@ class LookingForGameAction(BaseAction):
         actual_bracket: int = await self.get_bracket(actual_format, bracket)
         actual_service: int = await self.get_service(service)
         actual_seats: int = await self.get_seats(actual_format, actual_service, seats)
-        if not await self.ensure_guild_war_game_options(
-            war_id,
-            actual_seats=actual_seats,
-            actual_service=actual_service,
-            locale=locale,
-        ):
-            return None
         rules = None if not rules else rules[:MAX_RULES_LENGTH]
 
         assert self.user_data

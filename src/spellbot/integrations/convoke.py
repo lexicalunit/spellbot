@@ -37,6 +37,14 @@ class LiveGuildWar(TypedDict):
     status: str
 
 
+# Seat bounds Convoke enforces on Guild War matches. These are the single source of
+# truth for the `/war` seat choices, the validation in `LookingForGameAction`, and the
+# error message shown when a channel's default seat count falls outside them.
+MIN_WAR_SEATS = 2
+MAX_WAR_SEATS = 8
+DEFAULT_WAR_SEATS = 4
+
+
 def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
     match format:
         case (

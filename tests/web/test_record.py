@@ -934,6 +934,64 @@ class TestWebGameDetail:
         text = await resp.text()
         assert text == snapshot
 
+    async def test_game_detail_shows_the_guild_war(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            guild=guild,
+            channel=channel,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title="Summer Clash",
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "Guild War" in text
+        assert "Summer Clash" in text
+        # The id is shown too, so support can match a game to a war in Convoke.
+        assert "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" in text
+
+    async def test_game_detail_shows_a_war_with_no_cached_title(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # The title is only a cache of Convoke's; the row must still render without it.
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            guild=guild,
+            channel=channel,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title=None,
+        )
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "Guild War" in text
+        assert "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" in text
+
+    async def test_game_detail_omits_the_war_row_for_a_plain_game(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(id=1, guild=guild, channel=channel)
+
+        resp = await client.get(f"/game/{game.id}")
+        assert resp.status == 200
+        assert "Guild War" not in await resp.text()
+
     async def test_game_detail_links_hidden_from_anonymous(
         self,
         client: ClientSession,

@@ -63,6 +63,8 @@ class TestModelGame:
             "game_link": game.game_link,
             "password": game.password,
             "rules": game.rules,
+            "war_id": game.war_id,
+            "war_title": game.war_title,
             "blind": game.blind,
             "players": [asdict(player.to_data()) for player in await game.players()],
             "player_pins": await game.player_pins(),
@@ -1211,3 +1213,70 @@ class TestModelGame:
 
         embed = (await game.to_data()).to_embed(guild=dg, dm=True, suggested_vc=suggested_vc)
         assert "voice channel" not in embed.description.lower()
+
+
+@pytest.mark.asyncio
+class TestModelGameGuildWarEmbed:
+    """Covers the Guild War field on game embeds."""
+
+    async def test_shows_the_war_title(
+        self,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title="Summer Clash",
+        )
+
+        fields = (await game.to_data()).to_embed(guild=None).to_dict()["fields"]
+        assert {"inline": False, "name": "⚔️ Guild War", "value": "Summer Clash"} in fields
+
+    async def test_omits_the_field_for_a_plain_game(
+        self,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(guild=guild, channel=channel)
+
+        fields = (await game.to_data()).to_embed(guild=None).to_dict()["fields"]
+        assert not any(field["name"] == "⚔️ Guild War" for field in fields)
+
+    async def test_omits_the_field_when_only_the_id_is_known(
+        self,
+        factories: Factories,
+    ) -> None:
+        # A war id with no cached title would render an empty embed field, which
+        # Discord rejects — so both are required before the field is shown.
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title=None,
+        )
+
+        fields = (await game.to_data()).to_embed(guild=None).to_dict()["fields"]
+        assert not any(field["name"] == "⚔️ Guild War" for field in fields)
+
+    async def test_the_war_field_reaches_direct_messages_too(
+        self,
+        factories: Factories,
+    ) -> None:
+        # Players get the game details by DM, so the war has to be named there as well.
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title="Summer Clash",
+        )
+
+        fields = (await game.to_data()).to_embed(guild=None, dm=True).to_dict()["fields"]
+        assert {"inline": False, "name": "⚔️ Guild War", "value": "Summer Clash"} in fields
