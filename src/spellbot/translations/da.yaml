@@ -329,6 +329,7 @@ da:
       delete_expired: "Slet udløbne spil"
       blind_games: "Blinde spil"
       to_mode: "Turneringsarrangør-tilstand"
+      competitive_mode: "Konkurrencetilstand"
       save: "Gem kanalindstillinger"
       forget_hint: "Hvis du glemmer denne kanal, nulstilles den til standardindstillingerne ved at fjerne dens konfiguration. SpellBot konfigurerer den igen ud fra standarderne, næste gang den bruges."
       forget_confirm: "Glem denne kanal og nulstil den til standardindstillingerne?"

@@ -329,6 +329,7 @@ tl:
       delete_expired: "Burahin ang mga expired na laro"
       blind_games: "Mga blind na laro"
       to_mode: "Mode ng tagapag-ayos ng torneo"
+      competitive_mode: "Mode ng kompetisyon"
       save: "I-save ang mga setting ng channel"
       forget_hint: "Ang pagkalimot sa channel na ito ay magre-reset nito sa default na mga setting sa pamamagitan ng pag-alis ng configuration nito. Muling ico-configure ito ng SpellBot mula sa mga default sa susunod na paggamit."
       forget_confirm: "Kalimutan ang channel na ito at i-reset ito sa default na mga setting?"

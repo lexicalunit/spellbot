@@ -168,6 +168,46 @@ class TestFetchConvokeLink:
         assert "warPodMode" not in payload
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("competitive_mode", [True, False], ids=["enabled", "disabled"])
+    async def test_fetch_convoke_link_with_competitive_mode(
+        self,
+        competitive_mode: bool,
+    ) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"url": "https://convoke.gg/game/789"}
+        mock_client.post = AsyncMock(return_value=mock_response)
+
+        game = create_mock_game(
+            game_id=11,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
+            competitive_mode=competitive_mode,
+        )
+
+        with (
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
+            patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
+        ):
+            await fetch_convoke_link(mock_client, game, pins=None)
+
+        payload = mock_client.post.call_args.kwargs["json"]
+        if competitive_mode:
+            assert payload["competitiveMode"] is True
+        else:
+            # Omitted rather than sent as False so Convoke's B5 default still applies.
+            assert "competitiveMode" not in payload
+
+    @pytest.mark.asyncio
     async def test_fetch_live_guild_wars(self) -> None:
         mock_client = MagicMock(spec=httpx.AsyncClient)
         mock_response = MagicMock()

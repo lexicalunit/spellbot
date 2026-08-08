@@ -329,6 +329,7 @@ it:
       delete_expired: "Elimina partite scadute"
       blind_games: "Partite alla cieca"
       to_mode: "Modalità organizzatore di tornei"
+      competitive_mode: "Modalità competitiva"
       save: "Salva impostazioni del canale"
       forget_hint: "Dimenticare questo canale lo ripristina alle impostazioni predefinite rimuovendone la configurazione. SpellBot lo riconfigurerà dai valori predefiniti al successivo utilizzo."
       forget_confirm: "Dimenticare questo canale e ripristinarlo alle impostazioni predefinite?"

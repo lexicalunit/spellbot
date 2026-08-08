@@ -308,6 +308,7 @@ def parse_channel_settings(form: Any) -> dict[str, Any]:
         "delete_expired": form_bool(form, "delete_expired"),
         "blind_games": form_bool(form, "blind_games"),
         "to_mode": form_bool(form, "to_mode"),
+        "competitive_mode": form_bool(form, "competitive_mode"),
         "motd": form_str(form, "motd", Channel.motd.property.columns[0].type.length),
         "extra": form_str(form, "extra", Channel.extra.property.columns[0].type.length),
         "voice_category": form_str(

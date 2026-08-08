@@ -329,6 +329,7 @@ pl:
       delete_expired: "Usuwaj wygasłe gry"
       blind_games: "Gry w ciemno"
       to_mode: "Tryb organizatora turnieju"
+      competitive_mode: "Tryb rankingowy"
       save: "Zapisz ustawienia kanału"
       forget_hint: "Zapomnienie tego kanału przywraca go do ustawień domyślnych poprzez usunięcie jego konfiguracji. SpellBot skonfiguruje go ponownie z wartości domyślnych przy następnym użyciu."
       forget_confirm: "Zapomnieć ten kanał i przywrócić go do ustawień domyślnych?"

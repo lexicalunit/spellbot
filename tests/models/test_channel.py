@@ -41,4 +41,5 @@ class TestModelChannel:
             "delete_expired": channel.delete_expired,
             "blind_games": channel.blind_games,
             "to_mode": channel.to_mode,
+            "competitive_mode": channel.competitive_mode,
         }

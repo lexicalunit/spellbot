@@ -30,3 +30,4 @@ class ChannelData:
     delete_expired: bool
     blind_games: bool
     to_mode: bool
+    competitive_mode: bool

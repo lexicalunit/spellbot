@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Adds a per-channel "Competitive mode" setting that creates Convoke games in competitive mode.
+
 ## [v21.7.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.7.0) - 2026-08-05
 
 ### Added
