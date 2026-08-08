@@ -329,6 +329,7 @@ fr:
       delete_expired: "Supprimer les parties expirées"
       blind_games: "Parties à l'aveugle"
       to_mode: "Mode organisateur de tournoi"
+      competitive_mode: "Mode compétitif"
       save: "Enregistrer les paramètres du salon"
       forget_hint: "Oublier ce salon le réinitialise aux paramètres par défaut en supprimant sa configuration. SpellBot le reconfigurera à partir des valeurs par défaut lors de sa prochaine utilisation."
       forget_confirm: "Oublier ce salon et le réinitialiser aux paramètres par défaut ?"

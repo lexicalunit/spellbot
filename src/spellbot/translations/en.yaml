@@ -329,6 +329,7 @@ en:
       delete_expired: "Delete expired games"
       blind_games: "Blind games"
       to_mode: "Tournament organizer mode"
+      competitive_mode: "Competitive mode"
       save: "Save channel settings"
       forget_hint: "Forgetting this channel resets it to default settings by removing its configuration. SpellBot will reconfigure it from defaults the next time it is used."
       forget_confirm: "Forget this channel and reset it to default settings?"

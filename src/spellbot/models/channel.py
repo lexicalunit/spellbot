@@ -172,6 +172,15 @@ class Channel(Base):
             "for games in this channel.",
         ),
     )
+    competitive_mode = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc=web_editable(
+            "Create Convoke games for this channel in competitive mode.",
+        ),
+    )
 
     guild = relationship(
         "Guild",
@@ -208,4 +217,5 @@ class Channel(Base):
             delete_expired=self.delete_expired,  # type: ignore
             blind_games=self.blind_games,  # type: ignore
             to_mode=self.to_mode,  # type: ignore
+            competitive_mode=self.competitive_mode,  # type: ignore
         )

@@ -329,6 +329,7 @@ ja:
       delete_expired: "期限切れのゲームを削除"
       blind_games: "ブラインドゲーム"
       to_mode: "トーナメント主催者モード"
+      competitive_mode: "競技モード"
       save: "チャンネル設定を保存"
       forget_hint: "このチャンネルを忘れると、その構成が削除され、デフォルト設定にリセットされます。次に使用されるときに、SpellBot がデフォルトから再設定します。"
       forget_confirm: "このチャンネルを忘れてデフォルト設定にリセットしますか？"

@@ -329,6 +329,7 @@ fi:
       delete_expired: "Poista vanhentuneet pelit"
       blind_games: "Sokkopelit"
       to_mode: "Turnausjärjestäjätila"
+      competitive_mode: "Kilpailutila"
       save: "Tallenna kanavan asetukset"
       forget_hint: "Tämän kanavan unohtaminen palauttaa sen oletusasetuksiin poistamalla sen määritykset. SpellBot määrittää sen uudelleen oletusarvoista, kun sitä seuraavan kerran käytetään."
       forget_confirm: "Unohdetaanko tämä kanava ja palautetaanko se oletusasetuksiin?"

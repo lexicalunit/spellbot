@@ -329,6 +329,7 @@ sv:
       delete_expired: "Ta bort utgångna spel"
       blind_games: "Blinda spel"
       to_mode: "Turneringsarrangörsläge"
+      competitive_mode: "Tävlingsläge"
       save: "Spara kanalinställningar"
       forget_hint: "Att glömma den här kanalen återställer den till standardinställningarna genom att ta bort dess konfiguration. SpellBot konfigurerar om den från standardvärdena nästa gång den används."
       forget_confirm: "Glömma den här kanalen och återställa den till standardinställningarna?"

@@ -329,6 +329,7 @@ de:
       delete_expired: "Abgelaufene Spiele löschen"
       blind_games: "Blinde Spiele"
       to_mode: "Turnierorganisator-Modus"
+      competitive_mode: "Wettkampfmodus"
       save: "Kanaleinstellungen speichern"
       forget_hint: "Wenn du diesen Kanal vergisst, wird er auf die Standardeinstellungen zurückgesetzt, indem seine Konfiguration entfernt wird. SpellBot konfiguriert ihn beim nächsten Mal aus den Standardwerten neu."
       forget_confirm: "Diesen Kanal vergessen und auf die Standardeinstellungen zurücksetzen?"

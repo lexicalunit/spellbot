@@ -153,6 +153,10 @@ async def fetch_convoke_link(
         payload["bracketLevel"] = f"B{game_data.bracket - 1}"
     if game_data.format == GameFormat.PRE_CONS.value:
         payload["bracketLevel"] = "PRECON"  # Convoke uses Bracket to indicate "pre-cons"
+    if game_data.channel.competitive_mode:
+        # Only sent when the channel opts in. Convoke defaults this to on for B5 games, so
+        # sending `False` for an opted-out channel would suppress that behavior.
+        payload["competitiveMode"] = True
     if game_data.war_id:
         # Open seating: Convoke infers guild splits from who sits.
         payload["warId"] = game_data.war_id
