@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 """
 Migrate default_service from SpellTable to Convoke.
 

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 """
 Adds Convoke Guild War fields to games.
 

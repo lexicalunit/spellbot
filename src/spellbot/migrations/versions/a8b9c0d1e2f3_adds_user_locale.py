@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 """
 Adds user locale.
 

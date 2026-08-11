@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 from __future__ import annotations
 
 import asyncio
@@ -68,6 +70,7 @@ from .tracing import configure_tracing
 )
 @click.version_option(version=__version__)
 def main(
+    *,
     log_level: str | None,
     dev: bool,
     debug: bool,

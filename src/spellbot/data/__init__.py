@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 from __future__ import annotations
 
 from spellbot.data.alert_data import AlertData

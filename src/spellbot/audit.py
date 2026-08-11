@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 """
 Settings-change audit trail, backed by the `postgresql-audit` library.
 

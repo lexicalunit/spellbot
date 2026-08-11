@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 from __future__ import annotations
 
 import asyncio
@@ -122,6 +124,7 @@ class LookingForGameAction(BaseAction):
     @tracer.wrap()
     async def upsert_game(
         self,
+        *,
         friend_xids: list[int],
         seats: int,
         rules: str | None,
@@ -333,6 +336,7 @@ class LookingForGameAction(BaseAction):
     @tracer.wrap()
     async def execute(  # noqa: C901
         self,
+        *,
         friends: str | None = None,
         seats: int | None = None,
         rules: str | None = None,
@@ -397,13 +401,13 @@ class LookingForGameAction(BaseAction):
         friend_xids = await self.filter_friend_xids(friend_xids)
 
         new, game_data = await self.upsert_game(
-            friend_xids,
-            actual_seats,
-            rules,
-            actual_format,
-            actual_bracket,
-            actual_service,
-            message_xid,
+            friend_xids=friend_xids,
+            seats=actual_seats,
+            rules=rules,
+            format=actual_format,
+            bracket=actual_bracket,
+            service=actual_service,
+            message_xid=message_xid,
             war_id=war_id,
             war_title=war_title,
         )

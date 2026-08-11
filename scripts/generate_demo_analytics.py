@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 """Generate a static demo analytics HTML page with fake data."""
 
 from __future__ import annotations

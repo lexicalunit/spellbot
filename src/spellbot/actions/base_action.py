@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 from __future__ import annotations
 
 import logging
@@ -33,10 +35,13 @@ logger = logging.getLogger(__name__)
 async def handle_exception(ex: Exception) -> NoReturn:
     if isinstance(ex, SpellBotError):
         raise ex
-    logger.exception(
+    # This is always called from an except handler, but not lexically inside one,
+    # so pass exc_info explicitly rather than relying on logger.exception().
+    logger.error(
         "error: rolling back database session due to unhandled exception: %s: %s",
         ex.__class__.__name__,
         ex,
+        exc_info=ex,
     )
     await DatabaseSession.rollback()
     raise ex

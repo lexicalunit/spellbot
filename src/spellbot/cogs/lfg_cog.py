@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 from __future__ import annotations
 
 import logging
@@ -86,6 +88,7 @@ class LookingForGameCog(commands.Cog):
     async def lfg(
         self,
         interaction: discord.Interaction,
+        *,
         friends: str | None = None,
         seats: int | None = None,
         rules: str | None = None,
@@ -134,6 +137,7 @@ class LookingForGameCog(commands.Cog):
     async def war(
         self,
         interaction: discord.Interaction,
+        *,
         war: str,
         friends: str | None = None,
         seats: int | None = None,

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 """Internationalization (i18n) support for SpellBot."""
 
 from __future__ import annotations
