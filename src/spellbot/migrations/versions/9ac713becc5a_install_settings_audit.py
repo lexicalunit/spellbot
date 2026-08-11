@@ -1,3 +1,5 @@
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 """
 Install settings audit (postgresql-audit) on channels and guilds.
 

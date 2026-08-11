@@ -192,6 +192,7 @@ ignore = [
 "src/spellbot/operations.py" = ["RET504"]
 "tests/*" = [
   "EM101",
+  "PLR0917",  # positional arguments in tests are pytest fixtures
   "PT004",
   "S105",
   "SLF001",

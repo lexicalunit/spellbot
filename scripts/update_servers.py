@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 spellbot@lexicalunit.com
+
 from __future__ import annotations
 
 from itertools import islice
