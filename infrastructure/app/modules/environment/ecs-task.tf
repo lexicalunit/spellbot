@@ -3,6 +3,13 @@
 locals {
   domain_name = "${var.env_name}.${var.root_domain}"
 
+  # Castlog only publishes a prod and a dev endpoint; stage maps to their dev one.
+  castlog_endpoint = (
+    var.env_name == "prod"
+    ? "https://api.castlog.gg/functions/v1/spellbot-webhook"
+    : "https://dev.api.castlog.gg/functions/v1/spellbot-webhook"
+  )
+
   # Common environment variables shared across all containers
   common_env = {
     DD_SITE                               = "datadoghq.com"
@@ -50,7 +57,8 @@ locals {
     "BOT_APPLICATION_ID",
     "SECRET_TOKEN",
     "BOT_CLIENT_SECRET",
-    "SESSION_SECRET_KEY"
+    "SESSION_SECRET_KEY",
+    "CASTLOG_SECRET"
   ]
 }
 
@@ -134,14 +142,15 @@ resource "aws_ecs_task_definition" "spellbot" {
       portMappings = [{ containerPort = 80, protocol = "tcp" }]
       environment = [
         for k, v in merge(local.common_env, {
-          DD_SERVICE   = "spellapi"
-          DD_ENV       = var.env_name
-          ENVIRONMENT  = var.env_name
-          PORT         = "80"
-          HOST         = "0.0.0.0"
-          REDIS_URL    = "rediss://${var.elasticache_endpoint}:${var.elasticache_port}"
-          OWNER_XID    = local.app_common_env.OWNER_XID
-          API_BASE_URL = "https://${local.domain_name}"
+          DD_SERVICE       = "spellapi"
+          DD_ENV           = var.env_name
+          ENVIRONMENT      = var.env_name
+          PORT             = "80"
+          HOST             = "0.0.0.0"
+          REDIS_URL        = "rediss://${var.elasticache_endpoint}:${var.elasticache_port}"
+          OWNER_XID        = local.app_common_env.OWNER_XID
+          API_BASE_URL     = "https://${local.domain_name}"
+          CASTLOG_ENDPOINT = local.castlog_endpoint
         }) : { name = k, value = v }
       ]
       secrets = concat(

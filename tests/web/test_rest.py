@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+from unittest.mock import AsyncMock
 
 import aiohttp
 import pytest
@@ -876,6 +877,127 @@ class TestGameMetadataEndpoint:
         detail = await services.games.game_detail_view(game.id)
         assert detail is not None
         assert detail["metadata"] == report
+
+    async def test_game_metadata_forwards_to_castlog(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=2110, name="guild")
+        channel = factories.channel.create(xid=3110, name="channel", guild=guild)
+        game = factories.game.create(id=1110, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META10")
+        mock_report_match = mocker.patch(
+            "spellbot.web.api.rest.castlog.report_match",
+            new_callable=AsyncMock,
+            return_value={"match_id": "abc-123"},
+        )
+
+        report = {"source": "convoke", "players": [{"xid": 501, "commander": "Atraxa"}]}
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json=report,
+        )
+
+        assert resp.status == 200
+        mock_report_match.assert_awaited_once_with(report)
+
+    async def test_game_metadata_survives_castlog_failure(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=2111, name="guild")
+        channel = factories.channel.create(xid=3111, name="channel", guild=guild)
+        game = factories.game.create(id=1111, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META11")
+        mocker.patch(
+            "spellbot.web.api.rest.castlog.report_match",
+            new_callable=AsyncMock,
+            return_value=None,
+        )
+
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"source": "convoke"},
+        )
+
+        assert resp.status == 200
+        assert await resp.json() == {"result": {"success": True}}
+
+    async def test_game_metadata_stores_castlog_link(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=2112, name="guild")
+        channel = factories.channel.create(xid=3112, name="channel", guild=guild)
+        game = factories.game.create(id=1112, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META12")
+        mocker.patch(
+            "spellbot.web.api.rest.castlog.report_match",
+            new_callable=AsyncMock,
+            return_value={
+                "match_id": "abc-123",
+                "castlog_url": "https://app.castlog.gg/match/abc-123",
+                "linked_players": ["ravepool"],
+                "unlinked_players": [],
+            },
+        )
+
+        report = {
+            "source": "convoke",
+            "links": {"mythic_track": "https://mythictrack.com/g/abc"},
+        }
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json=report,
+        )
+        assert resp.status == 200
+
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert detail["metadata"]["links"] == {
+            "mythic_track": "https://mythictrack.com/g/abc",
+            "castlog": "https://app.castlog.gg/match/abc-123",
+        }
+
+    async def test_game_metadata_ignores_non_url_castlog_link(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=2113, name="guild")
+        channel = factories.channel.create(xid=3113, name="channel", guild=guild)
+        game = factories.game.create(id=1113, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META13")
+        mocker.patch(
+            "spellbot.web.api.rest.castlog.report_match",
+            new_callable=AsyncMock,
+            return_value={"match_id": "abc-123"},  # no castlog_url
+        )
+
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json={"source": "convoke"},
+        )
+        assert resp.status == 200
+
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert "links" not in detail["metadata"]
 
     async def test_game_metadata_replaces_prior_report(
         self,
