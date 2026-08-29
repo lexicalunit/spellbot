@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.9.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.9.0) - 2026-08-29
+
 ### Added
 
 - Adds an integration with castlog.gg!
