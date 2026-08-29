@@ -15,6 +15,7 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager
+from spellbot.integrations import castlog
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
@@ -360,4 +361,10 @@ async def game_metadata_endpoint(request: web.Request) -> web.Response:
             return reply(error=error, status=400)
         if not await services.games.set_metadata(game_id, payload):
             return reply(error="Game not found", status=404)
+        castlog_data = await castlog.report_match(payload)
+        castlog_url = castlog_data.get("castlog_url") if castlog_data else None
+        if is_http_url(castlog_url):
+            payload.setdefault("links", {})
+            payload["links"]["castlog"] = castlog_url
+            await services.games.set_metadata(game_id, payload)
         return reply({"success": True})

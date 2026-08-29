@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     PLAYGROUP_LIVE_API_URL: str = "https://playgroup.gg"
     PLAYGROUP_LIVE_API_KEY: str | None = None
 
+    # Castlog
+    CASTLOG_ENDPOINT: str = ""
+    CASTLOG_SECRET: str | None = None
+
     # Bot configuration
     BOT_INVITE_LINK: str = (
         "https://discord.com/api/oauth2/authorize"
