@@ -902,7 +902,79 @@ class TestGameMetadataEndpoint:
         )
 
         assert resp.status == 200
-        mock_report_match.assert_awaited_once_with(report)
+        # The game id only arrives in the URL, so it is added to the forwarded body to give
+        # Castlog a stable key for de-duplicating repeat reports of the same match.
+        mock_report_match.assert_awaited_once_with(report | {"spellbot_game_id": game.id})
+
+    async def test_game_metadata_does_not_forward_stale_report_to_castlog(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=2114, name="guild")
+        channel = factories.channel.create(xid=3114, name="channel", guild=guild)
+        game = factories.game.create(id=1114, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META14")
+        mock_report_match = mocker.patch(
+            "spellbot.web.api.rest.castlog.report_match",
+            new_callable=AsyncMock,
+            return_value=None,
+        )
+        headers = {"Authorization": f"Bearer {token.key}"}
+
+        newer = {"source": "convoke", "reported_at": "2026-07-11T18:30:00+00:00", "turns": 20}
+        older = {"source": "convoke", "reported_at": "2026-07-11T18:00:00+00:00", "turns": 5}
+
+        url = f"/api/game/{game.id}/metadata"
+        assert (await client.post(url, headers=headers, json=newer)).status == 200
+        assert (await client.post(url, headers=headers, json=older)).status == 200
+
+        # The older report is accepted-and-ignored locally, so Castlog must not be told
+        # about it either -- doing so would regress Castlog to data we rejected ourselves.
+        mock_report_match.assert_awaited_once_with(newer | {"spellbot_game_id": game.id})
+
+    async def test_game_metadata_accumulates_links_across_reports(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2115, name="guild")
+        channel = factories.channel.create(xid=3115, name="channel", guild=guild)
+        game = factories.game.create(id=1115, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="META15")
+        headers = {"Authorization": f"Bearer {token.key}"}
+
+        first = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers=headers,
+            json={
+                "source": "convoke",
+                "reported_at": "2026-07-11T18:00:00+00:00",
+                "links": {"mythic_track": "https://mythictrack.com/g/abc"},
+            },
+        )
+        assert first.status == 200
+        # A later report that only knows about its own tracker must not drop the other link.
+        second = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers=headers,
+            json={
+                "source": "convoke",
+                "reported_at": "2026-07-11T18:30:00+00:00",
+                "links": {"castlog": "https://app.castlog.gg/match/abc-123"},
+            },
+        )
+        assert second.status == 200
+
+        from spellbot import services  # allow_inline
+
+        detail = await services.games.game_detail_view(game.id)
+        assert detail is not None
+        assert detail["metadata"]["links"] == {
+            "mythic_track": "https://mythictrack.com/g/abc",
+            "castlog": "https://app.castlog.gg/match/abc-123",
+        }
 
     async def test_game_metadata_survives_castlog_failure(
         self,

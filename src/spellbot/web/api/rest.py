@@ -17,6 +17,7 @@ from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.integrations import castlog
 from spellbot.metrics import add_span_request_id, generate_request_id
+from spellbot.services.games import MetadataWrite
 from spellbot.settings import settings
 from spellbot.web.tools import rate_limited
 
@@ -359,9 +360,17 @@ async def game_metadata_endpoint(request: web.Request) -> web.Response:
             return reply(error="Metadata must be a JSON object", status=400)
         if (error := sanitize_metadata(payload)) is not None:
             return reply(error=error, status=400)
-        if not await services.games.set_metadata(game_id, payload):
+        write = await services.games.set_metadata(game_id, payload)
+        if write is MetadataWrite.MISSING:
             return reply(error="Game not found", status=404)
-        castlog_data = await castlog.report_match(payload)
+        if write is MetadataWrite.STALE:
+            # A newer report already won locally, so forwarding this one would only make
+            # Castlog regress to data we have ourselves rejected.
+            return reply({"success": True})
+        # Castlog needs a stable key to tell a re-report of a match it already has from a
+        # brand new match. The game id only ever arrives in the URL, so add it here rather
+        # than trusting the reporter to include it in the body.
+        castlog_data = await castlog.report_match(payload | {"spellbot_game_id": game_id})
         castlog_url = castlog_data.get("castlog_url") if castlog_data else None
         if is_http_url(castlog_url):
             payload.setdefault("links", {})
