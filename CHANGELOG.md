@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.9.1](https://github.com/lexicalunit/spellbot/releases/tag/v21.9.1) - 2026-08-30
+
 ### Changed
 
 - Post-game reports forwarded to castlog.gg now carry the SpellBot game id so castlog can tell a
