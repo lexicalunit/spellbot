@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Post-game reports forwarded to castlog.gg now carry the SpellBot game id so castlog can tell a
+  re-report of a match it already has from a brand new match.
+- A post-game report that loses the stale-write guard is no longer forwarded to castlog.gg.
+- Post-game report `links` now accumulate across reports instead of being replaced, so a report
+  that only knows about one tracker no longer drops the others from the game detail page.
+
 ## [v21.9.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.9.0) - 2026-08-29
 
 ### Added

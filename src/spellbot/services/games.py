@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import UTC, datetime, timedelta
+from enum import Enum
 from typing import TYPE_CHECKING, cast
 
 from dateutil import tz
 from ddtrace.trace import tracer
-from sqlalchemy import TIMESTAMP, delete, func, select, update
+from sqlalchemy import TIMESTAMP, delete, func, literal, select, update
 from sqlalchemy import cast as sql_cast
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
@@ -67,18 +69,58 @@ def report_timestamp(metadata: dict[str, Any] | None) -> datetime | None:
     return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
 
 
+class MetadataWrite(Enum):
+    """The outcome of a `set_metadata` call."""
+
+    APPLIED = "applied"
+    """The report was stored."""
+
+    STALE = "stale"
+    """The game exists, but a newer report is already stored, so this one was ignored."""
+
+    MISSING = "missing"
+    """No such game."""
+
+
+EMPTY_JSONB = sql_cast(literal("{}"), JSONB)
+
+
+def metadata_write_value(metadata: dict[str, Any]) -> Any:
+    """
+    Build the SQL value for a metadata write, accumulating `links` instead of replacing it.
+
+    Every key but `links` is last-write-wins. `links` is merged over what is already
+    stored because each writer only knows about its own trackers -- Convoke reports
+    `mythic_track`, SpellBot writes back `castlog` -- so a later report that simply
+    does not mention a link must not drop it from the game detail page.
+    """
+    incoming = sql_cast(literal(json.dumps(metadata)), JSONB)
+    stored_links = func.coalesce(
+        func.jsonb_extract_path(Game.game_metadata, "links"),
+        EMPTY_JSONB,
+    )
+    incoming_links = func.coalesce(func.jsonb_extract_path(incoming, "links"), EMPTY_JSONB)
+    merged_links = func.nullif(
+        stored_links.op("||", return_type=JSONB)(incoming_links),
+        EMPTY_JSONB,
+    )
+    # When neither side has any links, `nullif` yields NULL and `jsonb_strip_nulls` reduces
+    # `{"links": null}` to `{}`, so the merge becomes a no-op rather than storing an
+    # explicit null under `links`.
+    merge = func.jsonb_strip_nulls(func.jsonb_build_object("links", merged_links))
+    return incoming.op("||", return_type=JSONB)(merge)
+
+
 @tracer.wrap()
-async def set_metadata(game_id: int, metadata: dict[str, Any]) -> bool:
+async def set_metadata(game_id: int, metadata: dict[str, Any]) -> MetadataWrite:
     """
     Store the post-game report metadata for a game, replacing any prior report.
 
-    The store is last-write-wins, but a report that is strictly older than the one
-    already stored is accepted-and-ignored so a delayed write cannot clobber a
-    newer, richer report (both the automatic match-end report and the richer
-    post-game modal report race on this same row). The compare-and-set is done in a
-    single conditional `UPDATE` so it stays atomic under concurrent writes. Returns
-    `True` when the game exists (whether or not the report was applied),
-    `False` when it does not.
+    The store is last-write-wins (except for `links`, see `metadata_write_value`), but a
+    report that is strictly older than the one already stored is ignored so a delayed
+    write cannot clobber a newer, richer report (both the automatic match-end report and
+    the richer post-game modal report race on this same row). The compare-and-set is done
+    in a single conditional `UPDATE` so it stays atomic under concurrent writes.
     """
     new_ts = report_timestamp(metadata)
     conditions = [Game.id == game_id]
@@ -91,14 +133,16 @@ async def set_metadata(game_id: int, metadata: dict[str, Any]) -> bool:
         )
         conditions.append(or_(stored_ts.is_(None), stored_ts <= new_ts))
     result = await DatabaseSession.execute(
-        update(Game).where(*conditions).values(game_metadata=metadata),
+        update(Game).where(*conditions).values(game_metadata=metadata_write_value(metadata)),
     )
     await DatabaseSession.commit()
     if result.rowcount:
-        return True
-    # No row was updated: either the game does not exist, or a newer report already
-    # wins. Distinguish so the caller can return 404 vs. accepted-and-ignored.
-    return await DatabaseSession.scalar(select(Game.id).where(Game.id == game_id)) is not None
+        return MetadataWrite.APPLIED
+    # No row was updated: either the game does not exist, or a newer report already wins.
+    # Distinguish so the caller can return 404 vs. accepted-and-ignored.
+    if await DatabaseSession.scalar(select(Game.id).where(Game.id == game_id)) is None:
+        return MetadataWrite.MISSING
+    return MetadataWrite.STALE
 
 
 @tracer.wrap()
