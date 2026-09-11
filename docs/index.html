@@ -1,390 +1,252 @@
 ---
-layout: page
+layout: home
 title: SpellBot
 subtitle: The Discord bot for Webcam Magic
-use-site-title: true
 description: "SpellBot is the Discord bot that helps you find other players looking to play Magic: The Gathering on Webcam Magic sites."
+permalink: /
 ---
 
-<div class="add-to-discord">
-  <div class="hero">
-    <button
-      type="button"
-      class="add-bot"
-      onclick="
-        location.href =
-          'https://discord.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot'
-      "
-    >
-      <img
-        src="/assets/img/discord-logo.svg"
-        alt="add-bot"
-        style="margin-inline-end: 15px"
-      />
-      Add to Discord
-    </button>
-  </div>
-  <div class="hero">
-    <a
-      class="patreon"
-      rel="noopener noreferrer"
-      href="https://www.patreon.com/bePatron?u=5973611"
-      role="button"
-      target="_blank"
-    >
-      <svg width="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M14.82 2.398c-3.97 0-7.2 3.234-7.2 7.208 0 3.963 3.23 7.187 7.2 7.187 3.959 0 7.18-3.224 7.18-7.187 0-3.974-3.221-7.208-7.18-7.208zM2 21.598h3.516v-19.2H2v19.2z"
-          fill-rule="evenodd"
-          clip-rule="evenodd"
-        ></path></svg
-      >&nbsp;Become&nbsp;a&nbsp;patron
-    </a>
-    <script src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"></script>
-    <script>
-      kofiWidgetOverlay.draw("lexicalunit", {
-        type: "floating-chat",
-        "floating-chat.donateButton.text": "Tip me",
-        "floating-chat.donateButton.background-color": "#fcbf47",
-        "floating-chat.donateButton.text-color": "#323842",
-      });
-    </script>
-  </div>
-</div>
-
-<section id="getting-started" class="level2">
-  <p>
-    <span style="font-size: 1.25rem">SpellBot</span> helps you find
-    <em>Magic: The Gathering</em> games on
-    <a href="https://convoke.games/">Convoke</a>,
-    <a href="https://www.girudo.com/">Girudo</a>,
-    <a href="https://playgroup.gg/">Playgroup Live</a>,
-    <a href="https://edhlab.gg/">EDHLAB</a>, and
-    <a href="https://table-stream.com/">Table Stream</a>. Just looking to play a
-    game of Commander? Run the command <code>/lfg</code> and SpellBot will help
-    you out!
-  </p>
-  <img
-    class="screenshot"
-    src="/assets/img/screenshots/lfg.png"
-    width="600"
-    alt="/lfg"
-  />
-  <p>
-    Visit <a href="https://queues.spellbot.io/">live queues</a>, where you
-    can log in with Discord to browse the games currently queuing across every
-    server, filter them down to just the communities you play in, set up
-    notifications so you're pinged when a game you care about is forming, and
-    look back through your own game history and records.
-  </p>
-
-  <!-- Live activity widget. Progressive enhancement: the section stays hidden
-       unless the fetch succeeds, so if the API is unreachable, slow, or blocked
-       the page renders exactly as it did before. Counts come from a Redis-backed
-       cache, so traffic here never reaches the database. -->
-  <div id="live-stats" class="live-stats" hidden>
-    <div class="live-stats-live">
-      <span class="live-stats-dot" aria-hidden="true"></span>Live right now
-    </div>
-    <div class="live-stats-row">
-      <div class="live-stat">
-        <span class="live-stat-value" id="live-stat-servers">&mdash;</span>
-        <span class="live-stat-label">Servers</span>
-      </div>
-      <div class="live-stat">
-        <span class="live-stat-value" id="live-stat-players">&mdash;</span>
-        <span class="live-stat-label">Players</span>
-      </div>
-      <div class="live-stat">
-        <span class="live-stat-value" id="live-stat-games">&mdash;</span>
-        <span class="live-stat-label">Games</span>
-      </div>
-    </div>
-    <p class="live-stats-cta">
-      <a href="https://queues.spellbot.io/"
-        ><b>Browse live queues <span class="live-stats-arrow">&rarr;</span></b></a
-      >
+<section class="hero">
+  <div class="wrap hero-inner">
+    <p class="eyebrow">The Discord bot for Webcam Magic</p>
+    <h1 class="hero-title">Find your next game of Magic.</h1>
+    <p class="hero-lede">
+      Run <code>/lfg</code> in your Discord server and SpellBot gathers the
+      players, then opens a table on Convoke, Playgroup Live, EDHLAB, Girudo, or
+      Table Stream.
     </p>
-    <p class="live-stats-updated" id="live-stats-updated"></p>
-  </div>
-
-  <script>
-    (function () {
-      var el = document.getElementById("live-stats");
-      if (!el || !window.fetch) return;
-
-      var reduceMotion =
-        window.matchMedia &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      // Compact only once the numbers get long; plain grouped digits read better
-      // at the sizes these are displayed at.
-      var compact = new Intl.NumberFormat(undefined, {
-        notation: "compact",
-        maximumFractionDigits: 1,
-      });
-
-      function format(value) {
-        return value < 10000 ? value.toLocaleString() : compact.format(value);
-      }
-
-      // Counting up draws the eye to the numbers and reinforces that they are
-      // live rather than baked into the page. It is decoration, so it is skipped
-      // entirely when the visitor asks for reduced motion.
-      function countUp(node, target) {
-        if (reduceMotion || !window.requestAnimationFrame || target === 0) {
-          node.textContent = format(target);
-          return;
-        }
-        var DURATION = 900;
-        var started = null;
-        requestAnimationFrame(function step(now) {
-          if (started === null) started = now;
-          var progress = Math.min((now - started) / DURATION, 1);
-          var eased = 1 - Math.pow(1 - progress, 3);
-          node.textContent = format(Math.round(target * eased));
-          if (progress < 1) requestAnimationFrame(step);
-        });
-      }
-
-      function render(stats) {
-        var fields = [
-          ["live-stat-servers", stats.active_servers],
-          ["live-stat-players", stats.active_players],
-          ["live-stat-games", stats.active_games],
-        ];
-        // Validate everything before touching the DOM, so a malformed payload
-        // leaves the widget hidden rather than half-populated.
-        for (var i = 0; i < fields.length; i++) {
-          if (typeof fields[i][1] !== "number") return false;
-        }
-        var updated = document.getElementById("live-stats-updated");
-        var when = Date.parse(stats.last_updated);
-        if (!isNaN(when)) {
-          updated.textContent =
-            "Updated " + new Date(when).toLocaleTimeString();
-        }
-        el.hidden = false;
-        for (var j = 0; j < fields.length; j++) {
-          countUp(document.getElementById(fields[j][0]), fields[j][1]);
-        }
-        return true;
-      }
-
-      fetch("{{ site.spellbot_api }}/stats.json", { mode: "cors" })
-        .then(function (res) {
-          if (!res.ok) throw new Error("stats unavailable");
-          return res.json();
-        })
-        .then(render)
-        .catch(function () {
-          /* Leave the widget hidden; the rest of the page is unaffected. */
-        });
-    })();
-  </script>
-</section>
-
-<section id="where-to-play" class="level2">
-  <h2>🔭 Where to Play?</h2>
-  <p>
-    SpellBot helps Discord servers to build communities around playing Magic
-    online. Please check out the following servers to find games and connect
-    with other players. You can also
-    see <a href="https://queues.spellbot.io/">live queues</a> waiting for you
-    to join!
-  </p>
-  <!-- SERVERS BEGIN -->
-    <div class="where">
-        <div><a href="https://www.playedh.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playedh.png" alt="PlayEDH" /><br />PlayEDH</a></div>
-        <div><a href="https://www.patreon.com/tolariancommunitycollege"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/tolarian-community-college.png" alt="Tolarian Community College" /><br /><span class="small">Tolarian&nbsp;Community&nbsp;College</span></a></div>
-        <div><a href="https://discord.com/invite/cedh"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh.png" alt="cEDH" /><br />cEDH</a></div>
-        <div><a href="https://discord.gg/3jwqduTkGZ"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/champ-de-bataille.png" alt="Champ de Bataille" /><br />Champ&nbsp;de&nbsp;Bataille</a></div>
-        <div><a href="https://www.convoke.games/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/convoke.png" alt="Convoke" /><br />Convoke</a></div>
-        <div><a href="https://discord.com/invite/9Z7x8dh6Tf"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-fight-club.png" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></div>
-        <div><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png" alt="Oath of the Gaywatch" /><br /><span class="small">Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</span></a></div>
-        <div><a href="https://linktr.ee/women_in_magic"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/women-in-magic.png" alt="Women+ In Magic" /><br /><span class="small">Women+&nbsp;In&nbsp;Magic</span></a></div>
-        <div><a href="https://linktr.ee/cedhspain"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/comunidad-espanola-de-cedh.png" alt="Comunidad Española de cEDH" /><br /><span class="small">Comunidad&nbsp;Española&nbsp;de&nbsp;cEDH</span></a></div>
-        <div><a href="https://discord.gg/CfCb9fmgCD"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/top-tier-bangers.png" alt="Top Tier Bangers" /><br />Top&nbsp;Tier&nbsp;Bangers</a></div>
-        <div><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/play-to-win.png" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></div>
-        <div><a href="https://www.facebook.com/EDHTambayan/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-tambayan.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></div>
-        <div><a href="https://www.patreon.com/PlayingWithPowerMTG"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playing-with-power.png" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></div>
-        <div><a href="https://discord.gg/commander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/the-commander-staple.png" alt="The Commander Staple" /><br /><span class="small">The&nbsp;Commander&nbsp;Staple</span></a></div>
-        <div><a href="https://discord.gg/ZmPsjrxe4h"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/command-the-cause.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></div>
-        <div><a href="https://twitter.com/TurboDCommander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/turbo-commander.png" alt="Turbo Commander" /><br />Turbo&nbsp;Commander</a></div>
-        <div><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh-uk.png" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></div>
-        <div><a href="https://discord.com/invite/mtg-home-689674672240984067"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/mtg-at-home.png" alt="MTG@Home" /><br />MTG@Home</a></div>
+    <div class="cta-row">
+      <a
+        class="btn btn-solid"
+        href="https://discord.com/api/oauth2/authorize?client_id=725510263251402832&amp;permissions=2416045137&amp;scope=applications.commands%20bot"
+      >
+        <img src="/assets/img/discord-logo.svg" alt="" width="22" height="22" />
+        Add to Discord
+      </a>
+      <a class="btn btn-ghost" href="/getting-started/">See how it works</a>
     </div>
-<!-- SERVERS END -->
-  <p>
-    Want your community to be featured here as well? Please contact me at
-    <a href="mailto:spellbot@lexicalunit.com">spellbot@lexicalunit.com</a>!
-  </p>
-</section>
 
-<section id="mythictrack" class="level2">
-  <h2>
-    <img src="/assets/img/logos/mythic-track.png" alt="MythicTrack" />
-    Mythic Track
-  </h2>
-  <p>
-    SpellBot integrates seamlessly with
-    <a href="https://www.mythictrack.com/spellbot">Mythic Track</a> which allows
-    you to track games within your Discord server. Visualize and explore your
-    data to reveal interesting trends. To get started run the
-    <code>/setup_mythic_track</code> command on your server. Please also
-    consider
-    <a href="https://www.patreon.com/MythicTrack">supporting Mythic Track</a>!
-  </p>
-  <p align="center">
-    <img
-      class="screenshot"
-      src="/assets/img/screenshots/mythic-track-setup.png"
-      width="617"
-      alt="Mythic Track Setup"
-    />
-  </p>
-</section>
+      <!-- Live activity widget. Progressive enhancement: the section stays hidden
+           unless the fetch succeeds, so if the API is unreachable, slow, or blocked
+           the page renders exactly as it did before. Counts come from a Redis-backed
+           cache, so traffic here never reaches the database. -->
+      <div id="live-stats" class="live-stats" hidden>
+        <div class="live-stats-live">
+          <span class="live-stats-dot" aria-hidden="true"></span>Live right now
+        </div>
+        <div class="live-stats-row">
+          <div class="live-stat">
+            <span class="live-stat-value" id="live-stat-servers">&mdash;</span>
+            <span class="live-stat-label">Servers</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-value" id="live-stat-players">&mdash;</span>
+            <span class="live-stat-label">Players</span>
+          </div>
+          <div class="live-stat">
+            <span class="live-stat-value" id="live-stat-games">&mdash;</span>
+            <span class="live-stat-label">Games</span>
+          </div>
+        </div>
+        <p class="live-stats-cta">
+          <a href="https://queues.spellbot.io/"
+            ><b>Browse live queues <span class="live-stats-arrow">&rarr;</span></b></a
+          >
+        </p>
+        <p class="live-stats-updated" id="live-stats-updated"></p>
+      </div>
 
-<section id="playgroup-live" class="level2">
-  <h2>
-    <img src="/assets/img/logos/playgroup-live.svg" alt="" />
-    Playgroup Live
-  </h2>
-  <p>
-    SpellBot can also seat your games on
-    <a href="https://playgroup.gg/playgroup-live">Playgroup Live</a>, creating a
-    table for up to six players with starting life totals that match the format
-    you queued for. One player in the game needs to connect their account first:
-    run the <code>/playgroup link</code> command and SpellBot will find your
-    Playgroup Live account and remember it for future games.
-  </p>
-</section>
+      <script>
+        (function () {
+          var el = document.getElementById("live-stats");
+          if (!el || !window.fetch) return;
 
-<section id="castlog" class="level2">
-  <h2>
-    <img src="/assets/img/logos/castlog.svg" alt="" />
-    Castlog
-  </h2>
-  <p>
-    SpellBot keeps a history of your games on
-    <a href="https://castlog.gg/">Castlog</a>. When the result of a game is
-    reported, SpellBot forwards the match on and Castlog builds a page for it,
-    then links that page back to the game so you can find it later. Players who
-    have connected their Castlog account are credited on the match
-    automatically. Castlog's
-    <a href="https://castlog.gg/features/spellbot">SpellBot setup guide</a>
-    walks through getting started.
-  </p>
-</section>
+          var reduceMotion =
+            window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-<section id="help" class="level2">
-  <h2>❓ Help</h2>
-  <p>
-    The most common issue people have when using SpellBot is related to
-    receiving Direct Messages from the bot. SpellBot uses Discord embeds in the
-    DMs that it sends and there are some settings you need to enable for this to
-    work correctly.
-  </p>
-  <ol class="steps">
-    <li>
-      In your Settings search for <b>embeds and link previews</b> and make sure
-      that it's on.
-    </li>
-    <li>
-      For each Server you will want to make sure that you have allowed Direct
-      Messages from those server members. Search your Settings for
-      <b>Direct Messages</b> and turn the option on.
-    </li>
-    <li>
-      You may also need to enable message requests from server members you may
-      not know. Search your Settings for <b>message requests</b> and turn that
-      option on as well.
-    </li>
-  </ol>
-  <p>
-    If you have more questions, please don't hesitate to join us on the
-    <a href="https://discord.gg/HuzTQYpYH4">SpellBot Discord server</a> to get
-    answers from our generous community.
-  </p>
-  <p>
-    Wondering if the bot is online? Check the
-    <a href="https://status.spellbot.io">status page</a> for current health.
-  </p>
-</section>
+          // Compact only once the numbers get long; plain grouped digits read better
+          // at the sizes these are displayed at.
+          var compact = new Intl.NumberFormat(undefined, {
+            notation: "compact",
+            maximumFractionDigits: 1,
+          });
 
-<section id="feedback" class="level2">
-  <h2>🎤 Feedback</h2>
-  <p>
-    Thoughts and suggestions? Come join us on the
-    <a href="https://discord.gg/HuzTQYpYH4">SpellBot Discord server</a>! Please
-    also feel free to
-    <a href="https://github.com/lexicalunit/spellbot/issues"
-      >directly report any bugs</a
-    >
-    that you encounter. Or reach out to me on BlueSky at
-    <a href="https://bsky.app/profile/spellbot.io">@spellbot.io</a>. We also
-    have a support server if you&apos;d like to join and get help directly from
-    the developer.
-  </p>
-  <div class="support">
-    <iframe
-      src="https://discord.com/widget?id=949425995969093722&theme=dark"
-      width="350"
-      height="500"
-      allowtransparency="true"
-      frameborder="0"
-      sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-    ></iframe>
+          function format(value) {
+            return value < 10000 ? value.toLocaleString() : compact.format(value);
+          }
+
+          // Counting up draws the eye to the numbers and reinforces that they are
+          // live rather than baked into the page. It is decoration, so it is skipped
+          // entirely when the visitor asks for reduced motion.
+          function countUp(node, target) {
+            if (reduceMotion || !window.requestAnimationFrame || target === 0) {
+              node.textContent = format(target);
+              return;
+            }
+            var DURATION = 900;
+            var started = null;
+            requestAnimationFrame(function step(now) {
+              if (started === null) started = now;
+              var progress = Math.min((now - started) / DURATION, 1);
+              var eased = 1 - Math.pow(1 - progress, 3);
+              node.textContent = format(Math.round(target * eased));
+              if (progress < 1) requestAnimationFrame(step);
+            });
+          }
+
+          function render(stats) {
+            var fields = [
+              ["live-stat-servers", stats.active_servers],
+              ["live-stat-players", stats.active_players],
+              ["live-stat-games", stats.active_games],
+            ];
+            // Validate everything before touching the DOM, so a malformed payload
+            // leaves the widget hidden rather than half-populated.
+            for (var i = 0; i < fields.length; i++) {
+              if (typeof fields[i][1] !== "number") return false;
+            }
+            var updated = document.getElementById("live-stats-updated");
+            var when = Date.parse(stats.last_updated);
+            if (!isNaN(when)) {
+              updated.textContent =
+                "Updated " + new Date(when).toLocaleTimeString();
+            }
+            el.hidden = false;
+            for (var j = 0; j < fields.length; j++) {
+              countUp(document.getElementById(fields[j][0]), fields[j][1]);
+            }
+            return true;
+          }
+
+          fetch("{{ site.spellbot_api }}/stats.json", { mode: "cors" })
+            .then(function (res) {
+              if (!res.ok) throw new Error("stats unavailable");
+              return res.json();
+            })
+            .then(render)
+            .catch(function () {
+              /* Leave the widget hidden; the rest of the page is unaffected. */
+            });
+        })();
+      </script>
   </div>
 </section>
 
-<section id="supported-by" class="level2">
-  <h2>🙌 Supported By</h2>
-  <p>
-    The continued operation of SpellBot is supported by
-    <a href="https://www.playedh.com/">PlayEDH</a> as well as generous donations
-    from
-    <a href="https://www.patreon.com/lexicalunit">my patrons on Patreon</a>. If
-    you would like to help support SpellBot, please consider
-    <a href="https://www.patreon.com/lexicalunit">signing up</a> for as little
-    as <em>one dollar a month</em>.
-  </p>
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">Everything you need to get started</h2>
+    <div class="cards">
+      <article class="card">
+        <h3>One command to queue</h3>
+        <p>
+          <code>/lfg</code> puts you in the queue. When the seats fill, SpellBot
+          creates the table on the service your server plays on and posts the
+          link, so nobody is left coordinating in chat.
+        </p>
+      </article>
+      <article class="card">
+        <h3>Every server in one place</h3>
+        <p>
+          <a href="https://queues.spellbot.io/">Browse games</a> forming across
+          every SpellBot community at once, filter to the servers you actually
+          play in, and get pinged when a game you care about starts coming
+          together.
+        </p>
+      </article>
+      <article class="card">
+        <h3>Your games, on the record</h3>
+        <p>
+          Look back through your own
+          <a href="https://queues.spellbot.io/">history and records</a>, and keep
+          a fuller picture of every match with the Mythic Track, Castlog and
+          Playgroup Live integrations.
+        </p>
+      </article>
+    </div>
+    <p class="band-more">
+      <a href="/features/">See everything SpellBot does &rarr;</a>
+    </p>
+  </div>
 </section>
 
-<section id="contributing" class="level2">
-  <h2>❤️ Contributing</h2>
-  <p>
-    If you&apos;d like to become a part of the SpellBot development community
-    please first know that we have a documented
-    <a
-      href="https://github.com/lexicalunit/spellbot/blob/main/CODE_OF_CONDUCT.md"
-      >code of conduct</a
-    >
-    and then see our
-    <a href="https://github.com/lexicalunit/spellbot/blob/main/CONTRIBUTING.md"
-      >documentation on how to contribute</a
-    >
-    for details on how to get started.
-  </p>
+<section class="band band-alt">
+  <div class="wrap">
+    <h2 class="section-title">Played in communities you already know</h2>
+    <p class="section-lede">
+      SpellBot helps Discord servers build communities around playing Magic
+      online. These are some of the servers running it today.
+    </p>
+    <!-- LANDING SERVERS BEGIN -->
+    <div class="logo-strip">
+      <a href="https://www.patreon.com/tolariancommunitycollege"><img src="https://spellbot.io/assets/img/servers/tolarian-community-college.png" alt="Tolarian Community College" width="200" height="200" /></a>
+      <a href="https://discord.com/invite/cedh"><img src="https://spellbot.io/assets/img/servers/cedh.png" alt="cEDH" width="200" height="200" /></a>
+      <a href="https://discord.com/invite/9Z7x8dh6Tf"><img src="https://spellbot.io/assets/img/servers/edh-fight-club.png" alt="EDH Fight Club" width="200" height="200" /></a>
+      <a href="https://linktr.ee/cedhspain"><img src="https://spellbot.io/assets/img/servers/comunidad-espanola-de-cedh.png" alt="Comunidad Española de cEDH" width="200" height="200" /></a>
+      <a href="https://www.cedh.uk/"><img src="https://spellbot.io/assets/img/servers/cedh-uk.png" alt="cEDH UK" width="200" height="200" /></a>
+      <a href="https://www.playedh.com/"><img src="https://spellbot.io/assets/img/servers/playedh.png" alt="PlayEDH" width="200" height="200" /></a>
+    </div>
+    <!-- LANDING SERVERS END -->
+    <p class="band-more">
+      <a href="/community/">Find a server to play in &rarr;</a>
+    </p>
+  </div>
 </section>
 
-<section id="fine-print" class="level2">
-  <h2>🔍 Fine-print</h2>
-  <p>Any usage of SpellBot implies that you accept the following policies.</p>
-  <ul>
-    <li>
+<section class="band">
+  <div class="wrap">
+    <div class="cards cards-2">
+      <article class="card">
+        <h3>🙌 Supported By</h3>
+        <p>
+          The continued operation of SpellBot is supported by
+          <a href="https://www.playedh.com/">PlayEDH</a> as well as generous
+          donations from
+          <a href="https://www.patreon.com/lexicalunit">my patrons on Patreon</a>.
+          If you would like to help support SpellBot, please consider
+          <a href="https://www.patreon.com/lexicalunit">signing up</a> for as
+          little as <em>one dollar a month</em>.
+        </p>
+      </article>
+      <article class="card">
+        <h3>❤️ Contributing</h3>
+        <p>
+          If you&apos;d like to become a part of the SpellBot development
+          community please first know that we have a documented
+          <a
+            href="https://github.com/lexicalunit/spellbot/blob/main/CODE_OF_CONDUCT.md"
+            >code of conduct</a
+          >
+          and then see our
+          <a
+            href="https://github.com/lexicalunit/spellbot/blob/main/CONTRIBUTING.md"
+            >documentation on how to contribute</a
+          >
+          for details on how to get started.
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="band closing">
+  <div class="wrap">
+    <h2 class="section-title">Add SpellBot to your server</h2>
+    <p class="section-lede">
+      It is free, it takes a minute, and it works in any Discord server you
+      manage.
+    </p>
+    <div class="cta-row">
       <a
-        href="https://github.com/lexicalunit/spellbot/blob/main/PRIVACY_POLICY.md"
-        >Privacy Policy</a
+        class="btn btn-solid"
+        href="https://discord.com/api/oauth2/authorize?client_id=725510263251402832&amp;permissions=2416045137&amp;scope=applications.commands%20bot"
       >
-    </li>
-    <li>
-      <a
-        href="https://github.com/lexicalunit/spellbot/blob/main/TERMS_OF_SERVICE.md"
-        >Terms of Service</a
-      >
-    </li>
-  </ul>
+        <img src="/assets/img/discord-logo.svg" alt="" width="22" height="22" />
+        Add to Discord
+      </a>
+      <a class="btn btn-ghost" href="https://www.patreon.com/lexicalunit">
+        Support the project
+      </a>
+    </div>
+  </div>
 </section>
-
-<hr class="small" />

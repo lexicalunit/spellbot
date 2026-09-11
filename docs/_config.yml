@@ -25,6 +25,7 @@ navbar-links:
   Live: "https://queues.spellbot.io"
   Dev: "https://github.com/lexicalunit/spellbot"
   Status: "https://status.spellbot.io"
+  Help: "/getting-started/"
 
 ################
 # --- Logo --- #

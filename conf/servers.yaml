@@ -1,7 +1,4 @@
 servers:
-  - name: PlayEDH
-    logo: https://spellbot.io/assets/img/servers/playedh.png
-    url: https://www.playedh.com/
   - name: Tolarian Community College
     logo: https://spellbot.io/assets/img/servers/tolarian-community-college.png
     url: https://www.patreon.com/tolariancommunitycollege
@@ -9,62 +6,56 @@ servers:
   - name: cEDH
     logo: https://spellbot.io/assets/img/servers/cedh.png
     url: https://discord.com/invite/cedh
-  - name: Champ de Bataille
-    logo: https://spellbot.io/assets/img/servers/champ-de-bataille.png
-    url: https://discord.gg/3jwqduTkGZ
-  # - name: CriticalEDH
-  #   logo: https://spellbot.io/assets/img/servers/criticaledh.png
-  #   url: https://linktr.ee/CriticalEDH
-  - name: Convoke
-    logo: https://spellbot.io/assets/img/servers/convoke.png
-    url: https://www.convoke.games/
   - name: EDH Fight Club
     logo: https://spellbot.io/assets/img/servers/edh-fight-club.png
     url: https://discord.com/invite/9Z7x8dh6Tf
-  - name: Oath of the Gaywatch
-    logo: https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png
-    url: https://disboard.org/server/757455940009328670
-    small: true
-  - name: Women+ In Magic
-    logo: https://spellbot.io/assets/img/servers/women-in-magic.png
-    url: https://linktr.ee/women_in_magic
-    small: true
   - name: Comunidad Española de cEDH
     logo: https://spellbot.io/assets/img/servers/comunidad-espanola-de-cedh.png
     url: https://linktr.ee/cedhspain
     small: true
-  - name: Top Tier Bangers
-    logo: https://spellbot.io/assets/img/servers/top-tier-bangers.png
-    url: https://discord.gg/CfCb9fmgCD
+  - name: cEDH UK
+    logo: https://spellbot.io/assets/img/servers/cedh-uk.png
+    url: https://www.cedh.uk/
+  - name: PlayEDH
+    logo: https://spellbot.io/assets/img/servers/playedh.png
+    url: https://www.playedh.com/
+  - name: Champ de Bataille
+    logo: https://spellbot.io/assets/img/servers/champ-de-bataille.png
+    url: https://discord.gg/3jwqduTkGZ
   - name: Play to Win
     logo: https://spellbot.io/assets/img/servers/play-to-win.png
     url: https://www.playtowinmtg.com/
-  - name: EDH Tambayan
-    logo: https://spellbot.io/assets/img/servers/edh-tambayan.png
-    url: https://www.facebook.com/EDHTambayan/
-  - name: Playing with Power
-    logo: https://spellbot.io/assets/img/servers/playing-with-power.png
-    url: https://www.patreon.com/PlayingWithPowerMTG
   - name: The Commander Staple
     logo: https://spellbot.io/assets/img/servers/the-commander-staple.png
     url: https://discord.gg/commander
     small: true
-  - name: Command the Cause
-    logo: https://spellbot.io/assets/img/servers/command-the-cause.png
-    url: https://discord.gg/ZmPsjrxe4h
+  - name: Oath of the Gaywatch
+    logo: https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png
+    url: https://disboard.org/server/757455940009328670
+    small: true
+  - name: EDH Tambayan
+    logo: https://spellbot.io/assets/img/servers/edh-tambayan.png
+    url: https://www.facebook.com/EDHTambayan/
+  - name: Women+ In Magic
+    logo: https://spellbot.io/assets/img/servers/women-in-magic.png
+    url: https://linktr.ee/women_in_magic
+    small: true
+  - name: Convoke
+    logo: https://spellbot.io/assets/img/servers/convoke.png
+    url: https://www.convoke.games/
+  - name: MTG@Home
+    logo: https://spellbot.io/assets/img/servers/mtg-at-home.png
+    url: https://discord.com/invite/mtg-home-689674672240984067
+  - name: Top Tier Bangers
+    logo: https://spellbot.io/assets/img/servers/top-tier-bangers.png
+    url: https://discord.gg/CfCb9fmgCD
+  # - name: CriticalEDH
+  #   logo: https://spellbot.io/assets/img/servers/criticaledh.png
+  #   url: https://linktr.ee/CriticalEDH
   # - name: ka0s Tournaments
   #   light_logo: https://github.com/lexicalunit/spellbot/assets/1903876/2f989560-b4c2-42e7-9708-0718913aecec
   #   dark_logo: https://github.com/lexicalunit/spellbot/assets/1903876/104dc2da-4aad-4998-a778-479b54d1c600
   #   url: https://www.ka0stournaments.com/
-  - name: Turbo Commander
-    logo: https://spellbot.io/assets/img/servers/turbo-commander.png
-    url: https://twitter.com/TurboDCommander
-  - name: cEDH UK
-    logo: https://spellbot.io/assets/img/servers/cedh-uk.png
-    url: https://www.cedh.uk/
-  - name: MTG@Home
-    logo: https://spellbot.io/assets/img/servers/mtg-at-home.png
-    url: https://discord.com/invite/mtg-home-689674672240984067
   # - name: Combat Step
   #   logo: https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253
   #   url: https://discord.gg/Jkn5FpTASv
@@ -107,3 +98,12 @@ servers:
   # - name: Proxy Pirates
   #   logo: https://spellbot.io/assets/img/servers/proxy-pirates.png
   #   url: https://discord.gg/bA5tf3Xc8M
+  # - name: Turbo Commander
+  #   logo: https://spellbot.io/assets/img/servers/turbo-commander.png
+  #   url: https://twitter.com/TurboDCommander
+  # - name: Command the Cause
+  #   logo: https://spellbot.io/assets/img/servers/command-the-cause.png
+  #   url: https://discord.gg/ZmPsjrxe4h
+  # - name: Playing with Power
+  #   logo: https://spellbot.io/assets/img/servers/playing-with-power.png
+  #   url: https://www.patreon.com/PlayingWithPowerMTG

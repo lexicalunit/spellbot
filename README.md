@@ -55,34 +55,29 @@ SpellBot helps Discord servers to build communities around playing Magic online.
 <!-- SERVERS BEGIN -->
 <table>
     <tr>
-        <td align="center"><a href="https://www.playedh.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playedh.png" alt="PlayEDH" /><br />PlayEDH</a></td>
         <td align="center"><a href="https://www.patreon.com/tolariancommunitycollege"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/tolarian-community-college.png" alt="Tolarian Community College" /><br />Tolarian&nbsp;Community&nbsp;College</a></td>
         <td align="center"><a href="https://discord.com/invite/cedh"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh.png" alt="cEDH" /><br />cEDH</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://discord.gg/3jwqduTkGZ"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/champ-de-bataille.png" alt="Champ de Bataille" /><br />Champ&nbsp;de&nbsp;Bataille</a></td>
-        <td align="center"><a href="https://www.convoke.games/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/convoke.png" alt="Convoke" /><br />Convoke</a></td>
         <td align="center"><a href="https://discord.com/invite/9Z7x8dh6Tf"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-fight-club.png" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
     </tr>
     <tr>
-        <td align="center"><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png" alt="Oath of the Gaywatch" /><br />Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</a></td>
-        <td align="center"><a href="https://linktr.ee/women_in_magic"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/women-in-magic.png" alt="Women+ In Magic" /><br />Women+&nbsp;In&nbsp;Magic</a></td>
         <td align="center"><a href="https://linktr.ee/cedhspain"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/comunidad-espanola-de-cedh.png" alt="Comunidad Española de cEDH" /><br />Comunidad&nbsp;Española&nbsp;de&nbsp;cEDH</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://discord.gg/CfCb9fmgCD"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/top-tier-bangers.png" alt="Top Tier Bangers" /><br />Top&nbsp;Tier&nbsp;Bangers</a></td>
-        <td align="center"><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/play-to-win.png" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></td>
-        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-tambayan.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://www.patreon.com/PlayingWithPowerMTG"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playing-with-power.png" alt="Playing with Power" /><br />Playing&nbsp;with&nbsp;Power</a></td>
-        <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/the-commander-staple.png" alt="The Commander Staple" /><br />The&nbsp;Commander&nbsp;Staple</a></td>
-        <td align="center"><a href="https://discord.gg/ZmPsjrxe4h"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/command-the-cause.png" alt="Command the Cause" /><br />Command&nbsp;the&nbsp;Cause</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://twitter.com/TurboDCommander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/turbo-commander.png" alt="Turbo Commander" /><br />Turbo&nbsp;Commander</a></td>
         <td align="center"><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh-uk.png" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></td>
+        <td align="center"><a href="https://www.playedh.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playedh.png" alt="PlayEDH" /><br />PlayEDH</a></td>
+    </tr>
+    <tr>
+        <td align="center"><a href="https://discord.gg/3jwqduTkGZ"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/champ-de-bataille.png" alt="Champ de Bataille" /><br />Champ&nbsp;de&nbsp;Bataille</a></td>
+        <td align="center"><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/play-to-win.png" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></td>
+        <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/the-commander-staple.png" alt="The Commander Staple" /><br />The&nbsp;Commander&nbsp;Staple</a></td>
+    </tr>
+    <tr>
+        <td align="center"><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png" alt="Oath of the Gaywatch" /><br />Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</a></td>
+        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-tambayan.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
+        <td align="center"><a href="https://linktr.ee/women_in_magic"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/women-in-magic.png" alt="Women+ In Magic" /><br />Women+&nbsp;In&nbsp;Magic</a></td>
+    </tr>
+    <tr>
+        <td align="center"><a href="https://www.convoke.games/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/convoke.png" alt="Convoke" /><br />Convoke</a></td>
         <td align="center"><a href="https://discord.com/invite/mtg-home-689674672240984067"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/mtg-at-home.png" alt="MTG@Home" /><br />MTG@Home</a></td>
+        <td align="center"><a href="https://discord.gg/CfCb9fmgCD"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/top-tier-bangers.png" alt="Top Tier Bangers" /><br />Top&nbsp;Tier&nbsp;Bangers</a></td>
     </tr>
 </table>
 <!-- SERVERS END -->

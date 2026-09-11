@@ -1,0 +1,83 @@
+---
+layout: page
+title: Getting Started
+subtitle: Add SpellBot to your server and run your first game
+permalink: /getting-started/
+---
+
+<section id="add-the-bot" class="level2">
+  <h2>🤖 Add SpellBot to Discord</h2>
+  <p>
+    SpellBot is free and works in any Discord server you manage. Adding it takes
+    a minute and needs no configuration to get going.
+  </p>
+  <p class="cta-row">
+    <a
+      class="btn btn-solid"
+      href="https://discord.com/api/oauth2/authorize?client_id=725510263251402832&amp;permissions=2416045137&amp;scope=applications.commands%20bot"
+    >
+      <img src="/assets/img/discord-logo.svg" alt="" width="22" height="22" />
+      Add to Discord
+    </a>
+  </p>
+</section>
+
+<section id="first-game" class="level2">
+  <h2>🃏 Run your first game</h2>
+  <p>
+    Run <code>/lfg</code> in any channel and SpellBot posts a game other players
+    can join. When the last seat fills, it creates the table on the service your
+    server plays on and shares the link with everyone who joined.
+  </p>
+  <img
+    class="screenshot"
+    src="/assets/img/screenshots/lfg.png"
+    width="600"
+    alt="The embed SpellBot posts after running the /lfg command"
+  />
+  <p>
+    Once a game is forming you can watch it fill from
+    <a href="https://queues.spellbot.io/">live queues</a>, where you can log in
+    with Discord to browse games across every server, filter them down to just
+    the communities you play in, set up notifications so you are pinged when a
+    game you care about is forming, and look back through your own game history
+    and records.
+  </p>
+</section>
+
+<section id="direct-messages" class="level2">
+  <h2>📬 Let SpellBot message you</h2>
+  <p>
+    The most common issue people have is not receiving Direct Messages from the
+    bot. SpellBot uses Discord embeds in the DMs it sends, and there are a few
+    settings you need to enable for that to work.
+  </p>
+  <ol class="steps">
+    <li>
+      In your Settings search for <b>embeds and link previews</b> and make sure
+      that it's on.
+    </li>
+    <li>
+      For each Server you will want to make sure that you have allowed Direct
+      Messages from those server members. Search your Settings for
+      <b>Direct Messages</b> and turn the option on.
+    </li>
+    <li>
+      You may also need to enable message requests from server members you may
+      not know. Search your Settings for <b>message requests</b> and turn that
+      option on as well.
+    </li>
+  </ol>
+</section>
+
+<section id="more-help" class="level2">
+  <h2>🛟 Still stuck?</h2>
+  <p>
+    Join us on the
+    <a href="https://discord.gg/HuzTQYpYH4">SpellBot Discord server</a> to get
+    answers from our generous community. Wondering whether the bot is online?
+    Check the <a href="https://status.spellbot.io">status page</a> for current
+    health.
+  </p>
+  {% include discord-widget.html %}
+</section>

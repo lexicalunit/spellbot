@@ -16,7 +16,12 @@ if TYPE_CHECKING:
 SRC_ROOT = Path(realpath(__file__)).parent.parent
 SERVERS_FILE = SRC_ROOT / "conf" / "servers.yaml"
 README_FILE = SRC_ROOT / "README.md"
-INDEX_FILE = SRC_ROOT / "docs" / "index.html"
+COMMUNITY_FILE = SRC_ROOT / "docs" / "community.html"
+LANDING_FILE = SRC_ROOT / "docs" / "index.html"
+
+# The landing page shows a short strip of logos as a taster; the full directory
+# lives on the community page.
+LANDING_SERVER_COUNT = 6
 
 
 class Server(TypedDict):
@@ -71,12 +76,12 @@ def update_readme(servers: list[Server]) -> None:
         f.write(rhs)
 
 
-def update_index(servers: list[Server]) -> None:
-    with INDEX_FILE.open() as f:
+def update_community(servers: list[Server]) -> None:
+    with COMMUNITY_FILE.open() as f:
         index_text = f.read()
     lhs = index_text.split("<!-- SERVERS BEGIN -->")[0]
     rhs = index_text.split("<!-- SERVERS END -->")[1]
-    with INDEX_FILE.open("w") as f:
+    with COMMUNITY_FILE.open("w") as f:
         f.write(lhs)
         f.write("<!-- SERVERS BEGIN -->\n")
         f.write('    <div class="where">\n')
@@ -103,9 +108,35 @@ def update_index(servers: list[Server]) -> None:
         f.write(rhs)
 
 
+def update_landing(servers: list[Server]) -> None:
+    with LANDING_FILE.open() as f:
+        landing_text = f.read()
+    lhs = landing_text.split("<!-- LANDING SERVERS BEGIN -->")[0]
+    rhs = landing_text.split("<!-- LANDING SERVERS END -->")[1]
+    with LANDING_FILE.open("w") as f:
+        f.write(lhs)
+        f.write("<!-- LANDING SERVERS BEGIN -->\n")
+        f.write('    <div class="logo-strip">\n')
+        for server in servers[:LANDING_SERVER_COUNT]:
+            logo = server.get("logo") or server.get("light_logo")
+            assert logo is not None
+            name = server["name"]
+            url = server["url"]
+            f.write(
+                "      "
+                f'<a href="{url}">'
+                f'<img src="{logo}" alt="{name}" width="200" height="200" />'
+                "</a>\n",
+            )
+        f.write("    </div>\n")
+        f.write("    <!-- LANDING SERVERS END -->")
+        f.write(rhs)
+
+
 if __name__ == "__main__":
     with SERVERS_FILE.open() as f:
         servers_data = yaml.safe_load(f)
     servers = servers_data["servers"]
     update_readme(servers)
-    update_index(servers)
+    update_community(servers)
+    update_landing(servers)
