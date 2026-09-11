@@ -58,9 +58,17 @@ class Settings(BaseSettings):
     DD_ENV: str = "dev"
 
     # Database
+    #
+    # These pool limits are PER PROCESS, not per deployment. Production runs one
+    # `spellbot` bot process plus `WORKERS` gunicorn workers (see `scripts/start.sh`),
+    # and each one builds its own `AsyncEngine` with its own pool. Total connections
+    # to Aurora are therefore `(1 + WORKERS) * (POOL_SIZE + POOL_MAX_OVERFLOW)`, so
+    # raising these values multiplies across every process. At 4 workers that is
+    # 5 * (5 + 10) = 75 connections worst case, against a measured steady-state load
+    # of well under one active session.
     DATABASE_URL: str | None = None
-    DATABASE_POOL_SIZE: int = 20
-    DATABASE_POOL_MAX_OVERFLOW: int = 40
+    DATABASE_POOL_SIZE: int = 5
+    DATABASE_POOL_MAX_OVERFLOW: int = 10
     DATABASE_POOL_RECYCLE_S: int = 1800
     DATABASE_ECHO: bool = False
 

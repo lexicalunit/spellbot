@@ -153,6 +153,16 @@ async def initialize_connection(
         max_overflow=settings.DATABASE_POOL_MAX_OVERFLOW,
         pool_recycle=settings.DATABASE_POOL_RECYCLE_S,
         pool_pre_ping=True,
+        # `QueuePool` has no idle-shrink of its own: it never drops below its
+        # high-water mark. Under the default FIFO it rotates evenly through every
+        # pooled connection, so all of them stay warm and none is ever left idle
+        # long enough for the server to reap it. LIFO reuses the hottest connections
+        # instead and lets the tail go genuinely idle, which is what allows a
+        # server-side idle timeout (`idle_session_timeout`) to close them and shrink
+        # the pool during quiet periods. `pool_pre_ping` above handles the resulting
+        # stale connections. Without a server-side timeout LIFO alone does not lower
+        # the count -- correct `DATABASE_POOL_SIZE` sizing is what bounds it.
+        pool_use_lifo=True,
     )
 
     if use_transaction:  # pragma: no cover
@@ -184,11 +194,18 @@ async def rollback_session() -> None:  # pragma: no cover
 
 
 async def end_session(token: Token[AsyncSession]) -> None:
-    await DatabaseSession.commit()
-    await DatabaseSession.close()
-    DatabaseSession.reset(token)
-    if DatabaseSession.is_set():  # pragma: no branch
-        DatabaseSession.expire_all()
+    # `close()` must run even if `commit()` raises, otherwise the session's
+    # connection is never returned to the pool. An `AsyncSession` cannot be
+    # reclaimed by the garbage collector either, since returning the connection
+    # requires an await, so every failed commit would permanently burn a pool
+    # slot until the process restarts.
+    try:
+        await DatabaseSession.commit()
+    finally:
+        await DatabaseSession.close()
+        DatabaseSession.reset(token)
+        if DatabaseSession.is_set():  # pragma: no branch
+            DatabaseSession.expire_all()
 
 
 @asynccontextmanager
