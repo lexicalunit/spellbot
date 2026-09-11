@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Support for a status widget.
+
 ## [v21.9.2](https://github.com/lexicalunit/spellbot/releases/tag/v21.9.2) - 2026-09-10
 
 ### Changed
