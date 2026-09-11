@@ -367,10 +367,18 @@ resource "datadog_monitor" "rds_read_latency" {
   EOT
 }
 
+# Pool limits are PER PROCESS and prod runs 1 bot + 4 gunicorn workers, so the
+# ceiling is 5 * (DATABASE_POOL_SIZE + DATABASE_POOL_MAX_OVERFLOW) = 5 * 15 = 75.
+# The thresholds sit deliberately above that: steady state is ~25, a full
+# simultaneous burst across every pool is 75, so anything reaching 80 means either
+# the pool settings were raised without accounting for the process count or
+# connections are leaking. Revisit these if the worker count or pool sizes change.
 resource "datadog_monitor" "rds_database_connections" {
   evaluation_delay    = 900
   on_missing_data     = "default"
   require_full_window = false
+  renotify_interval   = 1440
+  renotify_statuses   = ["alert"]
   monitor_thresholds {
     critical = 100
     warning  = 80
@@ -393,27 +401,72 @@ resource "datadog_monitor" "rds_database_connections" {
   EOT
 }
 
+# Swap OCCUPANCY is a poor health signal: the kernel parks cold anonymous pages
+# in swap to reclaim RAM for page cache and then leaves them there indefinitely,
+# since a page is only faulted back in when something touches it. Occupancy
+# therefore reflects paging that happened at some point in the past, not pressure
+# now, and it does not fall when the pressure ends. What actually correlates with
+# degraded performance is paging *activity*, so this alerts on swap GROWTH rate.
+#
+# Observed baseline on spellbot-aurora-one is ~0.2 MB/h with a ceiling of ~3.4 MB/h
+# at 10-minute resolution, so 25/50 MB/h leaves a 7-15x margin over normal noise.
+# Sustained growth at that rate means the kernel is actively evicting pages.
 resource "datadog_monitor" "rds_swap_usage" {
   evaluation_delay    = 900
   on_missing_data     = "default"
   require_full_window = false
+  renotify_interval   = 1440
+  renotify_statuses   = ["alert"]
   monitor_thresholds {
-    critical = 524288000
-    warning  = 314572800
+    critical = 52428800
+    warning  = 26214400
   }
-  name    = "[RDS] Swap Usage High"
+  name    = "[RDS] Swap Usage Growing"
   type    = "query alert"
   tags    = ["integration:amazon_rds", "env:prod"]
   query   = <<-EOT
-    avg(last_15m):avg:aws.rds.swap_usage{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 524288000
+    change(avg(last_15m),last_1h):avg:aws.rds.swap_usage{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 52428800
   EOT
   message = <<-EOT
     {{#is_warning}}
-    RDS instance {{dbinstanceidentifier.name}} swap usage is elevated (300MB+). This may indicate memory pressure.
+    RDS instance {{dbinstanceidentifier.name}} swap usage grew {{value}} bytes in the last hour (25MB+/h), which suggests the kernel is evicting pages. Check [RDS] Freeable Memory Low and the database connection count.
     @${var.alert_email}
     {{/is_warning}}
     {{#is_alert}}
-    RDS instance {{dbinstanceidentifier.name}} swap usage is critically high (500MB+). Performance may be degraded.
+    RDS instance {{dbinstanceidentifier.name}} swap usage grew {{value}} bytes in the last hour (50MB+/h). The instance is under active memory pressure and performance is likely degraded.
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+# Backstop for the case the growth-rate monitor above cannot catch: a slow fill
+# that never trips the rate threshold but still exhausts the swap device, at which
+# point the kernel starts OOM-killing processes. Thresholds are a proportion of the
+# 2GiB swap device on db.t4g.medium (50% warn / 75% critical) rather than absolute
+# byte counts, so they stay meaningful if the instance class changes.
+resource "datadog_monitor" "rds_swap_saturation" {
+  evaluation_delay    = 900
+  on_missing_data     = "default"
+  require_full_window = false
+  renotify_interval   = 1440
+  renotify_statuses   = ["alert"]
+  monitor_thresholds {
+    critical = 1610612736
+    warning  = 1073741824
+  }
+  name    = "[RDS] Swap Nearly Exhausted"
+  type    = "query alert"
+  tags    = ["integration:amazon_rds", "env:prod"]
+  query   = <<-EOT
+    avg(last_15m):avg:aws.rds.swap_usage{dbinstanceidentifier:spellbot*} by {dbinstanceidentifier} > 1610612736
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    RDS instance {{dbinstanceidentifier.name}} has used over half of its 2GiB swap device ({{value}} bytes). Not urgent on its own, but check whether it is still climbing.
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    RDS instance {{dbinstanceidentifier.name}} has used 75% of its 2GiB swap device ({{value}} bytes). If swap is exhausted the kernel will begin OOM-killing processes. Scale the instance class or reduce memory demand.
     @${var.alert_email}
     {{/is_alert}}
   EOT
@@ -1231,9 +1284,9 @@ resource "datadog_monitor" "sqlalchemy_pool_timeout" {
     - Long-running queries holding connections
     - Pool size too small for current load
 
-    Check current pool settings:
-    - DATABASE_POOL_SIZE: 20
-    - DATABASE_POOL_MAX_OVERFLOW: 40
+    Check current pool settings (per process; prod runs 1 bot + 4 gunicorn workers):
+    - DATABASE_POOL_SIZE: 5
+    - DATABASE_POOL_MAX_OVERFLOW: 10
 
     @${var.alert_email}
     {{/is_alert}}

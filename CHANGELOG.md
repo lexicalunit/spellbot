@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated configuration for database connection pool.
+- Better thresholds for RDS monitors.
+
 ## [v21.9.1](https://github.com/lexicalunit/spellbot/releases/tag/v21.9.1) - 2026-08-30
 
 ### Changed
