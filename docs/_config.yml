@@ -283,7 +283,14 @@ exclude:
 # Base URL the live-stats widget on the home page fetches from. Overridden for
 # local development by `_config_dev.yml` (see `make dev` in docs/Makefile), since
 # the widget is cross-origin and must point at whichever API you are running.
-spellbot_api: "https://queues.spellbot.io"
+#
+# This is the canonical host rather than the queues.spellbot.io vanity host: that
+# host 301s every path to the canonical one (see infrastructure/app/vanity_domains.tf),
+# and a browser applies the CORS check to every response in a redirect chain. The
+# ALB's redirect carries no Access-Control-Allow-Origin, so the fetch fails on the
+# 301 before it ever reaches the app. `/stats.json` is anonymous and cookie-free,
+# so none of the session-cookie reasoning behind the vanity redirect applies to it.
+spellbot_api: "https://prod.app.spellbot.io"
 
 plugins:
   - jekyll-redirect-from
