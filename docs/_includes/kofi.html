@@ -1,0 +1,15 @@
+{% comment %}
+  Ko-fi floating tip button. Included from _layouts/base.html so it appears on
+  every page. Kept as its own include so the theme's generic
+  footer-scripts.html stays untouched.
+{% endcomment %}
+
+<script src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"></script>
+<script>
+  kofiWidgetOverlay.draw("lexicalunit", {
+    type: "floating-chat",
+    "floating-chat.donateButton.text": "Tip me",
+    "floating-chat.donateButton.background-color": "#fcbf47",
+    "floating-chat.donateButton.text-color": "#323842",
+  });
+</script>

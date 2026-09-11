@@ -1,0 +1,15 @@
+---
+layout: base
+---
+
+{% comment %}
+  Like `page`, but without the theme's `intro-header` block. That header renders
+  the site title, a rule and the subtitle at 3.125rem with 5rem of margin above
+  it, which costs roughly half the viewport before any content appears. Pages
+  using this layout supply their own compact header and control their own width,
+  so the first screen can carry real content.
+{% endcomment %}
+
+<main class="home">
+  {{ content }}
+</main>

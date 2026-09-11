@@ -134,6 +134,7 @@ class Settings(BaseSettings):
     PATREON_TOKEN: str | None = None
     PATREON_CAMPAIGN: str | None = None
     PATREON_SYNC_LOOP_M: int = 60
+    PUBLIC_STATS_LOOP_M: int = 1
 
     # Girudo
     GIRUDO_BASE_URL: str = "https://game.girudo.com"

@@ -26,6 +26,10 @@ SERVICE_LABEL = case(
     else_="Unknown",
 ).label("service")
 
+# How far back a started game still counts as "active". Shared by the queues page,
+# `/queues.json`, and the cached public stats so all three report the same games.
+STARTED_GAMES_WINDOW = timedelta(hours=2)
+
 
 async def public_active_games(
     within: timedelta,

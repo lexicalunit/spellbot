@@ -1,27 +1,309 @@
+/* SpellBot site styles.
+
+   Design tokens. Every value is drawn from what the site already uses: the page
+   and text colours come from _config.yml, the amber/purple pair from the
+   `.screenshot` gradient below. The neutrals are biased slightly toward the
+   purple accent rather than being flat greys, so raised surfaces read as chosen
+   rather than defaulted. Contrast of each ink colour was measured against the
+   surface it actually sits on. */
+:root {
+  --sb-ground: #1a202c;
+  --sb-surface: #23253f; /* rgba(124, 92, 255, 0.09) pre-composited on ground */
+  --sb-surface-hi: #2a2a4e;
+  --sb-ink-muted: #a0aec0; /* 7.2:1 on ground */
+  --sb-amber: #ffb342;
+  --sb-amber-hi: #ffd160;
+  --sb-purple: #7c5cff; /* brand #5a3efd lifted to clear 3:1 on ground */
+  --sb-purple-hi: #a892ff;
+  --sb-rule: linear-gradient(45deg, #f6ad4b, #7c5cff);
+  --sb-gap: 4rem;
+
+  /* Assigning the theme's own variables, rather than setting font-family per
+     element, lets every rule in beautifuljekyll.css pick these up. Both faces are
+     loaded in _layouts/base.html.
+
+     Outfit is a geometric sans with enough presence to carry display sizes;
+     Open Sans is humanist and stays out of the way in running text. Pairing a
+     geometric display face with a humanist text face keeps the headings
+     characterful without making body copy harder to read. */
+  --body-font: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --header-font: "Outfit", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--sb-ground);
+}
+
+/* Bootstrap sets its own heading colour (#212529, near-black) and the theme only
+   overrides some levels, so anything below h2 falls through to that default and
+   renders at ~1:1 contrast on this dark ground -- invisible. Pin every heading
+   to the text token so a new heading can never inherit an unreadable colour. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-col);
+}
+
+/* --- Rhythm ---------------------------------------------------------------
+   One gap value between sections instead of per-element margins, so spacing
+   cannot silently collapse or double as content is added. */
+main section.level2 {
+  margin-block: var(--sb-gap);
+}
+
+main section.level2 > h2 {
+  margin-bottom: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* The amber -> purple gradient is the site's signature (see `.screenshot`).
+   Repeating it as a short rule under every heading turns it into the page's
+   connective tissue rather than a one-off flourish. */
+main section.level2 > h2::after {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 3px;
+  margin-top: 0.6rem;
+  border-radius: 2px;
+  background: var(--sb-rule);
+}
+
+main section.level2 > h2 img {
+  height: 1.1em;
+  width: auto;
+  vertical-align: -0.12em;
+}
+
+/* Keep running text near a comfortable measure. */
+main section.level2 > p,
+main section.level2 > ol,
+main section.level2 > ul {
+  max-width: 68ch;
+  line-height: 1.7;
+}
+
+/* --- Landing page ---------------------------------------------------------
+   The home layout drops the theme's `intro-header`, so these rules own the top
+   of the page. The whole point is that the live-queues widget sits within the
+   first screen, so the hero is sized by its content rather than by the viewport:
+   no `100vh`, and the type scale is capped so a long headline cannot push the
+   widget below the fold. */
+.wrap {
+  max-width: 1060px;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
 .hero {
-  padding: 1rem;
+  /* The navbar is 91px tall and the theme's avatar hangs to 121px, so the hero
+     content has to start below that or the eyebrow renders behind the logo. The
+     theme's own intro-header carries a 5rem top margin for the same reason.
+
+     Deliberately not `100vh` or anything viewport-sized: the point of this layout
+     is that the live-queues widget lands inside the first screen. */
+  padding-block: 6.25rem 1.5rem;
+}
+
+.hero-inner {
   text-align: center;
 }
 
-.add-bot {
-  background-color: rgb(90, 62, 253);
-  border-radius: 3px;
-  border: none;
-  color: rgb(255, 255, 255);
-  cursor: pointer;
-  font-size: large;
-  font-weight: 200;
+.eyebrow {
+  margin-bottom: 0.6rem;
+  font-family: var(--body-font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sb-ink-muted);
+}
+
+.hero-title {
+  margin: 0 0 0.75rem;
+  font-family: var(--header-font);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.hero-lede {
+  max-width: 46rem;
+  margin: 0 auto 1.6rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #dfe4ec;
+  text-wrap: pretty;
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-block: 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 46px; /* comfortable touch target */
+  padding: 0.75rem 1.6rem;
+  border-radius: 999px;
+  font-family: var(--body-font);
+  font-size: 1rem;
+  font-weight: 600;
   line-height: 1;
-  min-height: 32px;
-  padding: 10px 30px;
-  transition: all 0.3s ease-in-out;
-  user-select: none;
+  white-space: nowrap;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    filter 0.2s ease;
 }
 
-.add-bot:hover {
-  filter: brightness(90%);
+.btn-solid,
+.btn-solid:visited {
+  background: linear-gradient(45deg, #5a3efd, #7c5cff);
+  border: 1px solid transparent;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(90, 62, 253, 0.35);
 }
 
+.btn-solid:hover {
+  color: #fff;
+  filter: brightness(112%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(90, 62, 253, 0.45);
+}
+
+/* Quieter than the solid button so the primary action stays unambiguous. */
+.btn-ghost,
+.btn-ghost:visited {
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-col);
+}
+
+.btn-ghost:hover {
+  border-color: var(--sb-purple-hi);
+  background-color: rgba(124, 92, 255, 0.12);
+  color: var(--text-col);
+  transform: translateY(-2px);
+}
+
+/* --- Bands ---------------------------------------------------------------- */
+.band {
+  padding-block: 3.25rem;
+}
+
+/* Alternating ground separates sections without giving each one a border, which
+   would read as a stack of unrelated cards. */
+.band-alt {
+  background-color: #161b26;
+  border-block: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.section-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.section-lede {
+  max-width: 46rem;
+  margin: 0 auto 2rem;
+  text-align: center;
+  color: var(--sb-ink-muted);
+  text-wrap: pretty;
+}
+
+.band-more {
+  margin: 1.75rem 0 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* --- Feature cards -------------------------------------------------------- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+/* Two wider tracks for a pair of cards, so they do not stretch to the full
+   three-column width of the feature row above. */
+.cards-2 {
+  grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr));
+}
+
+.card {
+  padding: 1.5rem 1.35rem;
+  background-color: var(--sb-surface);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+}
+
+.card h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.97rem;
+  line-height: 1.6;
+  color: #d7dce5;
+}
+
+/* --- Logo strip ----------------------------------------------------------- */
+.logo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.logo-strip img {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  /* Muted at rest so the row reads as one texture rather than a clash of 18
+     different brand palettes, and resolves on hover. */
+  opacity: 0.75;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.logo-strip a:hover img {
+  opacity: 1;
+  transform: translateY(-3px);
+}
+
+.closing {
+  text-align: center;
+}
+
+/* --- Media --------------------------------------------------------------- */
 .screenshot {
   border-radius: 40px;
   background: linear-gradient(45deg, rgb(246, 173, 75), rgb(90, 62, 253));
@@ -30,71 +312,42 @@
   display: block;
   margin-left: auto;
   margin-right: auto;
+  max-width: 100%;
+  height: auto;
 }
 
-.avatar-img {
-  -webkit-animation: spin 60s linear infinite;
-  -moz-animation: spin 60s linear infinite;
-  animation: spin 60s linear infinite;
-}
-@-moz-keyframes spin {
-  100% {
-    -moz-transform: rotate(360deg);
-  }
-}
-@-webkit-keyframes spin {
-  100% {
-    -webkit-transform: rotate(360deg);
-  }
-}
-@keyframes spin {
-  100% {
-    -webkit-transform: rotate(360deg);
-    transform: rotate(360deg);
-  }
-}
-
-p.note {
-  background: linear-gradient(45deg, rgba(246, 173, 75, 0.2), rgba(90, 62, 253, 0.2));
-  border-radius: 1rem;
-  margin: 2rem 1rem;
-  padding: 0.5rem 1rem 0.5rem 3rem;
-}
-
-p.note:before {
-  content: "💡";
-  float: left;
-  margin-left: -2rem;
-}
-
-.avatar-img-border {
-  box-shadow: none !important;
-  transition: all 0.3s ease-in-out;
-}
-
-.avatar-img-border:hover {
-  /* filter: brightness(150%); */
-  -webkit-transform: scale(1.1);
-  -ms-transform: scale(1.1);
-  transform: scale(1.1);
-  transition: 0.7s ease;
-}
-
+/* --- Links --------------------------------------------------------------- */
 a {
   transition: all 0.3s ease-in-out;
   text-decoration: none;
-}
-
-footer {
-  border-top: 0 !important;
 }
 
 a:hover {
   text-decoration: none !important;
 }
 
-*:not(.fas):not(.fab) {
-  font-family: "Verdana", sans-serif !important;
+/* Body links get an underline that grows on hover: colour alone is a weak
+   affordance in running text, and amber-on-dark reads as emphasis otherwise. */
+main section.level2 p:not(.live-stats-cta) a:not(.btn),
+main section.level2 li a:not(.btn),
+.card p a {
+  background-image: linear-gradient(var(--sb-amber-hi), var(--sb-amber-hi));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition:
+    background-size 0.25s ease,
+    color 0.25s ease;
+}
+
+main section.level2 p:not(.live-stats-cta) a:not(.btn):hover,
+main section.level2 li a:not(.btn):hover,
+.card p a:hover {
+  background-size: 100% 1px;
+}
+
+footer {
+  border-top: 0 !important;
 }
 
 .navbar-brand {
@@ -113,6 +366,28 @@ a:hover {
 code {
   font-size: 1em !important;
   background-color: transparent !important;
+  color: var(--sb-amber);
+}
+
+/* --- Avatar / nav -------------------------------------------------------- */
+.avatar-img {
+  animation: spin 60s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.avatar-img-border {
+  box-shadow: none !important;
+  transition: all 0.3s ease-in-out;
+}
+
+.avatar-img-border:hover {
+  transform: scale(1.1);
+  transition: 0.7s ease;
 }
 
 @keyframes fadeIn {
@@ -128,25 +403,91 @@ code {
   animation: fadeIn ease-in 2s;
 }
 
+/* --- Callout ------------------------------------------------------------- */
+p.note {
+  background: linear-gradient(45deg, rgba(246, 173, 75, 0.2), rgba(90, 62, 253, 0.2));
+  border-radius: 1rem;
+  margin: 2rem 1rem;
+  padding: 0.5rem 1rem 0.5rem 3rem;
+}
+
+p.note:before {
+  content: "💡";
+  float: left;
+  margin-left: -2rem;
+}
+
+/* --- Server directory ----------------------------------------------------
+   An auto-fill grid rather than fixed-width flex children, so tiles keep even
+   gutters at any width and reflow to one column on a phone.
+
+   The 240px floor is set by the longest label: "Comunidad Española de cEDH"
+   renders 211px wide at `.small`, and these names are joined with `&nbsp;` by
+   scripts/update_servers.py so they cannot wrap. 240px less the 0.5rem side
+   padding leaves a 224px content box, clearing 211px with slack. Anything
+   narrower and the label spills outside the tile's hover background.
+   `min(..., 100%)` keeps the floor from pushing the page wider than the viewport
+   on a narrow screen. */
 .where {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  gap: 0.5rem;
+  margin-block: 1.5rem;
 }
+
 .where div {
-  padding: 10px;
-  width: 230px;
+  padding: 0;
   text-align: center;
-  vertical-align: middle;
+  min-width: 0;
 }
+
+/* Two fixed rows rather than a flex column: the logo row is the same height in
+   every tile, so every name starts at the same y and the labels line up across
+   the whole grid regardless of how tall each logo is. */
+.where div a {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  align-content: start;
+  gap: 0.6rem;
+  height: 100%;
+  min-width: 0;
+  padding: 0.9rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  line-height: 1.3;
+  color: var(--text-col);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+/* The generated markup separates logo and name with a <br>, which would become a
+   third grid item and push the names out of alignment. The row gap handles the
+   break now. */
+.where div a br {
+  display: none;
+}
+
+.where div a:hover {
+  background-color: var(--sb-surface);
+  border-color: var(--sb-purple);
+  transform: translateY(-3px);
+}
+
+.where img {
+  width: 100%;
+  max-width: 150px;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+/* The whole tile lifts on hover, so the image itself stays put. */
 .where img:hover {
-  -webkit-transform: scale(1.05);
-  -ms-transform: scale(1.05);
-  transform: scale(1.05);
-  transition: 0.7s ease;
+  transform: none;
 }
 
 .small {
@@ -154,31 +495,79 @@ code {
   text-wrap: nowrap;
 }
 
+/* --- Help steps ----------------------------------------------------------
+   Numbered because these genuinely are a sequence the reader works through in
+   order, not because numerals decorate well. */
+ol.steps {
+  list-style: none;
+  padding-left: 0;
+  margin-block: 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+  counter-reset: step;
+}
+
+ol.steps li {
+  position: relative;
+  counter-increment: step;
+  padding: 0.9rem 1.1rem 0.9rem 3.25rem;
+  background-color: var(--sb-surface);
+  border-radius: 12px;
+  border-left: 3px solid var(--sb-purple);
+}
+
+ol.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 1rem;
+  top: 0.9rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sb-rule);
+  color: #1a202c;
+  font-family: var(--body-font);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* --- Discord embed ------------------------------------------------------- */
 .support {
-  width: 350px;
+  width: min(350px, 100%);
   margin-left: auto;
   margin-right: auto;
 }
 
-.patreon {
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 15px;
+.support iframe {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
 }
 
-.patreon,
-.patreon:active,
-.patreon:visited,
-.patreon:hover {
-  background-color: rgb(255, 66, 77);
-  color: white;
+/* --- Footer -------------------------------------------------------------- */
+/* Legal links sit in the footer of every page (see _includes/footer.html), so
+   they are always one click away without taking up a heading slot in a page's
+   own content. */
+.footer-legal {
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  text-align: center;
+  color: var(--sb-ink-muted);
 }
 
-.patreon:hover {
-  background-color: #e1000d;
-  color: white;
+.footer-legal a {
+  color: var(--sb-ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
+.footer-legal a:hover {
+  color: var(--text-col);
+}
+
+/* --- Footer social ------------------------------------------------------- */
 .fa-stack .fa-circle {
   color: rgb(90, 62, 253);
 }
@@ -190,4 +579,184 @@ code {
 
 .social-icon {
   color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-img {
+    animation: none;
+  }
+  .btn:hover,
+  .where div a:hover,
+  .logo-strip a:hover img {
+    transform: none;
+  }
+}
+
+/* Live activity widget (see the #live-stats block in index.html).
+   A KPI row of stat tiles rather than a chart: three independent headline counts
+   with no series, no trend and no axis, so there is nothing to plot.
+
+   The amber -> purple gradient border is the site's own motif, borrowed from
+   `.screenshot` above, so the widget reads as part of this page rather than a
+   bolted-on component. The purple stop is lifted from the brand #5a3efd to
+   #7c5cff because at 2px on #1a202c the brand value is only 2.75:1, under the
+   3:1 floor for non-text UI; #7c5cff is 3.75:1 and the amber end is 8.55:1.
+
+   This site commits to a single dark palette (page-col #1a202c / text-col #fff in
+   _config.yml) and does not follow the OS setting, so there is deliberately no
+   prefers-color-scheme branch. Every color was checked against its real backdrop.
+
+   The whole card is one click target, built with the "stretched link" pattern:
+   the card is positioned and the single CTA anchor's ::after is stretched over
+   it. That keeps exactly one real <a> in the markup, so middle-click, right-click
+   -> open in new tab, keyboard focus and screen-reader link semantics all behave
+   normally -- none of which survives a JS onclick handler on a <div>. */
+.live-stats {
+  position: relative;
+  max-width: 640px;
+  margin: 2rem auto 2.25rem;
+  padding: 1.35rem 1.25rem 1.15rem;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  /* The inner surface must be an opaque colour, not a tint: the border-box
+     gradient sits underneath and would otherwise show through the padding area.
+     #23253f is rgba(124, 92, 255, 0.09) pre-composited over the page. */
+  background:
+    linear-gradient(#23253f, #23253f) padding-box,
+    linear-gradient(45deg, #f6ad4b, #7c5cff) border-box;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+/* This card is the one conversion target on the page, so it is the one element
+   that spends a lift and a glow; everything around it stays flat. The offset
+   glow echoes the `10px 10px` shadow on `.screenshot`. */
+.live-stats:hover {
+  background:
+    linear-gradient(#2a2a4e, #2a2a4e) padding-box,
+    linear-gradient(45deg, #ffd160, #a892ff) border-box;
+  box-shadow: 0 10px 30px rgba(90, 62, 253, 0.35);
+  transform: translateY(-3px);
+}
+
+/* Keyboard users get the same affordance: the inner anchor takes focus, the card
+   shows the ring. */
+.live-stats:focus-within {
+  box-shadow: 0 0 0 3px rgba(255, 209, 96, 0.55);
+}
+
+.live-stats:focus-within .live-stats-cta a,
+.live-stats a:focus-visible {
+  outline: none; /* the ring is drawn on the card instead */
+}
+
+.live-stats-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a0aec0;
+}
+
+.live-stats-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #48bb78;
+  box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+  animation: live-pulse 2.4s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  70% {
+    box-shadow: 0 0 0 7px rgba(72, 187, 120, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+  }
+}
+
+.live-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+}
+
+.live-stat {
+  flex: 1 1 120px;
+  padding: 0.25rem 0.5rem;
+}
+
+.live-stat-value {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  /* The brand purple (#5a3efd) is only 2.75:1 on this surface, failing even the
+     large-text floor. This is that hue lifted to 5.84:1. */
+  color: #a892ff;
+  /* Deliberately NOT tabular-nums: at display sizes tabular figures pad every
+     digit to the width of a `0`, which makes short values look gappy. Tabular is
+     for columns of numbers that must align vertically. */
+}
+
+.live-stat-label {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  color: var(--text-col);
+}
+
+.live-stats-cta {
+  margin-top: 1.1rem;
+  margin-bottom: 0;
+  font-size: 1.05rem;
+  color: #ffb342;
+}
+
+/* Stretched to cover the card. */
+.live-stats-cta a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+}
+
+.live-stats-arrow {
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+
+.live-stats:hover .live-stats-arrow {
+  transform: translateX(5px);
+}
+
+.live-stats-updated {
+  margin-top: 0.4rem;
+  margin-bottom: 0;
+  font-size: 0.72rem;
+  color: #a0aec0; /* 6.61:1 -- muted but still AA at this small size */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-stats,
+  .live-stats-arrow {
+    transition: none;
+  }
+  .live-stats:hover {
+    transform: none;
+  }
+  .live-stats-dot {
+    animation: none;
+  }
 }

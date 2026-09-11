@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 SPELLBOT_DEFAULT_LOGO = "https://spellbot.io/assets/img/avatar-icon.png"
 ICON_FETCH_TTL = timedelta(hours=6)
-STARTED_GAMES_WINDOW = timedelta(hours=2)
+STARTED_GAMES_WINDOW = services.queues.STARTED_GAMES_WINDOW
 PLAYED_GUILDS_WINDOW = timedelta(days=365)
 
 _icon_fetch_attempts: dict[int, datetime] = {}
