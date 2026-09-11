@@ -1,0 +1,8 @@
+# Local development overrides, layered on top of `_config.yml`.
+# Used by `make dev`; never part of a production build.
+#
+# The live-stats widget fetches cross-origin, so it has to point at whichever API
+# you are running. Start one with `uv run spellbot -da` (serves on PORT, 3008 by
+# default) and a bot with `uv run spellbot -dm` to populate the stats cache that
+# `/stats.json` reads from.
+spellbot_api: "http://localhost:3008"

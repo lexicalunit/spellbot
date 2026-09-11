@@ -279,6 +279,11 @@ exclude:
   - screenshot.png
   - docs/
 
+# Base URL the live-stats widget on the home page fetches from. Overridden for
+# local development by `_config_dev.yml` (see `make dev` in docs/Makefile), since
+# the widget is cross-origin and must point at whichever API you are running.
+spellbot_api: "https://queues.spellbot.io"
+
 plugins:
   - jekyll-redirect-from
   - jekyll-sitemap

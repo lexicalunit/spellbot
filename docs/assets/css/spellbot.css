@@ -191,3 +191,164 @@ code {
 .social-icon {
   color: white;
 }
+
+/* Live activity widget (see the #live-stats block in index.html).
+   A KPI row of stat tiles rather than a chart: three independent headline counts
+   with no series, no trend and no axis, so there is nothing to plot.
+
+   This site commits to a single dark palette (page-col #1a202c / text-col #fff in
+   _config.yml) and does not follow the OS setting, so there is deliberately no
+   prefers-color-scheme branch here. Every color below was checked for contrast
+   against #1a202c.
+
+   The whole card is one click target, built with the "stretched link" pattern:
+   the card is positioned, and the single CTA anchor's ::after is stretched over
+   it. That keeps exactly one real <a> in the markup, so middle-click, right-click
+   -> open in new tab, keyboard focus and screen-reader link semantics all behave
+   normally -- none of which survives a JS onclick handler on a <div>. */
+.live-stats {
+  position: relative;
+  max-width: 640px;
+  margin: 1.5rem auto 2rem;
+  padding: 1.25rem 1rem 1rem;
+  background-color: rgba(124, 92, 255, 0.07);
+  /* Solid rather than a low-opacity tint: at 55% over #1a202c this composites to
+     2.02:1, under the 3:1 floor for non-text UI, which is what made the original
+     border hard to pick out. Solid #7c5cff is 3.75:1. */
+  border: 1px solid #7c5cff;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* The card is the one conversion target on the page, so it is the one element
+   that spends a lift on hover; everything around it stays flat. */
+.live-stats:hover {
+  border-color: #a892ff;
+  background-color: rgba(124, 92, 255, 0.13);
+  box-shadow: 0 8px 28px rgba(124, 92, 255, 0.28);
+  transform: translateY(-2px);
+}
+
+/* Keyboard users get the same affordance: the inner anchor takes focus, the
+   card shows the ring. */
+.live-stats:focus-within {
+  border-color: #a892ff;
+  box-shadow: 0 0 0 3px rgba(168, 146, 255, 0.45);
+}
+
+.live-stats:focus-within .live-stats-cta a,
+.live-stats a:focus-visible {
+  outline: none; /* the ring is drawn on the card instead */
+}
+
+.live-stats-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #a0aec0;
+}
+
+.live-stats-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #48bb78;
+  box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+  animation: live-pulse 2.4s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  70% {
+    box-shadow: 0 0 0 7px rgba(72, 187, 120, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+  }
+}
+
+.live-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+}
+
+.live-stat {
+  flex: 1 1 120px;
+  padding: 0.25rem 0.5rem;
+}
+
+.live-stat-value {
+  display: block;
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.1;
+  /* The brand purple (#5a3efd) is only 2.75:1 on this background, which fails
+     even the large-text floor. This is that hue lifted to 6.39:1. */
+  color: #a892ff;
+  /* Deliberately NOT tabular-nums: at display sizes tabular figures pad every
+     digit to the width of a `0`, which makes short values look gappy. Tabular is
+     for columns of numbers that must align vertically. */
+}
+
+.live-stat-label {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  color: var(--text-col);
+}
+
+.live-stats-cta {
+  margin-top: 0.9rem;
+  margin-bottom: 0;
+  font-size: 1rem;
+}
+
+/* Stretched to cover the card. `position: static` on the anchor itself keeps the
+   ::after anchored to .live-stats rather than to the link's own box. */
+.live-stats-cta a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+}
+
+.live-stats-arrow {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.live-stats:hover .live-stats-arrow {
+  transform: translateX(4px);
+}
+
+.live-stats-updated {
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  font-size: 0.75rem;
+  color: #a0aec0; /* 7.23:1 -- muted but still AA at this small size */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-stats,
+  .live-stats-arrow {
+    transition: none;
+  }
+  .live-stats:hover {
+    transform: none;
+  }
+  .live-stats-dot {
+    animation: none;
+  }
+}

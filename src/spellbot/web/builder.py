@@ -29,6 +29,7 @@ from spellbot.web.api import (
     queues,
     record,
     rest,
+    stats,
     status,
     viewer_auth,
 )
@@ -42,8 +43,17 @@ logger = logging.getLogger(__name__)
 
 TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 
+# Endpoints readable cross-origin. Every one is public, unauthenticated and
+# read-only, and is already served to anonymous visitors, so `*` exposes nothing
+# new while keeping responses cacheable (an origin-specific header would force
+# `Vary: Origin`). Matched as exact paths rather than by prefix so an
+# authenticated route can never pick up CORS by accident -- in particular nothing
+# under `/api` or `/admin` belongs here.
+PUBLIC_CORS_PATHS = frozenset({"/stats.json", "/queues.json", "/status.json"})
+
 ALL_ROUTES = [
     ping.routes,
+    stats.routes,
     status.routes,
     analytics.routes,
     record.routes,
@@ -114,6 +124,8 @@ async def security_headers_middleware(
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if request.path in PUBLIC_CORS_PATHS:
+        response.headers["Access-Control-Allow-Origin"] = "*"
     return response
 
 

@@ -71,12 +71,88 @@ description: "SpellBot is the Discord bot that helps you find other players look
     alt="/lfg"
   />
   <p>
-    Visit <b><a href="https://queues.spellbot.io">queues.spellbot.io</a></b>, where you
+    Visit <b><a href="https://queues.spellbot.io/">live queues</a></b>, where you
     can log in with Discord to browse the games currently queuing across every
     server, filter them down to just the communities you play in, set up
     notifications so you're pinged when a game you care about is forming, and
     look back through your own game history and records.
   </p>
+
+  <!-- Live activity widget. Progressive enhancement: the section stays hidden
+       unless the fetch succeeds, so if the API is unreachable, slow, or blocked
+       the page renders exactly as it did before. Counts come from a Redis-backed
+       cache, so traffic here never reaches the database. -->
+  <div id="live-stats" class="live-stats" hidden>
+    <div class="live-stats-live">
+      <span class="live-stats-dot" aria-hidden="true"></span>Live right now
+    </div>
+    <div class="live-stats-row">
+      <div class="live-stat">
+        <span class="live-stat-value" id="live-stat-servers">&mdash;</span>
+        <span class="live-stat-label">Servers</span>
+      </div>
+      <div class="live-stat">
+        <span class="live-stat-value" id="live-stat-players">&mdash;</span>
+        <span class="live-stat-label">Players</span>
+      </div>
+      <div class="live-stat">
+        <span class="live-stat-value" id="live-stat-games">&mdash;</span>
+        <span class="live-stat-label">Games</span>
+      </div>
+    </div>
+    <p class="live-stats-cta">
+      <a href="https://queues.spellbot.io/"
+        ><b>Browse live queues <span class="live-stats-arrow">&rarr;</span></b></a
+      >
+    </p>
+    <p class="live-stats-updated" id="live-stats-updated"></p>
+  </div>
+
+  <script>
+    (function () {
+      var el = document.getElementById("live-stats");
+      if (!el || !window.fetch) return;
+
+      function render(stats) {
+        // Compact only once the numbers get long; plain grouped digits read
+        // better at the sizes these are displayed at.
+        var fmt = new Intl.NumberFormat(undefined, {
+          notation: "compact",
+          maximumFractionDigits: 1,
+        });
+        var fields = {
+          "live-stat-servers": stats.active_servers,
+          "live-stat-players": stats.active_players,
+          "live-stat-games": stats.active_games,
+        };
+        for (var id in fields) {
+          var value = fields[id];
+          if (typeof value !== "number") return false;
+          document.getElementById(id).textContent =
+            value < 10000 ? value.toLocaleString() : fmt.format(value);
+        }
+        var updated = document.getElementById("live-stats-updated");
+        var when = Date.parse(stats.last_updated);
+        if (!isNaN(when)) {
+          updated.textContent =
+            "Updated " + new Date(when).toLocaleTimeString();
+        }
+        return true;
+      }
+
+      fetch("{{ site.spellbot_api }}/stats.json", { mode: "cors" })
+        .then(function (res) {
+          if (!res.ok) throw new Error("stats unavailable");
+          return res.json();
+        })
+        .then(function (stats) {
+          if (render(stats)) el.hidden = false;
+        })
+        .catch(function () {
+          /* Leave the widget hidden; the rest of the page is unaffected. */
+        });
+    })();
+  </script>
 </section>
 
 <section id="where-to-play" class="level2">

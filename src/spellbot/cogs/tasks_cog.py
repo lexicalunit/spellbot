@@ -11,6 +11,7 @@ from discord.ext import commands, tasks
 
 from spellbot.actions import TasksAction
 from spellbot.environment import running_in_pytest
+from spellbot.public_stats import update_public_stats
 from spellbot.settings import settings
 from spellbot.shard_status import update_shard_status
 
@@ -88,6 +89,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
             self.cleanup_old_voice_channels.start()
             self.expire_inactive_games.start()
             self.notify_pending_games.start()
+            self.refresh_public_stats.start()
 
             # Start tasks that don't require discord.py ready signal
             self._shard_status_task = asyncio.create_task(run_shard_status_loop(bot))
@@ -145,6 +147,24 @@ class TasksCog(commands.Cog):  # pragma: no cover
 
     @notify_pending_games.before_loop
     async def before_notify_pending_games(self) -> None:
+        await wait_until_ready(self.bot)
+
+    ###############################################
+    # Refresh cached public stats
+    ###############################################
+    # Runs in the bot process and writes to Redis; `/stats.json` in the web
+    # processes only ever reads that cached value, so traffic to the public
+    # marketing site never reaches the database.
+    @tasks.loop(minutes=settings.PUBLIC_STATS_LOOP_M)
+    async def refresh_public_stats(self) -> None:
+        try:
+            with tracer.trace(name="command", resource="refresh_public_stats"):
+                await update_public_stats()
+        except BaseException:  # Catch EVERYTHING so tasks don't die
+            logger.exception("error: exception in task cog")
+
+    @refresh_public_stats.before_loop
+    async def before_refresh_public_stats(self) -> None:
         await wait_until_ready(self.bot)
 
 
