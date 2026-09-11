@@ -1,0 +1,90 @@
+---
+layout: page
+title: Guild Wars
+subtitle: Queue matches for your Convoke guild with /war
+permalink: /guild-wars/
+---
+
+<section id="what-is-a-guild-war" class="level2">
+  <h2>⚔️ What is a Guild War?</h2>
+  <p>
+    <a href="https://convoke.games/en/guild">Guilds</a> are communities on
+    Convoke. You can create one or join an existing one, host your own games and
+    spaces, keep a curated member list and a shared ban list, and rise through
+    the boost ranks together. A Guild War is a head-to-head competition between
+    two guilds.
+  </p>
+  <p>
+    Guilds and wars live on Convoke, so that is where you set one up. SpellBot's
+    job is the matchmaking: it gets players seated in a game that counts toward a
+    war that is already running.
+  </p>
+</section>
+
+<section id="running-a-war-game" class="level2">
+  <h2>🎯 Queue a war match</h2>
+  <p>
+    Run <code>/war</code> in your Discord server and pick the war you are playing
+    for. The <code>war</code> option autocompletes from the wars that are live on
+    Convoke right now, so start typing a war's name and choose it from the list
+    rather than typing it out.
+  </p>
+  <p>
+    From there it behaves like <code>/lfg</code>: SpellBot posts a game other
+    players can join, and creates the table once the seats fill. Every player who
+    joins is in the war match.
+  </p>
+  <p class="note">
+    If nothing appears in the autocomplete, there are no wars running on Convoke
+    at the moment. SpellBot reads the live list every time you use the command.
+  </p>
+</section>
+
+<section id="options" class="level2">
+  <h2>🎛️ Options</h2>
+  <p>
+    <code>/war</code> takes the same extras as <code>/lfg</code>, so you can set
+    up the match the way you want it:
+  </p>
+  <ul>
+    <li><b>war</b> — which live Guild War the game counts toward. Required.</li>
+    <li><b>friends</b> — mention people to join the game with you.</li>
+    <li>
+      <b>seats</b> — how many players, from 2 to 8. Defaults to 4 if you leave it
+      off.
+    </li>
+    <li><b>format</b> — the game format you want to play.</li>
+    <li><b>bracket</b> — the commander bracket you want to play.</li>
+    <li><b>rules</b> — any additional rules or requests for the game.</li>
+  </ul>
+</section>
+
+<section id="good-to-know" class="level2">
+  <h2>💡 Good to know</h2>
+  <ul>
+    <li>
+      <b>War games are always Convoke games.</b> Guild Wars only exist on
+      Convoke, so a war match is created there whatever service your channel
+      normally uses.
+    </li>
+    <li>
+      <b>Seats are capped at 2 to 8.</b> That is the range Convoke allows for war
+      matches, so SpellBot will not seat one outside it.
+    </li>
+    <li>
+      <b>Wars have to be live.</b> If the war has not started or has already
+      finished it will not be in the autocomplete, and SpellBot will tell you the
+      war is not available.
+    </li>
+  </ul>
+</section>
+
+<section id="more" class="level2">
+  <h2>🛟 Questions?</h2>
+  <p>
+    Guild and war setup is handled on Convoke. Their
+    <a href="https://convoke.games/en/guild">guild page</a> is the place to
+    start. For anything about the <code>/war</code> command itself, join the
+    <a href="https://discord.gg/HuzTQYpYH4">SpellBot Discord server</a> and ask.
+  </p>
+</section>

@@ -15,6 +15,14 @@
   --sb-amber-hi: #ffd160;
   --sb-purple: #7c5cff; /* brand #5a3efd lifted to clear 3:1 on ground */
   --sb-purple-hi: #a892ff;
+  /* Inline code. Same violet family as the accent, but re-derived in OKLCH for
+     small monospace text: lightness raised to L=0.82 so it carries the same
+     optical weight as the amber links, and chroma pulled from 0.155 to 0.10.
+     Violet sits at the short-wavelength end where the eye resolves fine detail
+     worst -- few S-cones, none in the foveola, plus chromatic aberration
+     softening glyph edges -- and lowering chroma there is what recovers the
+     crispness. 9.1:1 on the page, 8.3:1 on a card. */
+  --sb-code: #c4b9ff;
   --sb-rule: linear-gradient(45deg, #f6ad4b, #7c5cff);
   --sb-gap: 4rem;
 
@@ -316,34 +324,31 @@ main section.level2 > ul {
   height: auto;
 }
 
-/* --- Links --------------------------------------------------------------- */
+/* --- Links ----------------------------------------------------------------
+   One treatment site-wide: amber, brightening on hover. Buttons, the live-stats
+   card and image links paint their own hover states and set their own colour. */
 a {
-  transition: all 0.3s ease-in-out;
+  color: var(--link-col);
   text-decoration: none;
+  transition:
+    color 0.25s ease,
+    filter 0.25s ease;
 }
 
 a:hover {
-  text-decoration: none !important;
+  color: var(--hover-col);
 }
 
-/* Body links get an underline that grows on hover: colour alone is a weak
-   affordance in running text, and amber-on-dark reads as emphasis otherwise. */
-main section.level2 p:not(.live-stats-cta) a:not(.btn),
-main section.level2 li a:not(.btn),
-.card p a {
-  background-image: linear-gradient(var(--sb-amber-hi), var(--sb-amber-hi));
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  background-size: 0% 1px;
-  transition:
-    background-size 0.25s ease,
-    color 0.25s ease;
+/* --- Arrow links ----------------------------------------------------------
+   Any link ending in an arrow nudges it on hover, wherever that link appears. */
+.arrow {
+  display: inline-block;
+  transition: transform 0.25s ease;
 }
 
-main section.level2 p:not(.live-stats-cta) a:not(.btn):hover,
-main section.level2 li a:not(.btn):hover,
-.card p a:hover {
-  background-size: 100% 1px;
+a:hover .arrow,
+.live-stats:hover .arrow {
+  transform: translateX(4px);
 }
 
 footer {
@@ -366,7 +371,7 @@ footer {
 code {
   font-size: 1em !important;
   background-color: transparent !important;
-  color: var(--sb-amber);
+  color: var(--sb-code);
 }
 
 /* --- Avatar / nav -------------------------------------------------------- */
@@ -557,24 +562,14 @@ ol.steps li::before {
   color: var(--sb-ink-muted);
 }
 
-.footer-legal a {
-  color: var(--sb-ink-muted);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.footer-legal a:hover {
-  color: var(--text-col);
-}
-
 /* --- Footer social ------------------------------------------------------- */
 .fa-stack .fa-circle {
   color: rgb(90, 62, 253);
 }
 
 .fa-stack:hover .fa-circle {
-  transition: all 0.3s ease-in-out;
-  color: #0085a1;
+  transition: color 0.25s ease;
+  color: var(--sb-purple);
 }
 
 .social-icon {
@@ -732,15 +727,6 @@ ol.steps li::before {
   border-radius: 14px;
 }
 
-.live-stats-arrow {
-  display: inline-block;
-  transition: transform 0.25s ease;
-}
-
-.live-stats:hover .live-stats-arrow {
-  transform: translateX(5px);
-}
-
 .live-stats-updated {
   margin-top: 0.4rem;
   margin-bottom: 0;
@@ -750,7 +736,7 @@ ol.steps li::before {
 
 @media (prefers-reduced-motion: reduce) {
   .live-stats,
-  .live-stats-arrow {
+  .arrow {
     transition: none;
   }
   .live-stats:hover {

@@ -132,7 +132,9 @@ link-col: "#ffb342"
 hover-col: "#ffd160"
 footer-col: "#0d1117"
 footer-text-col: "#718096"
-footer-link-col: "#765bff"
+# Match the body link colours so footer links behave like every other text link.
+footer-link-col: "#ffb342"
+footer-hover-col: "#ffd160"
 font-family: "'Verdana', sans-serif"
 
 # Alternatively, the navbar, footer, and page background can be set to an image
