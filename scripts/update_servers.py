@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
 SRC_ROOT = Path(realpath(__file__)).parent.parent
 SERVERS_FILE = SRC_ROOT / "conf" / "servers.yaml"
-README_FILE = SRC_ROOT / "README.md"
-COMMUNITY_FILE = SRC_ROOT / "docs" / "community.html"
+COMMUNITY_MD_FILE = SRC_ROOT / "COMMUNITY.md"
+COMMUNITY_HTML_FILE = SRC_ROOT / "docs" / "community.html"
 LANDING_FILE = SRC_ROOT / "docs" / "index.html"
 
 # The landing page shows a short strip of logos as a taster; the full directory
@@ -43,12 +43,12 @@ def batched[T](iterable: Iterable[T], n: int) -> Generator[Sequence[T]]:
         yield batch
 
 
-def update_readme(servers: list[Server]) -> None:
-    with README_FILE.open() as f:
+def update_community_md(servers: list[Server]) -> None:
+    with COMMUNITY_MD_FILE.open() as f:
         readme_text = f.read()
     lhs = readme_text.split("<!-- SERVERS BEGIN -->")[0]
     rhs = readme_text.split("<!-- SERVERS END -->")[1]
-    with README_FILE.open("w") as f:
+    with COMMUNITY_MD_FILE.open("w") as f:
         f.write(lhs)
         f.write("<!-- SERVERS BEGIN -->\n")
         f.write("<table>\n")
@@ -76,12 +76,12 @@ def update_readme(servers: list[Server]) -> None:
         f.write(rhs)
 
 
-def update_community(servers: list[Server]) -> None:
-    with COMMUNITY_FILE.open() as f:
+def update_community_html(servers: list[Server]) -> None:
+    with COMMUNITY_HTML_FILE.open() as f:
         index_text = f.read()
     lhs = index_text.split("<!-- SERVERS BEGIN -->")[0]
     rhs = index_text.split("<!-- SERVERS END -->")[1]
-    with COMMUNITY_FILE.open("w") as f:
+    with COMMUNITY_HTML_FILE.open("w") as f:
         f.write(lhs)
         f.write("<!-- SERVERS BEGIN -->\n")
         f.write('    <div class="where">\n')
@@ -137,6 +137,6 @@ if __name__ == "__main__":
     with SERVERS_FILE.open() as f:
         servers_data = yaml.safe_load(f)
     servers = servers_data["servers"]
-    update_readme(servers)
-    update_community(servers)
+    update_community_md(servers)
+    update_community_html(servers)
     update_landing(servers)

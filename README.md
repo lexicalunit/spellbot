@@ -45,85 +45,40 @@ SpellBot helps you find _Magic: The Gathering_ games on [Convoke][convoke], [Gir
     />
 </p>
 
-Visit **[queues.spellbot.io][queues]**, where you can log in with Discord to browse the games currently queuing across every server, filter them down to just the communities you play in, set up notifications so you're pinged when a game you care about is forming, and look back through your own game history and records.
+Visit [live queues][queues], where you can log in with Discord to browse the games currently queuing across every server, filter them down to just the communities you play in, set up notifications so you're pinged when a game you care about is forming, and look back through your own game history and records.
 
-## 🔭 Where to Play?
+## ✨ Everything you need to get started
 
-SpellBot helps Discord servers to build communities around playing Magic online. Please check out the following servers to find games and connect with other players. You can also **[see live games][queues]** waiting for you to join!
+- **One command to queue.** `/lfg` puts you in the queue. When the seats fill, SpellBot creates the table on the service your server plays on and posts the link, so nobody is left coordinating in chat.
+- **Every server in one place.** [Browse games][queues] forming across every SpellBot community at once, filter to the servers you actually play in, and get pinged when a game you care about starts coming together.
+- **Your games, on the record.** Look back through your own [history and records][queues], and keep a fuller picture of every match with the Mythic Track, Castlog and Playgroup Live integrations.
 
-<div align="center">
-<!-- SERVERS BEGIN -->
-<table>
-    <tr>
-        <td align="center"><a href="https://www.patreon.com/tolariancommunitycollege"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/tolarian-community-college.png" alt="Tolarian Community College" /><br />Tolarian&nbsp;Community&nbsp;College</a></td>
-        <td align="center"><a href="https://discord.com/invite/cedh"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh.png" alt="cEDH" /><br />cEDH</a></td>
-        <td align="center"><a href="https://discord.com/invite/9Z7x8dh6Tf"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-fight-club.png" alt="EDH Fight Club" /><br />EDH&nbsp;Fight&nbsp;Club</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://linktr.ee/cedhspain"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/comunidad-espanola-de-cedh.png" alt="Comunidad Española de cEDH" /><br />Comunidad&nbsp;Española&nbsp;de&nbsp;cEDH</a></td>
-        <td align="center"><a href="https://www.cedh.uk/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/cedh-uk.png" alt="cEDH UK" /><br />cEDH&nbsp;UK</a></td>
-        <td align="center"><a href="https://www.playedh.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/playedh.png" alt="PlayEDH" /><br />PlayEDH</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://discord.gg/3jwqduTkGZ"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/champ-de-bataille.png" alt="Champ de Bataille" /><br />Champ&nbsp;de&nbsp;Bataille</a></td>
-        <td align="center"><a href="https://www.playtowinmtg.com/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/play-to-win.png" alt="Play to Win" /><br />Play&nbsp;to&nbsp;Win</a></td>
-        <td align="center"><a href="https://discord.gg/commander"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/the-commander-staple.png" alt="The Commander Staple" /><br />The&nbsp;Commander&nbsp;Staple</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://disboard.org/server/757455940009328670"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png" alt="Oath of the Gaywatch" /><br />Oath&nbsp;of&nbsp;the&nbsp;Gaywatch</a></td>
-        <td align="center"><a href="https://www.facebook.com/EDHTambayan/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/edh-tambayan.png" alt="EDH Tambayan" /><br />EDH&nbsp;Tambayan</a></td>
-        <td align="center"><a href="https://linktr.ee/women_in_magic"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/women-in-magic.png" alt="Women+ In Magic" /><br />Women+&nbsp;In&nbsp;Magic</a></td>
-    </tr>
-    <tr>
-        <td align="center"><a href="https://www.convoke.games/"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/convoke.png" alt="Convoke" /><br />Convoke</a></td>
-        <td align="center"><a href="https://discord.com/invite/mtg-home-689674672240984067"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/mtg-at-home.png" alt="MTG@Home" /><br />MTG@Home</a></td>
-        <td align="center"><a href="https://discord.gg/CfCb9fmgCD"><img width="200" height="200" src="https://spellbot.io/assets/img/servers/top-tier-bangers.png" alt="Top Tier Bangers" /><br />Top&nbsp;Tier&nbsp;Bangers</a></td>
-    </tr>
-</table>
-<!-- SERVERS END -->
-</div>
+## 📚 Documentation
 
-Want your community to be featured here as well? Please contact me at [spellbot@lexicalunit.com](mailto:spellbot@lexicalunit.com)!
-
-## 📊 Mythic Track
-
-SpellBot integrates seamlessly with [Mythic Track](https://www.mythictrack.com/spellbot) which allows you to track games within your Discord server. Visualize and explore your data to reveal interesting trends. To get started run the `/setup_mythic_track` command on your server. Please also consider [supporting Mythic Track](https://www.patreon.com/MythicTrack)!
-
-<p align="center">
-    <img
-        src="https://spellbot.io/assets/img/screenshots/mythic-track-setup.png"
-        width="617"
-        alt="Mythic Track Setup"
-    />
-</p>
-
-## ❓ Help
-
-The most common issue people have when using SpellBot is related to receiving Direct Messages from the bot. SpellBot uses Discord embeds in the DMs that it sends and there are some settings you need to enable for this to work correctly.
-
-1. In your Settings search for **embeds and link previews** and make sure that it's on.
-2. For each Server you will want to make sure that you have allowed Direct Messages from those server members. Search your Settings for **Direct Messages** and turn the option on.
-3. You may also need to enable message requests from server members you may not know. Search your Settings for **message requests** and turn that option on as well.
-
-If you have more questions, please don't hesitate to join us on the [SpellBot Discord server][discord-invite] to get answers from our generous community.
-
-Wondering if the bot is online? Check the [status page][status] for current health.
-
-## 🎤 Feedback
-
-Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on BlueSky at [@spellbot.io][follow].
-
-## 🙌 Supported By
-
-The continued operation of SpellBot is supported by <a href="https://www.playedh.com/">PlayEDH</a> as well as generous donations from [my patrons on Patreon][patreon] and [Ko-fi][kofi]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little as _one dollar a month_ or [giving me a one-off tip][kofi] for whatever you feel is appropriate.
-
-## ❤️ Contributing
-
-If you'd like to become a part of the SpellBot development community please first know that we have a documented [code of conduct](CODE_OF_CONDUCT.md) and then see our [documentation on how to contribute](CONTRIBUTING.md) for details on how to get started.
+| <!-- --> | <!-- --> |
+| :------- | :------- |
+| [Getting Started](GETTING_STARTED.md) | Add the bot, run your first game, fix Direct Messages |
+| [Features](FEATURES.md) | Matchmaking, live queues, and the Mythic Track, Playgroup Live and Castlog integrations |
+| [Community](COMMUNITY.md) | Where to play, feedback, supporters, and contributing |
+| [Administration](ADMINISTRATION.md) | Per-server and per-channel configuration commands |
+| [Contributing](CONTRIBUTING.md) | Development setup and how to submit changes |
+| [Integrations](INTEGRATIONS.md) | Adding support for a new play service |
+| [API](API.md) | The public REST API |
+| [Database](DATABASE.md) | Schema and migrations |
+| [Docker](DOCKER.md) | Running SpellBot in a container |
+| [Security](SECURITY.md) | Reporting a vulnerability |
 
 ## 🐳 Docker Support
 
 SpellBot can be run via docker. Our image is published to [lexicalunit/spellbot][docker-hub]. See [our documentation on Docker Support](DOCKER.md) for help with installing and using it.
+
+## 🙌 Supported By
+
+The continued operation of SpellBot is supported by [PlayEDH](https://www.playedh.com/) as well as generous donations from [my patrons on Patreon][patreon] and [Ko-fi][kofi]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little as _one dollar a month_ or [giving me a one-off tip][kofi] for whatever you feel is appropriate.
+
+## ❤️ Contributing
+
+If you'd like to become a part of the SpellBot development community please first know that we have a documented [code of conduct](CODE_OF_CONDUCT.md) and then see our [documentation on how to contribute](CONTRIBUTING.md) for details on how to get started.
 
 ## 🔍 Fine-print
 
@@ -158,7 +113,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [ganalytics-badge]: https://img.shields.io/badge/analytics-google-orange.svg
 [ganalytics]: https://analytics.google.com/analytics/web/
 [girudo]: https://www.girudo.com/
-[issues]: https://github.com/lexicalunit/spellbot/issues
 [kofi-button]: https://img.shields.io/badge/Ko--fi-F16061?style=flat&logo=ko-fi&logoColor=white
 [kofi]: https://ko-fi.com/lexicalunit
 [lexicalunit]: http://github.com/lexicalunit
