@@ -345,7 +345,7 @@ class LookingForGameAction(BaseAction):
         return await services.games.attach_game_link(game_data, details.link, details.password)
 
     @tracer.wrap()
-    async def execute(  # noqa: C901, PLR0912
+    async def execute(  # noqa: C901
         self,
         *,
         friends: str | None = None,

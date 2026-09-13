@@ -718,6 +718,7 @@ class TestLookingForGameAction:
 
         create_link.assert_not_called()
         make_ready.assert_awaited_once()
+        assert make_ready.await_args is not None
         assert make_ready.await_args.args[1] == "https://convoke.games/en/play/already"
         assert make_ready.await_args.args[2] == "kept"
 
@@ -816,6 +817,7 @@ class TestLookingForGameAction:
 
         ensure_link.assert_awaited_once_with(game_data)
         embed_stub.assert_awaited_once()
+        assert embed_stub.await_args is not None
         assert embed_stub.await_args.kwargs["fully_seated"] is False
 
     async def test_create_initial_post_success(

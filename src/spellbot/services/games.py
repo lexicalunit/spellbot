@@ -640,10 +640,10 @@ async def attach_game_link(
     password: str | None,
 ) -> GameData:
     """Store a generated game link without starting the SpellBot queue."""
-    game: Game = await DatabaseSession.get(Game, game_data.id)
+    game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
     assert len(game_link or "") <= MAX_GAME_LINK_LEN
-    game.game_link = game_link
-    game.password = password
+    game.game_link = game_link  # type: ignore  # column is "game_link" for legacy reasons
+    game.password = password  # type: ignore
     await DatabaseSession.commit()
     return await game.to_data()
 
