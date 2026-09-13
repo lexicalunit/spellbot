@@ -770,6 +770,42 @@ class TestLookingForGameAction:
         create_link.assert_not_called()
         assert result.game_link == "https://convoke.games/en/play/existing"
 
+    async def test_ensure_guild_war_convoke_link_skips_when_not_a_war(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(game_id=7)
+        create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
+
+        result = await action.ensure_guild_war_convoke_link(game_data)
+
+        create_link.assert_not_called()
+        assert result is game_data
+
+    async def test_ensure_guild_war_convoke_link_skips_when_convoke_returns_no_link(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(
+            game_id=7,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        )
+        game_data.players = [create_mock_user(xid=100)]
+        mocker.patch.object(
+            action.bot,
+            "create_game_link",
+            AsyncMock(return_value=GameLinkDetails(None, None)),
+        )
+        attach = mocker.patch.object(services.games, "attach_game_link", AsyncMock())
+
+        result = await action.ensure_guild_war_convoke_link(game_data)
+
+        attach.assert_not_called()
+        assert result is game_data
+        assert result.game_link is None
+
     async def test_execute_opens_convoke_table_for_pending_guild_war(
         self,
         action: LookingForGameAction,
@@ -819,6 +855,48 @@ class TestLookingForGameAction:
         embed_stub.assert_awaited_once()
         assert embed_stub.await_args is not None
         assert embed_stub.await_args.kwargs["fully_seated"] is False
+
+    async def test_execute_skips_opening_table_when_link_already_exists(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(
+            game_id=9,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title="Dads vs Chill",
+            game_link="https://convoke.games/en/play/war",
+        )
+        game_data.players = [create_mock_user(xid=100)]
+        mocker.patch.object(
+            action,
+            "resolve_guild_war",
+            AsyncMock(
+                return_value=(
+                    "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                    "Dads vs Chill",
+                    GameService.CONVOKE.value,
+                    4,
+                ),
+            ),
+        )
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
+        mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(True, game_data)))
+        ensure_link = mocker.patch.object(
+            action,
+            "ensure_guild_war_convoke_link",
+            AsyncMock(return_value=game_data),
+        )
+        mocker.patch.object(
+            action,
+            "handle_embed_creation",
+            AsyncMock(return_value=game_data),
+        )
+
+        await action.execute(guild_war="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+
+        ensure_link.assert_not_called()
 
     async def test_create_initial_post_success(
         self,
