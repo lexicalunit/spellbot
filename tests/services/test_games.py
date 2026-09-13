@@ -158,7 +158,7 @@ class TestServiceGames:
     async def test_games_make_ready(self, game: Game) -> None:
         game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None
-        await games.make_ready(game_data, "http://link", "whatever", pins=[])
+        await games.make_ready(game_data, "http://link", "whatever", pins={})
 
         DatabaseSession.expire_all()
         found = await DatabaseSession.get(Game, game.id)
@@ -166,6 +166,23 @@ class TestServiceGames:
         assert found.game_link == "http://link"
         assert found.password == "whatever"
         assert found.status == GameStatus.STARTED.value
+
+    async def test_games_make_ready_assigns_pins_by_player(self, game: Game) -> None:
+        user1 = UserFactory.create(game=game)
+        user2 = UserFactory.create(game=game)
+        game_data = await games.get(game.id)  # type: ignore
+        assert game_data is not None
+        pins = {user2.xid: "222222", user1.xid: "111111"}
+
+        await games.make_ready(game_data, "http://link", None, pins)
+
+        DatabaseSession.expire_all()
+        plays = (
+            (await DatabaseSession.execute(select(Play).where(Play.game_id == game.id)))  # type: ignore
+            .scalars()
+            .all()
+        )
+        assert {play.user_xid: play.pin for play in plays} == pins
 
     async def test_games_shrink_game(self, game: Game) -> None:
         UserFactory.create(game=game)

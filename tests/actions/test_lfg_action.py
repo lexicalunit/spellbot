@@ -708,19 +708,50 @@ class TestLookingForGameAction:
             password="kept",  # noqa: S106
         )
         create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
+        update_players = mocker.patch.object(action.bot, "update_game_players", AsyncMock())
         make_ready = mocker.patch.object(
             services.games,
             "make_ready",
             AsyncMock(return_value=game_data),
         )
 
-        await action.make_game_ready(game_data, [123])
+        await action.make_game_ready(game_data, [123, 456])
 
         create_link.assert_not_called()
         make_ready.assert_awaited_once()
         assert make_ready.await_args is not None
         assert make_ready.await_args.args[1] == "https://convoke.games/en/play/already"
         assert make_ready.await_args.args[2] == "kept"
+        # The pins sent to Convoke with the final roster are the pins the players are given.
+        pins = make_ready.await_args.args[3]
+        assert set(pins) == {123, 456}
+        update_players.assert_awaited_once_with(game_data, pins)
+
+    async def test_make_game_ready_sends_player_pins_with_new_link(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(game_id=1)
+        create_link = mocker.patch.object(
+            action.bot,
+            "create_game_link",
+            AsyncMock(return_value=GameLinkDetails("https://convoke.games/en/play/new", None)),
+        )
+        update_players = mocker.patch.object(action.bot, "update_game_players", AsyncMock())
+        make_ready = mocker.patch.object(
+            services.games,
+            "make_ready",
+            AsyncMock(return_value=game_data),
+        )
+
+        await action.make_game_ready(game_data, [123, 456])
+
+        update_players.assert_not_called()
+        assert make_ready.await_args is not None
+        pins = make_ready.await_args.args[3]
+        assert set(pins) == {123, 456}
+        create_link.assert_awaited_once_with(game_data, pins, original_seats=None)
 
     async def test_ensure_guild_war_convoke_link_attaches_new_table(
         self,
@@ -737,7 +768,7 @@ class TestLookingForGameAction:
             war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
             game_link="https://convoke.games/en/play/new",
         )
-        mocker.patch.object(
+        create_link = mocker.patch.object(
             action.bot,
             "create_game_link",
             AsyncMock(return_value=GameLinkDetails("https://convoke.games/en/play/new", None)),
@@ -750,7 +781,8 @@ class TestLookingForGameAction:
 
         result = await action.ensure_guild_war_convoke_link(game_data)
 
-        attach.assert_awaited_once()
+        create_link.assert_awaited_once_with(game_data)
+        attach.assert_awaited_once_with(game_data, "https://convoke.games/en/play/new", None)
         assert result.game_link == "https://convoke.games/en/play/new"
 
     async def test_ensure_guild_war_convoke_link_skips_when_already_open(

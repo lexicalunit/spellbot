@@ -338,8 +338,9 @@ class LookingForGameAction(BaseAction):
         """Open the Convoke table as soon as a Guild War /lfg queue exists."""
         if not game_data.war_id or game_data.game_link:
             return game_data
-        pins = [generate_pin() for _ in game_data.players]
-        details = await self.bot.create_game_link(game_data, pins)
+        # No pins yet: players only get theirs once the queue fills, and `make_game_ready()`
+        # sends them to Convoke along with the final roster.
+        details = await self.bot.create_game_link(game_data)
         if not details.link:
             return game_data
         return await services.games.attach_game_link(game_data, details.link, details.password)
@@ -564,13 +565,19 @@ class LookingForGameAction(BaseAction):
         # This could be revisited later to better factor this code. Note that we always generate
         # pin for a player, even if Mythic Track is not enabled for the guild. The `player_pins()`
         # method of the Game object will return None for players if MT is not enabled.
-        pins = [generate_pin() for _ in player_xids]
+        pins = {xid: generate_pin() for xid in player_xids}
 
-        details = (
-            GameLinkDetails(game_data.game_link, game_data.password)
-            if game_data.game_link
-            else await self.bot.create_game_link(game_data, pins, original_seats=original_seats)
-        )
+        if game_data.game_link:
+            # Guild War tables are opened before the queue fills, so the link already exists.
+            # Send the service the final roster along with the pins players are about to get.
+            await self.bot.update_game_players(game_data, pins)
+            details = GameLinkDetails(game_data.game_link, game_data.password)
+        else:
+            details = await self.bot.create_game_link(
+                game_data,
+                pins,
+                original_seats=original_seats,
+            )
 
         suggested_vc = None
         if (

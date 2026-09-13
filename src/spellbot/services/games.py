@@ -653,7 +653,7 @@ async def make_ready(
     game_data: GameData,
     game_link: str | None,
     password: str | None,
-    pins: list[str],
+    pins: dict[int, str],
 ) -> GameData:
     """Start the pending game."""
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
@@ -688,9 +688,9 @@ async def make_ready(
                     "user_xid": queue.user_xid,
                     "game_id": game.id,
                     "og_guild_xid": queue.og_guild_xid,
-                    "pin": pins[i],
+                    "pin": pins[queue.user_xid],
                 }
-                for i, queue in enumerate(queues)
+                for queue in queues
             ],
         )
         .on_conflict_do_nothing(),

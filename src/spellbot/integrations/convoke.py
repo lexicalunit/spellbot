@@ -14,7 +14,9 @@ from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
-    from spellbot.data import GameData
+    from collections.abc import Awaitable, Callable
+
+    from spellbot.data import GameData, PlayerDataDict
 
 logger = logging.getLogger(__name__)
 
@@ -124,10 +126,51 @@ async def resolve_live_guild_war(war_id: str) -> LiveGuildWar | None:
     return None
 
 
+def roster_payload(
+    players: list[PlayerDataDict],
+    pins: dict[int, str] | None,
+) -> dict[str, Any]:
+    """Build the Discord players and their pins, which Convoke pairs up by list index."""
+    payload: dict[str, Any] = {
+        "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
+    }
+    if pins:
+        payload["spellbotGamePins"] = [pins[p["xid"]] for p in players]
+    return payload
+
+
+def request_headers() -> dict[str, str]:
+    return {
+        "user-agent": f"spellbot/{__version__}",
+        "x-api-key": settings.CONVOKE_API_KEY or "",
+    }
+
+
+async def request_with_retries[T](request: Callable[[httpx.AsyncClient], Awaitable[T]]) -> T | None:
+    """Run a Convoke API request, retrying on failure. Returns `None` if every attempt fails."""
+    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        for attempt in range(RETRY_ATTEMPTS):
+            try:
+                return await request(client)
+            except Exception as ex:
+                is_final_attempt = attempt == RETRY_ATTEMPTS - 1
+                if is_final_attempt:
+                    add_span_error(ex)
+                    logger.exception("Convoke API failure (final attempt)")
+                    return None
+                logger.warning(
+                    "Convoke API issue (attempt %s)",
+                    attempt + 1,
+                    exc_info=True,
+                )
+    return None
+
+
 async def fetch_convoke_link(
     client: httpx.AsyncClient,
     game_data: GameData,
-    pins: list[str] | None,
+    pins: dict[int, str] | None,
 ) -> dict[str, Any]:
     name = f"SB{game_data.id}"
     sb_game_format = GameFormat(game_data.format)
@@ -146,11 +189,9 @@ async def fetch_convoke_link(
         "format": format,
         "discordGuild": str(game_data.guild_xid),
         "discordChannel": str(game_data.channel_xid),
-        "discordPlayers": [{"id": str(p["xid"]), "name": p["name"]} for p in players],
+        **roster_payload(players, pins),
         "language": game_language,
     }
-    if pins:
-        payload["spellbotGamePins"] = pins
     if game_data.bracket != GameBracket.NONE.value:
         payload["bracketLevel"] = f"B{game_data.bracket - 1}"
     if game_data.format == GameFormat.PRE_CONS.value:
@@ -162,46 +203,53 @@ async def fetch_convoke_link(
     if game_data.war_id:
         # Open seating: Convoke infers guild splits from who sits.
         payload["warId"] = game_data.war_id
-    headers = {
-        "user-agent": f"spellbot/{__version__}",
-        "x-api-key": settings.CONVOKE_API_KEY,
-    }
     endpoint = f"{settings.CONVOKE_ROOT}/game/create-game"
-    resp = await client.post(endpoint, json=payload, headers=headers)
+    resp = await client.post(endpoint, json=payload, headers=request_headers())
     resp.raise_for_status()
     return resp.json()
 
 
 async def generate_link(
     game_data: GameData,
-    pins: list[str] | None,
+    pins: dict[int, str] | None,
 ) -> tuple[str | None, str | None]:
     if not settings.CONVOKE_API_KEY:
         return None, None
 
-    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
-    data: dict[str, Any] | None = None
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        for attempt in range(RETRY_ATTEMPTS):
-            try:
-                data = await fetch_convoke_link(client, game_data, pins)
-            except Exception as ex:
-                is_final_attempt = attempt == RETRY_ATTEMPTS - 1
-                if is_final_attempt:
-                    add_span_error(ex)
-                    logger.exception("Convoke API failure (final attempt)")
-                    return None, None
-                logger.warning(
-                    "Convoke API issue (attempt %s)",
-                    attempt + 1,
-                    exc_info=True,
-                )
-                continue
+    data = await request_with_retries(
+        lambda client: fetch_convoke_link(client, game_data, pins),
+    )
+    if not data:
+        return None, None
+    return data["url"], data.get("password")
 
-            if not data:
-                return None, None
-            game_link = data["url"]
-            game_pass = data.get("password")
-            return game_link, game_pass
 
-    return None, None
+def convoke_game_id(game_link: str) -> str:
+    """Convoke game links look like `https://www.convoke.games/en/play/<id>`."""
+    return game_link.rstrip("/").rsplit("/", 1)[-1]
+
+
+async def put_convoke_players(
+    client: httpx.AsyncClient,
+    game_data: GameData,
+    pins: dict[int, str],
+) -> None:
+    assert game_data.game_link
+    players = await services.games.player_convoke_data(game_data.id)
+    game_id = convoke_game_id(game_data.game_link)
+    endpoint = f"{settings.CONVOKE_ROOT}/game/{game_id}/spellbot-players"
+    payload = roster_payload(players, pins)
+    resp = await client.put(endpoint, json=payload, headers=request_headers())
+    resp.raise_for_status()
+
+
+async def update_players(game_data: GameData, pins: dict[int, str]) -> None:
+    """
+    Send Convoke the final roster and pins for a game whose link was created early.
+
+    Guild War tables are opened on Convoke before the SpellBot queue fills, so the roster sent
+    to create-game only has the players who had joined by then.
+    """
+    if not settings.CONVOKE_API_KEY or not game_data.game_link:
+        return
+    await request_with_retries(lambda client: put_convoke_players(client, game_data, pins))
