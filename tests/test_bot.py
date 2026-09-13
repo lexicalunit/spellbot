@@ -113,6 +113,31 @@ class TestSpellBot:
             assert response == GameLinkDetails()
 
     @pytest.mark.parametrize(
+        ("mock_games", "service", "expected"),
+        [
+            pytest.param(False, GameService.CONVOKE.value, True, id="convoke"),
+            pytest.param(True, GameService.CONVOKE.value, False, id="mock-games"),
+            pytest.param(False, GameService.TABLE_STREAM.value, False, id="other-service"),
+        ],
+    )
+    async def test_update_game_players(
+        self,
+        bot: SpellBot,
+        mock_games: bool,
+        service: int,
+        expected: bool,
+        mocker: MockerFixture,
+    ) -> None:
+        game = create_mock_game(service=service)
+        bot.mock_games = mock_games
+        mock = mocker.patch("spellbot.client.convoke.update_players", AsyncMock())
+        await bot.update_game_players(game, {1: "123456"})
+        if expected:
+            mock.assert_awaited_once_with(game, {1: "123456"})
+        else:
+            mock.assert_not_called()
+
+    @pytest.mark.parametrize(
         ("error", "response"),
         [
             pytest.param(

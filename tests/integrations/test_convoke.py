@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -15,11 +15,14 @@ from spellbot.integrations.convoke import (
     convoke_game_format,
     fetch_convoke_link,
     generate_link,
+    update_players,
 )
 from tests.mocks import create_mock_game
 
 if TYPE_CHECKING:
     from contextlib import AbstractContextManager
+
+    from spellbot.data import GameData
 
 
 class TestConvokeGameFormat:
@@ -88,14 +91,19 @@ class TestFetchConvokeLink:
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_api_key"),
             patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
         ):
-            result = await fetch_convoke_link(mock_client, game, pins=["123456"])
+            result = await fetch_convoke_link(
+                mock_client,
+                game,
+                pins={200: "654321", 100: "123456"},
+            )
 
         assert result == {"url": "https://convoke.gg/game/123"}
         mock_client.post.assert_called_once()
         call_args = mock_client.post.call_args
         payload = call_args.kwargs["json"]
         assert payload["spellbotGameId"] == "42"
-        assert payload["spellbotGamePins"] == ["123456"]
+        # Convoke pairs pins with players by index, whatever order the pins were generated in.
+        assert payload["spellbotGamePins"] == ["123456", "654321"]
         assert payload["discordPlayers"] == [
             {"id": "100", "name": "Player1"},
             {"id": "200", "name": "Player2"},
@@ -553,6 +561,93 @@ class TestGenerateLink:
             result = await generate_link(game, pins=None)
 
         assert result == (None, None)
+
+
+def client_context(client: MagicMock) -> MagicMock:
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=client)
+    cm.__aexit__ = AsyncMock(return_value=None)
+    return cm
+
+
+@pytest.mark.asyncio
+class TestUpdatePlayers:
+    players: ClassVar[list[dict[str, object]]] = [
+        {"xid": 100, "name": "Player1"},
+        {"xid": 200, "name": "Player2"},
+    ]
+
+    def game(self, game_link: str | None = "https://convoke.games/en/play/abc-123/") -> GameData:
+        return create_mock_game(game_id=42, game_link=game_link)
+
+    async def test_puts_the_final_roster_with_aligned_pins(self) -> None:
+        client = MagicMock(spec=httpx.AsyncClient)
+        client.put = AsyncMock(return_value=MagicMock())
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch.object(convoke_module.settings, "CONVOKE_ROOT", "https://api.convoke.gg"),
+            patch.object(convoke_module.httpx, "AsyncClient", return_value=client_context(client)),
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=self.players),
+            ),
+        ):
+            await update_players(self.game(), {200: "654321", 100: "123456"})
+
+        client.put.assert_awaited_once()
+        assert client.put.await_args is not None
+        assert client.put.await_args.args[0] == (
+            "https://api.convoke.gg/game/abc-123/spellbot-players"
+        )
+        assert client.put.await_args.kwargs["json"] == {
+            "discordPlayers": [
+                {"id": "100", "name": "Player1"},
+                {"id": "200", "name": "Player2"},
+            ],
+            "spellbotGamePins": ["123456", "654321"],
+        }
+        assert client.put.await_args.kwargs["headers"]["x-api-key"] == "test_key"
+
+    async def test_gives_up_after_all_retries(self) -> None:
+        client = MagicMock(spec=httpx.AsyncClient)
+        client.put = AsyncMock(side_effect=httpx.ConnectError("boom"))
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch.object(convoke_module.httpx, "AsyncClient", return_value=client_context(client)),
+            patch.object(convoke_module, "add_span_error") as add_span_error,
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=self.players),
+            ),
+        ):
+            await update_players(self.game(), {100: "123456", 200: "654321"})
+
+        assert client.put.await_count == convoke_module.RETRY_ATTEMPTS
+        add_span_error.assert_called_once()
+
+    @pytest.mark.parametrize(
+        ("api_key", "game_link"),
+        [
+            pytest.param("", "https://convoke.games/en/play/abc-123", id="no-api-key"),
+            pytest.param("test_key", None, id="no-link"),
+        ],
+    )
+    async def test_does_nothing_without_a_key_or_link(
+        self,
+        api_key: str,
+        game_link: str | None,
+    ) -> None:
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", api_key),
+            patch.object(convoke_module.httpx, "AsyncClient") as client_class,
+        ):
+            await update_players(self.game(game_link), {100: "123456"})
+
+        client_class.assert_not_called()
 
 
 def war_response(payload: object) -> MagicMock:

@@ -197,6 +197,37 @@ class TestModelGame:
             "flags": 0,
         }
 
+    async def test_game_embed_pending_guild_war_shows_convoke_link(
+        self,
+        settings: Settings,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(motd=None)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title="Dads vs Chill",
+            game_link="https://www.convoke.games/en/play/war-table",
+        )
+        player = factories.user.create(game=game)
+        embed = (await game.to_data()).to_embed(guild=None).to_dict()
+
+        assert embed["description"] == (
+            "# [Join your Convoke game now!](https://www.convoke.games/en/play/war-table)"
+            + SUPPORT_CTA
+        )
+        assert {
+            "inline": False,
+            "name": "⚔️ Guild War",
+            "value": "Dads vs Chill",
+        } in embed["fields"]
+        assert any(
+            field["value"] == f"• <@{player.xid}> ({player.name})" for field in embed["fields"]
+        )
+        assert embed["color"] == settings.PENDING_EMBED_COLOR
+
     async def test_game_embed_pending_with_emoji(
         self,
         settings: Settings,

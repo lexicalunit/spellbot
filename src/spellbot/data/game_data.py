@@ -288,6 +288,14 @@ class GameData:
     ) -> str:
         locale = locale or self.locale
         if self.status != GameStatus.STARTED.value:
+            # Guild War tables open on Convoke immediately so the other guild can sit.
+            if self.war_id and self.game_link:
+                return t(
+                    "game.description.join_link",
+                    locale=locale,
+                    service=str(effective_service),
+                    link=self.game_link,
+                )
             return effective_service.get_pending_msg(locale, emojis)
         if not self.show_links(dm):
             return t("game.description.check_dm", locale=locale)

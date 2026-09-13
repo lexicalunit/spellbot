@@ -199,7 +199,7 @@ class SpellBot(AutoShardedBot):
     async def create_game_link(
         self,
         game_data: GameData,
-        pins: list[str] | None = None,
+        pins: dict[int, str] | None = None,
         original_seats: int | None = None,
     ) -> GameLinkDetails:
         if self.mock_games:
@@ -225,6 +225,12 @@ class SpellBot(AutoShardedBot):
                 return GameLinkDetails(*details)
             case _:
                 return GameLinkDetails()
+
+    async def update_game_players(self, game_data: GameData, pins: dict[int, str]) -> None:
+        """Send the final roster and pins for a game whose link was created before it filled."""
+        if self.mock_games or game_data.service != GameService.CONVOKE.value:
+            return
+        await convoke.update_players(game_data, pins)
 
     async def on_message(self, message: discord.Message) -> None:
         # handle DMs normally
