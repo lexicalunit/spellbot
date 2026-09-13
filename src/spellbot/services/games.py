@@ -634,6 +634,21 @@ async def shrink_game(game_data: GameData) -> GameData:
 
 
 @tracer.wrap()
+async def attach_game_link(
+    game_data: GameData,
+    game_link: str | None,
+    password: str | None,
+) -> GameData:
+    """Store a generated game link without starting the SpellBot queue."""
+    game: Game = await DatabaseSession.get(Game, game_data.id)
+    assert len(game_link or "") <= MAX_GAME_LINK_LEN
+    game.game_link = game_link
+    game.password = password
+    await DatabaseSession.commit()
+    return await game.to_data()
+
+
+@tracer.wrap()
 async def make_ready(
     game_data: GameData,
     game_link: str | None,

@@ -139,6 +139,22 @@ class TestServiceGames:
         assert pending_game_data is not None
         assert not pending_game_data.fully_seated
 
+    async def test_games_attach_game_link_does_not_start(self, game: Game) -> None:
+        game_data = await games.get(game.id)  # type: ignore
+        assert game_data is not None
+        attached = await games.attach_game_link(game_data, "http://link", "secret")
+
+        assert attached.game_link == "http://link"
+        assert attached.password == "secret"
+        assert attached.status == GameStatus.PENDING.value
+
+        DatabaseSession.expire_all()
+        found = await DatabaseSession.get(Game, game.id)
+        assert found
+        assert found.game_link == "http://link"
+        assert found.password == "secret"
+        assert found.status == GameStatus.PENDING.value
+
     async def test_games_make_ready(self, game: Game) -> None:
         game_data = await games.get(game.id)  # type: ignore
         assert game_data is not None

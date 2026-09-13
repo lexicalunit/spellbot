@@ -13,6 +13,7 @@ import discord
 from ddtrace.trace import tracer
 
 from spellbot import services
+from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.i18n import guild_locale, t, user_locale
 from spellbot.integrations import convoke, playgroup_live
@@ -333,8 +334,18 @@ class LookingForGameAction(BaseAction):
             seats or convoke.DEFAULT_WAR_SEATS,
         )
 
+    async def ensure_guild_war_convoke_link(self, game_data: GameData) -> GameData:
+        """Open the Convoke table as soon as a Guild War /lfg queue exists."""
+        if not game_data.war_id or game_data.game_link:
+            return game_data
+        pins = [generate_pin() for _ in game_data.players]
+        details = await self.bot.create_game_link(game_data, pins)
+        if not details.link:
+            return game_data
+        return await services.games.attach_game_link(game_data, details.link, details.password)
+
     @tracer.wrap()
-    async def execute(  # noqa: C901
+    async def execute(  # noqa: C901, PLR0912
         self,
         *,
         friends: str | None = None,
@@ -414,6 +425,9 @@ class LookingForGameAction(BaseAction):
         if new is None:
             return None
         assert game_data is not None
+
+        if game_data.war_id and not game_data.game_link and not game_data.fully_seated:
+            game_data = await self.ensure_guild_war_convoke_link(game_data)
 
         other_game_ids: list[int] = []
         suggested_vc = None
@@ -552,7 +566,11 @@ class LookingForGameAction(BaseAction):
         # method of the Game object will return None for players if MT is not enabled.
         pins = [generate_pin() for _ in player_xids]
 
-        details = await self.bot.create_game_link(game_data, pins, original_seats=original_seats)
+        details = (
+            GameLinkDetails(game_data.game_link, game_data.password)
+            if game_data.game_link
+            else await self.bot.create_game_link(game_data, pins, original_seats=original_seats)
+        )
 
         suggested_vc = None
         if (

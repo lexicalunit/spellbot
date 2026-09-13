@@ -11,7 +11,7 @@ import pytest_asyncio
 
 from spellbot import services
 from spellbot.actions import LookingForGameAction
-from spellbot.data import PostData
+from spellbot.data import GameLinkDetails, PostData
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.integrations import convoke
 from spellbot.operations import VoiceChannelSuggestion
@@ -695,6 +695,128 @@ class TestLookingForGameAction:
         _, suggested_vc = await action.make_game_ready(game_data, [123, 456])
 
         assert suggested_vc == mock_suggestion
+
+    async def test_make_game_ready_reuses_existing_convoke_link(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(
+            game_id=1,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            game_link="https://convoke.games/en/play/already",
+            password="kept",  # noqa: S106
+        )
+        create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
+        make_ready = mocker.patch.object(
+            services.games,
+            "make_ready",
+            AsyncMock(return_value=game_data),
+        )
+
+        await action.make_game_ready(game_data, [123])
+
+        create_link.assert_not_called()
+        make_ready.assert_awaited_once()
+        assert make_ready.await_args.args[1] == "https://convoke.games/en/play/already"
+        assert make_ready.await_args.args[2] == "kept"
+
+    async def test_ensure_guild_war_convoke_link_attaches_new_table(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(
+            game_id=7,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        )
+        game_data.players = [create_mock_user(xid=100)]
+        attached = create_mock_game(
+            game_id=7,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            game_link="https://convoke.games/en/play/new",
+        )
+        mocker.patch.object(
+            action.bot,
+            "create_game_link",
+            AsyncMock(return_value=GameLinkDetails("https://convoke.games/en/play/new", None)),
+        )
+        attach = mocker.patch.object(
+            services.games,
+            "attach_game_link",
+            AsyncMock(return_value=attached),
+        )
+
+        result = await action.ensure_guild_war_convoke_link(game_data)
+
+        attach.assert_awaited_once()
+        assert result.game_link == "https://convoke.games/en/play/new"
+
+    async def test_ensure_guild_war_convoke_link_skips_when_already_open(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(
+            game_id=7,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            game_link="https://convoke.games/en/play/existing",
+        )
+        create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
+
+        result = await action.ensure_guild_war_convoke_link(game_data)
+
+        create_link.assert_not_called()
+        assert result.game_link == "https://convoke.games/en/play/existing"
+
+    async def test_execute_opens_convoke_table_for_pending_guild_war(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        game_data = create_mock_game(
+            game_id=9,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            war_title="Dads vs Chill",
+        )
+        game_data.players = [create_mock_user(xid=100)]
+        opened = create_mock_game(
+            game_id=9,
+            war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            game_link="https://convoke.games/en/play/war",
+        )
+        opened.players = game_data.players
+        mocker.patch.object(
+            action,
+            "resolve_guild_war",
+            AsyncMock(
+                return_value=(
+                    "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                    "Dads vs Chill",
+                    GameService.CONVOKE.value,
+                    4,
+                ),
+            ),
+        )
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
+        mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
+        mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(True, game_data)))
+        ensure_link = mocker.patch.object(
+            action,
+            "ensure_guild_war_convoke_link",
+            AsyncMock(return_value=opened),
+        )
+        embed_stub = mocker.patch.object(
+            action,
+            "handle_embed_creation",
+            AsyncMock(return_value=opened),
+        )
+
+        await action.execute(guild_war="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+
+        ensure_link.assert_awaited_once_with(game_data)
+        embed_stub.assert_awaited_once()
+        assert embed_stub.await_args.kwargs["fully_seated"] is False
 
     async def test_create_initial_post_success(
         self,
