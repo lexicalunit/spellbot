@@ -51,7 +51,7 @@ resource "datadog_monitor" "spellbot_application_error" {
   type    = "log alert"
   tags    = ["service:spellbot", "env:prod"]
   query   = <<-EOT
-    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -404 -\"ELB-HealthChecker\" -\"Error handling request from\" -\"raise ex\" -\"raise LineTooLong\" (env:error OR status:error OR raise)").index("*").rollup("count").last("5m") > 1
+    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -404 -\"ELB-HealthChecker\" -\"Error handling request from\" -\"raise ex\" -\"raise LineTooLong\" -\"raise BadHttpMessage\" -\"raise BadHttpMethod\" -\"raise BadStatusLine\" -\"raise InvalidHeader\" -\"raise InvalidURLError\" (env:error OR status:error OR raise)").index("*").rollup("count").last("5m") > 1
   EOT
   message = <<-EOT
     {{#is_alert}}
