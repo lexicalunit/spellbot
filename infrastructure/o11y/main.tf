@@ -152,6 +152,122 @@ resource "datadog_monitor" "spellbot_discord_server_errors" {
   EOT
 }
 
+# Rate limiting, watched by volume rather than by individual failures.
+#
+# A stray 429 is noise: Discord throttles a bucket, discord.py backs off, the call lands.
+# What matters is a sustained rate, which is how SpellBot's historical rate limit troubles
+# showed up, so each of these alerts on how many happen in five minutes, not on any one.
+#
+# Baselines from 15 days of production: every one of these sits at zero except during a real
+# incident, so the warning thresholds are set just above nothing rather than off a busy norm.
+
+# discord.py's own rate limiter reporting that it had to back off. This fires before any
+# exception reaches SpellBot, since discord.py absorbs most bucket limits by retrying, and is
+# the earliest sign the bot is pushing a Discord bucket too hard. On 2026-09-16 it logged 50
+# of these in 14 minutes while only 9 surfaced as errors.
+resource "datadog_monitor" "spellbot_discord_rate_limited_bot" {
+  enable_logs_sample  = true
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    warning  = 10
+    critical = 30
+  }
+  name    = "SpellBot: Discord Rate Limiting (bot)"
+  type    = "log alert"
+  tags    = ["env:prod", "service:spellbot"]
+  query   = <<-EOT
+    logs("environment:prod @name:discord.webhook.async_ \"rate limited\"").index("*").rollup("count").last("5m") > 30
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    discord.py is backing off from Discord rate limits on webhook/interaction routes.
+    Count: {{value}} in the last 5 minutes. Normally this is zero.
+
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    SpellBot is being rate limited HARD by Discord on webhook/interaction routes.
+    Count: {{value}} in the last 5 minutes.
+
+    Sustained rate limiting counts toward Discord's invalid request limit for the whole bot
+    token, which ends in a Cloudflare ban, so treat this as urgent rather than transient.
+
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+# 429s from the REST calls the web app makes to Discord directly with httpx. These bypass
+# discord.py and so get none of its bucket tracking or backoff, but they use the same bot
+# token, which means they spend the same rate limit budget the bot depends on.
+resource "datadog_monitor" "spellbot_discord_rate_limited_rest" {
+  enable_logs_sample  = true
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    warning  = 10
+    critical = 50
+  }
+  name    = "SpellBot: Discord Rate Limiting (direct REST)"
+  type    = "log alert"
+  tags    = ["env:prod", "service:spellbot"]
+  query   = <<-EOT
+    logs("environment:prod \"discord.com\" \"429 Too Many Requests\"").index("*").rollup("count").last("5m") > 50
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    SpellBot's direct Discord REST calls are being rate limited.
+    Count: {{value}} in the last 5 minutes. Normally this is zero.
+
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    SpellBot's direct Discord REST calls are being rate limited HEAVILY.
+    Count: {{value}} in the last 5 minutes.
+
+    These calls share the bot token, so they spend the bot's rate limit budget and count
+    toward Discord's invalid request limit. Look for a loop calling Discord per user.
+
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
+# Discord's transport errors, which the APM error monitor deliberately ignores because a lone
+# gateway reconnect is routine. Ignoring them individually is only safe if a storm of them
+# still says something, which is what this monitor is for.
+resource "datadog_monitor" "spellbot_discord_transport_errors" {
+  on_missing_data     = "default"
+  require_full_window = false
+  monitor_thresholds {
+    warning  = 15
+    critical = 50
+  }
+  name    = "SpellBot: Discord Transport Errors (gateway/API 5xx)"
+  type    = "trace-analytics alert"
+  tags    = ["env:prod", "service:spellbot"]
+  query   = <<-EOT
+    trace-analytics("env:prod service:spellbot -status:ok @http.status_code:(502 OR 503 OR 504 OR 522) @peer.hostname:(*discord.com OR *discord.gg)").index("trace-search", "djm-search").rollup("count").last("5m") > 50
+  EOT
+  message = <<-EOT
+    {{#is_warning}}
+    SpellBot is seeing repeated Discord gateway/API transport errors.
+    Count: {{value}} in the last 5 minutes.
+
+    @${var.alert_email}
+    {{/is_warning}}
+    {{#is_alert}}
+    SpellBot is seeing a STORM of Discord gateway/API transport errors.
+    Count: {{value}} in the last 5 minutes.
+
+    Check Discord status: https://discordstatus.com/
+
+    @${var.alert_email}
+    {{/is_alert}}
+  EOT
+}
+
 # ECS Alerts
 resource "datadog_monitor" "SpellBot_ECS_Tasks_Failed_to_Start_Successfully" {
   evaluation_delay       = 900

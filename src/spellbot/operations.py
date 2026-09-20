@@ -59,12 +59,14 @@ def is_discord_server_error(ex: BaseException) -> bool:
 
 def is_discord_rate_limited(ex: BaseException) -> bool:
     """
-    Check if this is Discord throttling us - transient, and not a bug on our side.
+    Check if Discord is throttling us, so one occurrence is a warning rather than an error.
 
-    discord.py absorbs ordinary per-route bucket limits with its own backoff, so a 429 that
-    surfaces here is Discord rate limiting a shared resource (error code 40062) rather than
-    a reaction to SpellBot's own call rate. There is nothing to fix and nothing to retry, so
-    treat it like a 503: record it as a warning and leave the trace unmarked.
+    discord.py retries bucket limits with its own backoff, so a 429 that still reaches us is
+    one those retries could not clear. That makes a single 429 not worth paging over and not
+    worth retrying here, but it does not make it harmless: rate limiting is only diagnosable
+    in aggregate, and sustained 429s count toward Discord's invalid request limit for the
+    whole bot token. The volume is what matters, and the rate limit monitors watch it - see
+    `infrastructure/o11y/main.tf`. A lone occurrence is recorded as a warning, like a 503.
     """
     if isinstance(ex, discord.errors.RateLimited):
         return True
@@ -111,7 +113,7 @@ async def retry(
             # Always ignore Discord server errors (503s) - transient infrastructure issues
             if is_discord_server_error(ex):
                 ignore_exception_on_all_spans(ex, warning_type="discord_server_error")
-            # Discord throttling a shared resource is transient too, and not ours to fix
+            # Discord throttling us: noise one at a time, alerted on by volume elsewhere
             elif is_discord_rate_limited(ex):
                 ignore_exception_on_all_spans(ex, warning_type="discord_rate_limited")
             # Also ignore any caller-specified errors
