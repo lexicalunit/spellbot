@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- `/start` now needs at least one other player, instead of shrinking the game to a single seat that the link services reject.
+- Integrations no longer retry a 4xx response, which can only fail again, and now log the response body so a rejected request says which field was wrong.
+- Discord rate limits (429) are recorded as warnings, like Discord's 503s already were, rather than paging as bot errors.
+
+### Changed
+
+- Reported errors now carry the real exception type and message on the trace instead of a hardcoded `OperationalError`, and are counted once per failure for alerting.
+
 ## [v21.10.1](https://github.com/lexicalunit/spellbot/releases/tag/v21.10.1) - 2026-09-13
 
 ### Changed

@@ -98,6 +98,8 @@ resource "datadog_monitor" "SpellBot_SpellTable_create_game_issues" {
   EOT
 }
 
+# Counts reported failures, not error spans. `spellbot.error.reported` is set once
+# per trace by `add_span_error`, so the count here is a count of real failures.
 resource "datadog_monitor" "spellbot_apm_trace_errors" {
   on_missing_data     = "default"
   require_full_window = false
@@ -108,7 +110,7 @@ resource "datadog_monitor" "spellbot_apm_trace_errors" {
   type    = "trace-analytics alert"
   tags    = ["env:prod", "service:spellbot"]
   query   = <<-EOT
-    trace-analytics("env:prod service:spellbot -status:ok -(@http.status_code:503 @peer.hostname:discord.com)").index("trace-search", "djm-search").rollup("count").last("5m") > 1
+    trace-analytics("env:prod service:spellbot -status:ok @spellbot.error.reported:true -(@http.status_code:(502 OR 503 OR 504 OR 522) AND @peer.hostname:(*discord.com OR *discord.gg))").index("trace-search", "djm-search").rollup("count").last("5m") > 1
   EOT
   message = <<-EOT
     {{#is_alert}}
