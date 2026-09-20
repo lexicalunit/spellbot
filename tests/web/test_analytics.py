@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
@@ -14,7 +14,7 @@ from spellbot.models import GameStatus
 from spellbot.settings import settings
 from spellbot.utils import generate_signed_url
 from spellbot.web.api import analytics
-from spellbot.web.api.analytics import check_guild_member
+from spellbot.web.api.analytics import Membership, check_guild_member
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -359,7 +359,7 @@ class TestWebAnalyticsEndpoints:
         # Mock check_guild_member to return True (user is still a member)
         mocker.patch(
             "spellbot.web.api.analytics.check_guild_member",
-            return_value=True,
+            return_value=Membership.MEMBER,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
 
@@ -393,7 +393,7 @@ class TestWebAnalyticsEndpoints:
         # Mock check_guild_member to return True (user is still a member)
         mocker.patch(
             "spellbot.web.api.analytics.check_guild_member",
-            return_value=True,
+            return_value=Membership.MEMBER,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
 
@@ -547,7 +547,7 @@ class TestWebAnalyticsMembershipChecks:
         # Mock check_guild_member to return False (user has left)
         mocker.patch(
             "spellbot.web.api.analytics.check_guild_member",
-            return_value=False,
+            return_value=Membership.LEFT,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
 
@@ -581,7 +581,7 @@ class TestWebAnalyticsMembershipChecks:
         # Mock check_guild_member to return False (user has left)
         mocker.patch(
             "spellbot.web.api.analytics.check_guild_member",
-            return_value=False,
+            return_value=Membership.LEFT,
         )
         mocker.patch("spellbot.utils.time.time", return_value=1000.0)
 
@@ -599,68 +599,55 @@ class TestWebAnalyticsMembershipChecks:
         assert len(data["top_blocked"]) == 1
         assert data["top_blocked"][0]["left_server"] is True
 
+    @staticmethod
+    def client_returning(mocker: MockerFixture, status: int) -> Any:
+        response = mocker.MagicMock()
+        response.status_code = status
+        client = mocker.MagicMock()
+        client.get = mocker.AsyncMock(return_value=response)
+        return client
+
     async def testcheck_guild_member_api_error(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that check_guild_member returns None on API errors."""
-        # Mock httpx to raise an exception
-        mock_client = mocker.MagicMock()
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
-        mock_client.get = mocker.AsyncMock(side_effect=Exception("Network error"))
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
+        """A transport failure is unknown, not evidence that the user left."""
+        client = mocker.MagicMock()
+        client.get = mocker.AsyncMock(side_effect=Exception("Network error"))
 
-        result = await check_guild_member(12345, 67890)
-        assert result is None
+        assert await check_guild_member(client, 12345, 67890) is Membership.UNKNOWN
 
     async def testcheck_guild_member_success(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that check_guild_member returns True when user is a member."""
-        mock_response = mocker.MagicMock()
-        mock_response.status_code = 200
-        mock_client = mocker.MagicMock()
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        result = await check_guild_member(12345, 67890)
-        assert result is True
+        """Test that check_guild_member reports a member on 200."""
+        client = self.client_returning(mocker, 200)
+        assert await check_guild_member(client, 12345, 67890) is Membership.MEMBER
 
     async def testcheck_guild_member_not_found(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that check_guild_member returns False when user is not a member."""
-        mock_response = mocker.MagicMock()
-        mock_response.status_code = 404
-        mock_client = mocker.MagicMock()
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        result = await check_guild_member(12345, 67890)
-        assert result is False
+        """Test that check_guild_member reports a departure on 404."""
+        client = self.client_returning(mocker, 404)
+        assert await check_guild_member(client, 12345, 67890) is Membership.LEFT
 
     async def testcheck_guild_member_rate_limited(
         self,
         mocker: MockerFixture,
     ) -> None:
-        """Test that check_guild_member returns None on rate limit (429)."""
-        mock_response = mocker.MagicMock()
-        mock_response.status_code = 429
-        mock_client = mocker.MagicMock()
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=None)
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
+        """A 429 is reported distinctly so the caller can stop asking."""
+        client = self.client_returning(mocker, 429)
+        assert await check_guild_member(client, 12345, 67890) is Membership.RATE_LIMITED
 
-        result = await check_guild_member(12345, 67890)
-        assert result is None
+    async def test_check_guild_member_unexpected_status(
+        self,
+        mocker: MockerFixture,
+    ) -> None:
+        """Any other status is unknown rather than a departure."""
+        client = self.client_returning(mocker, 500)
+        assert await check_guild_member(client, 12345, 67890) is Membership.UNKNOWN
 
     async def test_analytics_players_invalid_signature(
         self,
@@ -969,3 +956,151 @@ class TestWebAnalyticsDirect:
         )
         resp = await analytics.analytics_blocked_endpoint(request)
         assert resp.status == 200
+
+
+@pytest.mark.asyncio
+class TestMembershipTTL:
+    """A membership Discord already confirmed is reused instead of asked about again."""
+
+    @staticmethod
+    def players(*xids: int) -> list[dict[str, Any]]:
+        return [{"user_xid": str(xid), "name": f"p{xid}", "count": 1} for xid in xids]
+
+    async def test_recently_checked_member_is_not_refetched(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=901)
+        user = factories.user.create(xid=9001)
+        factories.guild_member.create(
+            guild_xid=guild.xid,
+            user_xid=user.xid,
+            membership_checked_at=datetime.now(UTC).replace(tzinfo=None),
+        )
+        check = mocker.patch(
+            "spellbot.web.api.analytics.check_guild_member",
+            AsyncMock(return_value=Membership.MEMBER),
+        )
+
+        result = await analytics.check_membership_and_update(guild.xid, self.players(user.xid))
+
+        check.assert_not_called()
+        assert result[0]["left_server"] is False
+
+    async def test_stale_member_is_refetched(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=902)
+        user = factories.user.create(xid=9002)
+        stale = datetime.now(UTC).replace(tzinfo=None) - analytics.MEMBERSHIP_TTL
+        stale -= timedelta(days=1)
+        factories.guild_member.create(
+            guild_xid=guild.xid,
+            user_xid=user.xid,
+            membership_checked_at=stale,
+        )
+        check = mocker.patch(
+            "spellbot.web.api.analytics.check_guild_member",
+            AsyncMock(return_value=Membership.MEMBER),
+        )
+
+        await analytics.check_membership_and_update(guild.xid, self.players(user.xid))
+
+        check.assert_called_once()
+
+    async def test_never_checked_member_is_fetched(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=903)
+        user = factories.user.create(xid=9003)
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
+        check = mocker.patch(
+            "spellbot.web.api.analytics.check_guild_member",
+            AsyncMock(return_value=Membership.MEMBER),
+        )
+
+        await analytics.check_membership_and_update(guild.xid, self.players(user.xid))
+
+        check.assert_called_once()
+
+    async def test_confirmed_member_starts_a_fresh_ttl(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=904)
+        user = factories.user.create(xid=9004)
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
+        mocker.patch(
+            "spellbot.web.api.analytics.check_guild_member",
+            AsyncMock(return_value=Membership.MEMBER),
+        )
+
+        await analytics.check_membership_and_update(guild.xid, self.players(user.xid))
+
+        fresh = await analytics.recently_checked_members(guild.xid, [user.xid])
+        assert fresh == {user.xid}
+
+    async def test_rate_limit_stops_asking_for_the_rest_of_the_request(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """The whole point: one refusal must not be followed by nine more requests."""
+        guild = factories.guild.create(xid=905)
+        xids = list(range(9101, 9111))
+        for xid in xids:
+            factories.user.create(xid=xid)
+            factories.guild_member.create(guild_xid=guild.xid, user_xid=xid)
+        check = mocker.patch(
+            "spellbot.web.api.analytics.check_guild_member",
+            AsyncMock(return_value=Membership.RATE_LIMITED),
+        )
+
+        result = await analytics.check_membership_and_update(guild.xid, self.players(*xids))
+
+        assert check.await_count == 1
+        assert len(result) == len(xids)
+        assert all(player["left_server"] is False for player in result)
+
+    async def test_departure_deletes_the_record(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        guild = factories.guild.create(xid=906)
+        user = factories.user.create(xid=9006)
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
+        mocker.patch(
+            "spellbot.web.api.analytics.check_guild_member",
+            AsyncMock(return_value=Membership.LEFT),
+        )
+
+        result = await analytics.check_membership_and_update(guild.xid, self.players(user.xid))
+
+        assert result[0]["left_server"] is True
+        assert await analytics.recently_checked_members(guild.xid, [user.xid]) == set()
+
+    async def test_unknown_leaves_the_record_alone(
+        self,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        """An error is not evidence of leaving, so nothing is written either way."""
+        guild = factories.guild.create(xid=907)
+        user = factories.user.create(xid=9007)
+        factories.guild_member.create(guild_xid=guild.xid, user_xid=user.xid)
+        mocker.patch(
+            "spellbot.web.api.analytics.check_guild_member",
+            AsyncMock(return_value=Membership.UNKNOWN),
+        )
+
+        result = await analytics.check_membership_and_update(guild.xid, self.players(user.xid))
+
+        assert result[0]["left_server"] is False
+        assert await analytics.recently_checked_members(guild.xid, [user.xid]) == set()

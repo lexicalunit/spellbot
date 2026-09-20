@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import httpx
 
 from spellbot.settings import settings
 from spellbot.utils import is_moderator
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +27,11 @@ PERMISSION_BAN_MEMBERS: Final = 0x4
 # expire so that role/permission changes on Discord are picked up within the TTL.
 MOD_CACHE_TTL_S: Final = 300.0
 mod_cache: dict[tuple[int, int], tuple[bool, float]] = {}
+
+# Lookups currently in flight, so that concurrent requests for the same viewer and guild
+# share one Discord round-trip instead of each making their own. Entries live only for the
+# duration of the request that created them.
+mod_inflight: dict[tuple[int, int], Awaitable[bool | None]] = {}
 
 
 def cache_get(key: tuple[int, int]) -> bool | None:
@@ -40,6 +49,25 @@ def cache_put(key: tuple[int, int], result: bool) -> None:
     mod_cache[key] = (result, time.monotonic() + MOD_CACHE_TTL_S)
 
 
+async def resolve_once(key: tuple[int, int], viewer_xid: int, guild_xid: int) -> bool | None:
+    """
+    Resolve one (viewer, guild) pair, sharing a single Discord round-trip between callers.
+
+    A dashboard issues several requests at once, and they all used to miss the cache
+    together and each call Discord, so one page view could fire a dozen identical lookups
+    and rate limit itself. The first caller owns the request and the rest await its result.
+    """
+    inflight = mod_inflight.get(key)
+    if inflight is not None:
+        return await inflight
+    task = asyncio.ensure_future(fetch_is_moderator(viewer_xid, guild_xid))
+    mod_inflight[key] = task
+    try:
+        return await task
+    finally:
+        mod_inflight.pop(key, None)
+
+
 async def viewer_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
     """
     Return True when `viewer_xid` is a moderator/admin of `guild_xid`.
@@ -54,12 +82,17 @@ async def viewer_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
     cached = cache_get(key)
     if cached is not None:
         return cached
-    result = await fetch_is_moderator(viewer_xid, guild_xid)
+    result = await resolve_once(key, viewer_xid, guild_xid)
+    if result is None:
+        # Could not reach Discord. Deny this request, but do not remember the denial: a
+        # cached failure would lock a real moderator out for the whole TTL over one blip.
+        return False
     cache_put(key, result)
     return result
 
 
-async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
+async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool | None:
+    """Ask Discord whether the viewer moderates the guild, or None if it could not be asked."""
     if not settings.BOT_TOKEN:
         return False
     headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
@@ -83,7 +116,7 @@ async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
             viewer_xid,
             guild_xid,
         )
-        return False
+        return None
 
     guild = guild_resp.json()
     member = member_resp.json()

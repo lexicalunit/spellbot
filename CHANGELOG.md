@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `/start` now needs at least one other player, instead of shrinking the game to a single seat that the link services reject.
 - Integrations no longer retry a 4xx response, which can only fail again, and now log the response body so a rejected request says which field was wrong.
 - Discord rate limits (429) are recorded as warnings, like Discord's 503s already were, rather than paging as bot errors, and are now alerted on by volume instead.
+- The guild analytics page no longer asks Discord whether each of its top players is still a member on every load. A confirmed membership is trusted for a week, and the page stops asking at all once Discord starts refusing.
+- Concurrent requests for the same viewer now share one moderator lookup instead of each calling Discord, and a failed lookup is no longer cached, so a transient Discord error can't lock a moderator out for the length of the cache TTL.
 - Added monitors for sustained Discord rate limiting (both from the bot and from the web app's direct REST calls) and for storms of Discord gateway/API transport errors, so the noise excluded from the error monitor is still caught when it becomes systemic.
 
 ### Changed
