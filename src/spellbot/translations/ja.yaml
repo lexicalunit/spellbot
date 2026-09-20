@@ -57,6 +57,7 @@ ja:
     no_previous_game: "このサーバーではまだゲームをプレイしていません。"
     run_in_game_channel: "このコマンドは、参加中のゲームと同じチャンネルで実行してください。"
     not_pending_here: "このチャンネルでは保留中のゲームに参加していません。"
+    start_needs_players: "ゲームを開始するには、他に少なくとも1人のプレイヤーが必要です。"
     unsupported_context: "申し訳ありませんが、そのコマンドはこの状況では使えません。"
     already_in_channel: "すでにこのチャンネルのゲームに参加しています。"
     too_many_pending: "現在、保留中のゲームが多すぎるため、別のゲームには参加できません。"

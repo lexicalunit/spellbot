@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from spellbot import __version__
+from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -59,14 +60,16 @@ async def report_match(payload: dict[str, Any]) -> dict[str, Any] | None:
             try:
                 return await fetch_castlog_report(client, payload)
             except Exception as ex:
+                details = describe_http_error(ex)
                 is_final_attempt = attempt == RETRY_ATTEMPTS - 1
-                if is_final_attempt:
+                if is_final_attempt or is_terminal_client_error(ex):
                     add_span_error(ex)
-                    logger.exception("Castlog API failure (final attempt)")
+                    logger.exception("Castlog API failure. %s", details)
                     return None
                 logger.warning(
-                    "Castlog API issue (attempt %s)",
+                    "Castlog API issue (attempt %s). %s",
                     attempt + 1,
+                    details,
                     exc_info=True,
                 )
                 continue

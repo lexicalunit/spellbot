@@ -57,6 +57,7 @@ pt:
     no_previous_game: "Ainda não fez nenhum jogo nesta guilda."
     run_in_game_channel: "Execute este comando no mesmo canal do seu jogo."
     not_pending_here: "Não está em nenhum jogo pendente neste canal."
+    start_needs_players: "Precisa de pelo menos mais um jogador antes de poder iniciar um jogo."
     unsupported_context: "Lamentamos, esse comando não é suportado neste contexto."
     already_in_channel: "Já está num jogo deste canal."
     too_many_pending: "Está em demasiados jogos pendentes para se juntar a outro agora."

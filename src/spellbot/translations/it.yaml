@@ -57,6 +57,7 @@ it:
     no_previous_game: "Non hai ancora giocato una partita in questa gilda."
     run_in_game_channel: "Esegui questo comando nello stesso canale della tua partita."
     not_pending_here: "Non sei in nessuna partita in attesa in questo canale."
+    start_needs_players: "Ti serve almeno un altro giocatore prima di poter iniziare una partita."
     unsupported_context: "Spiacenti, questo comando non è supportato in questo contesto."
     already_in_channel: "Sei già in una partita in questo canale."
     too_many_pending: "Sei in troppe partite in attesa per poterti unire a un'altra in questo momento."

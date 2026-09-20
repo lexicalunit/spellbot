@@ -57,6 +57,7 @@ tl:
     no_previous_game: "Hindi ka pa nakapaglaro ng game sa guild na ito."
     run_in_game_channel: "Paki-run ang command na ito sa channel na ginagamit mo sa iyong game."
     not_pending_here: "Wala ka sa isang pending game sa channel na ito."
+    start_needs_players: "Kailangan mo ng hindi bababa sa isa pang manlalaro bago ka makapagsimula ng laro."
     unsupported_context: "Pasensya na, hindi sinusuportahan ang command sa kontekstong ito."
     already_in_channel: "Nasa isang game ka na sa channel na ito."
     too_many_pending: "Masyado ka nang maraming sinalihang pending game para sumali ng isa pa sa ngayon."

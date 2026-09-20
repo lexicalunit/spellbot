@@ -10,6 +10,7 @@ import httpx
 
 from spellbot import __version__
 from spellbot.enums import GameFormat
+from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -140,14 +141,16 @@ async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:
             try:
                 data = await fetch_table_stream_link(client, ts_args)
             except Exception as ex:
+                details = describe_http_error(ex)
                 is_final_attempt = attempt == RETRY_ATTEMPTS - 1
-                if is_final_attempt:
+                if is_final_attempt or is_terminal_client_error(ex):
                     add_span_error(ex)
-                    logger.exception("TableStream API failure (final attempt)")
+                    logger.exception("TableStream API failure. %s", details)
                     return None, None
                 logger.warning(
-                    "TableStream API issue (attempt %s)",
+                    "TableStream API issue (attempt %s). %s",
                     attempt + 1,
+                    details,
                     exc_info=True,
                 )
                 continue

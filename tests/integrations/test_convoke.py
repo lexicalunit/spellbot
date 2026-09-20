@@ -772,3 +772,114 @@ class TestResolveLiveGuildWar:
     async def test_no_live_wars_is_none(self) -> None:
         with self.patch_wars([]):
             assert await convoke_module.resolve_live_guild_war(WAR_ID) is None
+
+
+class TestConvokeTerminalClientErrors:
+    """A 4xx from Convoke means the request was wrong, so replaying it only wastes attempts."""
+
+    @staticmethod
+    def make_game() -> GameData:
+        return create_mock_game(
+            game_id=1,
+            game_format=GameFormat.COMMANDER.value,
+            seats=4,
+            guild_xid=12345,
+            channel_xid=67890,
+            bracket=GameBracket.NONE.value,
+        )
+
+    @staticmethod
+    def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
+        request = httpx.Request("POST", "https://api.convoke.games/api/game/create-game")
+        response = httpx.Response(status, text=body, request=request)
+        return httpx.HTTPStatusError(f"{status}", request=request, response=response)
+
+    @pytest.mark.asyncio
+    async def test_400_is_not_retried(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=self.status_error(400, '{"error":"invalid_body"}'))
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(convoke_module, "add_span_error"),
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await generate_link(self.make_game(), pins=None)
+
+        assert result == (None, None)
+        assert mock_client.post.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_400_logs_the_response_body(self, caplog: pytest.LogCaptureFixture) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(
+            side_effect=self.status_error(400, '{"error":"invalid_body","details":"seatLimit"}'),
+        )
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(convoke_module, "add_span_error"),
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            await generate_link(self.make_game(), pins=None)
+
+        assert "seatLimit" in caplog.text
+        assert "HTTP 400" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_429_is_still_retried(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=self.status_error(429))
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(convoke_module, "add_span_error"),
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await generate_link(self.make_game(), pins=None)
+
+        assert result == (None, None)
+        assert mock_client.post.call_count == convoke_module.RETRY_ATTEMPTS
+
+    @pytest.mark.asyncio
+    async def test_500_is_still_retried(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=self.status_error(500))
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(convoke_module, "add_span_error"),
+            patch.object(
+                convoke_module.services.games,
+                "player_convoke_data",
+                AsyncMock(return_value=[]),
+            ),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await generate_link(self.make_game(), pins=None)
+
+        assert result == (None, None)
+        assert mock_client.post.call_count == convoke_module.RETRY_ATTEMPTS

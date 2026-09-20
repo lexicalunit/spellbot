@@ -469,3 +469,56 @@ class TestGenerateLink:
             result = await generate_link(game)
 
         assert result == (None, None)
+
+
+def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
+    request = httpx.Request("POST", "https://playgroup.gg/session")
+    response = httpx.Response(status, text=body, request=request)
+    return httpx.HTTPStatusError(f"{status}", request=request, response=response)
+
+
+class TestPlaygroupLiveTerminalClientErrors:
+    @staticmethod
+    def make_game() -> object:
+        game = create_mock_game(
+            game_id=42,
+            game_format=GameFormat.COMMANDER.value,
+            service=GameService.PLAYGROUP_LIVE.value,
+            seats=4,
+            bracket=GameBracket.NONE.value,
+        )
+        host = create_mock_user(xid=100)
+        host.playgroup_user_id = 42
+        game.players = [host]
+        return game
+
+    async def run(self, error: Exception) -> tuple[object, int]:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=error)
+
+        with (
+            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
+            patch.object(
+                playgroup_live_module.settings,
+                "PLAYGROUP_LIVE_API_URL",
+                "https://playgroup.gg",
+            ),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(playgroup_live_module, "add_span_error"),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await generate_link(self.make_game())  # type: ignore[arg-type]
+        return result, mock_client.post.call_count
+
+    @pytest.mark.asyncio
+    async def test_400_is_not_retried(self) -> None:
+        result, calls = await self.run(status_error(400, "bad session request"))
+        assert result == (None, None)
+        assert calls == 1
+
+    @pytest.mark.asyncio
+    async def test_500_is_still_retried(self) -> None:
+        result, calls = await self.run(status_error(500))
+        assert result == (None, None)
+        assert calls == playgroup_live_module.RETRY_ATTEMPTS

@@ -57,6 +57,7 @@ sv:
     no_previous_game: "Du har inte spelat något spel i denna guild ännu."
     run_in_game_channel: "Kör detta kommando i samma kanal som ditt spel."
     not_pending_here: "Du är inte med i något pågående spel i denna kanal."
+    start_needs_players: "Du behöver minst en spelare till innan du kan starta ett spel."
     unsupported_context: "Tyvärr, det kommandot stöds inte i detta sammanhang."
     already_in_channel: "Du är redan med i ett spel i denna kanal."
     too_many_pending: "Du har för många pågående spel för att kunna delta i ett nytt just nu."

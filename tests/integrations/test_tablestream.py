@@ -271,3 +271,57 @@ class TestGenerateLink:
             result = await generate_link(game)
 
         assert result == (None, None)
+
+
+def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
+    request = httpx.Request("POST", "https://api.table-stream.com/create-room")
+    response = httpx.Response(status, text=body, request=request)
+    return httpx.HTTPStatusError(f"{status}", request=request, response=response)
+
+
+class TestTableStreamTerminalClientErrors:
+    @pytest.mark.asyncio
+    async def test_400_is_not_retried(self) -> None:
+        game = create_mock_game(game_id=42, game_format=GameFormat.COMMANDER.value)
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=status_error(400, "bad room name"))
+
+        with (
+            patch.object(tablestream_module.settings, "TABLESTREAM_AUTH_KEY", "test_key"),
+            patch.object(
+                tablestream_module.settings,
+                "TABLESTREAM_CREATE",
+                "https://api.table-stream.com/create-room",
+            ),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(tablestream_module, "add_span_error"),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await generate_link(game)
+
+        assert result == (None, None)
+        assert mock_client.post.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_500_is_still_retried(self) -> None:
+        game = create_mock_game(game_id=42, game_format=GameFormat.COMMANDER.value)
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=status_error(500))
+
+        with (
+            patch.object(tablestream_module.settings, "TABLESTREAM_AUTH_KEY", "test_key"),
+            patch.object(
+                tablestream_module.settings,
+                "TABLESTREAM_CREATE",
+                "https://api.table-stream.com/create-room",
+            ),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(tablestream_module, "add_span_error"),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await generate_link(game)
+
+        assert result == (None, None)
+        assert mock_client.post.call_count == tablestream_module.RETRY_ATTEMPTS

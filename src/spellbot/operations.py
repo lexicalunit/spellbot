@@ -38,6 +38,9 @@ from .utils import (
 # Error code that are due to user configuration issues that we can't work around.
 EXPECTED_DM_FAILURE_CODES = frozenset({CANT_SEND_CODE, NO_MUTUAL_GUILDS_CODE})
 
+# HTTP status Discord returns when it is throttling a resource we asked for.
+RATE_LIMITED_STATUS = 429
+
 # Common set of exceptions we suppress during Discord API operations.
 DISCORD_OP_EXCEPTIONS = (DiscordException, ClientOSError, NotFound)
 
@@ -52,6 +55,20 @@ logger = logging.getLogger(__name__)
 def is_discord_server_error(ex: BaseException) -> bool:
     """Check if this is a Discord server error (503, etc.) - transient infrastructure issue."""
     return isinstance(ex, discord.errors.DiscordServerError)
+
+
+def is_discord_rate_limited(ex: BaseException) -> bool:
+    """
+    Check if this is Discord throttling us - transient, and not a bug on our side.
+
+    discord.py absorbs ordinary per-route bucket limits with its own backoff, so a 429 that
+    surfaces here is Discord rate limiting a shared resource (error code 40062) rather than
+    a reaction to SpellBot's own call rate. There is nothing to fix and nothing to retry, so
+    treat it like a 503: record it as a warning and leave the trace unmarked.
+    """
+    if isinstance(ex, discord.errors.RateLimited):
+        return True
+    return isinstance(ex, discord.errors.HTTPException) and ex.status == RATE_LIMITED_STATUS
 
 
 def ignore_exception_on_all_spans(ex: Exception, warning_type: str | None = None) -> None:
@@ -94,6 +111,9 @@ async def retry(
             # Always ignore Discord server errors (503s) - transient infrastructure issues
             if is_discord_server_error(ex):
                 ignore_exception_on_all_spans(ex, warning_type="discord_server_error")
+            # Discord throttling a shared resource is transient too, and not ours to fix
+            elif is_discord_rate_limited(ex):
+                ignore_exception_on_all_spans(ex, warning_type="discord_rate_limited")
             # Also ignore any caller-specified errors
             elif ignore_error is not None and ignore_error(ex):
                 ignore_exception_on_all_spans(ex)

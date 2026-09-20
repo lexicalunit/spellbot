@@ -45,6 +45,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Fewest players a force started game can have. `/start` shrinks the game to whoever is
+# already queued, so below this there is no opponent and no link service will seat the table.
+MIN_START_PLAYERS = 2
+
 
 class LookingForGameAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
@@ -256,6 +260,17 @@ class LookingForGameAction(BaseAction):
             return
 
         if await self.block_if_no_player_linked(game_data):
+            return
+
+        # Force starting shrinks the game to the players already queued, and a game of one is
+        # not a game: nobody has anyone to play against, and the link services reject a table
+        # seating fewer than two. Stop here rather than burn a game link on it.
+        if len(game_data.players) < MIN_START_PLAYERS:
+            await safe_followup_channel(
+                self.interaction,
+                t("lfg.start_needs_players", locale=locale),
+                ephemeral=True,
+            )
             return
 
         original_seats = (
