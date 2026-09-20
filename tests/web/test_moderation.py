@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -45,6 +46,7 @@ def member_response(role_ids: list[str], *, status_code: int = 200) -> MagicMock
 def reset_moderation_cache(mocker: MockerFixture) -> None:
     moderation.mod_cache.clear()
     moderation.mod_inflight.clear()
+    moderation.guild_cache.clear()
     mocker.patch.object(moderation.settings, "BOT_TOKEN", "bot-token")
 
 
@@ -145,8 +147,12 @@ class TestViewerIsModerator:
 
     async def test_role_not_held_by_member_is_skipped(self, mocker: MockerFixture) -> None:
         # The guild has an admin role, but the member does not hold it, so it must be
-        # skipped and the member is not a moderator.
-        roles = [{"id": "999", "name": "Admins", "permissions": str(0x8)}]
+        # skipped and the member is not a moderator. The guild also defines the role the
+        # member does hold, as Discord always returns every role it knows about.
+        roles = [
+            {"id": "999", "name": "Admins", "permissions": str(0x8)},
+            {"id": "500", "name": "Members", "permissions": str(0)},
+        ]
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
@@ -275,3 +281,96 @@ class TestUnresolvableModeratorStatus:
         assert await moderation.viewer_is_moderator(14, 100) is False
 
         fetch.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+class TestGuildRolesCache:
+    """Role definitions are shared between viewers, so they are fetched once per guild."""
+
+    async def test_second_viewer_reuses_the_cached_guild(self, mocker: MockerFixture) -> None:
+        roles = [{"id": "500", "name": "Staff", "permissions": str(0x8)}]
+        client = make_httpx_client(
+            [
+                guild_response("2", roles),
+                member_response(["500"]),
+                member_response(["500"]),  # only the member half is fetched again
+            ],
+        )
+        mocker.patch.object(moderation.httpx, "AsyncClient", return_value=client)
+
+        assert await moderation.viewer_is_moderator(1, 100) is True
+        assert await moderation.viewer_is_moderator(2, 100) is True
+
+        assert client.__aenter__.return_value.get.await_count == 3
+
+    async def test_expired_guild_entry_is_refetched(self, mocker: MockerFixture) -> None:
+        roles = [{"id": "500", "name": "Staff", "permissions": str(0x8)}]
+        moderation.guild_cache[100] = ({"owner_id": "2", "roles": []}, time.monotonic() - 1)
+        mocker.patch.object(
+            moderation.httpx,
+            "AsyncClient",
+            return_value=make_httpx_client(
+                [guild_response("2", roles), member_response(["500"])],
+            ),
+        )
+
+        assert await moderation.viewer_is_moderator(1, 100) is True
+
+    async def test_guild_cache_get_returns_none_when_absent(self) -> None:
+        assert moderation.guild_cache_get(12345) is None
+
+    async def test_expired_entry_is_evicted(self) -> None:
+        moderation.guild_cache[777] = ({"owner_id": "1", "roles": []}, time.monotonic() - 1)
+        assert moderation.guild_cache_get(777) is None
+        assert 777 not in moderation.guild_cache
+
+
+class TestRolesAreStale:
+    """A role id we can not name means the snapshot predates it."""
+
+    def test_known_roles_are_not_stale(self) -> None:
+        guild = {"roles": [{"id": "1"}, {"id": "2"}]}
+        assert moderation.roles_are_stale(guild, {"1", "2"}) is False
+
+    def test_no_roles_held_is_not_stale(self) -> None:
+        assert moderation.roles_are_stale({"roles": []}, set()) is False
+
+    def test_unknown_role_is_stale(self) -> None:
+        assert moderation.roles_are_stale({"roles": [{"id": "1"}]}, {"1", "9"}) is True
+
+
+@pytest.mark.asyncio
+class TestNewRoleIsPickedUpImmediately:
+    """The long TTL must not delay a brand new Moderator role."""
+
+    async def test_unknown_role_triggers_a_refetch(self, mocker: MockerFixture) -> None:
+        # The cached snapshot predates the role the viewer was just given, so a stale
+        # cache would deny them for the whole TTL. The refetch sees the new role instead.
+        moderation.guild_cache_put(100, {"owner_id": "2", "roles": []})
+        fresh = [{"id": "500", "name": "Moderator Team", "permissions": str(0)}]
+        mocker.patch.object(
+            moderation.httpx,
+            "AsyncClient",
+            return_value=make_httpx_client(
+                [member_response(["500"]), guild_response("2", fresh)],
+            ),
+        )
+
+        assert await moderation.viewer_is_moderator(1, 100) is True
+
+    async def test_refetch_replaces_the_cached_guild(self, mocker: MockerFixture) -> None:
+        moderation.guild_cache_put(100, {"owner_id": "2", "roles": []})
+        fresh = [{"id": "500", "name": "Moderator Team", "permissions": str(0)}]
+        mocker.patch.object(
+            moderation.httpx,
+            "AsyncClient",
+            return_value=make_httpx_client(
+                [member_response(["500"]), guild_response("2", fresh)],
+            ),
+        )
+
+        await moderation.viewer_is_moderator(1, 100)
+
+        cached = moderation.guild_cache_get(100)
+        assert cached is not None
+        assert cached["roles"] == fresh

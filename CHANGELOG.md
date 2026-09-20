@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Discord rate limits (429) are recorded as warnings, like Discord's 503s already were, rather than paging as bot errors, and are now alerted on by volume instead.
 - The guild analytics page no longer asks Discord whether each of its top players is still a member on every load. A confirmed membership is trusted for a week, and the page stops asking at all once Discord starts refusing.
 - Concurrent requests for the same viewer now share one moderator lookup instead of each calling Discord, and a failed lookup is no longer cached, so a transient Discord error can't lock a moderator out for the length of the cache TTL.
+- A guild's role definitions are now cached for an hour and shared between everyone viewing that guild, roughly halving the Discord calls a moderator check costs. Being granted an existing role still takes effect as quickly as before, and a newly created or renamed role is picked up right away rather than waiting out the hour.
 - Added monitors for sustained Discord rate limiting (both from the bot and from the web app's direct REST calls) and for storms of Discord gateway/API transport errors, so the noise excluded from the error monitor is still caught when it becomes systemic.
 
 ### Changed

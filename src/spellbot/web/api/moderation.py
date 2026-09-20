@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import httpx
 
@@ -33,6 +33,15 @@ mod_cache: dict[tuple[int, int], tuple[bool, float]] = {}
 # duration of the request that created them.
 mod_inflight: dict[tuple[int, int], Awaitable[bool | None]] = {}
 
+# A guild's role definitions are identical for every viewer of that guild and change only
+# when a role is created, renamed or re-permissioned, so this is the half of the lookup worth
+# holding on to. Granting someone an existing role is NOT a change to this data - that shows
+# up in the member lookup, which is never cached - so this TTL does not delay a new
+# moderator. It only bounds how long a brand new or renamed role could go unrecognised, and
+# `roles_are_stale` catches that case immediately anyway.
+GUILD_CACHE_TTL_S: Final = 3600.0
+guild_cache: dict[int, tuple[dict[str, Any], float]] = {}
+
 
 def cache_get(key: tuple[int, int]) -> bool | None:
     entry = mod_cache.get(key)
@@ -47,6 +56,46 @@ def cache_get(key: tuple[int, int]) -> bool | None:
 
 def cache_put(key: tuple[int, int], result: bool) -> None:
     mod_cache[key] = (result, time.monotonic() + MOD_CACHE_TTL_S)
+
+
+def guild_cache_get(guild_xid: int) -> dict[str, Any] | None:
+    entry = guild_cache.get(guild_xid)
+    if entry is None:
+        return None
+    guild, expires_at = entry
+    if time.monotonic() >= expires_at:
+        guild_cache.pop(guild_xid, None)
+        return None
+    return guild
+
+
+def guild_cache_put(guild_xid: int, guild: dict[str, Any]) -> None:
+    guild_cache[guild_xid] = (guild, time.monotonic() + GUILD_CACHE_TTL_S)
+
+
+def roles_are_stale(guild: dict[str, Any], member_role_ids: set[str]) -> bool:
+    """
+    Whether the viewer holds a role this snapshot of the guild has never heard of.
+
+    A role id we can not name means the snapshot predates the role, so someone has just
+    created or renamed one. Refetching on that signal is what lets the TTL be long: a brand
+    new `Moderator` role starts working on the viewer's next request rather than in an hour.
+    """
+    known = {str(role.get("id")) for role in guild.get("roles", [])}
+    return not member_role_ids.issubset(known)
+
+
+async def fetch_guild(
+    client: httpx.AsyncClient,
+    guild_xid: int,
+    headers: dict[str, str],
+) -> dict[str, Any]:
+    response = await client.get(
+        f"https://discord.com/api/v10/guilds/{guild_xid}",
+        headers=headers,
+    )
+    response.raise_for_status()
+    return response.json()
 
 
 async def resolve_once(key: tuple[int, int], viewer_xid: int, guild_xid: int) -> bool | None:
@@ -98,11 +147,10 @@ async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool | None:
     headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            guild_resp = await client.get(
-                f"https://discord.com/api/v10/guilds/{guild_xid}",
-                headers=headers,
-            )
-            guild_resp.raise_for_status()
+            guild = guild_cache_get(guild_xid)
+            if guild is None:
+                guild = await fetch_guild(client, guild_xid, headers)
+                guild_cache_put(guild_xid, guild)
             member_resp = await client.get(
                 f"https://discord.com/api/v10/guilds/{guild_xid}/members/{viewer_xid}",
                 headers=headers,
@@ -110,6 +158,11 @@ async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool | None:
             if member_resp.status_code == 404:
                 return False  # the viewer is not a member of this guild
             member_resp.raise_for_status()
+            member = member_resp.json()
+            held_role_ids = {str(role_id) for role_id in member.get("roles", [])}
+            if roles_are_stale(guild, held_role_ids):
+                guild = await fetch_guild(client, guild_xid, headers)
+                guild_cache_put(guild_xid, guild)
     except httpx.HTTPError:
         logger.warning(
             "could not resolve moderator status for viewer %s in guild %s",
@@ -118,15 +171,22 @@ async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool | None:
         )
         return None
 
-    guild = guild_resp.json()
-    member = member_resp.json()
+    return decide_moderator(guild, held_role_ids, viewer_xid=viewer_xid, guild_xid=guild_xid)
 
+
+def decide_moderator(
+    guild: dict[str, Any],
+    held_role_ids: set[str],
+    *,
+    viewer_xid: int,
+    guild_xid: int,
+) -> bool:
+    """Apply SpellBot's moderator rules to a guild payload and the roles the viewer holds."""
     owner_id = guild.get("owner_id")
     is_guild_owner = owner_id is not None and int(owner_id) == viewer_xid
 
     # The @everyone role shares the guild id and always applies to every member.
-    member_role_ids = {str(role_id) for role_id in member.get("roles", [])}
-    member_role_ids.add(str(guild_xid))
+    member_role_ids = held_role_ids | {str(guild_xid)}
 
     has_admin = False
     has_ban_members = False
