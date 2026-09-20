@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v21.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.11.0) - 2026-09-19
+
 ### Fixed
 
 - `/start` now needs at least one other player, instead of shrinking the game to a single seat that the link services reject.
