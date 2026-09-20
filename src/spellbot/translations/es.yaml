@@ -57,6 +57,7 @@ es:
     no_previous_game: "Aún no ha jugado ninguna partida en este servidor."
     run_in_game_channel: "Ejecute este comando en el canal de su partida."
     not_pending_here: "No está en ninguna partida pendiente en este canal."
+    start_needs_players: "Necesita al menos otro jugador antes de poder empezar una partida."
     unsupported_context: "Lo sentimos, ese comando no se admite en este contexto."
     already_in_channel: "Ya está en una partida en este canal."
     too_many_pending: "Está en demasiadas partidas pendientes para unirse a otra en este momento."

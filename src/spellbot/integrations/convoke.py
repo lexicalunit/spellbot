@@ -10,6 +10,7 @@ import httpx
 
 from spellbot import __version__, services
 from spellbot.enums import GameBracket, GameFormat
+from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -154,14 +155,16 @@ async def request_with_retries[T](request: Callable[[httpx.AsyncClient], Awaitab
             try:
                 return await request(client)
             except Exception as ex:
+                details = describe_http_error(ex)
                 is_final_attempt = attempt == RETRY_ATTEMPTS - 1
-                if is_final_attempt:
+                if is_final_attempt or is_terminal_client_error(ex):
                     add_span_error(ex)
-                    logger.exception("Convoke API failure (final attempt)")
+                    logger.exception("Convoke API failure. %s", details)
                     return None
                 logger.warning(
-                    "Convoke API issue (attempt %s)",
+                    "Convoke API issue (attempt %s). %s",
                     attempt + 1,
+                    details,
                     exc_info=True,
                 )
     return None

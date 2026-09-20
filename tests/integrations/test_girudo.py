@@ -7,6 +7,7 @@ import base64
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 
 from spellbot.enums import GameFormat
@@ -861,3 +862,44 @@ class TestGirudoGenerateLink:
         # Caches were already populated, so no fetch calls
         assert format_calls == 0
         assert tcg_calls == 0
+
+
+@pytest.mark.asyncio
+class TestGirudoTerminalClientErrors:
+    """A 4xx from Girudo is a bad request, so retrying it with another account is pointless."""
+
+    @staticmethod
+    def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
+        request = httpx.Request("POST", "https://api.girudo.com/game")
+        response = httpx.Response(status, text=body, request=request)
+        return httpx.HTTPStatusError(f"{status}", request=request, response=response)
+
+    async def run(self, monkeypatch: pytest.MonkeyPatch, error: Exception) -> int:
+        monkeypatch.setattr(
+            girudo,
+            "get_accounts",
+            lambda: [(GirudoTestData.AUTH_EMAIL, GirudoTestData.AUTH_PASSWORD)],
+        )
+        monkeypatch.setattr(girudo.settings, "GIRUDO_RETRY_ATTEMPTS", 3)
+        monkeypatch.setattr(girudo.settings, "GIRUDO_TIMEOUT_S", 5)
+
+        attempts = 0
+
+        async def mock_auth(client: Any, **kwargs: Any) -> str:
+            nonlocal attempts
+            attempts += 1
+            raise error
+
+        monkeypatch.setattr(girudo, "authenticate", mock_auth)
+        monkeypatch.setattr(girudo, "fetch_and_cache_formats", AsyncMock(return_value={}))
+        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", AsyncMock(return_value={}))
+
+        result = await girudo.generate_link(create_mock_game())
+        assert result.link is None
+        return attempts
+
+    async def test_400_is_not_retried(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        assert await self.run(monkeypatch, self.status_error(400, "bad request")) == 1
+
+    async def test_500_is_still_retried(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        assert await self.run(monkeypatch, self.status_error(500)) == 3

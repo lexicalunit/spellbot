@@ -57,6 +57,7 @@ en:
     no_previous_game: "You have not played a game in this guild yet."
     run_in_game_channel: "Please run this command in the same channel as your game."
     not_pending_here: "You're not in a pending game in this channel."
+    start_needs_players: "You need at least one other player before you can start a game."
     unsupported_context: "Sorry, that command is not supported in this context."
     already_in_channel: "You're already in a game in this channel."
     too_many_pending: "You're in too many pending games to join another one at this time."

@@ -57,6 +57,7 @@ pl:
     no_previous_game: "Jeszcze nie grałeś(-aś) w tej gildii."
     run_in_game_channel: "Uruchom tę komendę na kanale meczu."
     not_pending_here: "Nie jesteś w oczekującym meczu na tym kanale."
+    start_needs_players: "Potrzebujesz co najmniej jednego innego gracza, zanim rozpoczniesz mecz."
     unsupported_context: "Przepraszamy, ta komenda nie jest obsługiwana w tym kontekście."
     already_in_channel: "Jesteś już w meczu na tym kanale."
     too_many_pending: "Jesteś w zbyt wielu oczekujących meczach, aby dołączyć teraz do kolejnego."

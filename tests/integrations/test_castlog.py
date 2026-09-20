@@ -164,3 +164,55 @@ class TestReportMatch:
             result = await report_match({"players": []})
 
         assert result is None
+
+
+def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
+    request = httpx.Request("POST", "https://dev.api.castlog.gg/functions/v1/spellbot-webhook")
+    response = httpx.Response(status, text=body, request=request)
+    return httpx.HTTPStatusError(f"{status}", request=request, response=response)
+
+
+class TestCastlogTerminalClientErrors:
+    @pytest.mark.asyncio
+    async def test_400_is_not_retried(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=status_error(400, "malformed payload"))
+
+        with (
+            patch.object(castlog_module.settings, "CASTLOG_SECRET", "test-secret"),
+            patch.object(
+                castlog_module.settings,
+                "CASTLOG_ENDPOINT",
+                "https://dev.api.castlog.gg/functions/v1/spellbot-webhook",
+            ),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(castlog_module, "add_span_error"),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await report_match({"players": []})
+
+        assert result is None
+        assert mock_client.post.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_503_is_still_retried(self) -> None:
+        mock_client = MagicMock(spec=httpx.AsyncClient)
+        mock_client.post = AsyncMock(side_effect=status_error(503))
+
+        with (
+            patch.object(castlog_module.settings, "CASTLOG_SECRET", "test-secret"),
+            patch.object(
+                castlog_module.settings,
+                "CASTLOG_ENDPOINT",
+                "https://dev.api.castlog.gg/functions/v1/spellbot-webhook",
+            ),
+            patch("httpx.AsyncClient") as mock_client_class,
+            patch.object(castlog_module, "add_span_error"),
+        ):
+            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
+            result = await report_match({"players": []})
+
+        assert result is None
+        assert mock_client.post.call_count == castlog_module.RETRY_ATTEMPTS

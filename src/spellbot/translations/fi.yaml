@@ -57,6 +57,7 @@ fi:
     no_previous_game: "Et ole vielä pelannut yhtään peliä tässä killassa."
     run_in_game_channel: "Suorita tämä komento samalla kanavalla kuin pelisi."
     not_pending_here: "Et ole avoimessa pelissä tällä kanavalla."
+    start_needs_players: "Tarvitset vähintään yhden muun pelaajan, ennen kuin voit aloittaa pelin."
     unsupported_context: "Tätä komentoa ei valitettavasti tueta tässä yhteydessä."
     already_in_channel: "Olet jo pelissä tällä kanavalla."
     too_many_pending: "Sinulla on liian monta avointa peliä, etkä voi liittyä uuteen peliin juuri nyt."

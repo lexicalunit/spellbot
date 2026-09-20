@@ -1386,6 +1386,48 @@ class TestLookingForGameAction:
             ephemeral=True,
         )
 
+    async def test_execute_start_blocked_with_a_single_player(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """A game of one has no opponent, and the link services reject a one seat table."""
+        game_data = create_mock_game(game_id=42)
+        game_data.players = [create_mock_user(xid=100, name="Player1")]
+
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=game_data))
+        stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        shrink_stub = mocker.patch.object(services.games, "shrink_game", AsyncMock())
+        ready_stub = mocker.patch.object(action, "make_game_ready", AsyncMock())
+
+        await action.execute_start()
+
+        stub.assert_called_once_with(
+            action.interaction,
+            "You need at least one other player before you can start a game.",
+            ephemeral=True,
+        )
+        shrink_stub.assert_not_called()
+        ready_stub.assert_not_called()
+
+    async def test_execute_start_blocked_with_no_players(
+        self,
+        action: LookingForGameAction,
+        mocker: MockerFixture,
+    ) -> None:
+        """An empty queue is stopped by the same guard rather than shrinking to zero seats."""
+        game_data = create_mock_game(game_id=42)
+        game_data.players = []
+
+        mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=game_data))
+        stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        shrink_stub = mocker.patch.object(services.games, "shrink_game", AsyncMock())
+
+        await action.execute_start()
+
+        stub.assert_called_once()
+        shrink_stub.assert_not_called()
+
     async def test_execute_start_happy_path(
         self,
         action: LookingForGameAction,

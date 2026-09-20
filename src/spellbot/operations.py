@@ -38,6 +38,9 @@ from .utils import (
 # Error code that are due to user configuration issues that we can't work around.
 EXPECTED_DM_FAILURE_CODES = frozenset({CANT_SEND_CODE, NO_MUTUAL_GUILDS_CODE})
 
+# HTTP status Discord returns when it is throttling a resource we asked for.
+RATE_LIMITED_STATUS = 429
+
 # Common set of exceptions we suppress during Discord API operations.
 DISCORD_OP_EXCEPTIONS = (DiscordException, ClientOSError, NotFound)
 
@@ -52,6 +55,22 @@ logger = logging.getLogger(__name__)
 def is_discord_server_error(ex: BaseException) -> bool:
     """Check if this is a Discord server error (503, etc.) - transient infrastructure issue."""
     return isinstance(ex, discord.errors.DiscordServerError)
+
+
+def is_discord_rate_limited(ex: BaseException) -> bool:
+    """
+    Check if Discord is throttling us, so one occurrence is a warning rather than an error.
+
+    discord.py retries bucket limits with its own backoff, so a 429 that still reaches us is
+    one those retries could not clear. That makes a single 429 not worth paging over and not
+    worth retrying here, but it does not make it harmless: rate limiting is only diagnosable
+    in aggregate, and sustained 429s count toward Discord's invalid request limit for the
+    whole bot token. The volume is what matters, and the rate limit monitors watch it - see
+    `infrastructure/o11y/main.tf`. A lone occurrence is recorded as a warning, like a 503.
+    """
+    if isinstance(ex, discord.errors.RateLimited):
+        return True
+    return isinstance(ex, discord.errors.HTTPException) and ex.status == RATE_LIMITED_STATUS
 
 
 def ignore_exception_on_all_spans(ex: Exception, warning_type: str | None = None) -> None:
@@ -94,6 +113,9 @@ async def retry(
             # Always ignore Discord server errors (503s) - transient infrastructure issues
             if is_discord_server_error(ex):
                 ignore_exception_on_all_spans(ex, warning_type="discord_server_error")
+            # Discord throttling us: noise one at a time, alerted on by volume elsewhere
+            elif is_discord_rate_limited(ex):
+                ignore_exception_on_all_spans(ex, warning_type="discord_rate_limited")
             # Also ignore any caller-specified errors
             elif ignore_error is not None and ignore_error(ex):
                 ignore_exception_on_all_spans(ex)

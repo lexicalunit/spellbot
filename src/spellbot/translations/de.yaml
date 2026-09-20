@@ -57,6 +57,7 @@ de:
     no_previous_game: "Sie haben in dieser Gilde noch kein Spiel gespielt."
     run_in_game_channel: "Führen Sie diesen Befehl bitte im selben Kanal aus wie Ihr Spiel."
     not_pending_here: "Sie sind in keinem anstehenden Spiel in diesem Kanal."
+    start_needs_players: "Sie brauchen mindestens einen weiteren Spieler, bevor Sie ein Spiel starten können."
     unsupported_context: "Dieser Befehl wird in diesem Kontext leider nicht unterstützt."
     already_in_channel: "Sie sind bereits in einem anstehenden Spiel in diesem Kanal."
     too_many_pending: "Sie sind in zu vielen anstehenden Spielen, um zu diesem Zeitpunkt einem anderen beizutreten."

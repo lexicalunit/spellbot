@@ -52,6 +52,14 @@ class GuildMember(Base):
         index=True,
         doc="The external Discord ID of the guild",
     )
+    membership_checked_at = Column(
+        DateTime,
+        nullable=True,
+        doc=(
+            "UTC timestamp when this membership was last confirmed against the Discord API,"
+            " or NULL when it never has been"
+        ),
+    )
 
     def to_data(self) -> GuildMemberData:
         from spellbot.data import GuildMemberData  # allow_inline

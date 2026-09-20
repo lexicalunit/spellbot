@@ -133,18 +133,43 @@ def add_span_context(interaction: Any) -> None:  # pragma: no cover
             span.set_tag("guild_xid", str(guild_id))
 
 
+# Marks the one span per trace that carries a reported failure. ddtrace also flags every
+# span an exception propagated through, so counting error spans counts a single failure
+# several times over; alerting counts this tag instead. See `add_span_error`.
+REPORTED_ERROR_TAG = "spellbot.error.reported"
+
+# Longest error message we put on a span. Keeps a huge repr (an API body, say) from
+# dominating the trace view.
+MAX_SPAN_ERROR_MSG = 500
+
+
+def span_error_tags(ex: BaseException) -> dict[str, str]:
+    """
+    Build the tags describing `ex` for the root span of the trace it failed in.
+
+    The root span is where the trace view and the APM error rate read their error from, but
+    the exception itself was raised further down, so the root has to be told what happened.
+    Reporting the real type and message keeps that honest: naming every failure
+    `OperationalError` sent anyone reading a trace looking for a database fault, whatever had
+    actually gone wrong.
+    """
+    message = str(ex) or ex.__class__.__name__
+    if len(message) > MAX_SPAN_ERROR_MSG:
+        message = f"{message[:MAX_SPAN_ERROR_MSG]}… (truncated)"
+    return {
+        ERROR_TYPE: ex.__class__.__name__,
+        ERROR_MSG: message,
+        REPORTED_ERROR_TAG: "true",
+    }
+
+
 @skip_if_no_metrics
 def add_span_error(ex: BaseException) -> None:  # pragma: no cover
     if span := tracer.current_span():
         span.set_exc_info(ex.__class__, ex, getattr(ex, "__traceback__", None))
 
     if root := tracer.current_root_span():
-        root.set_tags(
-            {
-                ERROR_TYPE: "OperationalError",
-                ERROR_MSG: "An error occurred during bot operation",
-            },
-        )
+        root.set_tags(span_error_tags(ex))
         root.error = 1
 
 

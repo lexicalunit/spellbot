@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-from unittest.mock import ANY, AsyncMock, MagicMock, Mock
+from unittest.mock import ANY, AsyncMock, MagicMock, Mock, patch
 
 import discord
 import pytest
@@ -85,6 +85,55 @@ class TestOperationsRetry:
 
         with pytest.raises(discord.errors.DiscordServerError):
             await retry(func)
+
+    async def test_rate_limited_marked_as_warning(self) -> None:
+        response = MagicMock()
+        response.status = 429
+        error = discord.errors.HTTPException(
+            response,
+            {"code": 40062, "message": "Service resource is being rate limited."},
+        )
+
+        async def func() -> int:
+            raise error
+
+        with (
+            patch("spellbot.operations.ignore_exception_on_all_spans") as ignore,
+            pytest.raises(discord.errors.HTTPException),
+        ):
+            await retry(func)
+
+        ignore.assert_called_once_with(error, warning_type="discord_rate_limited")
+
+    async def test_rate_limited_exception_marked_as_warning(self) -> None:
+        error = discord.errors.RateLimited(retry_after=1.5)
+
+        async def func() -> int:
+            raise error
+
+        with (
+            patch("spellbot.operations.ignore_exception_on_all_spans") as ignore,
+            pytest.raises(discord.errors.RateLimited),
+        ):
+            await retry(func)
+
+        ignore.assert_called_once_with(error, warning_type="discord_rate_limited")
+
+    async def test_other_http_error_is_not_a_rate_limit_warning(self) -> None:
+        response = MagicMock()
+        response.status = 400
+        error = discord.errors.HTTPException(response, {"code": 50035, "message": "bad"})
+
+        async def func() -> int:
+            raise error
+
+        with (
+            patch("spellbot.operations.ignore_exception_on_all_spans") as ignore,
+            pytest.raises(discord.errors.HTTPException),
+        ):
+            await retry(func)
+
+        ignore.assert_not_called()
 
 
 @pytest.mark.asyncio

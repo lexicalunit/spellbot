@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 import aiohttp_jinja2
 import httpx
 from aiohttp import web
 from ddtrace.trace import tracer
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 
 from spellbot import services
 from spellbot.database import DatabaseSession, db_session_manager
@@ -29,6 +31,18 @@ routes = web.RouteTableDef()
 
 # How long a "Share this page" pre-signed link stays valid.
 SHARE_LINK_EXPIRE_MINUTES = 15
+
+# How long a membership Discord confirmed is trusted before asking again. Long on purpose:
+# this only decides a "left the server" badge on an analytics page, so an answer a few days
+# stale costs nothing, while asking Discord per player per page load costs rate limiting.
+MEMBERSHIP_TTL = timedelta(days=7)
+
+# These calls use the bot token, so a slow one holds a request open while spending the same
+# Discord budget the bot needs. Give up quickly rather than queue behind Discord.
+MEMBERSHIP_TIMEOUT_S = 5.0
+
+# Discord's "you are asking too often" status.
+RATE_LIMITED_STATUS = 429
 
 
 def has_valid_signature(request: web.Request, guild_xid: int) -> bool:
@@ -341,38 +355,70 @@ async def delete_guild_member(guild_xid: int, user_xid: int) -> None:
     )
 
 
-async def check_guild_member(guild_xid: int, user_xid: int) -> bool | None:
-    """
-    Check if a user is a member of a guild via the Discord REST API.
+class Membership(StrEnum):
+    """What one Discord membership check concluded."""
 
-    Returns:
-        True if the user is confirmed to be a member.
-        False if the user is confirmed to NOT be a member (404 response).
-        None if we couldn't determine membership status (errors, rate limits, etc).
+    MEMBER = "member"
+    LEFT = "left"
+    UNKNOWN = "unknown"
+    RATE_LIMITED = "rate_limited"
 
-    """
+
+async def recently_checked_members(guild_xid: int, user_xids: list[int]) -> set[int]:
+    """Return the xids among `user_xids` whose membership Discord confirmed recently."""
+    cutoff = datetime.now(UTC).replace(tzinfo=None) - MEMBERSHIP_TTL
+    rows = await DatabaseSession.execute(
+        select(GuildMember.user_xid).where(
+            GuildMember.guild_xid == guild_xid,
+            GuildMember.user_xid.in_(user_xids),
+            GuildMember.membership_checked_at.is_not(None),
+            GuildMember.membership_checked_at >= cutoff,
+        ),
+    )
+    return {row[0] for row in rows}
+
+
+async def mark_membership_checked(guild_xid: int, user_xid: int) -> None:
+    """Record that Discord confirmed this membership just now, starting a fresh TTL."""
+    await DatabaseSession.execute(
+        update(GuildMember)
+        .where(
+            GuildMember.guild_xid == guild_xid,
+            GuildMember.user_xid == user_xid,
+        )
+        .values(membership_checked_at=datetime.now(UTC).replace(tzinfo=None)),
+    )
+
+
+async def check_guild_member(
+    client: httpx.AsyncClient,
+    guild_xid: int,
+    user_xid: int,
+) -> Membership:
+    """Ask Discord whether a user is still a member of a guild."""
     headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"https://discord.com/api/v10/guilds/{guild_xid}/members/{user_xid}",
-                headers=headers,
-            )
-            if response.status_code == 200:
-                return True
-            if response.status_code == 404:
-                return False
-            # Any other status code (rate limit, server error, etc) - we can't be sure
-            logger.warning(
-                "check_guild_member unexpected status %s for %s/%s",
-                response.status_code,
-                guild_xid,
-                user_xid,
-            )
-            return None
+        response = await client.get(
+            f"https://discord.com/api/v10/guilds/{guild_xid}/members/{user_xid}",
+            headers=headers,
+        )
     except Exception as ex:
         logger.warning("check_guild_member failure for %s/%s: %s", guild_xid, user_xid, ex)
-        return None
+        return Membership.UNKNOWN
+    if response.status_code == 200:
+        return Membership.MEMBER
+    if response.status_code == 404:
+        return Membership.LEFT
+    if response.status_code == RATE_LIMITED_STATUS:
+        logger.warning("check_guild_member rate limited for %s/%s", guild_xid, user_xid)
+        return Membership.RATE_LIMITED
+    logger.warning(
+        "check_guild_member unexpected status %s for %s/%s",
+        response.status_code,
+        guild_xid,
+        user_xid,
+    )
+    return Membership.UNKNOWN
 
 
 async def check_membership_and_update(
@@ -380,25 +426,41 @@ async def check_membership_and_update(
     players: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """
-    Check membership for each player and mark those who have left.
+    Mark the players who have left the guild, asking Discord only about the stale ones.
 
-    Deletes GuildMember records for users who are confirmed to no longer be in the guild.
-    Only marks users as left when we get a definitive 404 from Discord API.
+    A membership Discord confirmed within `MEMBERSHIP_TTL` is reused instead of asked about
+    again, so repeatedly loading an analytics page costs no Discord calls at all. That
+    staleness is harmless here - it only decides a "left the server" badge - and asking per
+    player per page load is what made this page a source of rate limiting.
+
+    Deletes `GuildMember` records for users Discord definitively reports a 404 for. Anything
+    less than a 404 leaves the record alone, since an error is not evidence of leaving.
     """
-    results = []
-    for player in players:
-        user_xid = int(player["user_xid"])
-        is_member = await check_guild_member(guild_xid, user_xid)
-        player_copy = dict(player)
-        if is_member is False:
-            # Only mark as left when we get a definitive 404
-            player_copy["left_server"] = True
-            # Delete the stale GuildMember record
-            await delete_guild_member(guild_xid, user_xid)
-        else:
-            # User is confirmed member (True) or status unknown (None)
+    user_xids = [int(player["user_xid"]) for player in players]
+    fresh = await recently_checked_members(guild_xid, user_xids)
+
+    results: list[dict[str, Any]] = []
+    # Once Discord starts refusing, stop asking for the rest of this request. 429s count
+    # toward an invalid request budget for the whole bot token, so continuing to ask after
+    # the first refusal is how a slow page turns into a banned token.
+    rate_limited = False
+    async with httpx.AsyncClient(timeout=MEMBERSHIP_TIMEOUT_S) as client:
+        for player in players:
+            user_xid = int(player["user_xid"])
+            player_copy = dict(player)
             player_copy["left_server"] = False
-        results.append(player_copy)
+            if user_xid in fresh or rate_limited:
+                results.append(player_copy)
+                continue
+            membership = await check_guild_member(client, guild_xid, user_xid)
+            if membership is Membership.LEFT:
+                player_copy["left_server"] = True
+                await delete_guild_member(guild_xid, user_xid)
+            elif membership is Membership.MEMBER:
+                await mark_membership_checked(guild_xid, user_xid)
+            elif membership is Membership.RATE_LIMITED:
+                rate_limited = True
+            results.append(player_copy)
     return results
 
 

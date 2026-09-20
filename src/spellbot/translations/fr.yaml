@@ -57,6 +57,7 @@ fr:
     no_previous_game: "Vous n'avez pas encore joué de partie dans cette guilde."
     run_in_game_channel: "Veuillez exécuter cette commande dans le même canal que votre dernière partie."
     not_pending_here: "Vous n'êtes pas dans une partie en attente dans ce canal."
+    start_needs_players: "Il vous faut au moins un autre joueur avant de pouvoir lancer une partie."
     unsupported_context: "Désolés, cette commande n'est pas prise en charge dans ce contexte."
     already_in_channel: "Vous êtes déjà dans une partie dans ce canal."
     too_many_pending: "Vous avez déjà trop de parties en attente. Vous ne pouvez pas en rejoindre une autre pour le moment."

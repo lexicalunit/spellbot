@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 import httpx
 
 from spellbot.enums import GameFormat
+from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -386,17 +387,19 @@ async def generate_link(
                     return GirudoLinkDetails(link=link)
 
             except Exception as ex:
+                details = describe_http_error(ex)
                 is_final_attempt = attempt == retry_attempts - 1
-                if is_final_attempt:
+                if is_final_attempt or is_terminal_client_error(ex):
                     add_span_error(ex)
-                    logger.exception("Girudo API failure (final attempt, email=%s):", email)
+                    logger.exception("Girudo API failure (email=%s). %s", email, details)
                     return GirudoLinkDetails()
 
                 logger.warning(
-                    "Girudo API issue (attempt %s/%s, email=%s):",
+                    "Girudo API issue (attempt %s/%s, email=%s). %s",
                     attempt + 1,
                     retry_attempts,
                     email,
+                    details,
                     exc_info=True,
                 )
 

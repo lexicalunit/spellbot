@@ -57,6 +57,7 @@ da:
     no_previous_game: "Du har ikke spillet en kamp i denne guild endnu."
     run_in_game_channel: "Kør denne kommando i samme kanal som din kamp."
     not_pending_here: "Du er ikke i en afventende kamp i denne kanal."
+    start_needs_players: "Du skal bruge mindst én anden spiller, før du kan starte en kamp."
     unsupported_context: "Den kommando understøttes desværre ikke i denne sammenhæng."
     already_in_channel: "Du er allerede i gang med en kamp i denne kanal."
     too_many_pending: "Du er med i for mange igangværende kampe, så du kan ikke deltage i en ny lige nu."

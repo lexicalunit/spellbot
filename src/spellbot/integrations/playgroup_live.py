@@ -10,6 +10,7 @@ import httpx
 
 from spellbot import __version__
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -146,13 +147,15 @@ async def generate_link(
                     player_amount,
                 )
             except Exception as ex:
+                details = describe_http_error(ex)
                 add_span_error(ex)
-                if attempt == RETRY_ATTEMPTS - 1:
-                    logger.exception("Playgroup Live API failure (final attempt)")
+                if attempt == RETRY_ATTEMPTS - 1 or is_terminal_client_error(ex):
+                    logger.exception("Playgroup Live API failure. %s", details)
                     return None, None
                 logger.warning(
-                    "Playgroup Live API issue (attempt %s)",
+                    "Playgroup Live API issue (attempt %s). %s",
                     attempt + 1,
+                    details,
                     exc_info=True,
                 )
                 await asyncio.sleep(RETRY_BACKOFF_S * (2**attempt))
