@@ -14,7 +14,7 @@ import pytest_asyncio
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Guild
-from spellbot.services import alerts
+from spellbot.services import alerts, guilds
 from spellbot.web.api import admin_auth
 from spellbot.web.api import queues as queues_endpoint_mod
 from spellbot.web.api.queues import SPELLBOT_DEFAULT_LOGO, format_wait, language_name
@@ -37,6 +37,7 @@ NOW = datetime(2024, 6, 15, 12, 0, tzinfo=UTC)
 @pytest.fixture(autouse=True)
 def _clear_icon_fetch_throttle() -> None:
     queues_endpoint_mod._icon_fetch_attempts.clear()
+    queues_endpoint_mod.guild_icon_cache.clear()
 
 
 class TestFormatWait:
@@ -1746,3 +1747,92 @@ class TestQueuesAdminLink:
         assert "Logged in as" in body
         assert 'action="/logout?next=' in body
         assert 'class="filters__login"' not in body
+
+
+@pytest.mark.asyncio
+class TestGuildIconEndpoint:
+    async def test_redirects_to_stored_icon(self, client: WebClient, factories: Factories) -> None:
+        icon = "https://cdn.discordapp.com/icons/990001/abc.png?size=1024"
+        factories.guild.create(xid=990001, name="Iconic", icon=icon)
+
+        resp = await client.get("/g/990001/icon", allow_redirects=False)
+
+        assert resp.status == 302
+        assert resp.headers["Location"] == icon
+        assert resp.headers["Cache-Control"] == (
+            f"public, max-age={queues_endpoint_mod.GUILD_ICON_MAX_AGE}"
+        )
+
+    @pytest.mark.parametrize(
+        "fields",
+        [
+            pytest.param({"promote": False}, id="not-promoted"),
+            pytest.param({"banned": True}, id="banned"),
+        ],
+    )
+    async def test_hides_icon_of_unpromotable_guild(
+        self,
+        client: WebClient,
+        factories: Factories,
+        fields: dict[str, bool],
+    ) -> None:
+        icon = "https://cdn.discordapp.com/icons/990002/abc.png"
+        factories.guild.create(xid=990002, name="Private", icon=icon, **fields)
+
+        resp = await client.get("/g/990002/icon", allow_redirects=False)
+
+        assert resp.status == 302
+        assert resp.headers["Location"] == SPELLBOT_DEFAULT_LOGO
+
+    async def test_unknown_guild_gets_default_logo(self, client: WebClient) -> None:
+        with patch("spellbot.services.guilds.fetch_icon_url", new=AsyncMock()) as mock_fetch:
+            resp = await client.get("/g/990003/icon", allow_redirects=False)
+
+        assert resp.status == 302
+        assert resp.headers["Location"] == SPELLBOT_DEFAULT_LOGO
+        mock_fetch.assert_not_awaited()
+        assert resp.headers["Cache-Control"] == (
+            f"public, max-age={queues_endpoint_mod.GUILD_ICON_FALLBACK_MAX_AGE}"
+        )
+
+    async def test_backfills_missing_icon(self, client: WebClient, factories: Factories) -> None:
+        factories.guild.create(xid=990004, name="No Icon", icon=None)
+        fetched = "https://cdn.discordapp.com/icons/990004/fetched.png"
+
+        with patch(
+            "spellbot.services.guilds.fetch_icon_url",
+            new=AsyncMock(return_value=fetched),
+        ):
+            resp = await client.get("/g/990004/icon", allow_redirects=False)
+
+        assert resp.headers["Location"] == fetched
+        DatabaseSession.expire_all()
+        refreshed = await DatabaseSession.get(Guild, 990004)
+        assert refreshed
+        assert refreshed.icon == fetched
+
+    async def test_caches_icon(
+        self,
+        client: WebClient,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+    ) -> None:
+        freezer.move_to(NOW)
+        old = "https://cdn.discordapp.com/icons/990005/old.png"
+        new = "https://cdn.discordapp.com/icons/990005/new.png"
+        factories.guild.create(xid=990005, name="Changing", icon=old)
+        assert (await client.get("/g/990005/icon", allow_redirects=False)).headers[
+            "Location"
+        ] == old
+
+        await guilds.set_icon(990005, new)
+        resp = await client.get("/g/990005/icon", allow_redirects=False)
+        assert resp.headers["Location"] == old
+
+        freezer.move_to(NOW + queues_endpoint_mod.GUILD_ICON_CACHE_TTL)
+        resp = await client.get("/g/990005/icon", allow_redirects=False)
+        assert resp.headers["Location"] == new
+
+    async def test_non_numeric_guild_is_not_found(self, client: WebClient) -> None:
+        resp = await client.get("/g/nope/icon", allow_redirects=False)
+        assert resp.status == 404

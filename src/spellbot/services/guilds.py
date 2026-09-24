@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import httpx
 from sqlalchemy import select, update
@@ -166,6 +166,25 @@ async def get(guild_xid: int) -> GuildData | None:
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
     ).scalar_one_or_none()
     return await guild.to_data() if guild else None
+
+
+async def promoted_icon(guild_xid: int) -> dict[str, Any] | None:
+    """
+    Return `{guild_xid, guild_icon}` for a guild that may be shown on public pages.
+
+    Returns None when the guild is unknown, banned, or has opted out of promotion, so
+    public pages can't be used to look up icons for guilds that never agreed to it.
+    """
+    icon = (
+        await DatabaseSession.execute(
+            select(Guild.icon).where(
+                Guild.xid == guild_xid,  # type: ignore
+                Guild.banned.is_(False),
+                Guild.promote.is_(True),
+            ),
+        )
+    ).one_or_none()
+    return None if icon is None else {"guild_xid": guild_xid, "guild_icon": icon[0]}
 
 
 async def voice_category_prefixes(guild_xid: int) -> list[str]:

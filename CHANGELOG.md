@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Server logos on spellbot.io and in COMMUNITY.md now follow each server's own Discord icon, served through a new `/g/{guild}/icon` redirect, instead of images checked into the repo.
+
 ## [v21.11.1](https://github.com/lexicalunit/spellbot/releases/tag/v21.11.1) - 2026-09-24
 
 ### Changed

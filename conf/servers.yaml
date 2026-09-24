@@ -1,109 +1,99 @@
+# Featured servers shown on spellbot.io and in COMMUNITY.md.
+# Run `uv run python scripts/update_servers.py` after editing this file.
+#
+#   name:      display name
+#   guild_xid: Discord guild ID; the logo is the guild's current Discord icon
+#   url:       where the logo links to; prefer the community's website over an invite
+#   small:     optional, render the name in a smaller font
+#
+# Commented out servers need a `guild_xid` before they can be re-enabled.
 servers:
   - name: Tolarian Community College
-    logo: https://spellbot.io/assets/img/servers/tolarian-community-college.png
+    guild_xid: 574711449566445603
     url: https://www.patreon.com/tolariancommunitycollege
     small: true
   - name: cEDH
-    logo: https://spellbot.io/assets/img/servers/cedh.png
+    guild_xid: 1225118416298315857
     url: https://discord.com/invite/cedh
   - name: EDH Fight Club
-    logo: https://spellbot.io/assets/img/servers/edh-fight-club.png
+    guild_xid: 1229388601113051198
     url: https://discord.com/invite/9Z7x8dh6Tf
   - name: Comunidad Española de cEDH
-    logo: https://spellbot.io/assets/img/servers/comunidad-espanola-de-cedh.png
+    guild_xid: 1206898724266319882
     url: https://linktr.ee/cedhspain
     small: true
   - name: cEDH UK
-    logo: https://spellbot.io/assets/img/servers/cedh-uk.png
+    guild_xid: 1110129065152745505
     url: https://www.cedh.uk/
   - name: PlayEDH
-    logo: https://spellbot.io/assets/img/servers/playedh.png
+    guild_xid: 304276578005942272
     url: https://www.playedh.com/
   - name: Champ de Bataille
-    logo: https://spellbot.io/assets/img/servers/champ-de-bataille.png
+    guild_xid: 1350683295364550698
     url: https://discord.gg/3jwqduTkGZ
   - name: Play to Win
-    logo: https://spellbot.io/assets/img/servers/play-to-win.png
+    guild_xid: 682734915846275184
     url: https://www.playtowinmtg.com/
   - name: The Commander Staple
-    logo: https://spellbot.io/assets/img/servers/the-commander-staple.png
+    guild_xid: 675113113934364683
     url: https://discord.gg/commander
     small: true
   - name: Oath of the Gaywatch
-    logo: https://spellbot.io/assets/img/servers/oath-of-the-gaywatch.png
+    guild_xid: 757455940009328670
     url: https://disboard.org/server/757455940009328670
     small: true
   - name: EDH Tambayan
-    logo: https://spellbot.io/assets/img/servers/edh-tambayan.png
+    guild_xid: 750696719905456189
     url: https://www.facebook.com/EDHTambayan/
   - name: Women+ In Magic
-    logo: https://spellbot.io/assets/img/servers/women-in-magic.png
+    guild_xid: 1277548868552097812
     url: https://linktr.ee/women_in_magic
     small: true
   - name: Convoke
-    logo: https://spellbot.io/assets/img/servers/convoke.png
+    guild_xid: 1417960690110697504
     url: https://www.convoke.games/
   - name: MTG@Home
-    logo: https://spellbot.io/assets/img/servers/mtg-at-home.png
+    guild_xid: 689674672240984067
     url: https://discord.com/invite/mtg-home-689674672240984067
   - name: Top Tier Bangers
-    logo: https://spellbot.io/assets/img/servers/top-tier-bangers.png
+    guild_xid: 1255270514994184203
     url: https://discord.gg/CfCb9fmgCD
   # - name: CriticalEDH
-  #   logo: https://spellbot.io/assets/img/servers/criticaledh.png
   #   url: https://linktr.ee/CriticalEDH
   # - name: ka0s Tournaments
-  #   light_logo: https://github.com/lexicalunit/spellbot/assets/1903876/2f989560-b4c2-42e7-9708-0718913aecec
-  #   dark_logo: https://github.com/lexicalunit/spellbot/assets/1903876/104dc2da-4aad-4998-a778-479b54d1c600
   #   url: https://www.ka0stournaments.com/
   # - name: Combat Step
-  #   logo: https://github.com/lexicalunit/spellbot/assets/1903876/cc420426-7d3c-4829-b963-a63c7d36a253
   #   url: https://discord.gg/Jkn5FpTASv
   # - name: Commander en Español
-  #   logo: https://user-images.githubusercontent.com/1903876/140863856-00482a5a-7fe5-4cbb-8c4b-2442504925ea.jpg
   #   url: https://disboard.org/server/848414032398516264
   #   small: true
   # - name: The Nitpicking Nerds
-  #   logo: https://user-images.githubusercontent.com/1903876/140844623-8d8528a9-b60c-49c6-be0f-1d627b85adba.png
   #   url: https://www.patreon.com/NitpickingNerds
   # - name: Commander SpellTable (DE)
-  #   logo: https://user-images.githubusercontent.com/1903876/140845571-12e391d0-4cc8-4766-bf40-071f32503a7d.jpg
   #   url: https://disboard.org/server/752261529390284870
   #   small: true
   # - name: Budget Commander
-  #   logo: https://user-images.githubusercontent.com/1903876/192328539-a575bb6a-5a87-4766-92b3-8f94fbc17914.png
   #   url: https://discord.gg/Xc748UPh5B
   # - name: The Mages Guild
-  #   logo: https://user-images.githubusercontent.com/1903876/140845585-8053037f-a42b-4c1c-88f2-1b3c403fea09.jpg
   #   url: https://disboard.org/server/806995731268632596
   # - name: コマンドフェストオンライン
-  #   logo: https://user-images.githubusercontent.com/1903876/148895425-0c72426c-d7dd-4974-99d7-21949f80e893.png
   #   url: https://discord.gg/YeFrEqae3N
   #   small: true
   # - name: MTG let's play!!
-  #   logo: https://user-images.githubusercontent.com/1903876/147705994-909a94cc-ce70-431b-823a-127d257cdb52.png
   #   url: https://discord.gg/7gJDYU44gM
   # - name: Landfall
-  #   logo: https://user-images.githubusercontent.com/1903876/152042910-af34b521-bba2-43d1-a033-d7fd7c387673.png
   #   url: https://www.mtglandfall.com/
   # - name: Torre de Mando
-  #   logo: https://user-images.githubusercontent.com/1903876/148823767-5e1feb59-37d8-4340-ae23-148d8415699f.png
   #   url: https://discord.gg/Rgp3xaV7HU
   # - name: Your Virtual LGS
-  #   logo: https://user-images.githubusercontent.com/1903876/156637022-c8847db5-9cf5-4d00-a5b0-ecbaaec27802.jpg
   #   url: https://discord.gg/xcnRz86vkb
   # - name: Duel Commander
-  #   logo: https://spellbot.io/assets/img/servers/duel-commander.jpg
   #   url: https://www.mtgdc.info/
   # - name: Proxy Pirates
-  #   logo: https://spellbot.io/assets/img/servers/proxy-pirates.png
   #   url: https://discord.gg/bA5tf3Xc8M
   # - name: Turbo Commander
-  #   logo: https://spellbot.io/assets/img/servers/turbo-commander.png
   #   url: https://twitter.com/TurboDCommander
   # - name: Command the Cause
-  #   logo: https://spellbot.io/assets/img/servers/command-the-cause.png
   #   url: https://discord.gg/ZmPsjrxe4h
   # - name: Playing with Power
-  #   logo: https://spellbot.io/assets/img/servers/playing-with-power.png
   #   url: https://www.patreon.com/PlayingWithPowerMTG

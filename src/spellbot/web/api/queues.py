@@ -28,7 +28,14 @@ ICON_FETCH_TTL = timedelta(hours=6)
 STARTED_GAMES_WINDOW = services.queues.STARTED_GAMES_WINDOW
 PLAYED_GUILDS_WINDOW = timedelta(days=365)
 
+# `/g/{guild}/icon` cache lifetimes: in-process, then in browsers/CDNs
+GUILD_ICON_CACHE_TTL = timedelta(days=1)
+GUILD_ICON_MAX_AGE = int(GUILD_ICON_CACHE_TTL.total_seconds())
+# The fallback is cached briefly so a guild's icon shows up soon after we learn it
+GUILD_ICON_FALLBACK_MAX_AGE = 5 * 60
+
 _icon_fetch_attempts: dict[int, datetime] = {}
+guild_icon_cache: dict[int, tuple[datetime, str]] = {}
 
 routes = web.RouteTableDef()
 
@@ -163,6 +170,40 @@ async def queues_endpoint(request: web.Request) -> web.Response:
         "viewer": viewer,
     }
     return aiohttp_jinja2.render_template("queues.html.j2", request, context)
+
+
+@routes.get(r"/g/{guild}/icon")
+@tracer.wrap(name="web", resource="guild_icon")
+async def guild_icon_endpoint(request: web.Request) -> web.Response:
+    """
+    Redirect to a promoted guild's current Discord icon, or SpellBot's logo otherwise.
+
+    Lets the static site (spellbot.io, COMMUNITY.md) show server logos that follow the
+    guild's own Discord icon without checking images in. Hits are cached in-process so
+    site traffic mostly stays off the database.
+    """
+    add_span_request_id(generate_request_id())
+    try:
+        guild_xid = int(request.match_info["guild"])
+    except ValueError:
+        return web.Response(status=404)
+    now = datetime.now(UTC)
+    cached = guild_icon_cache.get(guild_xid)
+    if cached is not None and now - cached[0] < GUILD_ICON_CACHE_TTL:
+        icon: str | None = cached[1]
+    else:
+        async with db_session_manager():
+            row = await services.guilds.promoted_icon(guild_xid)
+            icon = None
+            if row is not None:
+                icon = row["guild_icon"] or (await _resolve_icons([row])).get(guild_xid)
+        # Only cache found guilds so the cache can't be grown by requesting random xids
+        if icon is not None:
+            guild_icon_cache[guild_xid] = (now, icon)
+    response = redirect(icon or SPELLBOT_DEFAULT_LOGO)
+    max_age = GUILD_ICON_MAX_AGE if icon else GUILD_ICON_FALLBACK_MAX_AGE
+    response.headers["Cache-Control"] = f"public, max-age={max_age}"
+    return response
 
 
 @routes.get("/queues.json")

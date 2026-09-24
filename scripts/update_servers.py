@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 SRC_ROOT = Path(realpath(__file__)).parent.parent
 SERVERS_FILE = SRC_ROOT / "conf" / "servers.yaml"
+DOCS_CONFIG_FILE = SRC_ROOT / "docs" / "_config.yml"
 COMMUNITY_MD_FILE = SRC_ROOT / "COMMUNITY.md"
 COMMUNITY_HTML_FILE = SRC_ROOT / "docs" / "community.html"
 LANDING_FILE = SRC_ROOT / "docs" / "index.html"
@@ -24,14 +25,26 @@ LANDING_FILE = SRC_ROOT / "docs" / "index.html"
 LANDING_SERVER_COUNT = 6
 
 
+# The Jekyll pages resolve the API base at build time, so `make dev` points them at a
+# local API. COMMUNITY.md is rendered by GitHub, so it always uses production.
+DOCS_API_BASE = "{{ site.spellbot_api }}"
+
+# Same fallback behavior as the live queues page, in case the icon can't load
+DOCS_IMG_ATTRS = (
+    'loading="lazy" onerror="this.onerror=null;this.src=\'/assets/img/avatar-icon.png\';"'
+)
+
+
 class Server(TypedDict):
     name: str  # server name
+    guild_xid: int  # Discord guild ID, the logo is the guild's current Discord icon
     url: str  # server url
     small: NotRequired[bool]  # server name should render with small font
-    # server should have either a logo or both dark/light logos
-    logo: NotRequired[str]  # server logo
-    dark_logo: NotRequired[str]  # server logo for dark mode
-    light_logo: NotRequired[str]  # server logo for light mode
+
+
+def logo_url(api_base: str, server: Server) -> str:
+    # Redirects to the guild's Discord icon, see `guild_icon_endpoint` in the web app
+    return f"{api_base}/g/{server['guild_xid']}/icon"
 
 
 def batched[T](iterable: Iterable[T], n: int) -> Generator[Sequence[T]]:
@@ -43,7 +56,7 @@ def batched[T](iterable: Iterable[T], n: int) -> Generator[Sequence[T]]:
         yield batch
 
 
-def update_community_md(servers: list[Server]) -> None:
+def update_community_md(servers: list[Server], api_base: str) -> None:
     with COMMUNITY_MD_FILE.open() as f:
         readme_text = f.read()
     lhs = readme_text.split("<!-- SERVERS BEGIN -->")[0]
@@ -55,8 +68,7 @@ def update_community_md(servers: list[Server]) -> None:
         for batch in batched(servers, 3):
             f.write("    <tr>\n")
             for server in batch:
-                logo = server.get("logo") or server.get("dark_logo")
-                assert logo is not None
+                logo = logo_url(api_base, server)
                 name = server["name"]
                 nbsp_name = name.replace(" ", "&nbsp;")
                 url = server["url"]
@@ -86,8 +98,7 @@ def update_community_html(servers: list[Server]) -> None:
         f.write("<!-- SERVERS BEGIN -->\n")
         f.write('    <div class="where">\n')
         for server in servers:
-            logo = server.get("logo") or server.get("light_logo")
-            assert logo is not None
+            logo = logo_url(DOCS_API_BASE, server)
             name = server["name"]
             nbsp_name = name.replace(" ", "&nbsp;")
             if server.get("small") or False:
@@ -97,7 +108,7 @@ def update_community_html(servers: list[Server]) -> None:
                 "        "
                 "<div>"
                 f'<a href="{url}">'
-                f'<img width="200" height="200" src="{logo}" alt="{name}" />'
+                f'<img width="200" height="200" src="{logo}" alt="{name}" {DOCS_IMG_ATTRS} />'
                 "<br />"
                 f"{nbsp_name}"
                 "</a>"
@@ -118,14 +129,13 @@ def update_landing(servers: list[Server]) -> None:
         f.write("<!-- LANDING SERVERS BEGIN -->\n")
         f.write('    <div class="logo-strip">\n')
         for server in servers[:LANDING_SERVER_COUNT]:
-            logo = server.get("logo") or server.get("light_logo")
-            assert logo is not None
+            logo = logo_url(DOCS_API_BASE, server)
             name = server["name"]
             url = server["url"]
             f.write(
                 "      "
                 f'<a href="{url}">'
-                f'<img src="{logo}" alt="{name}" width="200" height="200" />'
+                f'<img src="{logo}" alt="{name}" width="200" height="200" {DOCS_IMG_ATTRS} />'
                 "</a>\n",
             )
         f.write("    </div>\n")
@@ -137,6 +147,8 @@ if __name__ == "__main__":
     with SERVERS_FILE.open() as f:
         servers_data = yaml.safe_load(f)
     servers = servers_data["servers"]
-    update_community_md(servers)
+    with DOCS_CONFIG_FILE.open() as f:
+        prod_api_base = yaml.safe_load(f)["spellbot_api"]
+    update_community_md(servers, prod_api_base)
     update_community_html(servers)
     update_landing(servers)
