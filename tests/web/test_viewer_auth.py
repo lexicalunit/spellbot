@@ -67,21 +67,21 @@ class TestCanonicalHostRedirect:
         request = self.make_request("queues.spellbot.io", "/queues?my=1")
         resp = canonical_host_redirect(request)
         assert resp is not None
-        assert resp.location == "https://bot.spellbot.io/queues?my=1"
+        assert resp.headers["Location"] == "https://bot.spellbot.io/queues?my=1"
 
     def test_rejects_target_with_scheme(self, mocker: MockerFixture) -> None:
         mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
         request = self.make_request("queues.spellbot.io", "https://evil.example.com/x")
         resp = canonical_host_redirect(request)
         assert resp is not None
-        assert resp.location == "https://bot.spellbot.io/"
+        assert resp.headers["Location"] == "https://bot.spellbot.io/"
 
     def test_rejects_protocol_relative_target(self, mocker: MockerFixture) -> None:
         mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
         request = self.make_request("queues.spellbot.io", "//evil.example.com/x")
         resp = canonical_host_redirect(request)
         assert resp is not None
-        assert resp.location == "https://bot.spellbot.io/"
+        assert resp.headers["Location"] == "https://bot.spellbot.io/"
 
     def test_rejects_backslash_protocol_relative_target(self, mocker: MockerFixture) -> None:
         mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
@@ -90,7 +90,7 @@ class TestCanonicalHostRedirect:
         request = self.make_request("queues.spellbot.io", "/\\evil.example.com/x")
         resp = canonical_host_redirect(request)
         assert resp is not None
-        assert resp.location == "https://bot.spellbot.io/"
+        assert resp.headers["Location"] == "https://bot.spellbot.io/"
 
 
 class TestSafeRelativePath:

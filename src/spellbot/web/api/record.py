@@ -40,6 +40,7 @@ from spellbot.web.api.admin_auth import is_owner_request
 from spellbot.web.api.moderation import viewer_is_moderator
 from spellbot.web.api.oauth import safe_relative_path
 from spellbot.web.api.viewer_auth import get_viewer
+from spellbot.web.tools import redirect
 
 logger = logging.getLogger(__name__)
 
@@ -560,7 +561,7 @@ async def resolve_block_target(raw: str) -> tuple[int | None, str | None]:
     return xid, None
 
 
-def block_error_redirect(user_xid: int, code: str) -> web.HTTPFound:
+def block_error_redirect(user_xid: int, code: str) -> web.Response:
     """
     Redirect back to the profile page flagging a block validation error by code.
 
@@ -569,7 +570,7 @@ def block_error_redirect(user_xid: int, code: str) -> web.HTTPFound:
     the URL, never user-supplied text.
     """
     safe_code = code if code in BLOCK_ERRORS else "invalid"
-    return web.HTTPFound(f"/u/{int(user_xid)}?{urlencode({'block_error': safe_code})}")
+    return redirect(f"/u/{int(user_xid)}?{urlencode({'block_error': safe_code})}")
 
 
 async def user_block_add_impl(request: web.Request) -> web.Response:
@@ -590,7 +591,7 @@ async def user_block_add_impl(request: web.Request) -> web.Response:
     await services.users.ensure_exists(user_xid)
     await services.users.ensure_exists(target_xid)
     await services.users.block(user_xid, target_xid)
-    return web.HTTPFound(f"/u/{user_xid}")
+    return redirect(f"/u/{user_xid}")
 
 
 @routes.post(r"/u/{user}/blocks/add")
@@ -611,7 +612,7 @@ async def user_block_remove_impl(request: web.Request) -> web.Response:
     if not await viewer_owns_profile(request, user_xid):
         return web.Response(status=403, text="Forbidden")
     await services.users.unblock(user_xid, target_xid)
-    return web.HTTPFound(f"/u/{user_xid}")
+    return redirect(f"/u/{user_xid}")
 
 
 @routes.post(r"/u/{user}/blocks/{target}/remove")
@@ -736,7 +737,7 @@ async def guild_awards_impl(request: web.Request) -> web.Response:
 
     is_logged_in, is_moderator = await viewer_access(request, guild_xid)
     if not is_logged_in:
-        return web.HTTPFound(login_url(request))
+        return redirect(login_url(request))
     if not is_moderator:
         return web.Response(status=403, text="Forbidden")
 
@@ -772,7 +773,7 @@ async def guild_promote_impl(request: web.Request) -> web.Response:
     form = await request.post()
     promote = form.get("promote") == "true"
     await services.guilds.set_promote(guild_xid, promote)
-    return web.HTTPFound(f"/g/{guild_xid}")
+    return redirect(f"/g/{guild_xid}")
 
 
 @routes.post(r"/g/{guild}/promote")
@@ -795,7 +796,7 @@ async def guild_settings_impl(request: web.Request) -> web.Response:
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
         await services.guilds.update_settings(guild_xid, **parse_guild_settings(form))
-    return web.HTTPFound(f"/g/{guild_xid}")
+    return redirect(f"/g/{guild_xid}")
 
 
 @routes.post(r"/g/{guild}/settings")
@@ -806,7 +807,7 @@ async def guild_settings_endpoint(request: web.Request) -> web.StreamResponse:
         return await guild_settings_impl(request)
 
 
-def award_error_redirect(guild_xid: int, code: str) -> web.HTTPFound:
+def award_error_redirect(guild_xid: int, code: str) -> web.Response:
     """
     Redirect back to the guild page flagging an award validation error by code.
 
@@ -817,7 +818,7 @@ def award_error_redirect(guild_xid: int, code: str) -> web.HTTPFound:
     location = f"/g/{int(guild_xid)}/awards"
     if code in AWARD_ERRORS:
         location = f"{location}?{urlencode({'award_error': code})}"
-    return web.HTTPFound(location)
+    return redirect(location)
 
 
 async def award_add_impl(request: web.Request) -> web.Response:
@@ -843,7 +844,7 @@ async def award_add_impl(request: web.Request) -> web.Response:
         verified_only=values["verified_only"],
         unverified_only=values["unverified_only"],
     )
-    return web.HTTPFound(f"/g/{guild_xid}/awards")
+    return redirect(f"/g/{guild_xid}/awards")
 
 
 @routes.post(r"/g/{guild}/awards/add")
@@ -881,7 +882,7 @@ async def award_update_impl(request: web.Request) -> web.Response:
     )
     if updated is None:
         return web.Response(status=404)
-    return web.HTTPFound(f"/g/{guild_xid}/awards")
+    return redirect(f"/g/{guild_xid}/awards")
 
 
 @routes.post(r"/g/{guild}/awards/{award}/update")
@@ -903,7 +904,7 @@ async def award_delete_impl(request: web.Request) -> web.Response:
         return web.Response(status=403, text="Forbidden")
     if not await services.guilds.award_delete(guild_xid, award_id):
         return web.Response(status=404)
-    return web.HTTPFound(f"/g/{guild_xid}/awards")
+    return redirect(f"/g/{guild_xid}/awards")
 
 
 @routes.post(r"/g/{guild}/awards/{award}/delete")
@@ -927,7 +928,7 @@ async def channel_settings_impl(request: web.Request) -> web.Response:
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
         await services.channels.update_settings(channel_xid, **parse_channel_settings(form))
-    return web.HTTPFound(f"/g/{guild_xid}/c/{channel_xid}")
+    return redirect(f"/g/{guild_xid}/c/{channel_xid}")
 
 
 @routes.post(r"/g/{guild}/c/{channel}/settings")
@@ -950,7 +951,7 @@ async def channel_forget_impl(request: web.Request) -> web.Response:
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
         await services.channels.forget(channel_xid)
-    return web.HTTPFound(f"/g/{guild_xid}")
+    return redirect(f"/g/{guild_xid}")
 
 
 @routes.post(r"/g/{guild}/c/{channel}/forget")

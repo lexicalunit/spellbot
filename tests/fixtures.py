@@ -493,6 +493,25 @@ async def use_consistent_date(freezer: FreezeTimeFactory) -> None:
 
 
 @pytest.fixture(autouse=True)
+def disable_integrations() -> Generator[None]:
+    """
+    Clear integration credentials that `Settings` may have loaded from a local `.env`.
+
+    Otherwise tests make real requests to third-party services on developer machines
+    while silently skipping them in CI. Tests that exercise an integration patch the
+    credentials they need themselves.
+    """
+    with (
+        patch.object(runtime_settings, "CASTLOG_ENDPOINT", ""),
+        patch.object(runtime_settings, "CASTLOG_SECRET", None),
+        patch.object(runtime_settings, "CONVOKE_API_KEY", None),
+        patch.object(runtime_settings, "EDHLAB_API_KEY", None),
+        patch.object(runtime_settings, "PLAYGROUP_LIVE_API_KEY", None),
+    ):
+        yield
+
+
+@pytest.fixture(autouse=True)
 def clear_guild_cache() -> None:
     guild_cache.clear()
 

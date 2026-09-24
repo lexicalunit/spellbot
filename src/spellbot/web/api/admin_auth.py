@@ -25,6 +25,7 @@ from spellbot.web.api.oauth import (
     fetch_oauth_identify,
     parse_user_xid,
 )
+from spellbot.web.tools import redirect
 
 if TYPE_CHECKING:
     from aiohttp.typedefs import Handler
@@ -129,7 +130,7 @@ async def admin_auth_middleware(
     if path in PUBLIC_ADMIN_PATHS:
         return await handler(request)
     if await get_admin_user_xid(request) is None:
-        return web.HTTPFound("/admin/login")
+        return redirect("/admin/login")
     return await handler(request)
 
 
@@ -155,7 +156,7 @@ async def admin_login(request: web.Request) -> web.StreamResponse:
         "redirect_uri": oauth_redirect_uri(),
         "state": state,
     }
-    return web.HTTPFound(f"{DISCORD_AUTHORIZE_URL}?{urlencode(params)}")
+    return redirect(f"{DISCORD_AUTHORIZE_URL}?{urlencode(params)}")
 
 
 @routes.get("/admin/oauth/callback")
@@ -204,7 +205,7 @@ async def admin_oauth_callback(request: web.Request) -> web.StreamResponse:
     session = await new_session(request)
     session[ADMIN_XID_KEY] = xid
     session[ADMIN_NAME_KEY] = display_name(user, xid)
-    return web.HTTPFound("/admin/dashboard")
+    return redirect("/admin/dashboard")
 
 
 @routes.post("/admin/logout")
@@ -212,4 +213,4 @@ async def admin_logout(request: web.Request) -> web.StreamResponse:
     """Clear the admin session."""
     session = await get_session(request)
     session.invalidate()
-    return web.HTTPFound("/admin/login?logged_out=1")
+    return redirect("/admin/login?logged_out=1")

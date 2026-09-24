@@ -18,6 +18,7 @@ from spellbot.web.api.record import (
     service_choices,
     viewer_access,
 )
+from spellbot.web.tools import redirect
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -91,7 +92,7 @@ async def impl(request: web.Request, *, is_channel: bool) -> web.StreamResponse:
 
     is_logged_in, is_moderator = await viewer_access(request, guild_xid)
     if not is_logged_in:
-        return web.HTTPFound(login_url(request))
+        return redirect(login_url(request))
     if not is_moderator:
         return web.Response(status=403, text="Forbidden")
 

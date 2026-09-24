@@ -21,6 +21,7 @@ from spellbot.models import Guild, GuildMember
 from spellbot.settings import settings
 from spellbot.utils import generate_signed_url, validate_signature
 from spellbot.web.api.record import login_url, request_is_moderator, viewer_access
+from spellbot.web.tools import redirect
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -130,7 +131,7 @@ async def analytics_endpoint(request: web.Request) -> web.StreamResponse:
     if not is_shared and settings.CHECK_SIGNATURE:
         is_logged_in, is_moderator = await viewer_access(request, guild_xid)
         if not is_logged_in:
-            return web.HTTPFound(login_url(request))
+            return redirect(login_url(request))
         if not is_moderator:
             return web.Response(status=403, text="Forbidden")
 

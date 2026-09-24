@@ -2057,12 +2057,12 @@ class TestWebGuildAwards:
 class TestAwardErrorRedirect:
     def test_known_code_is_passed_through(self) -> None:
         resp = record.award_error_redirect(123, "no_role")
-        assert resp.location == "/g/123/awards?award_error=no_role"
+        assert resp.headers["Location"] == "/g/123/awards?award_error=no_role"
 
     def test_unknown_code_is_dropped(self) -> None:
         # An unrecognized code must never be reflected into the redirect URL.
         resp = record.award_error_redirect(123, "totally-bogus")
-        assert resp.location == "/g/123/awards"
+        assert resp.headers["Location"] == "/g/123/awards"
 
 
 @pytest.mark.asyncio
