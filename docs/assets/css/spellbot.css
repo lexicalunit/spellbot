@@ -293,7 +293,9 @@ main section.level2 > ul {
 .logo-strip img {
   width: 72px;
   height: 72px;
-  border-radius: 12px;
+  border-radius: 24%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.04);
   /* Muted at rest so the row reads as one texture rather than a clash of 18
      different brand palettes, and resolves on hover. */
   opacity: 0.75;
@@ -486,8 +488,9 @@ p.note:before {
   max-width: 150px;
   height: auto;
   aspect-ratio: 1;
-  object-fit: contain;
-  border-radius: 10px;
+  object-fit: cover;
+  border-radius: 24%;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* The whole tile lifts on hover, so the image itself stays put. */
