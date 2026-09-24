@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 import httpx
-from aiohttp import web
 from yarl import URL
 
 from spellbot.settings import settings
+from spellbot.web.tools import redirect
+
+if TYPE_CHECKING:
+    from aiohttp import web
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +41,7 @@ def safe_relative_path(raw: str | None) -> str | None:
     return normalized
 
 
-def canonical_host_redirect(request: web.Request) -> web.HTTPFound | None:
+def canonical_host_redirect(request: web.Request) -> web.Response | None:
     # If `request` arrived on a non-canonical host (e.g. via a vanity domain alias
     # like `queues.spellbot.io`), return a redirect to the same path+query on
     # `settings.API_BASE_URL`. This keeps the session cookie on a single origin so
@@ -58,8 +61,8 @@ def canonical_host_redirect(request: web.Request) -> web.HTTPFound | None:
     raw_target = str(request.rel_url).replace("\\", "/")
     parsed = urlparse(raw_target)
     if parsed.scheme or parsed.netloc or raw_target.startswith("//"):
-        return web.HTTPFound(str(base_url.with_path("/")))
-    return web.HTTPFound(str(base_url.with_path(parsed.path).with_query(parsed.query)))
+        return redirect(str(base_url.with_path("/")))
+    return redirect(str(base_url.with_path(parsed.path).with_query(parsed.query)))
 
 
 async def fetch_oauth_identify(code: str, redirect_uri: str) -> dict[str, Any] | None:

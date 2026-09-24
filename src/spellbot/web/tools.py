@@ -5,13 +5,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, cast
 
+from aiohttp import web
+
 from spellbot.redis_client import get_redis
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
-
-    from aiohttp import web
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,16 @@ if tonumber(current) == 1 then
 end
 return current
 """
+
+
+def redirect(location: str) -> web.Response:
+    """
+    Build a 302 redirect response.
+
+    Returning `web.HTTPFound` is deprecated by aiohttp and raising it would skip
+    middlewares like `security_headers_middleware`, so return a plain response instead.
+    """
+    return web.Response(status=302, headers={"Location": location})
 
 
 async def rate_limited(request: web.Request, key: str | None = None) -> bool:

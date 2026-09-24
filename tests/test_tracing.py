@@ -33,6 +33,14 @@ class TestConfigureTracing:
         processors = mock_tracer.configure.call_args.kwargs["trace_processors"]
         assert len(processors) == 1
 
+    @pytest.mark.parametrize("enabled", [True, False])
+    def test_preserves_enabled_state(self, enabled: bool) -> None:
+        with patch("ddtrace.trace.tracer") as mock_tracer:
+            mock_tracer.enabled = enabled
+            mock_tracer.configure.side_effect = lambda **_: setattr(mock_tracer, "enabled", True)
+            configure_tracing()
+        assert mock_tracer.enabled is enabled
+
     def test_filter_drops_empty_resource_spans(self) -> None:
         with patch("ddtrace.trace.tracer") as mock_tracer:
             configure_tracing()

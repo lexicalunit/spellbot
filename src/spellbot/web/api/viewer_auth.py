@@ -23,6 +23,7 @@ from spellbot.web.api.oauth import (
     parse_user_xid,
     safe_relative_path,
 )
+from spellbot.web.tools import redirect
 
 if TYPE_CHECKING:
     from aiohttp_session import Session
@@ -132,7 +133,7 @@ async def viewer_login(request: web.Request) -> web.StreamResponse:
         "redirect_uri": viewer_oauth_redirect_uri(),
         "state": state,
     }
-    return web.HTTPFound(f"{DISCORD_AUTHORIZE_URL}?{urlencode(params)}")
+    return redirect(f"{DISCORD_AUTHORIZE_URL}?{urlencode(params)}")
 
 
 @routes.get("/queues/oauth/callback")
@@ -179,7 +180,7 @@ async def viewer_oauth_callback(request: web.Request) -> web.StreamResponse:
     await grant_admin_if_authorized(session, user, xid)
     # Return to the page the viewer started from, when one was safely recorded.
     next_path = safe_relative_path(session.pop(VIEWER_NEXT_KEY, None))
-    return web.HTTPFound(next_path or VIEWER_REDIRECT_AFTER_LOGIN)
+    return redirect(next_path or VIEWER_REDIRECT_AFTER_LOGIN)
 
 
 @routes.post("/logout")
@@ -199,4 +200,4 @@ async def viewer_logout(request: web.Request) -> web.StreamResponse:
     session = await get_session(request)
     session.invalidate()
     next_path = safe_relative_path(request.query.get("next"))
-    return web.HTTPFound(next_path or VIEWER_REDIRECT_AFTER_LOGOUT)
+    return redirect(next_path or VIEWER_REDIRECT_AFTER_LOGOUT)

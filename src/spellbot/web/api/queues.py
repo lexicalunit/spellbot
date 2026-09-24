@@ -18,6 +18,7 @@ from spellbot.i18n import normalize_locale
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.settings import settings
 from spellbot.web.api.viewer_auth import get_viewer
+from spellbot.web.tools import redirect
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -252,7 +253,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         return web.Response(status=404)
     viewer_xid, viewer_name = await get_viewer(request)
     if viewer_xid is None:
-        return web.HTTPFound(f"/queues/login?next=/queues/g/{guild_xid}")
+        return redirect(f"/queues/login?next=/queues/g/{guild_xid}")
     async with db_session_manager():
         guild = await services.queues.guild_summary(guild_xid)
         if guild is None:
@@ -342,14 +343,14 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
         return web.Response(status=404)
     viewer_xid, _ = await get_viewer(request)
     if viewer_xid is None:
-        return web.HTTPFound(f"/queues/login?next=/queues/g/{guild_xid}")
+        return redirect(f"/queues/login?next=/queues/g/{guild_xid}")
     form = await request.post()
     if form.get("off"):
         async with db_session_manager():
             await services.alerts.delete(guild_xid, viewer_xid)
         if wants_json(request):
             return web.json_response({"ok": True, "off": True})
-        return web.HTTPFound(f"/queues/g/{guild_xid}")
+        return redirect(f"/queues/g/{guild_xid}")
     formats = parse_notify_values(form.getall("formats", []), VALID_FORMAT_VALUES)
     brackets = parse_notify_values(form.getall("brackets", []), VALID_BRACKET_VALUES)
     active_hours_raw = parse_active_hours_form(form)
@@ -393,4 +394,4 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
                 "active_hours": saved.active_hours,
             },
         )
-    return web.HTTPFound(f"/queues/g/{guild_xid}")
+    return redirect(f"/queues/g/{guild_xid}")

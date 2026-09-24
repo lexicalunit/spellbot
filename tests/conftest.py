@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ddtrace.trace import tracer
+
 if TYPE_CHECKING:
     import pytest
 
@@ -31,6 +33,11 @@ def pytest_collection_modifyitems(
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    # Keep spans from being flushed to a Datadog agent that doesn't exist. Setting
+    # `DD_TRACE_ENABLED` here would be too late, ddtrace's pytest plugin has already
+    # imported ddtrace and read its config by the time this conftest loads.
+    tracer.enabled = False
+
     config.addinivalue_line("markers", "use_db: mark tests that use the database")
     config.addinivalue_line(
         "markers",
