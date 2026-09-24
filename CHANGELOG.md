@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated dependencies.
 - Group vitest and peer dependencies in dependabot config.
 
+### Fixed
+
+- Ensure ddtrace is disabled for test suite.
+
 ## [v21.11.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.11.0) - 2026-09-19
 
 ### Fixed

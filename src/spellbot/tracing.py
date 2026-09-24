@@ -41,4 +41,7 @@ def configure_tracing() -> None:
             kept = [span for span in trace if not is_empty_resource(span)]
             return kept or None
 
+    # `configure()` force-enables the tracer, which would override `DD_TRACE_ENABLED=false`
+    enabled = tracer.enabled
     tracer.configure(trace_processors=[DropEmptyResource()])
+    tracer.enabled = enabled
