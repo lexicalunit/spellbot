@@ -53,6 +53,13 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+      # @vitest/* packages peer-depend on the exact same vitest version, so they
+      # must always be bumped together (including majors); listed before the
+      # catch-all groups since dependabot uses the first matching group
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
       # major bumps stay ungrouped so they can be reviewed one at a time;
       # prod and dev are split so each PR keeps its own commit-message prefix
       frontend:

@@ -21,12 +21,15 @@
     "jquery": "^4.0.0"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.1",
     "license-checker-evergreen": "^6.3.1",
     "oxfmt": "^0.67.0",
     "oxlint": "^1.82.0",
     "prettier": "^3.9.6",
     "prettier-plugin-jinja-template": "^2.2.0",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.1"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
   }
 }
