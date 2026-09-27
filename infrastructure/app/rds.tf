@@ -4,7 +4,7 @@ module "aurora_cluster" {
 
   name                        = "spellbot-aurora"
   engine                      = "aurora-postgresql"
-  engine_version              = "17.7"
+  engine_version              = "17.9"
   master_username             = "postgres"
   manage_master_user_password = true
 

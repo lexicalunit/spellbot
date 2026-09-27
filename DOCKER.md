@@ -7,7 +7,7 @@ SpellBot can be run directly from docker so that you don't have to worry about i
 You can quickly get a PostgreSQL Database running locally with `docker`:
 
 ```shell
-docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.5
+docker run -i --rm -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.9
 ```
 
 You should then be able to connect to this database using `psql`:
