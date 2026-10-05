@@ -78,12 +78,6 @@ fr:
     award_failure_give: "Impossible de donner le rôle %{role} à l'utilisateur <@%{user_id}>"
     award_failure_take: "Impossible de prendre le rôle %{role} de l'utilisateur <@%{user_id}>"
     mythic_track: "Suivez votre partie sur %{emoji}[Mythic Track](%{link}) grâce au code PIN : `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Un ou plusieurs utilisateurs que vous surveillez ont rejoint une partie"
-    jump_to_game: "[⇤ Aller sur la publication du jeu](%{link})"
-    users_header: "**Utilisateurs :**"
-    game_id: "ID de jeu"
   # Button labels
   button:
     join: "Rejoignez cette partie !"
@@ -95,7 +89,6 @@ fr:
     channels_title: "Configuration des canaux de %{guild}"
     setup_title: "Configuration de SpellBot pour %{guild}"
     setup_description: "SpellBot aide votre communauté à trouver et à jouer à la magie : les jeux de Collecte ensemble. Pour configurer votre serveur, les canaux et les récompenses des joueurs, visitez le tableau de bord du SpellBot.\n\n[Configurer le SpellBot →](%{link})"
-    page: "page %{current} sur %{total}"
     user_move_error: "Erreur : %{error}"
     user_moved: "L'utilisateur %{from_user} a été déplacé dans %{to_user}"
     expire_dequeued: "├── %{count} joueurs sortis de file d'attente"
@@ -119,10 +112,6 @@ fr:
     user_info_verified_yes: "✅ Vérifié"
     user_info_verified_no: "❌ Non vérifié"
     user_info_verified: "Vérifié"
-    user_info_watched_with_note: "⚠️ Surveillé : %{note}"
-    user_info_watched: "⚠️ Surveillé"
-    user_info_not_watched: "Non surveillé"
-    user_info_watch_status: "Statut de surveillance"
     user_info_no_games: "Aucunes parties jouées"
     user_info_play_range: "Plage de jeu"
     user_info_game_history: "Historique des parties"
@@ -152,13 +141,6 @@ fr:
   verify:
     verified: "Utilisateur <@%{user_id}> vérifié."
     unverified: "Utilisateur <@%{user_id}> non vérifié."
-  # Watch action messages
-  watch_action:
-    provide_target: "Vous devez fournir un utilisateur cible ou son ID."
-    invalid_id: "L'ID doit être un entier valide."
-    watching: "Vous surveillez <@%{user_id}>."
-    not_watching: "Vous ne surveillez plus <@%{user_id}>."
-    list_title: "Liste des joueurs surveillés sur ce serveur"
   # Score action messages
   score:
     record_title: "Historique des parties jouées"

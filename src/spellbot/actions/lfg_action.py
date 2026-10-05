@@ -953,46 +953,6 @@ class LookingForGameAction(BaseAction):
             warning = t("lfg.dm_failures", locale=guild_locale_fallback, players=failures)
             await safe_followup_channel(self.interaction, warning)
 
-        await self.handle_watched_players(game_data, player_xids)
-
-    @tracer.wrap()
-    async def handle_watched_players(self, game_data: GameData, player_xids: list[int]) -> None:
-        """Notify moderators about watched players."""
-        assert self.interaction.guild
-        locale = game_data.locale
-        mod_role: discord.Role | None = None
-        for role in self.interaction.guild.roles:
-            if role.name.startswith(settings.MOD_PREFIX):
-                mod_role = role
-                break
-
-        if not mod_role:
-            return
-
-        watch_notes = await services.games.watch_notes(game_data, player_xids)
-        if not watch_notes:
-            return
-
-        embed = discord.Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
-        embed.set_author(name=t("watch.title", locale=locale))
-        embed.color = settings.INFO_EMBED_COLOR
-        description = ""
-        for jump_link in game_data.jump_links.values():
-            description += t("watch.jump_to_game", locale=locale, link=jump_link) + "\n"
-        description += f"\n\n{t('watch.users_header', locale=locale)}"
-        for user_xid, note in watch_notes.items():
-            description += f"\n• <@{user_xid}>: {note}"
-        embed.description = description
-        embed.add_field(
-            name=t("watch.game_id", locale=locale),
-            value=f"SB{game_data.id}",
-            inline=False,
-        )
-
-        for member in mod_role.members:
-            await safe_send_user(member, embed=embed)
-
     @tracer.wrap()
     async def ensure_users_exist(
         self,

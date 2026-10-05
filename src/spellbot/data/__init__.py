@@ -21,7 +21,6 @@ from spellbot.data.queue_data import QueueData
 from spellbot.data.token_data import TokenData
 from spellbot.data.user_data import PlayerDataDict, UserData
 from spellbot.data.verify_data import VerifyData
-from spellbot.data.watch_data import WatchData
 
 __all__ = [
     "AlertData",
@@ -43,5 +42,4 @@ __all__ = [
     "UserAwardData",
     "UserData",
     "VerifyData",
-    "WatchData",
 ]

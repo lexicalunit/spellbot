@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from ddtrace.trace import tracer
 from sqlalchemy import delete, func, select, update
@@ -22,7 +22,6 @@ from spellbot.models import (
     User,
     UserAward,
     Verify,
-    Watch,
 )
 from spellbot.settings import settings
 
@@ -305,47 +304,6 @@ async def unblock(author_xid: int, target_xid: int) -> None:
 
 
 @tracer.wrap()
-async def watch(guild_xid: int, user_xid: int, note: str | None = None) -> None:
-    """Add the given user to the moderator watch list for a guild."""
-    values: dict[str, Any] = {
-        "guild_xid": guild_xid,
-        "user_xid": user_xid,
-    }
-    upsert = insert(Watch).values(**values)
-    if note:
-        max_note_len = Watch.note.property.columns[0].type.length
-        values["note"] = note[:max_note_len]
-        upsert = upsert.on_conflict_do_update(
-            constraint="watches_pkey",
-            index_where=and_(
-                Watch.guild_xid == values["guild_xid"],
-                Watch.user_xid == values["user_xid"],
-            ),
-            set_={"note": upsert.excluded.note},
-        )
-    else:
-        upsert = upsert.on_conflict_do_nothing()
-    await DatabaseSession.execute(upsert, values)
-    await DatabaseSession.commit()
-
-
-@tracer.wrap()
-async def unwatch(guild_xid: int, user_xid: int) -> None:
-    """Remove the given user from the moderator watch list for a guild."""
-    await DatabaseSession.execute(
-        delete(Watch)
-        .where(
-            and_(
-                Watch.guild_xid == guild_xid,
-                Watch.user_xid == user_xid,
-            ),
-        )
-        .execution_options(synchronize_session=False),
-    )
-    await DatabaseSession.commit()
-
-
-@tracer.wrap()
 async def blocklist(user_xid: int) -> list[UserData]:
     """Return the list of user ids that the given user has blocked."""
     return [
@@ -405,39 +363,6 @@ async def move_user(  # pragma: no cover
             },
         )
         await DatabaseSession.execute(user_upsert, user_values)
-
-        # upsert watches
-        for watch in (
-            (
-                await DatabaseSession.execute(
-                    select(Watch).where(
-                        Watch.user_xid == from_user_xid,
-                        Watch.guild_xid == guild_xid,
-                    ),
-                )
-            )
-            .scalars()
-            .all()
-        ):
-            watch_values = {
-                "guild_xid": watch.guild_xid,
-                "user_xid": to_user_xid,
-                "note": watch.note,
-            }
-            logger.info("upsert watch: %s", watch_values)
-            watch_upsert = insert(Watch).values(**watch_values)
-            watch_upsert = watch_upsert.on_conflict_do_update(
-                index_elements=[Watch.guild_xid, Watch.user_xid],
-                index_where=and_(
-                    Watch.guild_xid == watch_values["guild_xid"],
-                    Watch.user_xid == watch_values["user_xid"],
-                ),
-                set_={
-                    "user_xid": to_user_xid,
-                    "note": watch_upsert.excluded.note,
-                },
-            )
-            await DatabaseSession.execute(watch_upsert, watch_values)
 
         # upsert user blocks
         for user_block in (
@@ -646,22 +571,6 @@ async def games_played_count(user_xid: int, guild_xid: int) -> int:
         ).scalar()
         or 0,
     )
-
-
-@tracer.wrap()
-async def is_watched(user_xid: int, guild_xid: int) -> str | None:
-    """Check if user is being watched in this guild, return note if so."""
-    watch = (
-        await DatabaseSession.execute(
-            select(Watch).where(
-                and_(
-                    Watch.user_xid == user_xid,
-                    Watch.guild_xid == guild_xid,
-                ),
-            ),
-        )
-    ).scalar_one_or_none()
-    return watch.note if watch else None
 
 
 @tracer.wrap()

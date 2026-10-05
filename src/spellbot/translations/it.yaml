@@ -78,12 +78,6 @@ it:
     award_failure_give: "Impossibile dare il ruolo %{role} all'utente <@%{user_id}>"
     award_failure_take: "Impossibile assumere il ruolo %{role} dall'utente <@%{user_id}>"
     mythic_track: "Traccia la tua partita su %{emoji}[Mythic Track](%{link}) usando il codice PIN: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Gli utenti sotto osservazione sono entrati in una partita"
-    jump_to_game: "[⇤ Vai al post della partita](%{link})"
-    users_header: "**Utenti:**"
-    game_id: "ID partita"
   # Button labels
   button:
     join: "Entra in questa partita!"
@@ -95,7 +89,6 @@ it:
     channels_title: "Configurazione dei canali per %{guild}"
     setup_title: "Configurazione di SpellBot per %{guild}"
     setup_description: "SpellBot aiuta la tua comunità a trovare e giocare a Magic: i giochi di Raccolta insieme. Per configurare server, canali e premi giocatori, visita il cruscotto SpellBot.\n\n[Configura SpellBot →](%{link})"
-    page: "pagina %{current} di %{total}"
     user_move_error: "Errore: %{error}"
     user_moved: "L'utente %{from_user} è stato spostato su %{to_user}"
     expire_dequeued: "├── %{count} giocatori rimossi dalla coda"
@@ -119,10 +112,6 @@ it:
     user_info_verified_yes: "✅ Verificato"
     user_info_verified_no: "❌ Non verificato"
     user_info_verified: "Verificato"
-    user_info_watched_with_note: "⚠️ Sotto osservazione: %{note}"
-    user_info_watched: "⚠️ Sotto osservazione"
-    user_info_not_watched: "Non sotto osservazione"
-    user_info_watch_status: "Stato di osservazione"
     user_info_no_games: "Nessuna partita giocata"
     user_info_play_range: "Intervallo di gioco"
     user_info_game_history: "Cronologia di gioco"
@@ -152,13 +141,6 @@ it:
   verify:
     verified: "Verificato <@%{user_id}>."
     unverified: "Non verificato <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "Devi fornire un utente di destinazione o il suo ID."
-    invalid_id: "Devi fornire un numero intero valido come ID."
-    watching: "<@%{user_id}> sotto osservazione."
-    not_watching: "<@%{user_id}> non più sotto osservazione."
-    list_title: "Elenco dei giocatori sotto osservazione su questo server"
   # Score action messages
   score:
     record_title: "Record delle partite giocate"

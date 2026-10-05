@@ -66,8 +66,6 @@ UNKNOWN_CHANNEL_CODE = 10003
 # This can happen when we try to defer an interaction that was already responded to.
 ALREADY_ACKNOWLEDGED_CODE = 40060
 
-EMBED_DESCRIPTION_SIZE_LIMIT = 4096
-
 
 def log_warning(log: str, exc_info: bool = False, **kwargs: Any) -> None:
     if kwargs:

@@ -871,7 +871,7 @@ class TestOperationsAddRole:
         await safe_add_role(member, guild, "role", remove=True)
         member.remove_roles.assert_called_once_with(role)
 
-    async def test_no_roles_attribute(self) -> None:
+    async def test_user_cached_member(self) -> None:
         user = MagicMock(spec=discord.User | discord.Member)
         user.id = 101
         member = MagicMock(spec=discord.User | discord.Member)
@@ -889,8 +889,35 @@ class TestOperationsAddRole:
         )
         guild.me.top_role = role
         guild.get_member = MagicMock(return_value=member)
+        guild.fetch_member = AsyncMock()
         guild.roles = [role]
-        await safe_add_role(member, guild, "role")
+        await safe_add_role(user, guild, "role")
+        guild.get_member.assert_called_once_with(user.id)
+        guild.fetch_member.assert_not_called()
+        member.add_roles.assert_called_once_with(role)
+
+    async def test_user_fetched_member(self) -> None:
+        user = MagicMock(spec=discord.User | discord.Member)
+        user.id = 101
+        member = MagicMock(spec=discord.User | discord.Member)
+        member.id = user.id
+        member.roles = []
+        member.add_roles = AsyncMock()
+        guild = MagicMock(spec=discord.Guild)
+        guild.id = 201
+        guild.me = MagicMock()
+        guild.me.guild_permissions = self.role_perms
+        role = discord.Role(
+            guild=guild,
+            state=MagicMock(),
+            data={"id": 2, "name": "role"},  # type: ignore
+        )
+        guild.me.top_role = role
+        guild.get_member = MagicMock(return_value=None)
+        guild.fetch_member = AsyncMock(return_value=member)
+        guild.roles = [role]
+        await safe_add_role(user, guild, "role")
+        guild.fetch_member.assert_called_once_with(user.id)
         member.add_roles.assert_called_once_with(role)
 
     async def test_no_member(self, caplog: pytest.LogCaptureFixture) -> None:
@@ -902,8 +929,12 @@ class TestOperationsAddRole:
         guild.me = MagicMock()
         guild.me.guild_permissions = self.role_perms
         guild.get_member = MagicMock(return_value=None)
+        guild.fetch_member = AsyncMock(
+            side_effect=discord.errors.NotFound(MagicMock(), "Unknown Member"),
+        )
         await safe_add_role(user, guild, "role")
-        guild.get_member.assert_called_once()
+        guild.get_member.assert_called_once_with(user.id)
+        guild.fetch_member.assert_called_once_with(user.id)
         assert (
             f"warning: in guild {guild.name} ({guild.id}), could not manage role role:"
             " could not find member: user#1234"

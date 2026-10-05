@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Note upgrade to Postgres 17.9.
+- SpellBot no longer requests the privileged Server Members or Message Content intents.
+- Award roles are now assigned by fetching the member from Discord when they aren't cached.
+
+### Removed
+
+- Removed the `/watch`, `/unwatch`, and `/watched` commands, moderator DM notifications about watched players, and the watch status in `/user_info`. Existing watch notes are deleted by a migration.
 
 ## [v21.12.0](https://github.com/lexicalunit/spellbot/releases/tag/v21.12.0) - 2026-09-24
 

@@ -426,9 +426,8 @@ class TestCogAdminUserInfo:
         factories.block.create(user_xid=blocker1.xid, blocked_user_xid=target_user.xid)
         factories.block.create(user_xid=blocker2.xid, blocked_user_xid=target_user.xid)
 
-        # Create verification and watch
+        # Create verification
         factories.verify.create(user_xid=target_user.xid, guild_xid=guild.xid, verified=True)
-        factories.watch.create(user_xid=target_user.xid, guild_xid=guild.xid, note="Suspicious")
 
         # Mock the discord user
         mock_target = MagicMock(spec=discord.User)
@@ -447,7 +446,6 @@ class TestCogAdminUserInfo:
         assert f"2 games on {guild.name}" in fields["Games Played"]
         assert "Blocked by 2 users" in fields["Block Status"]
         assert "✅ Verified" in fields["Verified"]
-        assert "⚠️ Watched: Suspicious" in fields["Watch Status"]
         assert "2025-01-15 to 2026-03-20" in fields["Play Range"]
         assert fields["Game History"] == (
             f"[View on spellbot.io]({settings.API_BASE_URL}/g/{guild.xid}/u/{target_user.xid})"
@@ -573,45 +571,3 @@ class TestCogAdminUserInfo:
         embed = get_last_send_message(interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert "Not set" in fields["Verified"]
-
-    async def test_user_info_watched_no_note(
-        self,
-        cog: AdminCog,
-        interaction: discord.Interaction,
-        guild: Guild,
-        factories: Factories,
-    ) -> None:
-        """Test user info when user is watched without a note."""
-        target_user = factories.user.create(xid=9007)
-        factories.watch.create(user_xid=target_user.xid, guild_xid=guild.xid, note="")
-
-        mock_target = MagicMock(spec=discord.User)
-        mock_target.id = target_user.xid
-        mock_target.display_name = "WatchedNoNoteUser"
-
-        await run_command(cog.user_info, interaction, target=mock_target)
-
-        embed = get_last_send_message(interaction, "embed")
-        fields = {f["name"]: f["value"] for f in embed["fields"]}
-        assert fields["Watch Status"] == "⚠️ Watched"
-
-    async def test_user_info_not_watched(
-        self,
-        cog: AdminCog,
-        interaction: discord.Interaction,
-        guild: Guild,
-        factories: Factories,
-    ) -> None:
-        """Test user info when user is not watched."""
-        target_user = factories.user.create(xid=9008)
-        # No watch record created
-
-        mock_target = MagicMock(spec=discord.User)
-        mock_target.id = target_user.xid
-        mock_target.display_name = "NotWatchedUser"
-
-        await run_command(cog.user_info, interaction, target=mock_target)
-
-        embed = get_last_send_message(interaction, "embed")
-        fields = {f["name"]: f["value"] for f in embed["fields"]}
-        assert "Not watched" in fields["Watch Status"]

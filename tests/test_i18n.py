@@ -129,8 +129,8 @@ class TestPortugueseTranslations:
 
     def test_region_qualified_locale_routes_to_pt(self) -> None:
         # `t` normalizes "pt-BR" / "pt-PT" / "pt_BR" down to "pt" before lookup.
-        assert t("watch.title", locale="pt-BR") == "Utilizadores observados juntaram-se a um jogo"
-        assert t("watch.title", locale="pt_PT") == "Utilizadores observados juntaram-se a um jogo"
+        assert t("button.join", locale="pt-BR") == "Entrar neste jogo!"
+        assert t("button.join", locale="pt_PT") == "Entrar neste jogo!"
 
     def test_user_locale_pt_returns_pt_translation(self) -> None:
         interaction = MagicMock()
