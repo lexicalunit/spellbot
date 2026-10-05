@@ -78,12 +78,6 @@ ja:
     award_failure_give: "ユーザー <@ %{role} にロール%{user_id} を与えることができません >"
     award_failure_take: "ユーザー <@ %{role} > からロール%{user_id} を取ることができません"
     mythic_track: "%{emoji}[Mythic Track](%{link}) でゲームを追跡できます。PIN コード：`%{pin}`"
-  # Watch notifications
-  watch:
-    title: "監視中のユーザーがゲームに参加しました"
-    jump_to_game: "[⇤ ゲーム投稿へ移動](%{link})"
-    users_header: "**ユーザー：**"
-    game_id: "ゲーム ID"
   # Button labels
   button:
     join: "このゲームに参加！"
@@ -95,7 +89,6 @@ ja:
     channels_title: "%{guild} のチャンネル設定"
     setup_title: "%{guild} の SpellBot セットアップ"
     setup_description: "スペルボットは、あなたのコミュニティがマジック:ザ・ギャザリングのゲームを一緒に見つけてプレイするのを支援します。 サーバー、チャンネル、プレイヤーの賞を設定するには、SpellBotダッシュボードを参照してください。\n\n[SpellBot の設定 →](%{link})"
-    page: "ページ %{current} / %{total}"
     user_move_error: "エラー：%{error}"
     user_moved: "ユーザー %{from_user} を %{to_user} に移動しました。"
     expire_dequeued: "├── %{count}人のプレイヤーをキューから外しました"
@@ -119,10 +112,6 @@ ja:
     user_info_verified_yes: "✅ 認証済み"
     user_info_verified_no: "❌ 未認証"
     user_info_verified: "認証状況"
-    user_info_watched_with_note: "⚠️ 監視中：%{note}"
-    user_info_watched: "⚠️ 監視中"
-    user_info_not_watched: "監視対象外"
-    user_info_watch_status: "監視状況"
     user_info_no_games: "ゲーム履歴なし"
     user_info_play_range: "プレイ期間"
     user_info_game_history: "ゲーム履歴"
@@ -152,13 +141,6 @@ ja:
   verify:
     verified: "<@%{user_id}> を認証済みにしました。"
     unverified: "<@%{user_id}> を未認証にしました。"
-  # Watch action messages
-  watch_action:
-    provide_target: "対象ユーザーまたはその ID を指定してください。"
-    invalid_id: "ID には有効な整数を指定してください。"
-    watching: "<@%{user_id}> を監視対象に追加しました。"
-    not_watching: "<@%{user_id}> を監視対象から削除しました。"
-    list_title: "このサーバーの監視中プレイヤー一覧"
   # Score action messages
   score:
     record_title: "プレイしたゲームの記録"
