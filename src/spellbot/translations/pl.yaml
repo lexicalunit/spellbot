@@ -78,12 +78,6 @@ pl:
     award_failure_give: "Nie można nadać roli %{role} użytkownikowi <@%{user_id}>"
     award_failure_take: "Nie można przyjąć roli %{role} od użytkownika <@%{user_id}>"
     mythic_track: "Śledź swoją grę na %{emoji}[Mythic Track](%{link}) za pomocą kodu PIN: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Obserwowani użytkownicy dołączyli do meczu"
-    jump_to_game: "[⇤ Przejdź do posta dotyczącego meczu](%{link})"
-    users_header: "**Użytkownicy:**"
-    game_id: "Identyfikator meczu"
   # Button labels
   button:
     join: "Dołącz do tego meczu!"
@@ -95,7 +89,6 @@ pl:
     channels_title: "Konfiguracja kanałów w gildii %{guild}"
     setup_title: "Konfiguracja SpellBota dla gildii %{guild}"
     setup_description: "SpellBot pomaga Twojej społeczności znaleźć i grać w Magiczne: Gry Zbierające razem. Aby skonfigurować swój serwer, kanały i nagrody gracza, odwiedź panel SpellBot\n\n[Konfiguruj SpellBot →](%{link})"
-    page: "strona %{current} z %{total}"
     user_move_error: "Błąd: %{error}"
     user_moved: "Użytkownik %{from_user} został przeniesiony do %{to_user}"
     expire_dequeued: "├── %{count} graczy usunięto z kolejki"
@@ -119,10 +112,6 @@ pl:
     user_info_verified_yes: "✅ Zweryfikowano"
     user_info_verified_no: "❌ Nie zweryfikowano"
     user_info_verified: "Zweryfikowano"
-    user_info_watched_with_note: "⚠️ Obserwowany: %{note}"
-    user_info_watched: "⚠️ Obserwowany"
-    user_info_not_watched: "Nieobserwowany"
-    user_info_watch_status: "Status obserwowania"
     user_info_no_games: "Brak rozegranych meczów"
     user_info_play_range: "Zasięg gry"
     user_info_game_history: "Historia meczów"
@@ -152,13 +141,6 @@ pl:
   verify:
     verified: "Zweryfikowany użytkownik <@%{user_id}>."
     unverified: "Niezweryfikowany użytkownik <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "Musisz podać docelowego użytkownika albo jego identyfikator."
-    invalid_id: "Jako identyfikator musisz podać prawidłową liczbę całkowitą."
-    watching: "Obserwowanie użytkownika <@%{user_id}>."
-    not_watching: "Użytkownik <@%{user_id}> już nie jest obserwowany."
-    list_title: "Lista graczy obserwowanych na tym serwerze"
   # Score action messages
   score:
     record_title: "Rejestr rozegranych gier"
