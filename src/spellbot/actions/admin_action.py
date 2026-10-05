@@ -222,7 +222,6 @@ class AdminAction(BaseAction):
             self.interaction.guild_id,
         )
         blocked_by_count = await services.users.blocked_by_count(target_xid)
-        watch_note = await services.users.is_watched(target_xid, self.interaction.guild_id)
         verified_status = await services.users.is_verified(
             target_xid,
             self.interaction.guild_id,
@@ -269,20 +268,6 @@ class AdminAction(BaseAction):
         embed.add_field(
             name=t("admin.user_info_verified", locale=locale),
             value=verified_text,
-            inline=True,
-        )
-
-        if watch_note is not None:
-            watch_text = (
-                t("admin.user_info_watched_with_note", locale=locale, note=watch_note)
-                if watch_note
-                else t("admin.user_info_watched", locale=locale)
-            )
-        else:
-            watch_text = t("admin.user_info_not_watched", locale=locale)
-        embed.add_field(
-            name=t("admin.user_info_watch_status", locale=locale),
-            value=watch_text,
             inline=True,
         )
 

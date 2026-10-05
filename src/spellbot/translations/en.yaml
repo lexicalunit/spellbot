@@ -78,12 +78,6 @@ en:
     award_failure_give: "Unable to give role %{role} to user <@%{user_id}>"
     award_failure_take: "Unable to take role %{role} from user <@%{user_id}>"
     mythic_track: "Track your game on %{emoji}[Mythic Track](%{link}) with PIN code: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Watched user(s) joined a game"
-    jump_to_game: "[⇤ Jump to the game post](%{link})"
-    users_header: "**Users:**"
-    game_id: "Game ID"
   # Button labels
   button:
     join: "Join this game!"
@@ -95,7 +89,6 @@ en:
     channels_title: "Configuration for channels in %{guild}"
     setup_title: "SpellBot Setup for %{guild}"
     setup_description: "SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n\n[Configure SpellBot →](%{link})"
-    page: "page %{current} of %{total}"
     user_move_error: "Error: %{error}"
     user_moved: "User %{from_user} has been moved to %{to_user}"
     expire_dequeued: "├── Dequeued %{count} players"
@@ -119,10 +112,6 @@ en:
     user_info_verified_yes: "✅ Verified"
     user_info_verified_no: "❌ Unverified"
     user_info_verified: "Verified"
-    user_info_watched_with_note: "⚠️ Watched: %{note}"
-    user_info_watched: "⚠️ Watched"
-    user_info_not_watched: "Not watched"
-    user_info_watch_status: "Watch Status"
     user_info_no_games: "No games played"
     user_info_play_range: "Play Range"
     user_info_game_history: "Game History"
@@ -152,13 +141,6 @@ en:
   verify:
     verified: "Verified <@%{user_id}>."
     unverified: "Unverified <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "You must provide either a target User or their ID."
-    invalid_id: "You must provide a valid integer for an ID."
-    watching: "Watching <@%{user_id}>."
-    not_watching: "No longer watching <@%{user_id}>."
-    list_title: "List of watched players on this server"
   # Score action messages
   score:
     record_title: "Record of games played"

@@ -53,7 +53,6 @@ from tests.factories import (
     UserAwardFactory,
     UserFactory,
     VerifyFactory,
-    WatchFactory,
 )
 from tests.mocks import build_author, build_channel, build_guild, build_interaction, build_message
 
@@ -148,7 +147,6 @@ class Factories:
     user = UserFactory
     user_award = UserAwardFactory
     verify = VerifyFactory
-    watch = WatchFactory
     token = TokenFactory
 
 
@@ -203,7 +201,6 @@ async def session_context(
         UserAwardFactory._meta.sqlalchemy_session = sync_session  # type: ignore
         UserFactory._meta.sqlalchemy_session = sync_session  # type: ignore
         VerifyFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        WatchFactory._meta.sqlalchemy_session = sync_session  # type: ignore
 
         def cleanup_session() -> None:
             async def finalizer() -> None:

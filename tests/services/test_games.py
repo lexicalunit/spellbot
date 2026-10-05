@@ -20,7 +20,6 @@ from tests.factories import (
     GuildFactory,
     PostFactory,
     UserFactory,
-    WatchFactory,
 )
 
 pytestmark = pytest.mark.use_db
@@ -206,19 +205,6 @@ class TestServiceGames:
         assert game_data is not None
         player_xids = {p.xid for p in game_data.players}
         assert player_xids == {user1.xid, user2.xid}
-
-    async def test_games_watch_notes(self, game: Game) -> None:
-        user1 = UserFactory.create(game=game)
-        user2 = UserFactory.create(game=game)
-        user3 = UserFactory.create()
-        watch = WatchFactory.create(guild_xid=game.guild.xid, user_xid=user1.xid)
-
-        DatabaseSession.expire_all()
-        game_data = await games.get(game.id)  # type: ignore
-        assert game_data is not None
-        assert await games.watch_notes(game_data, [user1.xid, user2.xid, user3.xid]) == {
-            user1.xid: watch.note,
-        }
 
     async def test_games_set_voice(self, game: Game) -> None:
         game_data = await games.get(game.id)  # type: ignore

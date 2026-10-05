@@ -78,12 +78,6 @@ es:
     award_failure_give: "No se puede dar el rol %{role} al usuario <@%{user_id}>"
     award_failure_take: "No se puede tomar el rol %{role} del usuario <@%{user_id}>"
     mythic_track: "Siga su partida en %{emoji}[Mythic Track](%{link}) con el código PIN: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Usuario(s) observado(s) se ha(n) unido a una partida"
-    jump_to_game: "[⇤ Ver la publicación de la partida](%{link})"
-    users_header: "**Usuarios:**"
-    game_id: "ID de la partida"
   # Button labels
   button:
     join: "¡Únase a esta partida!"
@@ -95,7 +89,6 @@ es:
     channels_title: "Configuración de los canales en %{guild}"
     setup_title: "Configuración de SpellBot de %{guild}"
     setup_description: "SpellBot ayuda a tu comunidad a encontrar y jugar Magic: Los juegos de Gathering juntos. Para configurar su servidor, canales y premios de jugador, visite el panel de control de SpellBot.\n\n[Configurar SpellBot → ](%{link})"
-    page: "página %{current} de %{total}"
     user_move_error: "Error: %{error}"
     user_moved: "El usuario %{from_user} se ha movido a %{to_user}"
     expire_dequeued: "├── Se han eliminado %{count} jugadores de la cola"
@@ -119,10 +112,6 @@ es:
     user_info_verified_yes: "✅ Verificado"
     user_info_verified_no: "❌ No verificado"
     user_info_verified: "Verificado"
-    user_info_watched_with_note: "⚠️ Observado: %{note}"
-    user_info_watched: "⚠️ Observado"
-    user_info_not_watched: "No observado"
-    user_info_watch_status: "Estado de observación"
     user_info_no_games: "No hay partidas jugadas"
     user_info_play_range: "Intervalo de tiempo del juego"
     user_info_game_history: "Historial de partidas"
@@ -152,13 +141,6 @@ es:
   verify:
     verified: "<@%{user_id}> verificado."
     unverified: "<@%{user_id}> no verificado."
-  # Watch action messages
-  watch_action:
-    provide_target: "Debe proporcionar un usuario de destino o su ID."
-    invalid_id: "Debe proporcionar un número entero válido para el ID."
-    watching: "Observando a <@%{user_id}>."
-    not_watching: "Ya no está observando a <@%{user_id}>."
-    list_title: "Lista de jugadores observados en este servidor"
   # Score action messages
   score:
     record_title: "Registro de partidas jugadas"

@@ -44,7 +44,6 @@ from .queue import Queue  # noqa: E402
 from .token import Token  # noqa: E402
 from .user import User  # noqa: E402
 from .verify import Verify  # noqa: E402
-from .watch import Watch  # noqa: E402
 
 
 class HasTable(Protocol):
@@ -88,7 +87,6 @@ __all__ = [
     "User",
     "UserAward",
     "Verify",
-    "Watch",
     "create_all",
     "generate_pin",
     "import_models",

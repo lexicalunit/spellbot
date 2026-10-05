@@ -31,7 +31,6 @@ from spellbot.models import (
     Queue,
     User,
     UserAward,
-    Watch,
 )
 from spellbot.settings import settings
 
@@ -721,29 +720,6 @@ async def make_ready(
 
     await DatabaseSession.commit()
     return await game.to_data()
-
-
-@tracer.wrap()
-async def watch_notes(
-    game_data: GameData,
-    player_xids: list[int],
-) -> dict[int, str | None]:
-    """Return any moderator watch notes for the given game."""
-    watched = (
-        (
-            await DatabaseSession.execute(
-                select(Watch).where(
-                    and_(
-                        Watch.guild_xid == game_data.guild_xid,
-                        any_of(Watch.user_xid, player_xids),
-                    ),
-                ),
-            )
-        )
-        .scalars()
-        .all()
-    )
-    return {cast("int", watch.user_xid): cast("str | None", watch.note) for watch in watched}
 
 
 @tracer.wrap()

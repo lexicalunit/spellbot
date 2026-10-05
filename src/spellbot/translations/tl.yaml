@@ -78,12 +78,6 @@ tl:
     award_failure_give: "Hindi maitalaga ang role na %{role} sa user na <@%{user_id}>"
     award_failure_take: "Hindi maalis ang role na %{role} sa user na <@%{user_id}>"
     mythic_track: "I-track ang game mo sa %{emoji}[Mythic Track](%{link}) ang PIN code na: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Sumali sa isang game ang (mga) binabantayang user"
-    jump_to_game: "[⇤ Pumunta sa game post](%{link})"
-    users_header: "**Mga User:**"
-    game_id: "Game ID"
   # Button labels
   button:
     join: "Sumali sa game na ito!"
@@ -95,7 +89,6 @@ tl:
     channels_title: "Configuration para sa mga channel sa %{guild}"
     setup_title: "Setup ng SpellBot para sa %{guild}"
     setup_description: "Tinutulungan ng SpellBot ang iyong komunidad na makahanap at makapaglaro ng mga laro ng Magic: The Gathering nang magkakasama. Upang i-configure ang iyong server, mga channel, at mga gantimpala para sa mga manlalaro, bisitahin ang dashboard ng SpellBot.\n\n[I-configure ang SpellBot →](%{link})"
-    page: "page %{current} sa %{total}"
     user_move_error: "Error: %{error}"
     user_moved: "Inilipat sa %{to_user} ang user na %{from_user}"
     expire_dequeued: "├── Inalis sa pagkakapili ang %{count} (na) player"
@@ -119,10 +112,6 @@ tl:
     user_info_verified_yes: "✅ Na-verify"
     user_info_verified_no: "❌ Hindi na-verify"
     user_info_verified: "Na-verify"
-    user_info_watched_with_note: "⚠️ Binabantayan: %{note}"
-    user_info_watched: "⚠️ Binabantayan"
-    user_info_not_watched: "Hindi binabantayan"
-    user_info_watch_status: "Status ng Pagbabantay"
     user_info_no_games: "Walang nilarong game"
     user_info_play_range: "Range ng Paglalaro"
     user_info_game_history: "History ng Game"
@@ -152,13 +141,6 @@ tl:
   verify:
     verified: "Na-verify na si <@%{user_id}>."
     unverified: "Hindi na-verify si <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "Dapat mong ibigay ang target na User o ang kanyang ID."
-    invalid_id: "Dapat kang magbigay ng valid na integer para sa ID."
-    watching: "Binabantayan si <@%{user_id}>."
-    not_watching: "Hindi na binabantayan si <@%{user_id}>."
-    list_title: "Listahan ng mga binabantayang player sa server na ito"
   # Score action messages
   score:
     record_title: "Record ng mga game na nilaro sa"

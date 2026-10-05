@@ -779,14 +779,17 @@ async def safe_add_role(
         return
 
     try:
-        member = cast(
-            "discord.Member | None",
-            (
-                user_or_member
-                if hasattr(user_or_member, "roles")
-                else guild.get_member(cast("discord.User", user_or_member).id)
-            ),
-        )
+        if hasattr(user_or_member, "roles"):
+            member = cast("discord.Member | None", user_or_member)
+        else:
+            user_xid = user_or_member.id
+            # Without the privileged Server Members intent the member cache is mostly empty,
+            # so fall back to fetching the member from the API.
+            member = guild.get_member(user_xid) or await safe_call(
+                lambda: guild.fetch_member(user_xid),
+                "could not fetch member %(user_xid)s",
+                user_xid=user_xid,
+            )
         if not member or not hasattr(member, "roles"):
             logger.warning(
                 "warning: in guild %s (%s), could not manage role %s: could not find member: %s",

@@ -78,12 +78,6 @@ sv:
     award_failure_give: "Det går inte att ge rollen %{role} till användaren <@%{user_id}>"
     award_failure_take: "Det går inte att ta rollen %{role} från användaren <@%{user_id}>"
     mythic_track: "Spåra ditt spel på %{emoji}[Mythic Track](%{link}) med PIN-kod: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Användare du följer har gått med i ett spel"
-    jump_to_game: "[⇤ Gå till spelinlägget](%{link})"
-    users_header: "**Användare:**"
-    game_id: "Spel-ID"
   # Button labels
   button:
     join: "Gå med i detta spel!"
@@ -95,7 +89,6 @@ sv:
     channels_title: "Konfiguration för kanaler i %{guild}"
     setup_title: "SpellBot-inställningar för %{guild}"
     setup_description: "SpellBot hjälper din gemenskap att hitta och spela Magic: The Gathering spel tillsammans. För att konfigurera din server, kanal och spelare utmärkelser, besök Stavbots instrumentbräda.\n\n[Konfigurera Stavbot ≥ ](%{link})"
-    page: "sida %{current} av %{total}"
     user_move_error: "Fel: %{error}"
     user_moved: "Användaren %{from_user} har flyttats till %{to_user}"
     expire_dequeued: "├── %{count} spelare togs bort från kön"
@@ -119,10 +112,6 @@ sv:
     user_info_verified_yes: "✅ Verifierad"
     user_info_verified_no: "❌ Overifierad"
     user_info_verified: "Verifierad"
-    user_info_watched_with_note: "⚠️ Tittade: %{note}"
-    user_info_watched: "⚠️ Tittade"
-    user_info_not_watched: "Tittade inte"
-    user_info_watch_status: "Tittarstatus"
     user_info_no_games: "Inga spelade spel"
     user_info_play_range: "Spelintervall"
     user_info_game_history: "Spelhistorik"
@@ -152,13 +141,6 @@ sv:
   verify:
     verified: "Verifierad <@%{user_id}>."
     unverified: "Overifierad <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "Du måste ange antingen en målanvändare eller deras ID."
-    invalid_id: "Du måste ange ett giltigt heltal för ett ID."
-    watching: "Titta på <@%{user_id}>."
-    not_watching: "Titta inte längre på <@%{user_id}>."
-    list_title: "Lista över spelare som tittar på denna server"
   # Score action messages
   score:
     record_title: "Spela in spelade partier"

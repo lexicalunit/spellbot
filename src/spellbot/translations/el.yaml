@@ -78,12 +78,6 @@ el:
     award_failure_give: "Δεν είναι δυνατή η εκχώρηση του ρόλου %{role} στον χρήστη <@%{user_id}>"
     award_failure_take: "Δεν είναι δυνατή η ανάληψη του ρόλου %{role} από τον χρήστη <@%{user_id}>"
     mythic_track: "Παρακολουθήστε το παιχνίδι σας στο %{emoji}[Mythic Track](%{link}) με τον κωδικό PIN: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Οι χρήστες που παρακολουθούνται συμμετείχαν σε ένα παιχνίδι"
-    jump_to_game: "[⇤ Μετάβαση στην ανάρτηση του παιχνιδιού](%{link})"
-    users_header: "**Χρήστες:**"
-    game_id: "ID παιχνιδιού"
   # Button labels
   button:
     join: "Συμμετοχή σε αυτό το παιχνίδι!"
@@ -95,7 +89,6 @@ el:
     channels_title: "Διαμόρφωση καναλιών στο %{guild}"
     setup_title: "Ρύθμιση SpellBot για το %{guild}"
     setup_description: "Το SpellBot βοηθά την κοινότητά σας να βρει και να παίξει παιχνίδια Magic: The Gathering μαζί. Για να διαμορφώσετε τον διακομιστή, τα κανάλια και τα βραβεία παικτών σας, επισκεφθείτε τον πίνακα ελέγχου του SpellBot.\n\n[Διαμόρφωση SpellBot →](%{link})"
-    page: "σελίδα %{current} από %{total}"
     user_move_error: "Σφάλμα: %{error}"
     user_moved: "Ο χρήστης %{from_user} μεταφέρθηκε στο %{to_user}"
     expire_dequeued: "├── %{count} παίκτες αφαιρέθηκαν από την ουρά"
@@ -119,10 +112,6 @@ el:
     user_info_verified_yes: "✅ Επαληθευμένος"
     user_info_verified_no: "❌ Μη επαληθευμένος"
     user_info_verified: "Επαληθευμένος"
-    user_info_watched_with_note: "⚠️ Παρακολουθείται: %{note}"
-    user_info_watched: "⚠️ Παρακολουθείται"
-    user_info_not_watched: "Δεν παρακολουθείται"
-    user_info_watch_status: "Κατάσταση παρακολούθησης"
     user_info_no_games: "Δεν έχει παίξει παιχνίδια"
     user_info_play_range: "Διάρκεια παιχνιδιού"
     user_info_game_history: "Ιστορικό παιχνιδιού"
@@ -152,13 +141,6 @@ el:
   verify:
     verified: "Επαληθευμένος <@%{user_id}>."
     unverified: "Μη επαληθευμένος <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "Πρέπει να καθορίσετε είτε τον χρήστη-στόχο είτε το ID του."
-    invalid_id: "Πρέπει να δώσετε έναν έγκυρο ακέραιο αριθμό για ένα ID."
-    watching: "Παρακολουθείτε <@%{user_id}>."
-    not_watching: "Δεν παρακολουθείτε πλέον <@%{user_id}>."
-    list_title: "Λίστα παρακολουθούμενων παικτών σε αυτόν τον διακομιστή"
   # Score action messages
   score:
     record_title: "Εγγραφή παιχνιδιών που παίχτηκαν"

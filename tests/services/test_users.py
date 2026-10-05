@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, Guild, Queue, User, Watch
+from spellbot.models import Block, Game, Queue, User
 from spellbot.services import users
 from tests.factories import UserFactory
 
@@ -178,84 +178,6 @@ class TestServiceUsers:
             )
         ).scalar_one_or_none()
         assert block is None
-
-    async def test_users_watch(self, guild: Guild) -> None:
-        user = UserFactory.create()
-
-        await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")
-
-        DatabaseSession.expire_all()
-        watch = (
-            await DatabaseSession.execute(
-                select(Watch).where(
-                    Watch.guild_xid == guild.xid,
-                    Watch.user_xid == user.xid,
-                ),
-            )
-        ).scalar_one()
-        assert watch.note == "note"
-
-    async def test_users_watch_upsert(self, guild: Guild) -> None:
-        user = UserFactory.create()
-
-        await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note1")
-        await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note2")
-
-        DatabaseSession.expire_all()
-        watch = (
-            await DatabaseSession.execute(
-                select(Watch).where(
-                    Watch.guild_xid == guild.xid,
-                    Watch.user_xid == user.xid,
-                ),
-            )
-        ).scalar_one()
-        assert watch.note == "note2"
-
-    async def test_users_watch_without_note(self, guild: Guild) -> None:
-        user = UserFactory.create()
-
-        await users.watch(guild_xid=guild.xid, user_xid=user.xid)
-
-        DatabaseSession.expire_all()
-        watch = (
-            await DatabaseSession.execute(
-                select(Watch).where(
-                    Watch.guild_xid == guild.xid,
-                    Watch.user_xid == user.xid,
-                ),
-            )
-        ).scalar_one()
-        assert watch.note is None
-
-    async def test_users_unwatch(self, guild: Guild) -> None:
-        user = UserFactory.create()
-
-        await users.watch(guild_xid=guild.xid, user_xid=user.xid, note="note")
-
-        DatabaseSession.expire_all()
-        watch = (
-            await DatabaseSession.execute(
-                select(Watch).where(
-                    Watch.guild_xid == guild.xid,
-                    Watch.user_xid == user.xid,
-                ),
-            )
-        ).scalar_one()
-        assert watch.note == "note"
-
-        await users.unwatch(guild_xid=guild.xid, user_xid=user.xid)
-
-        DatabaseSession.expire_all()
-        watch = (
-            await DatabaseSession.execute(
-                select(Watch).where(
-                    Watch.guild_xid == guild.xid,
-                    Watch.user_xid == user.xid,
-                ),
-            )
-        ).scalar_one_or_none()
-        assert watch is None
 
     async def test_users_leave_game(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)

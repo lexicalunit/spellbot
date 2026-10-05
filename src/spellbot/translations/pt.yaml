@@ -78,12 +78,6 @@ pt:
     award_failure_give: "Não é possível dar o papel %{role} ao usuário <@%{user_id}>"
     award_failure_take: "Não foi possível assumir o papel %{role} do usuário <@%{user_id}>"
     mythic_track: "Acompanhe o seu jogo em %{emoji}[Mythic Track](%{link}) com o código PIN: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Utilizadores observados juntaram-se a um jogo"
-    jump_to_game: "[⇤ Ir para a publicação do jogo](%{link})"
-    users_header: "**Utilizadores:**"
-    game_id: "ID do jogo"
   # Button labels
   button:
     join: "Entrar neste jogo!"
@@ -95,7 +89,6 @@ pt:
     channels_title: "Configuração para canais em %{guild}"
     setup_title: "Configuração SpellBot para %{guild}"
     setup_description: "SpellBot ajuda sua comunidade a encontrar e jogar o Magico: The Gathering games juntos. Para configurar o seu servidor, canais e recompensas de jogador, visite o painel do SpellBot.\n\n[Configure SpellBot →](%{link})"
-    page: "página %{current} de %{total}"
     user_move_error: "Erro: %{error}"
     user_moved: "O utilizador %{from_user} foi transferido para %{to_user}"
     expire_dequeued: "├── %{count} jogadores retirados da fila"
@@ -119,10 +112,6 @@ pt:
     user_info_verified_yes: "✅ Verificado"
     user_info_verified_no: "❌ Não verificado"
     user_info_verified: "Verificado"
-    user_info_watched_with_note: "⚠️ Visto: %{note}"
-    user_info_watched: "⚠️ Visto"
-    user_info_not_watched: "Não visto"
-    user_info_watch_status: "Estado de observação"
     user_info_no_games: "Não se realizaram jogos"
     user_info_play_range: "Duração do jogo"
     user_info_game_history: "Histórico de jogos"
@@ -152,13 +141,6 @@ pt:
   verify:
     verified: "Verificado <@%{user_id}>."
     unverified: "Não verificado <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "Deve indicar o utilizador em questão ou o seu ID."
-    invalid_id: "Deve introduzir um número inteiro válido como ID."
-    watching: "A ver <@%{user_id}>."
-    not_watching: "Já não está a ver <@%{user_id}>."
-    list_title: "Lista de jogadores observados neste servidor"
   # Score action messages
   score:
     record_title: "Gravar de jogos jogados"
