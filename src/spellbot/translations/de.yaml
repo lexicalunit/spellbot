@@ -78,12 +78,6 @@ de:
     award_failure_give: "Rolle %{role} kann nicht an Benutzer <@%{user_id} > übertragen werden"
     award_failure_take: "Konnte die Rolle %{role} nicht von Benutzer <@%{user_id} > übernehmen"
     mythic_track: "Verfolgen Sie Ihr Spiel auf %{emoji}[Mythic Track](%{link}) mit dem PIN-Code: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Beobachtete Benutzer sind einem Spiel beigetreten"
-    jump_to_game: "[⇤ Zum Spiel-Beitrag springen](%{link})"
-    users_header: "**Benutzer:**"
-    game_id: "Spiel-ID"
   # Button labels
   button:
     join: "Diesem Spiel beitreten!"
@@ -95,7 +89,6 @@ de:
     channels_title: "Konfiguration für Kanäle in %{guild}"
     setup_title: "SpellBot-Einrichtung für %{guild}"
     setup_description: "SpellBot hilft deiner Community zusammen Magic: The Gathering Spiele zu finden und zu spielen. Um deinen Server, Kanäle und Spieler-Auszeichnungen zu konfigurieren, besuche das SpellBot-Dashboard.\n\n[SpellBot konfigurieren → ](%{link})"
-    page: "Seite %{current} von %{total}"
     user_move_error: "Fehler: %{error}"
     user_moved: "Benutzer %{from_user} wurde nach %{to_user} verschoben"
     expire_dequeued: "├── %{count} Spieler aus Warteschlange entfernt"
@@ -119,10 +112,6 @@ de:
     user_info_verified_yes: "✅ Verifiziert"
     user_info_verified_no: "❌ Nicht verifiziert"
     user_info_verified: "Verifiziert"
-    user_info_watched_with_note: "⚠️ Beobachtet: %{note}"
-    user_info_watched: "⚠️ Beobachtet"
-    user_info_not_watched: "Nicht beobachtet"
-    user_info_watch_status: "Beobachtungsstatus"
     user_info_no_games: "Keine Spiele gespielt"
     user_info_play_range: "Spielzeitraum"
     user_info_game_history: "Spielverlauf"
@@ -152,13 +141,6 @@ de:
   verify:
     verified: "<@%{user_id}> verifiziert."
     unverified: "<@%{user_id}> nicht verifiziert."
-  # Watch action messages
-  watch_action:
-    provide_target: "Sie müssen entweder einen Zielbenutzer oder dessen ID angeben."
-    invalid_id: "Sie müssen eine gültige Ganzzahl für eine ID angeben."
-    watching: "Sie beobachten <@%{user_id}>."
-    not_watching: "Sie beobachten <@%{user_id}> nicht mehr."
-    list_title: "Liste der beobachteten Spieler auf diesem Server"
   # Score action messages
   score:
     record_title: "Aufzeichnung der gespielten Spiele"
