@@ -78,12 +78,6 @@ fi:
     award_failure_give: "Roolia %{role} ei voitu antaa käyttäjälle <@%{user_id}>"
     award_failure_take: "Roolia %{role} ei voitu ottaa käyttäjältä <@%{user_id}>"
     mythic_track: "Seuraa peliäsi kohteessa %{emoji}[Mythic Track](%{link}) PIN-koodilla: `%{pin}`"
-  # Watch notifications
-  watch:
-    title: "Tarkkailtu käyttäjä tai käyttäjiä liittyi peliin"
-    jump_to_game: "[⇤ Siirry pelijulkaisuun](%{link})"
-    users_header: "**Käyttäjät:**"
-    game_id: "Pelin tunnus"
   # Button labels
   button:
     join: "Liity tähän peliin!"
@@ -95,7 +89,6 @@ fi:
     channels_title: "%{guild} -kanavien määritys"
     setup_title: "SpellBot-asetukset – %{guild}"
     setup_description: "SpellBot auttaa yhteisöäsi löytämään ja pelaamaan Magic: The Gathering -pelejä yhdessä. Voit määrittää palvelimesi, kanavasi ja pelaajapalkinnot SpellBotin hallintapaneelissa.\n\n[Määritä SpellBotia →](%{link})"
-    page: "sivu %{current} / %{total}"
     user_move_error: "Virhe: %{error}"
     user_moved: "Käyttäjä %{from_user} on siirretty kohteeseen %{to_user}"
     expire_dequeued: "├── %{count} pelaajaa poistettu jonosta"
@@ -119,10 +112,6 @@ fi:
     user_info_verified_yes: "✅ Vahvistettu"
     user_info_verified_no: "❌ Vahvistamaton"
     user_info_verified: "Vahvistettu"
-    user_info_watched_with_note: "⚠️ Seurattu: %{note}"
-    user_info_watched: "⚠️ Seurattu"
-    user_info_not_watched: "Ei seurattu"
-    user_info_watch_status: "Seuraamisen tila"
     user_info_no_games: "Ei pelattuja pelejä"
     user_info_play_range: "Pelin aikaväli"
     user_info_game_history: "Pelihistoria"
@@ -152,13 +141,6 @@ fi:
   verify:
     verified: "Vahvistettu <@%{user_id}>."
     unverified: "Vahvistamaton <@%{user_id}>."
-  # Watch action messages
-  watch_action:
-    provide_target: "Sinun on annettava kohdekäyttäjä tai tämän tunnus."
-    invalid_id: "Sinun on annettava kelvollinen tunnusluku."
-    watching: "Seurataan käyttäjää <@%{user_id}>."
-    not_watching: "Käyttäjää <@%{user_id}> ei enää seurata."
-    list_title: "Luettelo tällä palvelimella seuratuista pelaajista"
   # Score action messages
   score:
     record_title: "Record pelatuista peleistä"
