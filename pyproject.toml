@@ -223,7 +223,7 @@ safe_licenses = [
 ]
 # Psycopg uses LGPLv3, which is ok to link against, but otherwise not compatible with the more
 # permissive license of this project. We can explicitly ignore the pylic errors this causes.
-unsafe_packages = ["psycopg-binary", "psycopg"]
+unsafe_packages = ["psycopg-binary", "psycopg", "ddtrace-internal"]
 
 [tool.vulture]
 exclude = ["src/spellbot/migrations/"] # alembic
