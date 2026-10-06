@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,6 +12,9 @@ from spellbot.models import Channel, Guild
 from spellbot.services import channels
 from spellbot.services.channels import channel_cache
 from tests.factories import ChannelFactory, GuildFactory
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 pytestmark = pytest.mark.use_db
 
@@ -101,6 +105,29 @@ class TestServiceChannels:
 
         # Verify it's also removed from the cache
         assert discord_channel.id not in channel_cache
+
+    async def test_channels_upsert_cached_but_deleted(
+        self,
+        guild: Guild,
+        mocker: MockerFixture,
+    ) -> None:
+        discord_channel = MagicMock()
+        discord_channel.id = 998
+        discord_channel.name = "test-channel"
+        discord_guild = MagicMock()
+        discord_guild.id = guild.xid
+        discord_channel.guild = discord_guild
+
+        # Simulate another process (the web app) deleting a channel this process has cached.
+        mocker.patch.object(channels, "is_cached", return_value=True)
+        assert await channels.select(discord_channel.id) is None
+
+        data = await channels.upsert(discord_channel)
+
+        assert data.xid == discord_channel.id
+        assert data.name == "test-channel"
+        assert await channels.select(discord_channel.id) is not None
+        assert channel_cache[discord_channel.id] == "test-channel"
 
 
 @pytest.mark.asyncio

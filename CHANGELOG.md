@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixes a bug where a channel gets forgotten in one process but not the other.
+
 ## [v22.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v22.0.0) - 2026-10-05
 
 ### Changed

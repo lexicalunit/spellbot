@@ -30,37 +30,46 @@ def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
     return bool((cached_name := channel_cache.get(xid)) and cached_name == name)
 
 
+async def write(channel: MessageableChannel, name: str) -> None:
+    """Insert or update the given Discord channel's row and cache its name."""
+    assert channel.guild is not None
+    values = {
+        "xid": channel.id,
+        "guild_xid": channel.guild.id,
+        "name": name,
+        "updated_at": datetime.now(tz=UTC),
+    }
+    upsert = insert(Channel).values(**values)
+    upsert = upsert.on_conflict_do_update(
+        index_elements=[Channel.xid],  # type: ignore
+        index_where=Channel.xid == values["xid"],
+        set_={
+            "name": upsert.excluded.name,
+            "updated_at": upsert.excluded.updated_at,
+        },
+        where=upsert.excluded.name != Channel.name,
+    )
+    await DatabaseSession.execute(upsert, values)
+    await DatabaseSession.commit()
+    channel_cache[channel.id] = name
+
+
 async def upsert(channel: MessageableChannel) -> ChannelData:
     """Upsert the given Discord channel into the database."""
     assert channel.guild is not None
     name_max_len = Channel.name.property.columns[0].type.length
     raw_name = getattr(channel, "name", "")
     name = raw_name[:name_max_len]
-    if not is_cached(channel.id, name):  # pragma: no branch (caching disabled in tests)
-        values = {
-            "xid": channel.id,
-            "guild_xid": channel.guild.id,
-            "name": name,
-            "updated_at": datetime.now(tz=UTC),
-        }
-        upsert = insert(Channel).values(**values)
-        upsert = upsert.on_conflict_do_update(
-            index_elements=[Channel.xid],  # type: ignore
-            index_where=Channel.xid == values["xid"],
-            set_={
-                "name": upsert.excluded.name,
-                "updated_at": upsert.excluded.updated_at,
-            },
-            where=upsert.excluded.name != Channel.name,
-        )
-        await DatabaseSession.execute(upsert, values)
-        await DatabaseSession.commit()
-        channel_cache[channel.id] = name
+    if not is_cached(channel.id, name):
+        await write(channel, name)
 
-    result = await DatabaseSession.execute(
-        sa_select(Channel).where(Channel.xid == channel.id),  # type: ignore
-    )
-    db_channel = result.scalar_one()
+    query = sa_select(Channel).where(Channel.xid == channel.id)  # type: ignore
+    db_channel = (await DatabaseSession.execute(query)).scalar_one_or_none()
+    if db_channel is None:
+        # The cache is per process, so another process (e.g. the web app forgetting this
+        # channel) may have deleted the row after we cached it. Write it again.
+        await write(channel, name)
+        db_channel = (await DatabaseSession.execute(query)).scalar_one()
     return db_channel.to_data()
 
 
