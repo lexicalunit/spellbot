@@ -40,9 +40,9 @@ class RecordAction(BaseAction):
 
     async def history(self) -> None:
         assert self.interaction.channel
-        assert hasattr(self.interaction.channel, "name")
+        assert not isinstance(self.interaction.channel, discord.DMChannel)
         locale = user_locale(self.interaction)
-        channel_name = self.interaction.channel.name  # type: ignore
+        channel_name = self.interaction.channel.name
         channel_xid = self.interaction.channel.id
 
         embed = discord.Embed()
@@ -58,9 +58,9 @@ class RecordAction(BaseAction):
             ago = 0  # "months ago" doesn't make sense for "all time" range
 
         assert self.interaction.channel
-        assert hasattr(self.interaction.channel, "name")
+        assert not isinstance(self.interaction.channel, discord.DMChannel)
         locale = user_locale(self.interaction)
-        channel_name = self.interaction.channel.name  # type: ignore
+        channel_name = self.interaction.channel.name
         channel_xid = self.interaction.channel.id
         guild_xid = self.interaction.guild_id
 

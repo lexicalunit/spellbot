@@ -8,6 +8,7 @@ from typing import Any
 import factory
 
 from spellbot.models import Game, Play, Post, Queue, User
+from tests.factories.session import factory_session
 
 
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -16,9 +17,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     @classmethod
     def _create(cls, model_class: Any, *args: Any, **kwargs: Any) -> Any:
-        session = cls._meta.sqlalchemy_session  # type: ignore
-        if session is None:  # pragma: no cover
-            raise RuntimeError("No session provided.")
+        session = factory_session()
 
         if "game" in kwargs:
             game: Game = kwargs.pop("game")
@@ -43,4 +42,5 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = User
+        sqlalchemy_session_factory = factory_session
         sqlalchemy_session_persistence = "flush"

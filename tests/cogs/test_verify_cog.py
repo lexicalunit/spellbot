@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import discord
+    from decoy import Decoy
 
     from spellbot import SpellBot
 
@@ -37,6 +38,7 @@ class TestCogVerify:
 
     async def test_verify_and_unverify(
         self,
+        decoy: Decoy,
         cog: VerifyCog,
         target: discord.Member,
         interaction: discord.Interaction,
@@ -44,9 +46,12 @@ class TestCogVerify:
     ) -> None:
         await run_command(cog.verify, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
-            f"Verified <@{target.id}>.",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.response.send_message(
+                f"Verified <@{target.id}>.",
+                ephemeral=True,
+            ),
+            times=1,
         )
         found = (
             await DatabaseSession.execute(select(Verify).where(Verify.user_xid == target.id))
@@ -55,12 +60,14 @@ class TestCogVerify:
         assert found.user_xid == target.id
         assert found.verified
 
-        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.unverify, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
-            f"Unverified <@{target.id}>.",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.response.send_message(
+                f"Unverified <@{target.id}>.",
+                ephemeral=True,
+            ),
+            times=1,
         )
         found = (
             await DatabaseSession.execute(select(Verify).where(Verify.user_xid == target.id))

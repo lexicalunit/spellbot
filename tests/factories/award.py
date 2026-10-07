@@ -5,6 +5,7 @@ from __future__ import annotations
 import factory
 
 from spellbot.models import GuildAward, UserAward
+from tests.factories.session import factory_session
 
 
 class GuildAwardFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -16,10 +17,12 @@ class GuildAwardFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = GuildAward
+        sqlalchemy_session_factory = factory_session
         sqlalchemy_session_persistence = "flush"
 
 
 class UserAwardFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = UserAward
+        sqlalchemy_session_factory = factory_session
         sqlalchemy_session_persistence = "flush"

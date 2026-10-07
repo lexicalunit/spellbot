@@ -4,16 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, TypeIs, get_args
 
 from dateutil.relativedelta import relativedelta
 
 Bucket = Literal["day", "week", "month"]
 Period = Literal["7d", "30d", "90d", "180d", "365d", "730d", "all"]
 
-VALID_PERIODS: frozenset[str] = frozenset(("7d", "30d", "90d", "180d", "365d", "730d", "all"))
+VALID_PERIODS: frozenset[Period] = frozenset(get_args(Period))
 
-PERIOD_DAYS: dict[str, int] = {
+PERIOD_DAYS: dict[Period, int] = {
     "7d": 7,
     "30d": 30,
     "90d": 90,
@@ -21,7 +21,7 @@ PERIOD_DAYS: dict[str, int] = {
     "365d": 365,
     "730d": 730,
 }
-PERIOD_BUCKET: dict[str, Bucket] = {
+PERIOD_BUCKET: dict[Period, Bucket] = {
     "7d": "day",
     "30d": "day",
     "90d": "day",
@@ -39,19 +39,23 @@ class PeriodSpec:
     bucket: Bucket
 
 
+def is_period(value: str | None) -> TypeIs[Period]:
+    return value in VALID_PERIODS
+
+
 def parse_period(period: str | None) -> PeriodSpec:
     """
     Parse the period query parameter into a (start_dt, bucket) spec.
 
     Unknown values default to 30d. `all` returns `start_dt=None` (no lower bound).
     """
-    p = period if period in VALID_PERIODS else "30d"
+    p: Period = period if is_period(period) else "30d"
     bucket = PERIOD_BUCKET[p]
     if p == "all":
         return PeriodSpec(period="all", start_dt=None, bucket=bucket)
     days = PERIOD_DAYS[p]
     start = datetime.now(tz=UTC) + relativedelta(days=-days)
-    return PeriodSpec(period=p, start_dt=start, bucket=bucket)  # type: ignore[arg-type]
+    return PeriodSpec(period=p, start_dt=start, bucket=bucket)
 
 
 GuildMode = Literal["all", "include", "exclude"]

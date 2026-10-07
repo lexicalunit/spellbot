@@ -217,9 +217,9 @@ def is_admin(interaction: discord.Interaction) -> bool:
     perms = safe_permissions_for(channel, interaction.user)
     if perms is not None and perms.administrator:
         return True
-    if not hasattr(interaction.user, "roles"):
+    author_roles = getattr(interaction.user, "roles", None)
+    if author_roles is None:
         raise AdminOnlyError
-    author_roles = interaction.user.roles  # type: ignore
     has_admin_role = any(
         role.name == settings.ADMIN_ROLE for role in cast("list[discord.Role]", author_roles)
     )
@@ -288,11 +288,7 @@ def user_can_moderate(
         if perms := safe_permissions_for(channel, member):
             has_admin = perms.administrator
             has_ban_members = perms.ban_members
-        role_names = [
-            role.name
-            for role in cast("list[discord.Role]", author.roles)  # type: ignore
-            if role is not None
-        ]
+        role_names = [role.name for role in member.roles if role is not None]
     return is_moderator(
         is_guild_owner=is_guild_owner,
         has_admin=has_admin,

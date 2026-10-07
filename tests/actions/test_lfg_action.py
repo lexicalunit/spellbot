@@ -64,20 +64,12 @@ class TestLookingForGameAction:
         action.channel_data.default_service = GameService.X_MAGE
         assert await action.get_service(None) == GameService.X_MAGE.value
 
-    async def test_get_service_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data.default_service = None  # type: ignore
-        assert await action.get_service(None) == GameService.CONVOKE.value
-
     async def test_get_format(self, action: LookingForGameAction) -> None:
         assert await action.get_format(GameFormat.PAUPER.value) == GameFormat.PAUPER.value
 
     async def test_get_format_fallback_channel_data(self, action: LookingForGameAction) -> None:
         action.channel_data.default_format = GameFormat.PAUPER
         assert await action.get_format(None) == GameFormat.PAUPER.value
-
-    async def test_get_format_fallback_default(self, action: LookingForGameAction) -> None:
-        action.channel_data.default_format = None  # type: ignore
-        assert await action.get_format(None) == GameFormat.COMMANDER.value
 
     @pytest.mark.parametrize(
         ("format", "bracket", "actual"),
@@ -1375,7 +1367,7 @@ class TestLookingForGameAction:
         )
 
         mock_suggestion = VoiceChannelSuggestion(already_picked=None, random_empty=None)
-        mocker.patch.object(
+        make_game_ready = mocker.patch.object(
             action,
             "make_game_ready",
             AsyncMock(return_value=(game_data, mock_suggestion)),
@@ -1395,20 +1387,13 @@ class TestLookingForGameAction:
         await action.execute_start()
 
         services.games.shrink_game.assert_called_once_with(game_data)
-        action.make_game_ready.assert_called_once()  # type: ignore
-        call_args = action.make_game_ready.call_args  # type: ignore
+        make_game_ready.assert_called_once()
+        call_args = make_game_ready.call_args
         assert call_args[0][0] == game_data
         assert set(call_args[1]["player_xids"]) == {100, 200}
         voice_stub.assert_called_once_with(game_data, action.interaction.guild_id)
         embed_stub.assert_called_once()
         dm_stub.assert_called_once()
-
-    async def test_get_bracket_when_no_format_no_bracket_no_default(
-        self,
-        action: LookingForGameAction,
-    ) -> None:
-        action.channel_data.default_bracket = None  # type: ignore
-        assert await action.get_bracket(None, None) == GameBracket.NONE.value
 
     async def test_block_if_no_player_linked_non_playgroup_service(
         self,

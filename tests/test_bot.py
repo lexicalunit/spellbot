@@ -28,9 +28,10 @@ from spellbot.errors import (
 )
 from spellbot.models import Channel, Game, Guild, Verify
 from spellbot.utils import handle_interaction_errors
-from tests.mocks import create_mock_game
+from tests.mocks import build_role, create_mock_game
 
 if TYPE_CHECKING:
+    from decoy import Decoy
     from pytest_mock import MockerFixture
 
     from spellbot.settings import Settings
@@ -189,12 +190,15 @@ class TestSpellBot:
     )
     async def test_handle_interaction_errors(
         self,
-        interaction: discord.Interaction,
+        decoy: Decoy,
+        decoy_member: discord.Member,
         error: Exception,
         response: str,
     ) -> None:
+        interaction = decoy.mock(cls=discord.Interaction)
+        interaction.user = decoy_member
         await handle_interaction_errors(interaction, error)
-        interaction.user.send.assert_called_once_with(response)  # type: ignore
+        decoy.verify(await decoy_member.send(response))
 
     async def test_handle_interaction_errors_unhandled_exception(
         self,
@@ -244,18 +248,20 @@ class TestSpellBot:
 
     async def test_on_message_happy_path(
         self,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
         bot: SpellBot,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         super_on_message_mock = AsyncMock()
         monkeypatch.setattr(AutoShardedBot, "on_message", super_on_message_mock)
-        monkeypatch.setattr(bot, "handle_verification", AsyncMock())
-        dpy_message.flags.value = 16
-        await bot.on_message(dpy_message)
+        handle_verification = AsyncMock()
+        monkeypatch.setattr(bot, "handle_verification", handle_verification)
+        decoy_message.flags.value = 16
+        await bot.on_message(decoy_message)
         super_on_message_mock.assert_not_called()
-        bot.handle_verification.assert_called_once_with(dpy_message)  # type: ignore
-        dpy_message.reply.assert_not_called()  # type: ignore
+        handle_verification.assert_called_once_with(decoy_message)
+        decoy.verify(await decoy_message.reply(), times=0, ignore_extra_args=True)
 
     async def test_on_message_delete_happy_path(
         self,
@@ -266,7 +272,7 @@ class TestSpellBot:
         mock_handle_message_deleted = AsyncMock()
         monkeypatch.setattr(bot, "handle_message_deleted", mock_handle_message_deleted)
         await bot.on_message_delete(dpy_message)
-        bot.handle_message_deleted.assert_called_once_with(dpy_message)  # type: ignore
+        mock_handle_message_deleted.assert_called_once_with(dpy_message)
 
     async def test_on_message_delete_message_without_id(
         self,
@@ -278,7 +284,7 @@ class TestSpellBot:
         mock_handle_message_deleted = AsyncMock()
         monkeypatch.setattr(bot, "handle_message_deleted", mock_handle_message_deleted)
         await bot.on_message_delete(dpy_message)
-        bot.handle_message_deleted.assert_not_called()  # type: ignore
+        mock_handle_message_deleted.assert_not_called()
 
     async def test_on_command_error_command_not_found(
         self,
@@ -399,11 +405,12 @@ class TestSpellBotHandleVerification:
         message.flags.value = 1
         message.author = MagicMock()
         del message.author.id
-        monkeypatch.setattr(bot, "handle_verification", MagicMock())
+        handle_verification = MagicMock()
+        monkeypatch.setattr(bot, "handle_verification", handle_verification)
 
         await bot.on_message(message)
 
-        bot.handle_verification.assert_not_called()  # type: ignore
+        handle_verification.assert_not_called()
 
     async def test_without_auto_verify(
         self,
@@ -484,180 +491,156 @@ class TestSpellBotHandleVerification:
     async def test_verified_only_when_unverified(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
         factories: Factories,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
-            xid=dpy_message.channel.id,
-            verified_only=True,
-            guild_xid=dpy_message.guild.id,
-        )
+        factories.guild.create(xid=decoy_guild.id)
+        factories.channel.create(xid=decoy_channel.id, verified_only=True, guild_xid=decoy_guild.id)
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_called_once()  # type: ignore
+        decoy.verify(await decoy_message.delete())
 
     async def test_verified_only_when_verified(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
+        decoy_member: discord.Member,
         factories: Factories,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
-        assert isinstance(dpy_message.author, discord.User)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
-            xid=dpy_message.channel.id,
-            verified_only=True,
-            guild_xid=dpy_message.guild.id,
-        )
-        factories.verify.create(
-            guild_xid=dpy_message.guild.id,
-            user_xid=dpy_message.author.id,
-            verified=True,
-        )
+        factories.guild.create(xid=decoy_guild.id)
+        factories.channel.create(xid=decoy_channel.id, verified_only=True, guild_xid=decoy_guild.id)
+        factories.verify.create(guild_xid=decoy_guild.id, user_xid=decoy_member.id, verified=True)
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_not_called()  # type: ignore
+        decoy.verify(await decoy_message.delete(), times=0, ignore_extra_args=True)
 
     async def test_unverified_only_when_unverified(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
         factories: Factories,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
-        factories.guild.create(xid=dpy_message.guild.id)
+        factories.guild.create(xid=decoy_guild.id)
         factories.channel.create(
-            xid=dpy_message.channel.id,
+            xid=decoy_channel.id,
             unverified_only=True,
-            guild_xid=dpy_message.guild.id,
+            guild_xid=decoy_guild.id,
         )
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_not_called()  # type: ignore
+        decoy.verify(await decoy_message.delete(), times=0, ignore_extra_args=True)
 
     async def test_unverified_only_when_verified(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
+        decoy_member: discord.Member,
         factories: Factories,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
-        assert isinstance(dpy_message.author, discord.User)
-        factories.guild.create(xid=dpy_message.guild.id)
+        factories.guild.create(xid=decoy_guild.id)
         factories.channel.create(
-            xid=dpy_message.channel.id,
+            xid=decoy_channel.id,
             unverified_only=True,
-            guild_xid=dpy_message.guild.id,
+            guild_xid=decoy_guild.id,
         )
-        factories.verify.create(
-            guild_xid=dpy_message.guild.id,
-            user_xid=dpy_message.author.id,
-            verified=True,
-        )
+        factories.verify.create(guild_xid=decoy_guild.id, user_xid=decoy_member.id, verified=True)
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_called_once()  # type: ignore
+        decoy.verify(await decoy_message.delete())
 
     async def test_message_from_mod_role(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
+        decoy_member: discord.Member,
         factories: Factories,
         settings: Settings,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
-        mod_role = MagicMock()
-        mod_role.name = f"{settings.MOD_PREFIX}-role"
-        monkeypatch.setattr(dpy_message.author, "roles", [mod_role])
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
-            xid=dpy_message.channel.id,
-            verified_only=True,
-            guild_xid=dpy_message.guild.id,
-        )
+        mod_role = build_role(decoy_guild, role_id=1, name=f"{settings.MOD_PREFIX}-role")
+        decoy.when(decoy_member.roles).then_return([mod_role])
+        factories.guild.create(xid=decoy_guild.id)
+        factories.channel.create(xid=decoy_channel.id, verified_only=True, guild_xid=decoy_guild.id)
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_not_called()  # type: ignore
+        decoy.verify(await decoy_message.delete(), times=0, ignore_extra_args=True)
 
     async def test_message_from_admin_role(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
+        decoy_member: discord.Member,
         factories: Factories,
         settings: Settings,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
-        admin_role = MagicMock()
-        admin_role.name = settings.ADMIN_ROLE
-        monkeypatch.setattr(dpy_message.author, "roles", [admin_role])
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
-            xid=dpy_message.channel.id,
-            verified_only=True,
-            guild_xid=dpy_message.guild.id,
-        )
+        admin_role = build_role(decoy_guild, role_id=1, name=settings.ADMIN_ROLE)
+        decoy.when(decoy_member.roles).then_return([admin_role])
+        factories.guild.create(xid=decoy_guild.id)
+        factories.channel.create(xid=decoy_channel.id, verified_only=True, guild_xid=decoy_guild.id)
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_not_called()  # type: ignore
+        decoy.verify(await decoy_message.delete(), times=0, ignore_extra_args=True)
 
     async def test_message_from_owner(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
+        decoy_member: discord.Member,
         factories: Factories,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
-        monkeypatch.setattr(dpy_message.author, "id", dpy_message.guild.owner_id)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
-            xid=dpy_message.channel.id,
-            verified_only=True,
-            guild_xid=dpy_message.guild.id,
-        )
+        assert decoy_guild.owner_id is not None
+        decoy_member.id = decoy_guild.owner_id
+        factories.guild.create(xid=decoy_guild.id)
+        factories.channel.create(xid=decoy_channel.id, verified_only=True, guild_xid=decoy_guild.id)
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_not_called()  # type: ignore
+        decoy.verify(await decoy_message.delete(), times=0, ignore_extra_args=True)
 
     async def test_message_from_administrator(
         self,
         bot: SpellBot,
-        dpy_message: discord.Message,
+        decoy: Decoy,
+        decoy_message: discord.Message,
+        decoy_guild: discord.Guild,
+        decoy_channel: discord.TextChannel,
+        decoy_member: discord.Member,
         factories: Factories,
     ) -> None:
-        assert dpy_message.guild
-        assert isinstance(dpy_message.guild, discord.Guild)
         admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
-        dpy_message.channel.permissions_for = MagicMock(return_value=admin_perms)
-        factories.guild.create(xid=dpy_message.guild.id)
-        factories.channel.create(
-            xid=dpy_message.channel.id,
-            verified_only=True,
-            guild_xid=dpy_message.guild.id,
-        )
+        decoy.when(decoy_channel.permissions_for(decoy_member)).then_return(admin_perms)
+        factories.guild.create(xid=decoy_guild.id)
+        factories.channel.create(xid=decoy_channel.id, verified_only=True, guild_xid=decoy_guild.id)
 
-        await bot.handle_verification(dpy_message)
+        await bot.handle_verification(decoy_message)
 
-        dpy_message.delete.assert_not_called()  # type: ignore
+        decoy.verify(await decoy_message.delete(), times=0, ignore_extra_args=True)
 
 
 @pytest.mark.asyncio

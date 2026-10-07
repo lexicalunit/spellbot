@@ -557,7 +557,8 @@ async def safe_delete_channel(
     if not hasattr(channel, "id"):
         return False
 
-    if not hasattr(channel, "delete"):
+    delete = getattr(channel, "delete", None)
+    if delete is None:
         return False
 
     channel_xid: int = channel.id
@@ -565,7 +566,7 @@ async def safe_delete_channel(
         span.set_tag("channel_xid", str(channel_xid))
 
     result = await safe_call(
-        channel.delete,  # type: ignore
+        delete,
         "in guild %(guild_xid)s, could not delete channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,

@@ -5,6 +5,7 @@ from __future__ import annotations
 import factory
 
 from spellbot.models import Token
+from tests.factories.session import factory_session
 
 
 class TokenFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -12,4 +13,5 @@ class TokenFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = Token
+        sqlalchemy_session_factory = factory_session
         sqlalchemy_session_persistence = "flush"

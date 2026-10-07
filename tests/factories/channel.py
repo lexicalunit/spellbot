@@ -5,6 +5,7 @@ from __future__ import annotations
 import factory
 
 from spellbot.models import Channel
+from tests.factories.session import factory_session
 
 
 class ChannelFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -14,4 +15,5 @@ class ChannelFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = Channel
+        sqlalchemy_session_factory = factory_session
         sqlalchemy_session_persistence = "flush"

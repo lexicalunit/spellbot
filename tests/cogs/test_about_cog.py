@@ -12,6 +12,7 @@ from tests.fixtures import get_last_send_message, run_command
 
 if TYPE_CHECKING:
     import discord
+    from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
 
     from spellbot import SpellBot
@@ -24,6 +25,7 @@ pytestmark = pytest.mark.use_db
 class TestCogAbout:
     async def test_about(
         self,
+        decoy: Decoy,
         bot: SpellBot,
         interaction: discord.Interaction,
         settings: Settings,
@@ -34,7 +36,7 @@ class TestCogAbout:
         cog = AboutCog(bot)
         await run_command(cog.about, interaction)
 
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "color": settings.INFO_EMBED_COLOR,
             "description": (
                 "_The Discord bot for Webcam Magic._\n"

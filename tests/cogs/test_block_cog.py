@@ -16,6 +16,7 @@ from tests.fixtures import run_command
 
 if TYPE_CHECKING:
     import discord
+    from decoy import Decoy
 
     from spellbot import SpellBot
     from spellbot.settings import Settings
@@ -32,6 +33,7 @@ async def cog(bot: SpellBot) -> BlockCog:
 class TestCogBlock:
     async def test_block_and_unblock(
         self,
+        decoy: Decoy,
         cog: BlockCog,
         interaction: discord.Interaction,
         settings: Settings,
@@ -47,9 +49,12 @@ class TestCogBlock:
 
         await run_command(cog.block, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
-            f"<@{target.id}> has been blocked.\n\n{cta}",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.response.send_message(
+                f"<@{target.id}> has been blocked.\n\n{cta}",
+                ephemeral=True,
+            ),
+            times=1,
         )
 
         target_user = (
@@ -76,11 +81,13 @@ class TestCogBlock:
         assert block.blocked_user_xid == target.id
 
         DatabaseSession.expire_all()
-        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.unblock, interaction, target=target)
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
-            f"<@{target.id}> has been unblocked.\n\n{cta}",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.response.send_message(
+                f"<@{target.id}> has been unblocked.\n\n{cta}",
+                ephemeral=True,
+            ),
+            times=1,
         )
         block = (
             await DatabaseSession.execute(
@@ -94,6 +101,7 @@ class TestCogBlock:
 
     async def test_block_self(
         self,
+        decoy: Decoy,
         cog: BlockCog,
         interaction: discord.Interaction,
     ) -> None:
@@ -103,15 +111,19 @@ class TestCogBlock:
 
         await run_command(cog.block, interaction, target=target)
 
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
-            "You can not block yourself.",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.response.send_message(
+                "You can not block yourself.",
+                ephemeral=True,
+            ),
+            times=1,
         )
         blocks = list((await DatabaseSession.execute(select(Block))).scalars().all())
         assert len(blocks) == 0
 
     async def test_blocked_links_to_profile(
         self,
+        decoy: Decoy,
         cog: BlockCog,
         user: User,
         interaction: discord.Interaction,
@@ -120,10 +132,13 @@ class TestCogBlock:
         await run_command(cog.blocked, interaction)
 
         link = f"{settings.API_BASE_URL}/u/{interaction.user.id}"
-        interaction.response.send_message.assert_called_once_with(  # type: ignore
-            (
-                "You can view and manage your blocked users from your profile page.\n\n"
-                f"[Open your profile on spellbot.io]({link})"
+        decoy.verify(
+            await interaction.response.send_message(
+                (
+                    "You can view and manage your blocked users from your profile page.\n\n"
+                    f"[Open your profile on spellbot.io]({link})"
+                ),
+                ephemeral=True,
             ),
-            ephemeral=True,
+            times=1,
         )

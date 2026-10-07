@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from aiohttp.client import ClientSession
+    from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
     from pytest_mock import MockerFixture
 
@@ -269,8 +270,8 @@ class TestRetryIfNotUnrecoverable:
             pytest.param(504, True, id="gateway_timeout"),
         ],
     )
-    def test_client_response_error(self, status: int, expected: bool) -> None:
-        exc = aiohttp.ClientResponseError(None, None, status=status)  # type: ignore
+    def test_client_response_error(self, decoy: Decoy, status: int, expected: bool) -> None:
+        exc = aiohttp.ClientResponseError(decoy.mock(cls=aiohttp.RequestInfo), (), status=status)
         assert retry_if_not_unrecoverable(exc) is expected
 
     def test_non_client_response_error(self) -> None:
@@ -421,15 +422,23 @@ class TestSendDm:
         await send_dm(101, {"content": "Hello"})
         assert mock_post.call_count == 2
 
-    async def test_send_dm_unrecoverable_error(self, mocker: MockerFixture) -> None:
-        exc = aiohttp.ClientResponseError(None, None, status=403)  # type: ignore
+    async def test_send_dm_unrecoverable_error(
+        self,
+        decoy: Decoy,
+        mocker: MockerFixture,
+    ) -> None:
+        exc = aiohttp.ClientResponseError(decoy.mock(cls=aiohttp.RequestInfo), (), status=403)
         mocker.patch("spellbot.web.api.rest.post_with_retry", side_effect=exc)
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})
 
-    async def test_send_dm_recoverable_client_error(self, mocker: MockerFixture) -> None:
+    async def test_send_dm_recoverable_client_error(
+        self,
+        decoy: Decoy,
+        mocker: MockerFixture,
+    ) -> None:
         # 500 is not in UNRECOVERABLE, so it should be re-raised and caught by outer except
-        exc = aiohttp.ClientResponseError(None, None, status=500)  # type: ignore
+        exc = aiohttp.ClientResponseError(decoy.mock(cls=aiohttp.RequestInfo), (), status=500)
         mocker.patch("spellbot.web.api.rest.post_with_retry", side_effect=exc)
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})
