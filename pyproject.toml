@@ -105,7 +105,7 @@ exclude = ["tests"]
 packages = ["src/spellbot"]
 
 [tool.pyright]
-enableTypeIgnoreComments = true
+enableTypeIgnoreComments = false
 ignore = [".venv", "dist"]
 reportMatchNotExhaustive = true
 reportMissingParameterType = true
