@@ -538,6 +538,15 @@ wheels = [
 ]
 
 [[package]]
+name = "crawlerdetect"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/7f/fd2d1a8f2bab45c235a87ebeff748acca186947c53e4da9b5b237de576b2/crawlerdetect-0.4.2.tar.gz", hash = "sha256:2ecbc825ec9bbfe94d1878078fbc3d336ed4b247a00dd56691479554ca3cb2ef", size = 2525256, upload-time = "2026-07-30T06:38:05.353Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/80/39/bfc1990a96e68391721d8d76a56f6d8a90f803a4c06c402b73e2a240c6f7/crawlerdetect-0.4.2-py3-none-any.whl", hash = "sha256:62e6dd62afde41d8c934604f0c99c097d456d24e0de3b81f51eca7b1bf94d6a3", size = 17215, upload-time = "2026-07-30T06:38:00.772Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "50.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1906,6 +1915,7 @@ dependencies = [
     { name = "alembic" },
     { name = "babel" },
     { name = "click" },
+    { name = "crawlerdetect" },
     { name = "cryptography" },
     { name = "datadog" },
     { name = "ddtrace" },
@@ -1971,6 +1981,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13.1" },
     { name = "babel", specifier = ">=2.14.0" },
     { name = "click", specifier = ">=8.1.7" },
+    { name = "crawlerdetect", specifier = ">=0.4.2" },
     { name = "cryptography", specifier = ">=48.0.0" },
     { name = "datadog", specifier = ">=0.49.1" },
     { name = "ddtrace", specifier = ">=3.16.2" },

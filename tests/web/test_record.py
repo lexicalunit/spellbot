@@ -15,6 +15,8 @@ from spellbot.models import Block, Channel, GameStatus, Guild, GuildAward, User
 from spellbot.web.api import record
 
 if TYPE_CHECKING:
+    from aiohttp import web
+    from aiohttp.abc import AbstractStreamWriter
     from aiohttp.client import ClientSession
     from freezegun.api import FrozenDateTimeFactory
     from pytest_mock import MockerFixture
@@ -822,6 +824,85 @@ class TestWebRecordExport:
         # The disconnect is swallowed: the request completes without a 500/traceback.
         assert resp.status == 200
         assert any("client disconnected" in r.message for r in caplog.records)
+
+    async def test_user_export_client_disconnect_before_headers(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+        factories.play.create(game_id=game.id, user_xid=user.xid)
+
+        # Simulate the client dropping the connection before the headers are sent.
+        # Only the handler's own `prepare` call fails; aiohttp's follow-up call succeeds.
+        original_prepare = record.web.StreamResponse.prepare
+        calls = 0
+
+        async def flaky_prepare(
+            response: web.StreamResponse,
+            request: web.BaseRequest,
+        ) -> AbstractStreamWriter | None:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise ConnectionResetError("Cannot write to closing transport")
+            return await original_prepare(response, request)
+
+        mocker.patch.object(record.web.StreamResponse, "prepare", flaky_prepare)
+
+        with caplog.at_level("INFO"):
+            resp = await client.get(f"/u/{user.xid}/export.csv")
+
+        # The disconnect is swallowed: the request completes without a 500/traceback.
+        assert resp.status == 200
+        assert any("client disconnected" in r.message for r in caplog.records)
+        assert not any(r.name == "aiohttp.server" for r in caplog.records)
+
+    @pytest.mark.parametrize("method", ["GET", "HEAD"])
+    @pytest.mark.parametrize("kind", ["user", "channel"])
+    async def test_export_rejects_crawlers(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        mocker: MockerFixture,
+        method: str,
+        kind: str,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        stream_user = mocker.spy(record.services.plays, "stream_user_records")
+        stream_channel = mocker.spy(record.services.plays, "stream_channel_records")
+        path = (
+            f"/u/{user.xid}/export.csv"
+            if kind == "user"
+            else f"/g/{guild.xid}/c/{channel.xid}/export.csv"
+        )
+
+        resp = await client.request(
+            method,
+            path,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; ShapBot/0.1.0)"},
+        )
+
+        assert resp.status == 403
+        stream_user.assert_not_called()
+        stream_channel.assert_not_called()
 
     async def test_channel_export_success(
         self,

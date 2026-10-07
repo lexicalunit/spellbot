@@ -57,6 +57,13 @@ class TestWebStaticFiles:
         assert "PERIOD_BUCKET" in text
         assert resp.headers.get("Cache-Control") == "no-cache, no-store, must-revalidate"
 
+    async def test_robots_txt(self, client: ClientSession) -> None:
+        resp = await client.get("/robots.txt")
+        assert resp.status == 200
+        assert resp.content_type == "text/plain"
+        text = await resp.text()
+        assert text == "User-agent: *\nDisallow: /\n"
+
 
 @pytest.mark.asyncio
 class TestWebHealth:

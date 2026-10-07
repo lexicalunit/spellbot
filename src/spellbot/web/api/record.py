@@ -40,7 +40,7 @@ from spellbot.web.api.admin_auth import is_owner_request
 from spellbot.web.api.moderation import viewer_is_moderator
 from spellbot.web.api.oauth import safe_relative_path
 from spellbot.web.api.viewer_auth import get_viewer
-from spellbot.web.tools import redirect
+from spellbot.web.tools import is_crawler, redirect
 
 logger = logging.getLogger(__name__)
 
@@ -1009,6 +1009,9 @@ def format_channel_export_row(record: dict[str, Any]) -> list[Any]:
 
 
 async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamResponse:
+    if is_crawler(request):
+        return web.Response(status=403, text="Forbidden")
+
     try:
         if kind is RecordKind.CHANNEL:
             guild_xid = int(request.match_info["guild"])
@@ -1044,9 +1047,9 @@ async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamRespo
     )
     response.enable_compression(force=web.ContentCoding.gzip)
     response.enable_chunked_encoding()
-    await response.prepare(request)
 
     try:
+        await response.prepare(request)
         await response.write(csv_line(header))
         async for record in stream:
             await response.write(csv_line(format_row(record)))

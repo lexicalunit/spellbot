@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 from aiohttp import web
+from crawlerdetect import CrawlerDetect
 
 from spellbot.redis_client import get_redis
 from spellbot.settings import settings
@@ -26,6 +27,10 @@ end
 return current
 """
 
+# Shared across requests: `is_crawler` doesn't await between matching and returning,
+# so the detector's per-call match state can't interleave between requests.
+crawler_detect = CrawlerDetect()
+
 
 def redirect(location: str) -> web.Response:
     """
@@ -35,6 +40,11 @@ def redirect(location: str) -> web.Response:
     middlewares like `security_headers_middleware`, so return a plain response instead.
     """
     return web.Response(status=302, headers={"Location": location})
+
+
+def is_crawler(request: web.Request) -> bool:
+    """Whether the request comes from a self-identified crawler."""
+    return crawler_detect.is_crawler(request.headers.get("User-Agent", ""))
 
 
 async def rate_limited(request: web.Request, key: str | None = None) -> bool:

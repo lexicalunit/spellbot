@@ -51,6 +51,13 @@ TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 # under `/api` or `/admin` belongs here.
 PUBLIC_CORS_PATHS = frozenset({"/stats.json", "/queues.json", "/status.json"})
 
+# Keep crawlers off the whole site. CSV exports, which are expensive to serve,
+# additionally reject crawlers that ignore this (see `is_crawler`).
+ROBOTS_TXT = """\
+User-agent: *
+Disallow: /
+"""
+
 ALL_ROUTES = [
     ping.routes,
     stats.routes,
@@ -190,6 +197,11 @@ async def serve_dashboard_js(_: web.Request) -> web.Response:
     )
 
 
+async def serve_robots_txt(_: web.Request) -> web.Response:
+    """Serve the crawler rules for the site."""
+    return web.Response(text=ROBOTS_TXT, content_type="text/plain")
+
+
 def build_web_app() -> web.Application:
     import_models()
     app = web.Application(
@@ -213,6 +225,7 @@ def build_web_app() -> web.Application:
         app.router.add_routes(routes)
     app.router.add_get("/analytics.js", serve_analytics_js)
     app.router.add_get("/dashboard.js", serve_dashboard_js)
+    app.router.add_get("/robots.txt", serve_robots_txt)
     app.on_cleanup.append(close_shared_clients)
     return app
 

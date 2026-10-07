@@ -85,6 +85,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+)
+
 # Counters for generating unique offsets in fixtures when running tests in parallel.
 # Each worker gets its own counter, and offsets are calculated to avoid collisions
 # across workers. Worker gw0 gets offsets 1, 2, 3...; gw1 gets 10001, 10002...; etc.
@@ -275,8 +280,14 @@ def client(
     event_loop = asyncio.get_event_loop()
     # Disable the test server's access logger: on Python 3.14 aiohttp's access-log
     # time formatter raises (`tm_gmtoff` is None), spamming errors during tests.
+    # Browse as a real browser: aiohttp's default `User-Agent` is detected as a
+    # crawler, which endpoints like the CSV exports reject.
     return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"access_log": None}),
+        aiohttp_client(
+            app,
+            server_kwargs={"access_log": None},
+            headers={"User-Agent": BROWSER_USER_AGENT},
+        ),
     )
 
 

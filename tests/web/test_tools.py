@@ -11,7 +11,7 @@ import pytest_asyncio
 from spellbot import redis_client
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
-from spellbot.web.tools import rate_limited
+from spellbot.web.tools import is_crawler, rate_limited
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -114,3 +114,52 @@ class TestRateLimited:
             await rate_limited(request)
             await rate_limited(request)
             assert from_url.call_count == 1
+
+
+class TestIsCrawler:
+    @pytest.mark.parametrize(
+        "user_agent",
+        [
+            "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ShapBot/0.1.0",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+            "Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)",
+            "Sogou web spider/4.0",
+            "CCBot/2.0 (https://commoncrawl.org/faq/)",
+            (
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) HeadlessChrome/139.0.0.0 Safari/537.36"
+            ),
+            "python-requests/2.32.3",
+            "curl/8.7.1",
+        ],
+    )
+    def test_crawler(self, user_agent: str) -> None:
+        request = MagicMock()
+        request.headers = {"User-Agent": user_agent}
+        assert is_crawler(request)
+
+    @pytest.mark.parametrize(
+        "user_agent",
+        [
+            (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+                "(KHTML, like Gecko) Chrome/139.0.0.0 Safari/605.1.15"
+            ),
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0",
+            (
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 "
+                "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+            ),
+            "",
+        ],
+    )
+    def test_not_crawler(self, user_agent: str) -> None:
+        request = MagicMock()
+        request.headers = {"User-Agent": user_agent}
+        assert not is_crawler(request)
+
+    def test_missing_user_agent(self) -> None:
+        request = MagicMock()
+        request.headers = {}
+        assert not is_crawler(request)
