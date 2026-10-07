@@ -11,13 +11,12 @@ import alembic.command
 import alembic.config
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 from . import import_models
 
 if TYPE_CHECKING:
     from sqlalchemy.engine.url import URL
-    from sqlalchemy.ext.declarative import DeclarativeMeta
 
 MODULE_ROOT = Path(__file__).resolve().parent
 PACKAGE_ROOT = MODULE_ROOT.parent
@@ -27,7 +26,11 @@ ALEMBIC_INI = MIGRATIONS_DIR / "alembic.ini"
 logger = logging.getLogger(__name__)
 
 now = text("(now() at time zone 'utc')")
-Base: DeclarativeMeta = declarative_base(cls=AsyncAttrs)
+
+
+class Base(AsyncAttrs, DeclarativeBase):
+    """Declarative base for all SpellBot models."""
+
 
 # Marker placed in a column's `doc` to flag it as editable from the web admin panel.
 WEB_EDITABLE = "[web-editable]"

@@ -62,7 +62,7 @@ async def guild(factories: Factories) -> Guild:
 
 @pytest_asyncio.fixture
 async def discord_guild(guild: Guild, mocker: MockerFixture) -> discord.Guild:
-    discord_obj: discord.Guild = mock_discord_object(guild)  # type: ignore
+    discord_obj: discord.Guild = mock_discord_object(guild)
     mocker.patch("spellbot.client.SpellBot.get_guild", return_value=discord_obj)
     discord_obj.categories = []  # type: ignore
     return discord_obj
@@ -526,7 +526,7 @@ class TestTaskCleanupOldVoiceChannels:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC) - timedelta(hours=1),
         )
-        game.voice_xid = voice_channel.id + 1  # type: ignore
+        game.voice_xid = voice_channel.id + 1
         await DatabaseSession.commit()
         voice_channel.voice_states.keys = lambda: False  # type: ignore
         make_category_channel(

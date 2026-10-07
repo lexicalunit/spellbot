@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Column, DateTime, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import BigInteger, DateTime, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.expression import false, text
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
@@ -19,7 +19,7 @@ from . import Base, now, web_editable
 if TYPE_CHECKING:
     from spellbot.data import ChannelData
 
-    from . import Game, Guild  # noqa: F401
+    from . import Game, Guild
 
 
 class Channel(Base):
@@ -27,23 +27,20 @@ class Channel(Base):
 
     __tablename__ = "channels"
 
-    xid: int = cast(
-        "int",
-        Column(
-            BigInteger,
-            primary_key=True,
-            nullable=False,
-            doc="The external Discord ID for a channel",
-        ),
+    xid: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True,
+        nullable=False,
+        doc="The external Discord ID for a channel",
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this channel was first created",
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
@@ -51,18 +48,18 @@ class Channel(Base):
         onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this channel was last updated",
     )
-    guild_xid = Column(
+    guild_xid: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("guilds.xid", ondelete="CASCADE"),
         nullable=False,
         index=True,
         doc="The guild associated with this channel",
     )
-    name = Column(
+    name: Mapped[str | None] = mapped_column(
         String(100),
         doc="Most recently cached name of this channel",
     )
-    default_seats = Column(
+    default_seats: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=4,
@@ -71,7 +68,7 @@ class Channel(Base):
             "The default number of players that should be seated at newly created games.",
         ),
     )
-    default_format = Column(
+    default_format: Mapped[int] = mapped_column(
         Integer(),
         default=GameFormat.COMMANDER.value,
         server_default=text(str(GameFormat.COMMANDER.value)),
@@ -79,7 +76,7 @@ class Channel(Base):
         nullable=False,
         doc=web_editable("The default Magic: The Gathering format for this channel."),
     )
-    default_bracket = Column(
+    default_bracket: Mapped[int] = mapped_column(
         Integer(),
         default=GameBracket.NONE.value,
         server_default=text(str(GameBracket.NONE.value)),
@@ -87,7 +84,7 @@ class Channel(Base):
         nullable=False,
         doc=web_editable("The default commander bracket for this channel"),
     )
-    default_service = Column(
+    default_service: Mapped[int] = mapped_column(
         Integer(),
         default=GameService.CONVOKE.value,
         server_default=text(str(GameService.CONVOKE.value)),
@@ -95,7 +92,7 @@ class Channel(Base):
         nullable=False,
         doc=web_editable("The default service for games in this channel."),
     )
-    auto_verify = Column(
+    auto_verify: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -104,14 +101,14 @@ class Channel(Base):
             "If enabled, this channel will trigger automatic verification of users who post there.",
         ),
     )
-    unverified_only = Column(
+    unverified_only: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc=web_editable("Verified user posts will be deleted from this channel automatically."),
     )
-    verified_only = Column(
+    verified_only: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -120,17 +117,17 @@ class Channel(Base):
             "Unverified user posts will be deleted from this channel automatically.",
         ),
     )
-    motd = Column(
+    motd: Mapped[str | None] = mapped_column(
         String(255),
         doc=web_editable("This channel's message of the day."),
     )
-    extra = Column(
+    extra: Mapped[str | None] = mapped_column(
         String(255),
         doc=web_editable(
             "Extra message content (which can contain role pings) added to game posts.",
         ),
     )
-    voice_category = Column(
+    voice_category: Mapped[str | None] = mapped_column(
         String(50),
         doc=web_editable(
             "The channel category name for voice channels created by this bot "
@@ -140,7 +137,7 @@ class Channel(Base):
         default="SpellBot Voice Channels",
         server_default=text("'SpellBot Voice Channels'"),
     )
-    delete_expired = Column(
+    delete_expired: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -150,21 +147,21 @@ class Channel(Base):
             "expired.",
         ),
     )
-    voice_invite = Column(
+    voice_invite: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc=web_editable("Create voice channel invites for games in this channel."),
     )
-    blind_games = Column(
+    blind_games: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc=web_editable("Hide the player list for games created in this channel."),
     )
-    to_mode = Column(
+    to_mode: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -174,7 +171,7 @@ class Channel(Base):
             "for games in this channel.",
         ),
     )
-    competitive_mode = Column(
+    competitive_mode: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -184,12 +181,12 @@ class Channel(Base):
         ),
     )
 
-    guild = relationship(
+    guild: Mapped["Guild"] = relationship(
         "Guild",
         back_populates="channels",
         doc="The guild where this channel exists",
     )
-    games = relationship(
+    games: Mapped[list["Game"]] = relationship(
         "Game",
         back_populates="channel",
         uselist=True,
@@ -201,23 +198,23 @@ class Channel(Base):
 
         return ChannelData(
             xid=self.xid,
-            created_at=self.created_at,  # type: ignore
-            updated_at=self.updated_at,  # type: ignore
-            guild_xid=self.guild_xid,  # type: ignore
-            name=self.name,  # type: ignore
-            default_seats=self.default_seats,  # type: ignore
-            default_format=GameFormat(cast("int", self.default_format)),
-            default_bracket=GameBracket(cast("int", self.default_bracket)),
-            default_service=GameService(cast("int", self.default_service)),
-            auto_verify=self.auto_verify,  # type: ignore
-            unverified_only=self.unverified_only,  # type: ignore
-            verified_only=self.verified_only,  # type: ignore
-            motd=self.motd,  # type: ignore
-            extra=self.extra,  # type: ignore
-            voice_category=self.voice_category,  # type: ignore
-            voice_invite=self.voice_invite,  # type: ignore
-            delete_expired=self.delete_expired,  # type: ignore
-            blind_games=self.blind_games,  # type: ignore
-            to_mode=self.to_mode,  # type: ignore
-            competitive_mode=self.competitive_mode,  # type: ignore
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            guild_xid=self.guild_xid,
+            name=self.name,
+            default_seats=self.default_seats,
+            default_format=GameFormat(self.default_format),
+            default_bracket=GameBracket(self.default_bracket),
+            default_service=GameService(self.default_service),
+            auto_verify=self.auto_verify,
+            unverified_only=self.unverified_only,
+            verified_only=self.verified_only,
+            motd=self.motd,
+            extra=self.extra,
+            voice_category=self.voice_category,
+            voice_invite=self.voice_invite,
+            delete_expired=self.delete_expired,
+            blind_games=self.blind_games,
+            to_mode=self.to_mode,
+            competitive_mode=self.competitive_mode,
         )

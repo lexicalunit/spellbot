@@ -139,7 +139,7 @@ class TestCogAdminMythicTrack:
         guild: Guild,
     ) -> None:
         await DatabaseSession.execute(
-            update(Guild).where(Guild.xid == guild.xid).values(enable_mythic_track=initial_setting),  # type: ignore
+            update(Guild).where(Guild.xid == guild.xid).values(enable_mythic_track=initial_setting),
         )
         await DatabaseSession.commit()
 

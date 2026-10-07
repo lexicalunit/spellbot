@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, Column, false
+from sqlalchemy import BigInteger, Boolean, false
+from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base
 
@@ -17,19 +18,19 @@ class Verify(Base):
 
     __tablename__ = "verify"
 
-    guild_xid = Column(
+    guild_xid: Mapped[int] = mapped_column(
         BigInteger,
         primary_key=True,
         nullable=False,
         doc="The external Discord ID of this guild",
     )
-    user_xid = Column(
+    user_xid: Mapped[int] = mapped_column(
         BigInteger,
         primary_key=True,
         nullable=False,
         doc="The external Discord ID of this user",
     )
-    verified = Column(
+    verified: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -41,7 +42,7 @@ class Verify(Base):
         from spellbot.data import VerifyData  # allow_inline
 
         return VerifyData(
-            guild_xid=self.guild_xid,  # type: ignore
-            user_xid=self.user_xid,  # type: ignore
-            verified=self.verified,  # type: ignore
+            guild_xid=self.guild_xid,
+            user_xid=self.user_xid,
+            verified=self.verified,
         )

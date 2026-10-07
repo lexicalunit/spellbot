@@ -33,7 +33,7 @@ async def public_recent_started_count(  # pragma: no cover
     stmt = (
         select(func.count(Game.id))
         .select_from(Game)
-        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .join(Guild, Guild.xid == Game.guild_xid)
         .where(
             Game.started_at.is_not(None),
             Game.started_at >= cutoff,

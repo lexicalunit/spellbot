@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TYPE_CHECKING, cast
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, null, true
-from sqlalchemy.orm import relationship
+from sqlalchemy import BigInteger, Boolean, DateTime, String, false, null, true
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from . import Base, now, web_editable
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from spellbot.data import GuildData
 
-    from . import Channel, Game, GuildAward  # noqa: F401
+    from . import Channel, Game, GuildAward
 
 
 class Guild(Base):
@@ -24,15 +24,15 @@ class Guild(Base):
 
     __tablename__ = "guilds"
 
-    xid: int = cast("int", Column(BigInteger, primary_key=True, nullable=False))
-    created_at = Column(
+    xid: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this guild was first created",
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
@@ -40,22 +40,22 @@ class Guild(Base):
         onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this guild was last updated",
     )
-    name = Column(
+    name: Mapped[str | None] = mapped_column(
         String(100),
         doc="Most recently cached name of this guild",
     )
-    motd = Column(
+    motd: Mapped[str | None] = mapped_column(
         String(255),
         doc=web_editable("The message of the day, shown in all game posts on the server."),
     )
-    show_links = Column(
+    show_links: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc=web_editable("When enabled the game links will be visible in the channel post."),
     )
-    voice_create = Column(
+    voice_create: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -64,7 +64,7 @@ class Guild(Base):
             "When enabled the bot will automatically create voice channels for games.",
         ),
     )
-    use_max_bitrate = Column(
+    use_max_bitrate: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -73,56 +73,56 @@ class Guild(Base):
             "When enabled the bot will create voice channels using the maximum bitrate possible.",
         ),
     )
-    banned = Column(
+    banned: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc="If true, this guild is banned from using SpellBot",
     )
-    notice = Column(
+    notice: Mapped[str | None] = mapped_column(
         String(255),
         doc="Notice to display to users in this guild",
         nullable=True,
         default=None,
         server_default=null(),
     )
-    suggest_voice_category = Column(
+    suggest_voice_category: Mapped[str | None] = mapped_column(
         String(100),
         doc=web_editable("Category to use when suggesting voice channels for games"),
         nullable=True,
         default=None,
         server_default=null(),
     )
-    enable_mythic_track = Column(
+    enable_mythic_track: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc=web_editable("If true, enable Mythic Track for this guild."),
     )
-    active = Column(
+    active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=True,
         server_default=true(),
         doc="If false, the bot is no longer a member of this guild",
     )
-    locale = Column(
+    locale: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
         default="en",
         server_default="en",
         doc="The guild's preferred locale from Discord",
     )
-    icon = Column(
+    icon: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         default=None,
         server_default=null(),
         doc="Cached Discord CDN URL for this guild's icon",
     )
-    promote = Column(
+    promote: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=True,
@@ -130,19 +130,19 @@ class Guild(Base):
         doc="If true, this guild may be advertised on public SpellBot pages",
     )
 
-    games = relationship(
+    games: Mapped[list["Game"]] = relationship(
         "Game",
         back_populates="guild",
         uselist=True,
         doc="Games played on this guild",
     )
-    channels = relationship(
+    channels: Mapped[list["Channel"]] = relationship(
         "Channel",
         back_populates="guild",
         uselist=True,
         doc="Channels on this guild",
     )
-    awards = relationship(
+    awards: Mapped[list["GuildAward"]] = relationship(
         "GuildAward",
         back_populates="guild",
         uselist=True,
@@ -157,13 +157,13 @@ class Guild(Base):
         awards = await self.awaitable_attrs.awards
         return GuildData(
             xid=self.xid,
-            created_at=self.created_at,  # type: ignore
-            updated_at=self.updated_at,  # type: ignore
-            name=self.name,  # type: ignore
-            motd=self.motd,  # type: ignore
-            show_links=self.show_links,  # type: ignore
-            voice_create=self.voice_create,  # type: ignore
-            use_max_bitrate=self.use_max_bitrate,  # type: ignore
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            name=self.name,
+            motd=self.motd,
+            show_links=self.show_links,
+            voice_create=self.voice_create,
+            use_max_bitrate=self.use_max_bitrate,
             channels=sorted(
                 [channel.to_data() for channel in cast("Iterable[Channel]", channels)],
                 key=lambda c: c.xid,
@@ -172,12 +172,12 @@ class Guild(Base):
                 [award.to_data() for award in cast("Iterable[GuildAward]", awards)],
                 key=lambda c: c.id,
             ),
-            banned=self.banned,  # type: ignore
-            notice=self.notice,  # type: ignore
-            suggest_voice_category=self.suggest_voice_category,  # type: ignore
-            enable_mythic_track=self.enable_mythic_track,  # type: ignore
-            active=self.active,  # type: ignore
-            locale=self.locale,  # type: ignore
-            icon=self.icon,  # type: ignore
-            promote=self.promote,  # type: ignore
+            banned=self.banned,
+            notice=self.notice,
+            suggest_voice_category=self.suggest_voice_category,
+            enable_mythic_track=self.enable_mythic_track,
+            active=self.active,
+            locale=self.locale,
+            icon=self.icon,
+            promote=self.promote,
         )

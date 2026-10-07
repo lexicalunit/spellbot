@@ -196,7 +196,7 @@ async def find_matching_user_xids(
         select(Queue.user_xid)
         .join(Game, Game.id == Queue.game_id)
         .where(
-            Game.status == GameStatus.PENDING.value,  # type: ignore[arg-type]
+            Game.status == GameStatus.PENDING.value,
             Game.deleted_at.is_(None),
             Game.started_at.is_(None),
         )

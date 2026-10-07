@@ -118,7 +118,7 @@ class TestCogOwner:
             f"Guild {target_guild} has been banned.",
         )
         guild = (
-            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))  # type: ignore
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
         ).scalar_one()
         assert guild.xid == target_guild
         assert guild.banned
@@ -126,7 +126,7 @@ class TestCogOwner:
         DatabaseSession.expire_all()
         await run_owner_command(cog, cog.unban_guild, context, str(target_guild))
         guild = (
-            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))  # type: ignore
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
         ).scalar_one()
         assert guild.xid == target_guild
         assert not guild.banned

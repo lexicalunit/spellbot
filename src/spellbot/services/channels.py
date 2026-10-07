@@ -41,7 +41,7 @@ async def write(channel: MessageableChannel, name: str) -> None:
     }
     upsert = insert(Channel).values(**values)
     upsert = upsert.on_conflict_do_update(
-        index_elements=[Channel.xid],  # type: ignore
+        index_elements=[Channel.xid],
         index_where=Channel.xid == values["xid"],
         set_={
             "name": upsert.excluded.name,
@@ -63,7 +63,7 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
     if not is_cached(channel.id, name):
         await write(channel, name)
 
-    query = sa_select(Channel).where(Channel.xid == channel.id)  # type: ignore
+    query = sa_select(Channel).where(Channel.xid == channel.id)
     db_channel = (await DatabaseSession.execute(query)).scalar_one_or_none()
     if db_channel is None:
         # The cache is per process, so another process (e.g. the web app forgetting this
@@ -75,11 +75,7 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
 
 async def forget(xid: int) -> None:
     """Delete the channel with the given xid from the database."""
-    query = (
-        delete(Channel)
-        .where(Channel.xid == xid)  # type: ignore
-        .execution_options(synchronize_session=False)
-    )
+    query = delete(Channel).where(Channel.xid == xid).execution_options(synchronize_session=False)
     # Record the deletion in one actor-attributed transaction so the audit triggers capture it.
     async with audit.transaction():
         await DatabaseSession.execute(query)
@@ -88,7 +84,7 @@ async def forget(xid: int) -> None:
 
 async def select(xid: int) -> ChannelData | None:
     """Fetch the channel data for the given xid."""
-    result = await DatabaseSession.execute(sa_select(Channel).where(Channel.xid == xid))  # type: ignore
+    result = await DatabaseSession.execute(sa_select(Channel).where(Channel.xid == xid))
     channel = result.scalar_one_or_none()
     return channel.to_data() if channel else None
 
@@ -97,7 +93,7 @@ async def _set_column(xid: int, **values: object) -> None:
     """Update the given columns on the channel with the given xid."""
     query = (
         update(Channel)
-        .where(Channel.xid == xid)  # type: ignore
+        .where(Channel.xid == xid)
         .values(**values)
         .execution_options(synchronize_session=False)
     )

@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, String, false, func, select
-from sqlalchemy.orm import relationship
+from sqlalchemy import BigInteger, Boolean, DateTime, String, false, func, select
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from spellbot.models import GameStatus
 
@@ -16,7 +16,7 @@ from . import Base, now
 if TYPE_CHECKING:
     from spellbot.data import GameData, UserData
 
-    from . import Game
+    from . import Game, Play, Queue
 
 
 class User(Base):
@@ -24,20 +24,20 @@ class User(Base):
 
     __tablename__ = "users"
 
-    xid = Column(
+    xid: Mapped[int] = mapped_column(
         BigInteger,
         primary_key=True,
         nullable=False,
         doc="The external Discord ID of this user",
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this user was first created",
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
@@ -45,32 +45,32 @@ class User(Base):
         onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this user was last updated",
     )
-    name = Column(
+    name: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
         doc="Most recently cached name of this user",
     )
-    banned = Column(
+    banned: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc="If true, this user is banned from using SpellBot",
     )
-    is_admin = Column(
+    is_admin: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
         doc="If true, this user can access the admin dashboard",
     )
-    playgroup_user_id = Column(
+    playgroup_user_id: Mapped[int | None] = mapped_column(
         BigInteger,
         nullable=True,
         default=None,
         doc="The Playgroup Live user ID linked to this Discord user",
     )
-    locale = Column(
+    locale: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
         default="en",
@@ -78,12 +78,12 @@ class User(Base):
         doc="The user's preferred locale from Discord interactions",
     )
 
-    queues = relationship(
+    queues: Mapped[list["Queue"]] = relationship(
         "Queue",
         primaryjoin="User.xid == Queue.user_xid",
         doc="Queues this user is currently in",
     )
-    plays = relationship(
+    plays: Mapped[list["Play"]] = relationship(
         "Play",
         primaryjoin="User.xid == Play.user_xid",
         doc="Queryset of games played by this user",
@@ -116,7 +116,7 @@ class User(Base):
             return None
         if game.status != GameStatus.PENDING.value:
             return None
-        if game.deleted_at:  # type: ignore
+        if game.deleted_at:
             return None
         return await game.to_data()
 
@@ -140,12 +140,12 @@ class User(Base):
         from spellbot.data import UserData  # allow_inline
 
         return UserData(
-            xid=self.xid,  # type: ignore
-            created_at=self.created_at,  # type: ignore
-            updated_at=self.updated_at,  # type: ignore
-            name=self.name,  # type: ignore
-            banned=self.banned,  # type: ignore
-            is_admin=self.is_admin,  # type: ignore
-            playgroup_user_id=self.playgroup_user_id,  # type: ignore
-            locale=self.locale,  # type: ignore
+            xid=self.xid,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            name=self.name,
+            banned=self.banned,
+            is_admin=self.is_admin,
+            playgroup_user_id=self.playgroup_user_id,
+            locale=self.locale,
         )

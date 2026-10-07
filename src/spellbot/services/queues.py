@@ -51,15 +51,15 @@ async def public_active_games(
             Guild.name.label("guild_name"),
             Guild.locale.label("guild_locale"),
             Guild.icon.label("guild_icon"),
-            Game.channel_xid,  # type: ignore
+            Game.channel_xid,
             FORMAT_LABEL,
             BRACKET_LABEL,
             SERVICE_LABEL,
-            Game.seats,  # type: ignore
+            Game.seats,
             Game.started_at,
         )
         .select_from(Game)
-        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .join(Guild, Guild.xid == Game.guild_xid)
         .where(
             Game.started_at.is_not(None),
             Game.started_at >= cutoff,
@@ -124,17 +124,17 @@ async def public_active_queues(
             Guild.name.label("guild_name"),
             Guild.locale.label("guild_locale"),
             Guild.icon.label("guild_icon"),
-            Game.channel_xid,  # type: ignore
+            Game.channel_xid,
             FORMAT_LABEL,
             BRACKET_LABEL,
             SERVICE_LABEL,
-            Game.seats,  # type: ignore
+            Game.seats,
             Game.created_at,
             players_col,
         )
         .select_from(Game)
         .join(Queue, Queue.game_id == Game.id)
-        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .join(Guild, Guild.xid == Game.guild_xid)
         .where(
             Game.started_at.is_(None),
             Game.deleted_at.is_(None),
@@ -157,11 +157,11 @@ async def public_active_queues(
                 Guild.name,
                 Guild.locale,
                 Guild.icon,
-                Game.channel_xid,  # type: ignore
-                Game.format,  # type: ignore
-                Game.bracket,  # type: ignore
-                Game.service,  # type: ignore
-                Game.seats,  # type: ignore
+                Game.channel_xid,
+                Game.format,
+                Game.bracket,
+                Game.service,
+                Game.seats,
                 Game.created_at,
             ).order_by(Game.created_at.desc()),
         )
@@ -228,7 +228,7 @@ async def viewer_played_guilds(
     aggregated counts and timestamps still cover the full history). Results
     are ordered by most-recent play first.
     """
-    games_played = func.count(Play.game_id).label("games_played")  # type: ignore
+    games_played = func.count(Play.game_id).label("games_played")
     first_played_at = func.min(Play.created_at).label("first_played_at")
     last_played_at = func.max(Play.created_at).label("last_played_at")
     stmt = (
@@ -243,7 +243,7 @@ async def viewer_played_guilds(
         )
         .select_from(Play)
         .join(Game, Game.id == Play.game_id)
-        .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+        .join(Guild, Guild.xid == Game.guild_xid)
         .where(
             Play.user_xid == user_xid,
             Guild.banned.is_(False),
@@ -292,7 +292,7 @@ async def viewer_played_channels(
     last_played_at = func.max(Play.created_at).label("last_played_at")
     stmt = (
         select(
-            Channel.xid,  # type: ignore
+            Channel.xid,
             Channel.name,
             last_played_at,
         )
@@ -304,7 +304,7 @@ async def viewer_played_channels(
             Game.guild_xid == guild_xid,
         )
         .group_by(Channel.xid, Channel.name)
-        .order_by(Channel.name.asc(), Channel.xid.asc())  # type: ignore
+        .order_by(Channel.name.asc(), Channel.xid.asc())
     )
     if played_within is not None:
         cutoff = datetime.now(tz=UTC) - played_within
@@ -322,7 +322,7 @@ async def viewer_played_channels(
 async def guild_summary(guild_xid: int) -> dict[str, Any] | None:
     """Return basic public guild fields for the notification preferences page."""
     stmt = select(
-        Guild.xid,  # type: ignore
+        Guild.xid,
         Guild.name,
         Guild.locale,
         Guild.icon,

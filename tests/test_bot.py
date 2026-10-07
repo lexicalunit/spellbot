@@ -418,12 +418,12 @@ class TestSpellBotHandleVerification:
 
         DatabaseSession.expire_all()
         guild = (
-            await DatabaseSession.execute(select(Guild).where(Guild.xid == dpy_message.guild.id))  # type: ignore
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == dpy_message.guild.id))
         ).scalar_one()
         assert guild.xid == dpy_message.guild.id
         channel = (
             await DatabaseSession.execute(
-                select(Channel).where(Channel.xid == dpy_message.channel.id),  # type: ignore
+                select(Channel).where(Channel.xid == dpy_message.channel.id),
             )
         ).scalar_one()
         assert channel.xid == dpy_message.channel.id
@@ -460,12 +460,12 @@ class TestSpellBotHandleVerification:
 
         DatabaseSession.expire_all()
         guild = (
-            await DatabaseSession.execute(select(Guild).where(Guild.xid == dpy_message.guild.id))  # type: ignore
+            await DatabaseSession.execute(select(Guild).where(Guild.xid == dpy_message.guild.id))
         ).scalar_one()
         assert guild.xid == dpy_message.guild.id
         channel = (
             await DatabaseSession.execute(
-                select(Channel).where(Channel.xid == dpy_message.channel.id),  # type: ignore
+                select(Channel).where(Channel.xid == dpy_message.channel.id),
             )
         ).scalar_one()
         assert channel.xid == dpy_message.channel.id

@@ -19,6 +19,8 @@ from spellbot.models import Block, Channel, Game, Guild, GuildMember, Play, User
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
+    from sqlalchemy.sql.elements import ColumnElement
+
 USER_PAGE_SIZE = 25
 CHANNEL_PAGE_SIZE = 10
 
@@ -357,7 +359,7 @@ def decomposed(combined_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
 async def get_plays_by_game_id(game_id: int) -> list[Play]:
     """Fetch all plays for the given game id."""
     return (
-        (await DatabaseSession.execute(select(Play).where(Play.game_id == game_id))).scalars().all()  # type: ignore
+        (await DatabaseSession.execute(select(Play).where(Play.game_id == game_id))).scalars().all()
     )
 
 
@@ -469,12 +471,12 @@ async def channel_records(
     guild or channel is unknown.
     """
     guild = (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
     ).scalar_one_or_none()
     if not guild:
         return None
     channel = (
-        await DatabaseSession.execute(select(Channel).where(Channel.xid == channel_xid))  # type: ignore
+        await DatabaseSession.execute(select(Channel).where(Channel.xid == channel_xid))
     ).scalar_one_or_none()
     if not channel:
         return None
@@ -538,7 +540,7 @@ async def channel_export_target_exists(guild_xid: int, channel_xid: int) -> bool
         return False
     return (
         await DatabaseSession.execute(
-            select(Channel.xid).where(Channel.xid == channel_xid),  # type: ignore
+            select(Channel.xid).where(Channel.xid == channel_xid),
         )
     ).scalar_one_or_none() is not None
 
@@ -585,14 +587,14 @@ async def stream_channel_records(
     """Stream all game records for a channel without pagination, one row per player."""
     guild_name = (
         await DatabaseSession.execute(
-            select(Guild.name).where(Guild.xid == guild_xid),  # type: ignore
+            select(Guild.name).where(Guild.xid == guild_xid),
         )
     ).scalar_one_or_none()
     if guild_name is None:
         return
     channel_name = (
         await DatabaseSession.execute(
-            select(Channel.name).where(Channel.xid == channel_xid),  # type: ignore
+            select(Channel.name).where(Channel.xid == channel_xid),
         )
     ).scalar_one_or_none()
     if channel_name is None:
@@ -642,7 +644,7 @@ async def top_records(
     result = await DatabaseSession.execute(
         select(
             Play.user_xid,
-            func.count(Play.game_id).label("count"),  # type: ignore
+            func.count(Play.game_id).label("count"),
         )
         .where(*filters)
         .group_by(Play.user_xid)
@@ -655,7 +657,7 @@ async def top_records(
 async def guild_exists(guild_xid: int) -> bool:
     """Check if a guild exists."""
     return (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
     ).scalar_one_or_none() is not None
 
 
@@ -711,7 +713,7 @@ async def analytics_summary(guild_xid: int, *, all_time: bool = False) -> dict[s
             await DatabaseSession.execute(
                 select(func.count(func.distinct(Play.user_xid)))
                 .select_from(Play)
-                .join(Game, Play.game_id == Game.id)  # type: ignore
+                .join(Game, Play.game_id == Game.id)
                 .where(*base_filters),
             )
         ).scalar()
@@ -725,7 +727,7 @@ async def analytics_summary(guild_xid: int, *, all_time: bool = False) -> dict[s
             func.count(func.distinct(Game.id)).label("game_count"),
         )
         .select_from(Play)
-        .join(Game, Play.game_id == Game.id)  # type: ignore
+        .join(Game, Play.game_id == Game.id)
         .where(*base_filters)
         .group_by(Play.user_xid)
         .subquery()
@@ -813,7 +815,7 @@ async def analytics_activity(guild_xid: int, *, all_time: bool = False) -> dict[
             )
             .select_from(User)
             .join(Play, Play.user_xid == User.xid)
-            .join(Game, Play.game_id == Game.id)  # type: ignore
+            .join(Game, Play.game_id == Game.id)
             .where(*new_user_filters)
             .group_by(func.date(User.created_at))
             .order_by(text("day")),
@@ -878,9 +880,9 @@ async def analytics_brackets(guild_xid: int, *, all_time: bool = False) -> dict[
 
     bracket_daily_rows = (
         await DatabaseSession.execute(
-            select(  # type: ignore
+            select(
                 func.date(Game.started_at).label("day"),
-                Game.bracket,  # type: ignore
+                Game.bracket,
                 func.count(Game.id).label("count"),
             )
             .where(*filters)
@@ -916,7 +918,7 @@ async def analytics_retention(
                 func.min(Game.started_at).label("first_game"),
             )
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore
+            .join(Game, Play.game_id == Game.id)
             .where(
                 Game.guild_xid == guild_xid,
                 Game.started_at.isnot(None),
@@ -944,7 +946,7 @@ async def analytics_retention(
                 Play.user_xid,
             )
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore
+            .join(Game, Play.game_id == Game.id)
             .where(*filters)
             .group_by(week_expr, Play.user_xid),
         )
@@ -994,7 +996,7 @@ async def analytics_growth(guild_xid: int, *, all_time: bool = False) -> dict[st
             func.count(Play.user_xid.distinct()).label("count"),
         )
         .select_from(Play)
-        .join(Game, Play.game_id == Game.id)  # type: ignore
+        .join(Game, Play.game_id == Game.id)
         .where(*filters)
         .group_by(Play.user_xid)
         .subquery()
@@ -1041,7 +1043,7 @@ async def analytics_histogram(
                 func.count(Game.id).label("game_count"),
             )
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore
+            .join(Game, Play.game_id == Game.id)
             .where(*filters)
             .group_by(Play.user_xid),
         )
@@ -1083,8 +1085,8 @@ async def analytics_formats(guild_xid: int, *, all_time: bool = False) -> dict[s
 
     format_rows = (
         await DatabaseSession.execute(
-            select(  # type: ignore
-                Game.format,  # type: ignore
+            select(
+                Game.format,
                 func.count(Game.id).label("count"),
             )
             .where(*filters)
@@ -1141,8 +1143,8 @@ async def analytics_channels(guild_xid: int, *, all_time: bool = False) -> dict[
 
     channel_rows = (
         await DatabaseSession.execute(
-            select(  # type: ignore
-                Channel.xid,  # type: ignore
+            select(
+                Channel.xid,
                 Channel.name,
                 func.count(Game.id).label("count"),
             )
@@ -1174,8 +1176,8 @@ async def analytics_channel_players(guild_xid: int, *, all_time: bool = False) -
     # Count distinct users per channel through plays
     channel_rows = (
         await DatabaseSession.execute(
-            select(  # type: ignore
-                Channel.xid,  # type: ignore
+            select(
+                Channel.xid,
                 Channel.name,
                 func.count(func.distinct(Play.user_xid)).label("players"),
             )
@@ -1208,8 +1210,8 @@ async def analytics_services(guild_xid: int, *, all_time: bool = False) -> dict[
 
     service_rows = (
         await DatabaseSession.execute(
-            select(  # type: ignore
-                Game.service,  # type: ignore
+            select(
+                Game.service,
                 func.count(Game.id).label("count"),
             )
             .where(*filters)
@@ -1243,10 +1245,10 @@ async def analytics_players(guild_xid: int, *, all_time: bool = False) -> dict[s
             select(
                 Play.user_xid,
                 User.name,
-                func.count(Play.game_id).label("count"),  # type: ignore
+                func.count(Play.game_id).label("count"),
             )
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore
+            .join(Game, Play.game_id == Game.id)
             .join(User, User.xid == Play.user_xid)
             .join(
                 GuildMember,
@@ -1278,9 +1280,9 @@ async def analytics_blocked(guild_xid: int, *, all_time: bool = False) -> dict[s
     )
 
     # Count blocks for each blocked user, filtering to only guild members
-    block_filters = [Block.blocked_user_xid.in_(members_in_guild)]
+    block_filters: list[ColumnElement[bool]] = [Block.blocked_user_xid.in_(members_in_guild)]
     if not all_time:
-        block_filters.append(Block.created_at >= thirty_days_ago)  # type: ignore
+        block_filters.append(Block.created_at >= thirty_days_ago)
     blocked_rows = (
         await DatabaseSession.execute(
             select(

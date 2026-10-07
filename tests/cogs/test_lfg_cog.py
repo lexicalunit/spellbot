@@ -84,7 +84,7 @@ class TestCogLookingForGame:
                 await DatabaseSession.execute(
                     select(Game)
                     .where(
-                        Game.channel_xid == channel.xid,  # type: ignore
+                        Game.channel_xid == channel.xid,
                         Game.guild_xid == guild.xid,
                     )
                     .order_by(Game.id.desc()),
@@ -694,7 +694,7 @@ class TestCogWar:
                     select(Game)
                     .where(
                         Game.guild_xid == guild.xid,
-                        Game.channel_xid == channel.xid,  # type: ignore
+                        Game.channel_xid == channel.xid,
                     )
                     .order_by(Game.id.desc()),
                 )

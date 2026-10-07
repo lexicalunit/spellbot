@@ -550,7 +550,7 @@ class TestFindMatchingUserXids:
 class TestMarkNotified:
     async def test_sets_notified_at(self, game: Game) -> None:
         assert game.notified_at is None
-        game_id = int(game.id)  # type: ignore[arg-type]
+        game_id = int(game.id)
 
         await alerts.mark_notified(game_id)
 

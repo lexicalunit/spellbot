@@ -1,7 +1,7 @@
 # Copyright (c) 2026 spellbot@lexicalunit.com
 
 """
-Settings-change audit trail, backed by the `postgresql-audit` library.
+Settings-change audit trail, using trigger SQL adapted from the `postgresql-audit` library.
 
 Auditing is performed entirely by PostgreSQL statement-level triggers installed on the
 `channels` and `guilds` tables (see the `..._install_settings_audit` migration). The triggers
@@ -16,9 +16,10 @@ same database transaction as the change. The acting user is supplied ambiently v
 variable (mirroring `DatabaseSession`'s context-local), set by the web handlers and `AdminAction`,
 and read by `stamp()` at the settings-write choke points.
 
-We deliberately do **not** call `VersioningManager.init`: its `before_flush` listener calls the
-session synchronously, which is unsafe under our `AsyncSession`. We only need the library's ORM
-models (to query / create the audit tables) and its trigger SQL (installed by the migration).
+The audit tables and trigger SQL (in `audit_sql/`) were adapted from `postgresql-audit` 0.18.0,
+which we no longer depend on: we only ever used its models and trigger SQL (its session listeners
+are unsafe under our `AsyncSession`), and its `sqlalchemy-utils` dependency blocked SQLAlchemy
+upgrades. The schema and triggers are unchanged from what the library installed.
 """
 
 from __future__ import annotations
@@ -26,12 +27,16 @@ from __future__ import annotations
 import contextvars
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from datetime import datetime
+from pathlib import Path
+from string import Template
+from typing import TYPE_CHECKING, Any, cast
 
 import sqlalchemy as sa
-from postgresql_audit import VersioningManager
-from postgresql_audit.base import transaction_base
+from sqlalchemy.dialects.postgresql import INET, JSONB
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import UserDefinedType
 
 from spellbot.database import DatabaseSession
 from spellbot.models import Base, Channel, Guild, web_editable_columns
@@ -42,6 +47,7 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
 
 AUDIT_SCHEMA = "audit"
+AUDIT_SQL_DIR = Path(__file__).resolve().parent / "audit_sql"
 
 # Sources recorded on `audit.transaction.source`.
 SOURCE_WEB = "web"
@@ -57,34 +63,61 @@ class Actor:
     source: str
 
 
-class SpellbotVersioningManager(VersioningManager):
-    """Adds `actor_id`/`actor_name`/`source` columns to the audit transaction table."""
+class XID8(UserDefinedType[int]):
+    """PostgreSQL's 64-bit transaction ID type, as returned by `pg_current_xact_id()`."""
 
-    def transaction_model_factory(self, base: type) -> type:
-        schema = self.schema_name
+    cache_ok = True
 
-        class Transaction(transaction_base(base, schema)):
-            __tablename__ = "transaction"
-            # Discord snowflakes exceed 32 bits, so actor_id must be a BigInteger (the library's
-            # default actor_id type would be derived from an actor model's PK, which we don't use).
-            actor_id = sa.Column(sa.BigInteger, index=True)
-            actor_name = sa.Column(sa.Text)
-            source = sa.Column(sa.Text)
-
-        return Transaction
+    def get_col_spec(self, **kw: Any) -> str:
+        return "XID8"
 
 
-# Build the audit ORM models without attaching the library's (async-unsafe) session listeners.
-versioning_manager = SpellbotVersioningManager(schema_name=AUDIT_SCHEMA)
-versioning_manager.base = Base
-versioning_manager.transaction_cls = versioning_manager.transaction_model_factory(Base)
-versioning_manager.activity_cls = versioning_manager.activity_model_factory(
-    Base,
-    versioning_manager.transaction_cls,
-)
+class Transaction(Base):
+    """One DB transaction that changed audited settings, and the actor who made it."""
 
-Transaction = versioning_manager.transaction_cls
-Activity = versioning_manager.activity_cls
+    __tablename__ = "transaction"
+    __table_args__ = (
+        sa.UniqueConstraint("native_transaction_id", name="transaction_unique_native_tx_id"),
+        {"schema": AUDIT_SCHEMA},
+    )
+
+    # Discord snowflakes exceed 32 bits, so actor_id must be a BigInteger.
+    actor_id: Mapped[int | None] = mapped_column(sa.BigInteger, index=True)
+    actor_name: Mapped[str | None] = mapped_column(sa.Text)
+    source: Mapped[str | None] = mapped_column(sa.Text)
+    id: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
+    native_transaction_id: Mapped[int | None] = mapped_column(XID8())
+    issued_at: Mapped[datetime | None] = mapped_column(sa.DateTime)
+    client_addr: Mapped[str | None] = mapped_column(INET)
+
+
+class Activity(Base):
+    """One audited row change, written by the `create_activity()` trigger function."""
+
+    __tablename__ = "activity"
+    __table_args__ = {"schema": AUDIT_SCHEMA}  # noqa: RUF012
+
+    id: Mapped[int] = mapped_column(sa.BigInteger, primary_key=True)
+    schema_name: Mapped[str | None] = mapped_column(sa.Text)
+    table_name: Mapped[str | None] = mapped_column(sa.Text)
+    relid: Mapped[int | None] = mapped_column(sa.Integer)
+    issued_at: Mapped[datetime | None] = mapped_column(sa.DateTime)
+    native_transaction_id: Mapped[int | None] = mapped_column(XID8(), index=True)
+    verb: Mapped[str | None] = mapped_column(sa.Text)
+    old_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default={}, server_default="{}")
+    changed_data: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
+        default={},
+        server_default="{}",
+    )
+    transaction_id: Mapped[int | None] = mapped_column(sa.BigInteger, sa.ForeignKey(Transaction.id))
+
+
+def render_sql(name: str) -> str:
+    """Return the `audit_sql/` file `name` with the audit schema substituted in."""
+    # `Template` treats `$$` as an escaped `$`, so double them to keep PL/pgSQL `$$` quoting.
+    source = (AUDIT_SQL_DIR / name).read_text().replace("$$", "$$$$")
+    return Template(source).substitute(schema=AUDIT_SCHEMA)
 
 
 # --- What gets audited (the single source of truth) ------------------------------------------
@@ -120,12 +153,13 @@ def excluded_columns(model: Any) -> list[str]:
 
 def install(bind: Connection) -> None:
     """Create the audit schema, tables, trigger function, and JSONB operators (one-time)."""
-    bind.execute(sa.text(versioning_manager.render_tmpl("create_schema.sql")))
-    Transaction.__table__.create(bind)  # transaction first; activity FKs it
-    Activity.__table__.create(bind)
-    bind.execute(sa.text(versioning_manager.render_tmpl("jsonb_change_key_name.sql")))
-    versioning_manager.create_audit_table(None, bind)
-    versioning_manager.create_operators(None, bind)
+    bind.execute(sa.text(render_sql("create_schema.sql")))
+    # Transaction first; activity FKs it.
+    for model in (Transaction, Activity):
+        cast("sa.Table", model.__table__).create(bind)
+    bind.execute(sa.text(render_sql("jsonb_change_key_name.sql")))
+    bind.execute(sa.text(render_sql("create_activity.sql") + render_sql("audit_table.sql")))
+    bind.execute(sa.text(render_sql("operators.sql")))
 
 
 def attach_triggers(bind: Connection) -> None:
@@ -189,7 +223,7 @@ async def stamp() -> None:
     if current is None:
         return
     await DatabaseSession.execute(
-        pg_insert(Transaction.__table__)
+        pg_insert(Transaction)
         .values(
             actor_id=current.xid,
             actor_name=current.name,
