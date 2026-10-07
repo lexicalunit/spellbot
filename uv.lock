@@ -646,6 +646,15 @@ wheels = [
 ]
 
 [[package]]
+name = "decoy"
+version = "2.6.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/1b/17035a255625e9dc82a3ac3e73b228016275996b85fd163b10ea448dc3b2/decoy-2.6.0.tar.gz", hash = "sha256:e65c875c8cfaed6ceff55df39d266e2967e90de3390c99d228ff94c6a2ba51d7", size = 39705, upload-time = "2026-04-30T20:25:03.051Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/53/2a/813d13054e67c5dfc492c2cf2e51a5571a1dd026714d7b8d4a20064cb19f/decoy-2.6.0-py3-none-any.whl", hash = "sha256:c2d333a2ee3632d5bae907eca4bf7c341c287589cc37ebdfad51038e9bdcf192", size = 52136, upload-time = "2026-04-30T20:25:01.415Z" },
+]
+
+[[package]]
 name = "discord-py"
 version = "2.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1924,6 +1933,7 @@ dependencies = [
 dev = [
     { name = "callee" },
     { name = "coverage" },
+    { name = "decoy" },
     { name = "exceptiongroup" },
     { name = "factory-boy" },
     { name = "faker" },
@@ -1988,6 +1998,7 @@ requires-dist = [
 dev = [
     { name = "callee", specifier = ">=0" },
     { name = "coverage", specifier = ">=7" },
+    { name = "decoy", specifier = ">=2" },
     { name = "exceptiongroup", specifier = ">=1" },
     { name = "factory-boy", specifier = ">=3" },
     { name = "faker", specifier = ">=24" },

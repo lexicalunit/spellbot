@@ -16,6 +16,7 @@ from tests.fixtures import Factories, run_command
 
 if TYPE_CHECKING:
     import discord
+    from decoy import Decoy
     from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
@@ -32,6 +33,7 @@ async def cog(bot: SpellBot) -> PlaygroupCog:
 class TestCogPlaygroup:
     async def test_link_already_linked(
         self,
+        decoy: Decoy,
         cog: PlaygroupCog,
         interaction: discord.Interaction,
         factories: Factories,
@@ -45,15 +47,19 @@ class TestCogPlaygroup:
 
         await run_command(cog.link, interaction)
 
-        interaction.response.defer.assert_called_once_with(ephemeral=True)  # type: ignore
-        interaction.followup.send.assert_called_once_with(  # type: ignore
-            "Your Discord account is already linked to Playgroup Live!",
-            ephemeral=True,
+        decoy.verify(await interaction.response.defer(ephemeral=True), times=1)
+        decoy.verify(
+            await interaction.followup.send(
+                "Your Discord account is already linked to Playgroup Live!",
+                ephemeral=True,
+            ),
+            times=1,
         )
         lookup_stub.assert_not_called()
 
     async def test_link_success(
         self,
+        decoy: Decoy,
         cog: PlaygroupCog,
         interaction: discord.Interaction,
         factories: Factories,
@@ -74,14 +80,18 @@ class TestCogPlaygroup:
         ).scalar_one()
         assert user.playgroup_user_id == 99
 
-        interaction.followup.send.assert_called_once_with(  # type: ignore
-            "Linked! Welcome, **testuser**. "
-            "Your Playgroup Live games will now be attributed to your account.",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.followup.send(
+                "Linked! Welcome, **testuser**. "
+                "Your Playgroup Live games will now be attributed to your account.",
+                ephemeral=True,
+            ),
+            times=1,
         )
 
     async def test_link_no_account_found(
         self,
+        decoy: Decoy,
         cog: PlaygroupCog,
         interaction: discord.Interaction,
         mocker: MockerFixture,
@@ -94,11 +104,14 @@ class TestCogPlaygroup:
 
         await run_command(cog.link, interaction)
 
-        interaction.followup.send.assert_called_once_with(  # type: ignore
-            "No Playgroup account found for your Discord. "
-            "Go to <https://playgroup.gg/profiles> and click **Link Discord**, "
-            "then run `/playgroup link` again to confirm.",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.followup.send(
+                "No Playgroup account found for your Discord. "
+                "Go to <https://playgroup.gg/profiles> and click **Link Discord**, "
+                "then run `/playgroup link` again to confirm.",
+                ephemeral=True,
+            ),
+            times=1,
         )
 
 

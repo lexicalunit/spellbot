@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, cast
 
+import discord
 import pytest
 import pytest_asyncio
 
@@ -15,7 +16,7 @@ from tests.mocks import build_channel, build_guild, build_interaction, mock_disc
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    import discord
+    from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
 
     from spellbot import SpellBot
@@ -34,6 +35,7 @@ async def cog(bot: SpellBot) -> RecordCog:
 class TestCogRecord:
     async def test_record(
         self,
+        decoy: Decoy,
         cog: RecordCog,
         user: User,
         channel: Channel,
@@ -44,7 +46,7 @@ class TestCogRecord:
     ) -> None:
         await run_command(cog.record, interaction)
 
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 0 games.\n"
@@ -62,10 +64,9 @@ class TestCogRecord:
         )
         factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.record, interaction)
 
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 1 game.\n"
@@ -83,9 +84,8 @@ class TestCogRecord:
         )
         factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.record, interaction)
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 2 games.\n"
@@ -99,14 +99,15 @@ class TestCogRecord:
         new_guild = build_guild(2)
         new_channel = build_channel(new_guild, 2)
         discord_user = mock_discord_object(user)
-        new_interaction = build_interaction(new_guild, new_channel, discord_user)
+        new_interaction = build_interaction(
+            new_guild,
+            new_channel,
+            discord_user,
+            response=decoy.mock(cls=discord.InteractionResponse),
+        )
         await run_command(cog.record, new_interaction)
 
-        send_message = new_interaction.response.send_message
-        send_message.assert_called_once()  # type: ignore
-        embed = send_message.call_args.kwargs.get("embed")  # type: ignore
-        assert embed is not None
-        assert embed.to_dict() == {
+        assert await get_last_send_message(decoy, new_interaction, "embed") == {
             "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{user.xid}> has played 2 games.\n"
@@ -119,6 +120,7 @@ class TestCogRecord:
 
     async def test_record_for_other_user(
         self,
+        decoy: Decoy,
         cog: RecordCog,
         add_user: Callable[..., User],
         interaction: discord.Interaction,
@@ -129,7 +131,7 @@ class TestCogRecord:
         target_member = cast("discord.Member", mock_discord_object(target_user))
         await run_command(cog.record, interaction, user=target_member)
 
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "author": {"name": "Record of games played"},
             "color": settings.INFO_EMBED_COLOR,
             "description": f"<@{target_member.id}> has played 0 games.\n"
@@ -142,6 +144,7 @@ class TestCogRecord:
 
     async def test_history(
         self,
+        decoy: Decoy,
         cog: RecordCog,
         channel: Channel,
         interaction: discord.Interaction,
@@ -150,7 +153,7 @@ class TestCogRecord:
     ) -> None:
         await run_command(cog.history, interaction)
 
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "author": {"name": f"Recent games played in {channel.name}"},
             "color": settings.INFO_EMBED_COLOR,
             "description": "View [game history on spellbot.io]"
@@ -162,6 +165,7 @@ class TestCogRecord:
 
     async def test_top(
         self,
+        decoy: Decoy,
         cog: RecordCog,
         channel: Channel,
         add_user: Callable[..., User],
@@ -211,7 +215,7 @@ class TestCogRecord:
             factories.play.create(user_xid=user4.xid, game_id=game.id)
 
         await run_command(cog.top, interaction, monthly=False)
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "title": f"Top players in #{channel.name} (all time)",
             "color": settings.INFO_EMBED_COLOR,
             "description": (
@@ -226,9 +230,8 @@ class TestCogRecord:
             "flags": 0,
         }
 
-        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.top, interaction)
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "title": f"Top players in #{channel.name} (this month)",
             "color": settings.INFO_EMBED_COLOR,
             "description": (
@@ -242,9 +245,8 @@ class TestCogRecord:
             "flags": 0,
         }
 
-        interaction.response.send_message.reset_mock()  # type: ignore
         await run_command(cog.top, interaction, ago=1)
-        assert get_last_send_message(interaction, "embed") == {
+        assert await get_last_send_message(decoy, interaction, "embed") == {
             "title": f"Top players in #{channel.name} (1 months ago)",
             "color": settings.INFO_EMBED_COLOR,
             "description": (

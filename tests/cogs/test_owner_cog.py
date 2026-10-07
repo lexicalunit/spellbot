@@ -15,6 +15,8 @@ from spellbot.database import DatabaseSession
 from spellbot.models import Guild, User
 
 if TYPE_CHECKING:
+    import discord
+    from decoy import Decoy
     from discord.ext import commands
     from pytest_mock import MockerFixture
 
@@ -38,16 +40,20 @@ class TestCogOwner:
     async def test_ban_and_unban(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         target_user = MagicMock()
         target_user.id = 1002
         cog = OwnerCog(bot)
 
-        await run_owner_command(cog, cog.ban, context, str(target_user.id))
+        await run_owner_command(cog, cog.ban, decoy_context, str(target_user.id))
 
-        context.author.send.assert_called_once_with(  # type: ignore
-            f"User <@{target_user.id}> has been banned.",
+        decoy.verify(
+            await decoy_member.send(
+                f"User <@{target_user.id}> has been banned.",
+            ),
         )
         user = (
             await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
@@ -56,7 +62,7 @@ class TestCogOwner:
         assert user.banned
 
         DatabaseSession.expire_all()
-        await run_owner_command(cog, cog.unban, context, str(target_user.id))
+        await run_owner_command(cog, cog.unban, decoy_context, str(target_user.id))
         user = (
             await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
         ).scalar_one()
@@ -66,25 +72,31 @@ class TestCogOwner:
     async def test_ban_without_target(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         cog = OwnerCog(bot)
-        await run_owner_command(cog, cog.ban, context, None)
-        context.author.send.assert_called_once_with("No target user.")  # type: ignore
+        await run_owner_command(cog, cog.ban, decoy_context, None)
+        decoy.verify(await decoy_member.send("No target user."))
 
     async def test_ban_with_invalid_target(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         cog = OwnerCog(bot)
-        await run_owner_command(cog, cog.ban, context, "abc")
-        context.author.send.assert_called_once_with("Invalid user id.")  # type: ignore
+        await run_owner_command(cog, cog.ban, decoy_context, "abc")
+        decoy.verify(await decoy_member.send("Invalid user id."))
 
     async def test_ban_and_unban_exceptions(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
         mocker: MockerFixture,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
@@ -95,27 +107,31 @@ class TestCogOwner:
         mocker.patch("spellbot.cogs.owner_cog.set_banned", AsyncMock(side_effect=RuntimeError()))
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.ban, context, str(target_user.id))
+            await run_owner_command(cog, cog.ban, decoy_context, str(target_user.id))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
         caplog.clear()
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.unban, context, str(target_user.id))
+            await run_owner_command(cog, cog.unban, decoy_context, str(target_user.id))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
     async def test_ban_and_unban_guild(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         target_guild = 1002
         cog = OwnerCog(bot)
 
-        await run_owner_command(cog, cog.ban_guild, context, str(target_guild))
+        await run_owner_command(cog, cog.ban_guild, decoy_context, str(target_guild))
 
-        context.author.send.assert_called_once_with(  # type: ignore
-            f"Guild {target_guild} has been banned.",
+        decoy.verify(
+            await decoy_member.send(
+                f"Guild {target_guild} has been banned.",
+            ),
         )
         guild = (
             await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
@@ -124,7 +140,7 @@ class TestCogOwner:
         assert guild.banned
 
         DatabaseSession.expire_all()
-        await run_owner_command(cog, cog.unban_guild, context, str(target_guild))
+        await run_owner_command(cog, cog.unban_guild, decoy_context, str(target_guild))
         guild = (
             await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
         ).scalar_one()
@@ -134,25 +150,31 @@ class TestCogOwner:
     async def test_ban_guild_without_target(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         cog = OwnerCog(bot)
-        await run_owner_command(cog, cog.ban_guild, context, None)
-        context.author.send.assert_called_once_with("No target guild.")  # type: ignore
+        await run_owner_command(cog, cog.ban_guild, decoy_context, None)
+        decoy.verify(await decoy_member.send("No target guild."))
 
     async def test_ban_guild_with_invalid_target(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         cog = OwnerCog(bot)
-        await run_owner_command(cog, cog.ban_guild, context, "abc")
-        context.author.send.assert_called_once_with("Invalid guild id.")  # type: ignore
+        await run_owner_command(cog, cog.ban_guild, decoy_context, "abc")
+        decoy.verify(await decoy_member.send("Invalid guild id."))
 
     async def test_ban_and_unban_guild_exceptions(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
         mocker: MockerFixture,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
@@ -165,28 +187,32 @@ class TestCogOwner:
         )
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.ban_guild, context, str(target_guild))
+            await run_owner_command(cog, cog.ban_guild, decoy_context, str(target_guild))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
         caplog.clear()
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.unban_guild, context, str(target_guild))
+            await run_owner_command(cog, cog.unban_guild, decoy_context, str(target_guild))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
     async def test_promote_and_demote(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         target_user = MagicMock()
         target_user.id = 2002
         cog = OwnerCog(bot)
 
-        await run_owner_command(cog, cog.promote, context, str(target_user.id))
+        await run_owner_command(cog, cog.promote, decoy_context, str(target_user.id))
 
-        context.author.send.assert_called_once_with(  # type: ignore
-            f"User <@{target_user.id}> is now an admin.",
+        decoy.verify(
+            await decoy_member.send(
+                f"User <@{target_user.id}> is now an admin.",
+            ),
         )
         user = (
             await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
@@ -194,7 +220,7 @@ class TestCogOwner:
         assert user.is_admin
 
         DatabaseSession.expire_all()
-        await run_owner_command(cog, cog.demote, context, str(target_user.id))
+        await run_owner_command(cog, cog.demote, decoy_context, str(target_user.id))
         user = (
             await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
         ).scalar_one()
@@ -203,25 +229,31 @@ class TestCogOwner:
     async def test_promote_without_target(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         cog = OwnerCog(bot)
-        await run_owner_command(cog, cog.promote, context, None)
-        context.author.send.assert_called_once_with("No target user.")  # type: ignore
+        await run_owner_command(cog, cog.promote, decoy_context, None)
+        decoy.verify(await decoy_member.send("No target user."))
 
     async def test_promote_with_invalid_target(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         cog = OwnerCog(bot)
-        await run_owner_command(cog, cog.promote, context, "abc")
-        context.author.send.assert_called_once_with("Invalid user id.")  # type: ignore
+        await run_owner_command(cog, cog.promote, decoy_context, "abc")
+        decoy.verify(await decoy_member.send("Invalid user id."))
 
     async def test_promote_and_demote_exceptions(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
         mocker: MockerFixture,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
@@ -232,58 +264,66 @@ class TestCogOwner:
         mocker.patch("spellbot.cogs.owner_cog.set_admin", AsyncMock(side_effect=RuntimeError()))
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.promote, context, str(target_user.id))
+            await run_owner_command(cog, cog.promote, decoy_context, str(target_user.id))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
         caplog.clear()
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.demote, context, str(target_user.id))
+            await run_owner_command(cog, cog.demote, decoy_context, str(target_user.id))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
     async def test_stats(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
     ) -> None:
         cog = OwnerCog(bot)
 
-        await run_owner_command(cog, cog.stats, context)
+        await run_owner_command(cog, cog.stats, decoy_context)
 
-        context.author.send.assert_called_once_with(  # type: ignore
-            cleandoc(
-                """
-                    ```
-                    status:   online
-                    activity: None
-                    ready:    False
-                    shards:   None
-                    guilds:   0
-                    users:    0
-                    patrons:  set()
-                    ```
-                """,
+        decoy.verify(
+            await decoy_member.send(
+                cleandoc(
+                    """
+                        ```
+                        status:   online
+                        activity: None
+                        ready:    False
+                        shards:   None
+                        guilds:   0
+                        users:    0
+                        patrons:  set()
+                        ```
+                    """,
+                ),
             ),
         )
 
     async def test_sync(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
         mocker: MockerFixture,
     ) -> None:
         mocker.patch("spellbot.cogs.owner_cog.load_extensions", AsyncMock())
         cog = OwnerCog(bot)
         callback = partial(cog.sync.callback, cog)
 
-        await callback(context)
+        await callback(decoy_context)
 
-        context.author.send.assert_called_once_with("Commands synced!")  # type: ignore
+        decoy.verify(await decoy_member.send("Commands synced!"))
 
     async def test_sync_exception(
         self,
         bot: SpellBot,
-        context: commands.Context[SpellBot],
+        decoy: Decoy,
+        decoy_context: commands.Context[SpellBot],
+        decoy_member: discord.Member,
         mocker: MockerFixture,
     ) -> None:
         mocker.patch(
@@ -294,6 +334,6 @@ class TestCogOwner:
         callback = partial(cog.sync.callback, cog)
 
         with pytest.raises(RuntimeError):
-            await callback(context)
+            await callback(decoy_context)
 
-        context.author.send.assert_called_once_with("Error: oops")  # type: ignore
+        decoy.verify(await decoy_member.send("Error: oops"))

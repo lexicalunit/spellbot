@@ -57,7 +57,7 @@ def patch_discord() -> None:  # pragma: no cover
     webhook_message = re.compile(r"/webhooks/([0-9]+)/([^/]+)/messages/@original")
 
     def request(  # pragma: no cover
-        wrapped: Callable,  # type: ignore
+        wrapped: Callable[..., Any],
         instance: Any,
         args: Any,
         kwargs: Any,

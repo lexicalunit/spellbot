@@ -56,6 +56,7 @@ spellbot = "spellbot:main"
 dev = [
   "callee>=0",
   "coverage>=7",
+  "decoy>=2",
   "exceptiongroup>=1",
   "factory-boy>=3",
   "faker>=24",
@@ -261,6 +262,7 @@ ignore_names = [
   "pytest_plugins", # pytest
   "pytestmark", # pytest
   "setup_hook", # discord.py
+  "sqlalchemy_session_factory", # factory_boy
   "sqlalchemy_session_persistence", # factory_boy
   "test_*", # pytest
 ]

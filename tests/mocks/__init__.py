@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast, overload
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, NonCallableMock
 
 import discord
 import pytest
@@ -25,6 +25,8 @@ from tests.mocks.girudo import (
 if TYPE_CHECKING:
     from collections.abc import Generator
     from types import ModuleType
+
+    from discord.types.role import Role as RolePayload
 
 CLIENT_USER_ID = 1  # id of the test bot itself
 OWNER_USER_ID = 2  # id of the test guild owner
@@ -179,6 +181,32 @@ def build_channel(guild: discord.Guild, offset: int = 1) -> discord.TextChannel:
     return channel
 
 
+def build_role(guild: discord.Guild, *, role_id: int, name: str) -> discord.Role:
+    data: RolePayload = {
+        "id": role_id,
+        "name": name,
+        "color": 0,
+        "colors": {"primary_color": 0, "secondary_color": None, "tertiary_color": None},
+        "hoist": False,
+        "position": 0,
+        "permissions": "0",
+        "managed": False,
+        "mentionable": False,
+        "flags": 0,
+    }
+    return discord.Role(guild=guild, state=MagicMock(), data=data)
+
+
+def set_str(mock: NonCallableMock, value: str) -> None:
+    """
+    Make `str(mock)` return `value`.
+
+    Python looks up magic methods on the class, so this sets `__str__` on the mock's type. That
+    is safe because `unittest.mock` gives every mock instance its own class.
+    """
+    type(mock).__str__ = lambda self: value
+
+
 def build_message(
     guild: discord.Guild,
     channel: discord.TextChannel,
@@ -210,12 +238,17 @@ def build_interaction(
     guild: discord.Guild,
     channel: discord.TextChannel,
     author: discord.User,
+    *,
+    response: discord.InteractionResponse | None = None,
+    followup: discord.Webhook | None = None,
 ) -> discord.Interaction:
     stub = AsyncMock(spec=discord.Interaction)
-    stub.response = AsyncMock()
+    stub.response = response or AsyncMock()
     message = build_message(guild, channel, author)
-    stub.followup = AsyncMock()
-    stub.followup.send = AsyncMock(return_value=message)
+    if followup is None:
+        followup = AsyncMock()
+        followup.send = AsyncMock(return_value=message)
+    stub.followup = followup
     stub.guild = guild
     stub.guild_id = guild.id
     stub.channel = channel

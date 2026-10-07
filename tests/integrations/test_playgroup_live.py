@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -18,6 +19,9 @@ from spellbot.integrations.playgroup_live import (
     playgroup_life_amount,
 )
 from tests.mocks import create_mock_game, create_mock_user
+
+if TYPE_CHECKING:
+    from spellbot.data import GameData
 
 
 class TestPlaygroupLifeAmount:
@@ -479,7 +483,7 @@ def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
 
 class TestPlaygroupLiveTerminalClientErrors:
     @staticmethod
-    def make_game() -> object:
+    def make_game() -> GameData:
         game = create_mock_game(
             game_id=42,
             game_format=GameFormat.COMMANDER.value,
@@ -508,7 +512,7 @@ class TestPlaygroupLiveTerminalClientErrors:
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(self.make_game())  # type: ignore[arg-type]
+            result = await generate_link(self.make_game())
         return result, mock_client.post.call_count
 
     @pytest.mark.asyncio

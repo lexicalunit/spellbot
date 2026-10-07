@@ -88,17 +88,13 @@ class LookingForGameAction(BaseAction):
     async def get_service(self, service: int | None = None) -> int:
         if service is not None:
             return service
-        if self.channel_data.default_service is not None:
-            return self.channel_data.default_service.value
-        return GameService.CONVOKE.value
+        return self.channel_data.default_service.value
 
     @tracer.wrap()
     async def get_format(self, format: int | None = None) -> int:
         if format is not None:
             return format
-        if self.channel_data.default_format is not None:
-            return self.channel_data.default_format.value
-        return GameFormat.COMMANDER.value
+        return self.channel_data.default_format.value
 
     @tracer.wrap()
     async def get_bracket(self, format: int | None, bracket: int | None = None) -> int:
@@ -108,9 +104,7 @@ class LookingForGameAction(BaseAction):
             return GameBracket.BRACKET_2.value
         if bracket is not None:
             return bracket
-        if self.channel_data.default_bracket is not None:
-            return self.channel_data.default_bracket.value
-        return GameBracket.NONE.value
+        return self.channel_data.default_bracket.value
 
     @tracer.wrap()
     async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:

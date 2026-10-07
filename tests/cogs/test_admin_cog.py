@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 import discord
 import pytest
 import pytest_asyncio
+from decoy import matchers
 from sqlalchemy import select, update
 
 from spellbot.actions import admin_action
@@ -20,6 +21,7 @@ from tests.fixtures import get_last_send_message, run_command
 from tests.mocks import mock_operations
 
 if TYPE_CHECKING:
+    from decoy import Decoy
     from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
@@ -38,6 +40,7 @@ async def cog(bot: SpellBot) -> AdminCog:
 class TestCogAdminSetup:
     async def test_setup(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
@@ -45,26 +48,31 @@ class TestCogAdminSetup:
     ) -> None:
         await run_command(cog.setup, interaction)
 
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         assert embed["title"] == f"SpellBot Setup for {guild.name}"
         assert embed["color"] == settings.INFO_EMBED_COLOR
         assert embed["thumbnail"]["url"] == settings.ICO_URL
         assert f"{settings.API_BASE_URL}/g/{guild.xid}" in embed["description"]
         assert "fields" not in embed
-        assert "view" not in interaction.response.send_message.call_args.kwargs  # type: ignore
+        decoy.verify(
+            await interaction.response.send_message(view=matchers.Anything()),
+            times=0,
+            ignore_extra_args=True,
+        )
 
 
 @pytest.mark.asyncio
 class TestCogAdminGameInfo:
     async def test_happy_path(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         game: Game,
         interaction: discord.Interaction,
         settings: Settings,
     ) -> None:
         await run_command(cog.game_info, interaction, game_id=f"SB#{game.id}")
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         assert embed["author"]["name"] == f"Game info for #SB{game.id}"
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert fields["Format"] == "Commander"
@@ -74,10 +82,11 @@ class TestCogAdminGameInfo:
         assert fields["Details"] == (
             f"[View on spellbot.io]({settings.API_BASE_URL}/game/{game.id})"
         )
-        assert get_last_send_message(interaction, "ephemeral") is True
+        assert await get_last_send_message(decoy, interaction, "ephemeral") is True
 
     async def test_started_game_with_bracket(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         guild: Guild,
         channel: Channel,
@@ -96,7 +105,7 @@ class TestCogAdminGameInfo:
         factories.play.create(user_xid=player.xid, game_id=game.id, og_guild_xid=guild.xid)
 
         await run_command(cog.game_info, interaction, game_id=str(game.id))
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert fields["Bracket"] == "Bracket 1: Exhibition"
         assert fields["Players"] == "1/2"
@@ -105,26 +114,34 @@ class TestCogAdminGameInfo:
 
     async def test_non_numeric_game_id(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
     ) -> None:
         await run_command(cog.game_info, interaction, game_id="bogus")
-        interaction.response.send_message.assert_awaited_once_with(  # type: ignore
-            "There is no game with that ID.",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.response.send_message(
+                "There is no game with that ID.",
+                ephemeral=True,
+            ),
+            times=1,
         )
 
     async def test_non_existant_game_id(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
     ) -> None:
         await run_command(cog.game_info, interaction, game_id="1")
-        interaction.response.send_message.assert_awaited_once_with(  # type: ignore
-            "There is no game with that ID.",
-            ephemeral=True,
+        decoy.verify(
+            await interaction.response.send_message(
+                "There is no game with that ID.",
+                ephemeral=True,
+            ),
+            times=1,
         )
 
 
@@ -133,6 +150,7 @@ class TestCogAdminMythicTrack:
     @pytest.mark.parametrize("initial_setting", [True, False])
     async def test_setup_mythic_track(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         initial_setting: bool,
         interaction: discord.Interaction,
@@ -145,7 +163,7 @@ class TestCogAdminMythicTrack:
 
         await run_command(cog.setup_mythic_track, interaction)
 
-        interaction.response.send_message.assert_called_once()  # type: ignore
+        decoy.verify(await interaction.response.send_message(), times=1, ignore_extra_args=True)
         db_guild = (await DatabaseSession.execute(select(Guild))).scalar_one()
         assert db_guild.enable_mythic_track != initial_setting
 
@@ -387,6 +405,7 @@ class TestCogAdminExpireGames:
 class TestCogAdminUserInfo:
     async def test_user_info_happy_path(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
@@ -436,7 +455,7 @@ class TestCogAdminUserInfo:
 
         await run_command(cog.user_info, interaction, target=mock_target)
 
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         assert embed["author"]["name"] == "User info for TargetUser"
         assert embed["color"] == settings.INFO_EMBED_COLOR
         assert embed["footer"]["text"] == f"User ID: {target_user.xid}"
@@ -453,6 +472,7 @@ class TestCogAdminUserInfo:
 
     async def test_user_info_no_games(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
@@ -468,7 +488,7 @@ class TestCogAdminUserInfo:
 
         await run_command(cog.user_info, interaction, target=mock_target)
 
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert f"0 games on {guild.name}" in fields["Games Played"]
         assert "Blocked by 0 users" in fields["Block Status"]
@@ -476,6 +496,7 @@ class TestCogAdminUserInfo:
 
     async def test_user_info_single_game(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
@@ -502,7 +523,7 @@ class TestCogAdminUserInfo:
 
         await run_command(cog.user_info, interaction, target=mock_target)
 
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert "1 game on" in fields["Games Played"]  # singular
         assert "2025-06-01" in fields["Play Range"]
@@ -510,6 +531,7 @@ class TestCogAdminUserInfo:
 
     async def test_user_info_single_block(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
@@ -526,12 +548,13 @@ class TestCogAdminUserInfo:
 
         await run_command(cog.user_info, interaction, target=mock_target)
 
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert "Blocked by 1 user" in fields["Block Status"]  # singular
 
     async def test_user_info_verified_false(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
@@ -547,12 +570,13 @@ class TestCogAdminUserInfo:
 
         await run_command(cog.user_info, interaction, target=mock_target)
 
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert "❌ Unverified" in fields["Verified"]
 
     async def test_user_info_verified_not_set(
         self,
+        decoy: Decoy,
         cog: AdminCog,
         interaction: discord.Interaction,
         guild: Guild,
@@ -568,6 +592,6 @@ class TestCogAdminUserInfo:
 
         await run_command(cog.user_info, interaction, target=mock_target)
 
-        embed = get_last_send_message(interaction, "embed")
+        embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert "Not set" in fields["Verified"]

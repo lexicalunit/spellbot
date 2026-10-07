@@ -15,6 +15,7 @@ import freezegun
 import pytest
 import pytest_asyncio
 from click.testing import CliRunner
+from decoy import matchers
 from discord.ext import commands
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
@@ -54,13 +55,22 @@ from tests.factories import (
     UserFactory,
     VerifyFactory,
 )
-from tests.mocks import build_author, build_channel, build_guild, build_interaction, build_message
+from tests.factories.session import FactorySession
+from tests.mocks import (
+    build_author,
+    build_channel,
+    build_guild,
+    build_interaction,
+    build_message,
+    decoys,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator
 
     from aiohttp import web
     from aiohttp.test_utils import TestClient
+    from decoy import Decoy
     from discord.app_commands import Command
     from freezegun.api import (
         FrozenDateTimeFactory,
@@ -83,39 +93,47 @@ _WORKER_OFFSET_MULTIPLIER = 10000
 
 
 @overload
-def get_last_send_message(  # pragma: no cover
+async def get_last_send_message(  # pragma: no cover
+    decoy: Decoy,
     interaction: discord.Interaction,
     kwarg: Literal["embed"],
 ) -> dict[str, Any]: ...
 
 
 @overload
-def get_last_send_message(  # pragma: no cover
+async def get_last_send_message(  # pragma: no cover
+    decoy: Decoy,
     interaction: discord.Interaction,
     kwarg: Literal["view"],
 ) -> list[dict[str, Any]]: ...
 
 
 @overload
-def get_last_send_message(  # pragma: no cover
+async def get_last_send_message(  # pragma: no cover
+    decoy: Decoy,
     interaction: discord.Interaction,
     kwarg: str,
 ) -> Any: ...
 
 
-def get_last_send_message(
+async def get_last_send_message(
+    decoy: Decoy,
     interaction: discord.Interaction,
     kwarg: str,
 ) -> dict[str, Any] | list[dict[str, Any]] | Any:
-    """Get the last send_message call's kwargs from an interaction."""
-    send_message = interaction.response.send_message
-    send_message.assert_called_once()  # type: ignore
-    send_message_call = send_message.call_args_list[0]  # type: ignore
-    actual = send_message_call.kwargs[kwarg]
+    """Get `kwarg` from the latest `send_message` call on an interaction's (decoy) response."""
+    captor = matchers.ValueCaptor[Any]()
+    decoy.verify(
+        await interaction.response.send_message(**{kwarg: captor.matcher}),
+        ignore_extra_args=True,
+    )
+    actual = captor.value
     if kwarg == "embed":  # pragma: no cover
-        actual = actual.to_dict()
+        assert isinstance(actual, discord.Embed)
+        return actual.to_dict()
     if kwarg == "view":  # pragma: no cover
-        actual = actual.to_components()
+        assert isinstance(actual, discord.ui.View)
+        return actual.to_components()
     return actual
 
 
@@ -187,20 +205,7 @@ async def session_context(
 
         _truncate_all()
 
-        AlertFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        BlockFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        ChannelFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        GameFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        GuildAwardFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        GuildFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        GuildMemberFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        PlayFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        PostFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        QueueFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        TokenFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        UserAwardFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        UserFactory._meta.sqlalchemy_session = sync_session  # type: ignore
-        VerifyFactory._meta.sqlalchemy_session = sync_session  # type: ignore
+        FactorySession.current = sync_session
 
         def cleanup_session() -> None:
             async def finalizer() -> None:
@@ -288,12 +293,6 @@ def guild(factories: Factories, interaction: discord.Interaction) -> Guild:
 
 
 @pytest.fixture
-def add_guild(factories: Factories) -> Callable[..., Guild]:
-    """Add a guild."""
-    return factories.guild.create
-
-
-@pytest.fixture
 def add_channel(factories: Factories, guild: Guild) -> Callable[..., Channel]:
     """Add a channel to the given guild."""
     return partial(factories.channel.create, guild=guild)
@@ -303,8 +302,8 @@ def add_channel(factories: Factories, guild: Guild) -> Callable[..., Channel]:
 def channel(interaction: discord.Interaction, add_channel: Callable[..., Channel]) -> Channel:
     """Create a database Channel that matches the interaction's channel."""
     assert interaction.channel is not None
-    assert hasattr(interaction.channel, "name")
-    channel_name = interaction.channel.name  # type: ignore
+    assert not isinstance(interaction.channel, discord.DMChannel)
+    channel_name = interaction.channel.name
     return add_channel(xid=interaction.channel_id, name=channel_name)
 
 
@@ -400,27 +399,56 @@ def dpy_message(
 
 @pytest.fixture
 def interaction(
+    decoy: Decoy,
     dpy_guild: discord.Guild,
     dpy_channel: discord.TextChannel,
     dpy_author: discord.User,
 ) -> discord.Interaction:
-    return build_interaction(dpy_guild, dpy_channel, dpy_author)
+    response = decoy.mock(cls=discord.InteractionResponse)
+    followup = decoy.mock(cls=discord.Webhook)
+    return build_interaction(
+        dpy_guild,
+        dpy_channel,
+        dpy_author,
+        response=response,
+        followup=followup,
+    )
 
 
 @pytest.fixture
-def context(
-    dpy_guild: discord.Guild,
-    dpy_channel: discord.TextChannel,
-    dpy_author: discord.User,
-    dpy_message: discord.Message,
-) -> discord.Interaction:
-    stub = AsyncMock(spec=commands.Context)
-    stub.guild = dpy_guild
-    stub.channel = dpy_channel
-    stub.channel_id = dpy_channel.id
-    stub.author = dpy_author
-    stub.message = dpy_message
-    return stub
+def decoy_guild(decoy: Decoy, unique_offset: int) -> discord.Guild:
+    return decoys.guild(decoy, offset=unique_offset)
+
+
+@pytest.fixture
+def decoy_channel(
+    decoy: Decoy,
+    decoy_guild: discord.Guild,
+    unique_offset: int,
+) -> discord.TextChannel:
+    return decoys.channel(decoy, decoy_guild, offset=unique_offset)
+
+
+@pytest.fixture
+def decoy_member(decoy: Decoy, unique_offset: int) -> discord.Member:
+    return decoys.member(decoy, offset=unique_offset)
+
+
+@pytest.fixture
+def decoy_message(
+    decoy: Decoy,
+    decoy_guild: discord.Guild,
+    decoy_channel: discord.TextChannel,
+    decoy_member: discord.Member,
+) -> discord.Message:
+    return decoys.message(decoy, decoy_guild, decoy_channel, decoy_member)
+
+
+@pytest.fixture
+def decoy_context(decoy: Decoy, decoy_message: discord.Message) -> commands.Context[SpellBot]:
+    context = decoy.mock(cls=commands.Context)
+    context.message = decoy_message
+    return context
 
 
 def close_coroutine(coro: Any, **kwargs: Any) -> None:
