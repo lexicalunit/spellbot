@@ -6,7 +6,8 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, DateTime, Integer, String, text
+from sqlalchemy import DateTime, Integer, String, text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base, now
 
@@ -19,21 +20,21 @@ class Token(Base):
 
     __tablename__ = "tokens"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         autoincrement=True,
         nullable=False,
         primary_key=True,
         doc="A pk for this token",
     )
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
         server_default=now,
         doc="UTC timestamp when this key was first created",
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=partial(datetime.now, UTC),
@@ -41,24 +42,24 @@ class Token(Base):
         onupdate=partial(datetime.now, UTC),
         doc="UTC timestamp when this key was last updated",
     )
-    deleted_at = Column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         index=True,
         doc="UTC timestamp when this key was deleted",
     )
-    key = Column(
+    key: Mapped[str] = mapped_column(
         String,
         nullable=False,
         index=True,
         doc="The API token key",
     )
-    note = Column(
+    note: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
         doc="A note for my reference",
     )
-    scopes = Column(
+    scopes: Mapped[str] = mapped_column(
         String,
         nullable=False,
         default="*",
@@ -70,11 +71,11 @@ class Token(Base):
         from spellbot.data import TokenData  # allow_inline
 
         return TokenData(
-            id=self.id,  # type: ignore
-            created_at=self.created_at,  # type: ignore
-            updated_at=self.updated_at,  # type: ignore
-            deleted_at=self.deleted_at,  # type: ignore
-            key=self.key,  # type: ignore
-            note=self.note,  # type: ignore
-            scopes=self.scopes,  # type: ignore
+            id=self.id,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            deleted_at=self.deleted_at,
+            key=self.key,
+            note=self.note,
+            scopes=self.scopes,
         )

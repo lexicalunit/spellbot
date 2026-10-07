@@ -28,7 +28,7 @@ pytestmark = pytest.mark.use_db
 @pytest.mark.asyncio
 class TestServiceGames:
     async def test_games_get(self, game: Game) -> None:
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         assert game_data.id == game.id
         assert await games.get(404) is None
@@ -54,7 +54,7 @@ class TestServiceGames:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game)
         user = UserFactory.create()
 
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         updated_game_data = await games.add_player(game_data, user.xid)
 
@@ -78,7 +78,7 @@ class TestServiceGames:
         for _ in range(game.seats):
             UserFactory.create(game=game)
 
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         latecomer = UserFactory.create()
         assert await games.add_player(game_data, latecomer.xid) is None
@@ -100,9 +100,9 @@ class TestServiceGames:
         assert private_embed is not None
 
     async def test_games_add_post(self, game: Game) -> None:
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
-        updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)  # type: ignore
+        updated_data = await games.add_post(game_data, game.guild_xid, game.channel_xid, 12345)
 
         # Verify the post was added to game_data
         assert any(p.message_xid == 12345 for p in updated_data.posts)
@@ -114,12 +114,12 @@ class TestServiceGames:
 
     async def test_games_add_post_conflict(self, game: Game) -> None:
         PostFactory.create(guild=game.guild, channel=game.channel, game=game, message_xid=22345)
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         existing_count = len(game_data.posts)
 
         # Re-adding the same post should be a no-op (on_conflict_do_nothing returns None)
-        result = await games.add_post(game_data, game.guild_xid, game.channel_xid, 22345)  # type: ignore
+        result = await games.add_post(game_data, game.guild_xid, game.channel_xid, 22345)
         assert len(result.posts) == existing_count
 
     async def test_games_fully_seated(self, guild: Guild, channel: Channel) -> None:
@@ -139,7 +139,7 @@ class TestServiceGames:
         assert not pending_game_data.fully_seated
 
     async def test_games_attach_game_link_does_not_start(self, game: Game) -> None:
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         attached = await games.attach_game_link(game_data, "http://link", "secret")
 
@@ -155,7 +155,7 @@ class TestServiceGames:
         assert found.status == GameStatus.PENDING.value
 
     async def test_games_make_ready(self, game: Game) -> None:
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         await games.make_ready(game_data, "http://link", "whatever", pins={})
 
@@ -169,7 +169,7 @@ class TestServiceGames:
     async def test_games_make_ready_assigns_pins_by_player(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         pins = {user2.xid: "222222", user1.xid: "111111"}
 
@@ -177,7 +177,7 @@ class TestServiceGames:
 
         DatabaseSession.expire_all()
         plays = (
-            (await DatabaseSession.execute(select(Play).where(Play.game_id == game.id)))  # type: ignore
+            (await DatabaseSession.execute(select(Play).where(Play.game_id == game.id)))
             .scalars()
             .all()
         )
@@ -188,7 +188,7 @@ class TestServiceGames:
         UserFactory.create(game=game)
         assert game.seats == 4
 
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         await games.shrink_game(game_data)
 
@@ -201,13 +201,13 @@ class TestServiceGames:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
 
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         player_xids = {p.xid for p in game_data.players}
         assert player_xids == {user1.xid, user2.xid}
 
     async def test_games_set_voice(self, game: Game) -> None:
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345)
 
@@ -217,7 +217,7 @@ class TestServiceGames:
         assert found.voice_xid == 12345
 
     async def test_games_set_voice_with_link(self, game: Game) -> None:
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         await games.set_voice(game_data, voice_xid=12345, voice_invite_link="http://link")
 
@@ -228,7 +228,7 @@ class TestServiceGames:
         assert found.voice_invite_link == "http://link"
 
     async def test_message_xids(self, game: Game) -> None:
-        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]  # type: ignore
+        assert await games.message_xids([game.id]) == [game.posts[0].message_xid]
 
     async def test_dequeue_players(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -243,7 +243,7 @@ class TestServiceGames:
     async def test_player_convoke_data(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
         user2 = UserFactory.create(game=game)
-        result = await games.player_convoke_data(game.id)  # type: ignore
+        result = await games.player_convoke_data(game.id)
         expected = [
             {"xid": user1.xid, "name": user1.name},
             {"xid": user2.xid, "name": user2.name},
@@ -338,7 +338,7 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
 
@@ -348,7 +348,7 @@ class TestServiceGamesBlocked:
 
         BlockFactory.create(user_xid=user2.xid, blocked_user_xid=user1.xid)
 
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         assert await games.blocked(game_data, user2.xid)
 
@@ -356,7 +356,7 @@ class TestServiceGamesBlocked:
         UserFactory.create(game=game)
         user3 = UserFactory.create()
 
-        game_data = await games.get(game.id)  # type: ignore
+        game_data = await games.get(game.id)
         assert game_data is not None
         assert not await games.blocked(game_data, user3.xid)
 
@@ -367,7 +367,7 @@ class TestServiceGamesUpsert:
         new, game_data = await games.upsert(
             guild_xid=game.guild.xid,
             channel_xid=game.channel.xid,
-            author_xid=user.xid,  # type: ignore
+            author_xid=user.xid,
             friends=[],
             seats=4,
             rules=None,
@@ -424,7 +424,7 @@ class TestServiceGamesUpsert:
         new, game_data = await games.upsert(
             guild_xid=guild.xid,
             channel_xid=channel.xid,
-            author_xid=user.xid,  # type: ignore
+            author_xid=user.xid,
             friends=[],
             seats=4,
             rules=None,
@@ -786,7 +786,7 @@ class TestServiceGamesGuildWar:
         new, game_id = await self.upsert_war_game(
             guild,
             channel,
-            user.xid,  # type: ignore
+            user.xid,
             war_id=WAR_ID,
             war_title="Summer Clash",
         )

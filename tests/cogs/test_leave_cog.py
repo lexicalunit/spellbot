@@ -7,11 +7,12 @@ from unittest.mock import ANY
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import delete
 
 from spellbot.actions import leave_action
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel, Game, Guild, Queue, User
+from spellbot.models import Channel, Game, Guild, Post, Queue, User
 from spellbot.views.lfg_view import GameView
 from tests.fixtures import Factories, run_command
 from tests.mocks import mock_operations
@@ -251,7 +252,7 @@ class TestCogLeaveGame:
         game: Game,
         channel: Channel,
     ) -> None:
-        game.message_xid = None
+        await DatabaseSession.execute(delete(Post).where(Post.game_id == game.id))
         await DatabaseSession.commit()
 
         with mock_operations(leave_action):

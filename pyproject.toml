@@ -26,7 +26,6 @@ dependencies = [
   "humanize>=4.9.0",
   "hupper>=1.12.1",
   "packaging>=24.0",
-  "postgresql-audit>=0.18.0",
   "psycopg[binary]>=3.2.9",
   "pydantic-settings>=2.14.1",
   "python-dateutil>=2.8.2",
@@ -199,6 +198,10 @@ ignore = [
   "TRY003",
 ]
 
+[tool.ruff.lint.flake8-type-checking]
+# SQLAlchemy resolves `Mapped[...]` annotations at runtime, so their imports can't be type-only.
+runtime-evaluated-base-classes = ["spellbot.models.Base", "spellbot.models.base.Base"]
+
 [tool.ruff.lint.pycodestyle]
 max-doc-length = 100
 max-line-length = 100
@@ -217,6 +220,7 @@ safe_licenses = [
   "LICENSE.BSD3",
   "MIT License",
   "MIT",
+  "MIT-0",
   "Mozilla Public License 2.0 (MPL 2.0)",
   "PSF-2.0",
   "Python Software Foundation License",

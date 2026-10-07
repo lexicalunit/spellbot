@@ -203,7 +203,7 @@ async def game_detail_view(game_id: int) -> dict[str, Any] | None:
     plays = (
         (
             await DatabaseSession.execute(
-                select(Play).where(Play.game_id == game_id).order_by(Play.user_xid),  # type: ignore
+                select(Play).where(Play.game_id == game_id).order_by(Play.user_xid),
             )
         )
         .scalars()
@@ -304,7 +304,7 @@ async def guild_detail_view(guild_xid: int) -> dict[str, Any] | None:
     channel. Returns `None` when the guild is unknown.
     """
     guild = (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
     ).scalar_one_or_none()
     if guild is None:
         return None
@@ -314,7 +314,7 @@ async def guild_detail_view(guild_xid: int) -> dict[str, Any] | None:
     rows = (
         await DatabaseSession.execute(
             select(
-                Channel.xid,  # type: ignore
+                Channel.xid,
                 Channel.name,
                 games_count,
                 last_updated_at,
@@ -501,18 +501,18 @@ async def _find_existing(
         .filter(
             and_(
                 Game.guild_xid == guild_xid,
-                Game.channel_xid == channel_xid,  # type: ignore
-                Game.seats == seats,  # type: ignore
+                Game.channel_xid == channel_xid,
+                Game.seats == seats,
                 Game.rules == rules,
-                Game.format == format,  # type: ignore
-                Game.bracket == bracket,  # type: ignore
-                Game.service == service,  # type: ignore
+                Game.format == format,
+                Game.bracket == bracket,
+                Game.service == service,
                 war_filter,
-                Game.status == GameStatus.PENDING.value,  # type: ignore
+                Game.status == GameStatus.PENDING.value,
                 Game.deleted_at.is_(None),
             ),
         )
-        .group_by(Game, Queue.user_xid)
+        .group_by(*Game.__table__.c, Queue.user_xid)
         .order_by(asc(Game.updated_at))
         .alias("inner")
     )
@@ -641,8 +641,8 @@ async def attach_game_link(
     """Store a generated game link without starting the SpellBot queue."""
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
     assert len(game_link or "") <= MAX_GAME_LINK_LEN
-    game.game_link = game_link  # type: ignore  # column is "game_link" for legacy reasons
-    game.password = password  # type: ignore
+    game.game_link = game_link  # column is "game_link" for legacy reasons
+    game.password = password
     await DatabaseSession.commit()
     return await game.to_data()
 
@@ -669,10 +669,10 @@ async def make_ready(
     ]
 
     # update game's state
-    game.game_link = game_link  # type: ignore  # column is "game_link" for legacy reasons
-    game.password = password  # type: ignore
+    game.game_link = game_link  # column is "game_link" for legacy reasons
+    game.password = password
     game.status = GameStatus.STARTED.value
-    game.started_at = datetime.now(tz=UTC)  # type: ignore
+    game.started_at = datetime.now(tz=UTC)
 
     if not queues:  # Not sure this is possible, but just in case.
         await DatabaseSession.commit()
@@ -787,13 +787,13 @@ async def games_pending_notification() -> list[GameData]:
                 select(Game)
                 .join(Queue, isouter=True)
                 .where(
-                    Game.status == GameStatus.PENDING.value,  # type: ignore[arg-type]
+                    Game.status == GameStatus.PENDING.value,
                     Game.deleted_at.is_(None),
                     Game.started_at.is_(None),
                     Game.notified_at.is_(None),
                     Game.created_at <= cutoff,
                 )
-                .group_by(Game)
+                .group_by(*Game.__table__.c)
                 .having(func.count(Queue.game_id) < Game.seats),
             )
         )
@@ -818,7 +818,7 @@ async def inactive_games(guild_xid: int | None = None) -> list[GameData]:
                 select(Game)
                 .join(Queue, isouter=True)
                 .where(*filters)
-                .group_by(Game)
+                .group_by(*Game.__table__.c)
                 .having(
                     or_(
                         Game.updated_at <= limit,
@@ -885,7 +885,7 @@ async def get_last_game(user_xid: int, guild_xid: int) -> GameData | None:
         select(Game)
         .where(
             Game.guild_xid == guild_xid,
-            Game.status == GameStatus.STARTED.value,  # type: ignore
+            Game.status == GameStatus.STARTED.value,
             Game.deleted_at.is_(None),
             Play.user_xid == user_xid,
         )

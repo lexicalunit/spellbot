@@ -6,10 +6,8 @@ from importlib import import_module
 from inspect import getmembers, isclass
 from pathlib import Path
 from pkgutil import iter_modules
-from typing import TYPE_CHECKING, Protocol
 
-if TYPE_CHECKING:
-    from sqlalchemy import Table
+from sqlalchemy import inspect as sa_inspect
 
 
 def import_models() -> None:  # pragma: no cover
@@ -46,24 +44,20 @@ from .user import User  # noqa: E402
 from .verify import Verify  # noqa: E402
 
 
-class HasTable(Protocol):
-    __table__: Table
-
-
-def web_editable_columns(model: HasTable) -> frozenset[str]:
+def web_editable_columns(model: type[Base]) -> frozenset[str]:
     """Return the names of columns a guild moderator may edit, per their `doc` marker."""
     return frozenset(
         column.name
-        for column in model.__table__.columns
+        for column in sa_inspect(model).columns
         if column.doc and WEB_EDITABLE in column.doc
     )
 
 
-def web_editable_docs(model: HasTable) -> dict[str, str]:
+def web_editable_docs(model: type[Base]) -> dict[str, str]:
     """Map each web-editable column name to its help text (its `doc` minus the marker)."""
     return {
         column.name: column.doc.replace(WEB_EDITABLE, "").strip()
-        for column in model.__table__.columns
+        for column in sa_inspect(model).columns
         if column.doc and WEB_EDITABLE in column.doc
     }
 

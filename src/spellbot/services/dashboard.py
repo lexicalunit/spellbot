@@ -96,7 +96,7 @@ async def dashboard_guilds(*, top_n: int = 100) -> list[dict[str, Any]]:
     """
     top_rows = (
         await DatabaseSession.execute(
-            select(Guild.xid, Guild.name, func.count(Game.id).label("total"))  # type: ignore[arg-type]
+            select(Guild.xid, Guild.name, func.count(Game.id).label("total"))
             .select_from(Guild)
             .join(Game, Game.guild_xid == Guild.xid)
             .group_by(Guild.xid, Guild.name)
@@ -140,7 +140,7 @@ async def dashboard_summary(period: PeriodSpec, opts: GuildFilter) -> dict[str, 
             await DatabaseSession.execute(
                 select(func.count(distinct(Play.user_xid)))
                 .select_from(Play)
-                .join(Game, Play.game_id == Game.id)  # type: ignore
+                .join(Game, Play.game_id == Game.id)
                 .where(*game_filters),
             )
         ).scalar()
@@ -153,7 +153,7 @@ async def dashboard_summary(period: PeriodSpec, opts: GuildFilter) -> dict[str, 
     servers = int(
         (
             await DatabaseSession.execute(
-                select(func.count(Guild.xid)).where(*server_filters),  # type: ignore[arg-type]
+                select(func.count(Guild.xid)).where(*server_filters),
             )
         ).scalar()
         or 0,
@@ -161,9 +161,7 @@ async def dashboard_summary(period: PeriodSpec, opts: GuildFilter) -> dict[str, 
 
     bracket_rows = (
         await DatabaseSession.execute(
-            select(Game.bracket, func.count(Game.id))  # type: ignore[arg-type]
-            .where(*game_filters)
-            .group_by(Game.bracket),
+            select(Game.bracket, func.count(Game.id)).where(*game_filters).group_by(Game.bracket),
         )
     ).all()
     bracket_counts = {int(value): int(count) for value, count in bracket_rows}
@@ -200,7 +198,7 @@ async def dashboard_totals(period: PeriodSpec, opts: GuildFilter) -> dict[str, A
             await DatabaseSession.execute(
                 select(func.count(distinct(Play.user_xid)))
                 .select_from(Play)
-                .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+                .join(Game, Play.game_id == Game.id)
                 .where(*game_filters),
             )
         ).scalar()
@@ -209,7 +207,7 @@ async def dashboard_totals(period: PeriodSpec, opts: GuildFilter) -> dict[str, A
     servers = int(
         (
             await DatabaseSession.execute(
-                select(func.count(Guild.xid)),  # type: ignore[arg-type]
+                select(func.count(Guild.xid)),
             )
         ).scalar()
         or 0,
@@ -239,7 +237,7 @@ async def new_user_bucket_series(
             func.min(Game.started_at).label("first_started"),
         )
         .select_from(Play)
-        .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+        .join(Game, Play.game_id == Game.id)
         .where(*inner_filters)
         .group_by(Play.user_xid)
         .subquery()
@@ -282,7 +280,7 @@ async def active_user_bucket_series(
         await DatabaseSession.execute(
             select(bucket_col, func.count(distinct(Play.user_xid)))
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+            .join(Game, Play.game_id == Game.id)
             .where(*filters)
             .group_by(bucket_col)
             .order_by(bucket_col),
@@ -419,7 +417,7 @@ async def dashboard_casual_vs_cedh(period: PeriodSpec, opts: GuildFilter) -> dic
         await DatabaseSession.execute(
             select(classification, bucket_col, func.count(Game.id))
             .select_from(Game)
-            .outerjoin(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+            .outerjoin(Guild, Guild.xid == Game.guild_xid)
             .where(*filters)
             .group_by(classification, bucket_col)
             .order_by(bucket_col),
@@ -459,7 +457,7 @@ async def dashboard_server_popularity(
         await DatabaseSession.execute(
             select(Guild.name, total_col)
             .select_from(Game)
-            .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+            .join(Guild, Guild.xid == Game.guild_xid)
             .where(*filters)
             .group_by(Guild.name)
             .order_by(total_col.desc(), Guild.name),
@@ -476,7 +474,7 @@ async def dashboard_server_popularity(
         await DatabaseSession.execute(
             select(Guild.name, bucket_col, func.count(Game.id))
             .select_from(Game)
-            .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore
+            .join(Guild, Guild.xid == Game.guild_xid)
             .where(*filters, any_of(Guild.name, top_names))
             .group_by(Guild.name, bucket_col)
             .order_by(bucket_col),
@@ -535,7 +533,7 @@ async def dashboard_user_languages(period: PeriodSpec, opts: GuildFilter) -> dic
         await DatabaseSession.execute(
             select(User.locale, count_col)
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore
+            .join(Game, Play.game_id == Game.id)
             .join(User, Play.user_xid == User.xid)
             .where(*filters)
             .group_by(User.locale)
@@ -580,7 +578,7 @@ async def dashboard_top_guild_per_game_language(
     count_col = func.count(Game.id)
     rows = (
         await DatabaseSession.execute(
-            select(Game.locale, Guild.xid, Guild.name, count_col)  # type: ignore[arg-type]
+            select(Game.locale, Guild.xid, Guild.name, count_col)
             .select_from(Game)
             .join(Guild, Guild.xid == Game.guild_xid)
             .where(*filters)
@@ -611,12 +609,12 @@ async def dashboard_guild_languages(period: PeriodSpec, opts: GuildFilter) -> di
     ]
     if period.start_dt is not None:
         filters.append(Game.started_at >= period.start_dt)
-    count_col = func.count(distinct(Guild.xid))  # type: ignore[arg-type]
+    count_col = func.count(distinct(Guild.xid))
     rows = (
         await DatabaseSession.execute(
             select(Guild.locale, count_col)
             .select_from(Game)
-            .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore[arg-type]
+            .join(Guild, Guild.xid == Game.guild_xid)
             .where(*filters)
             .group_by(Guild.locale)
             .order_by(count_col.desc(), Guild.locale),
@@ -715,7 +713,7 @@ async def dashboard_popular_seats(period: PeriodSpec, opts: GuildFilter) -> dict
     count_col = func.count(Game.id)
     rows = (
         await DatabaseSession.execute(
-            select(Game.seats, count_col)  # type: ignore[arg-type]
+            select(Game.seats, count_col)
             .where(*filters)
             .group_by(Game.seats)
             .order_by(count_col.desc(), Game.seats),
@@ -737,7 +735,7 @@ async def dashboard_bracket_adoption(period: PeriodSpec, opts: GuildFilter) -> d
     """
     filters: list[ColumnElement[bool]] = [
         Game.started_at.isnot(None),
-        Game.format.in_(BRACKETABLE_FORMATS),  # type: ignore[attr-defined]
+        Game.format.in_(BRACKETABLE_FORMATS),
         *game_guild_filter(opts),
     ]
     if period.start_dt is not None:
@@ -764,7 +762,7 @@ async def dashboard_bracket_adoption(period: PeriodSpec, opts: GuildFilter) -> d
     leader_count = func.count(Game.id).label("count")
     leader_rows = (
         await DatabaseSession.execute(
-            select(Game.bracket, Guild.name, leader_count)  # type: ignore
+            select(Game.bracket, Guild.name, leader_count)
             .select_from(Game)
             .join(Guild, Guild.xid == Game.guild_xid)
             .where(
@@ -836,12 +834,12 @@ async def dashboard_top_players(
     ]
     if period.start_dt is not None:
         filters.append(Game.started_at >= period.start_dt)
-    count_col = func.count(Play.game_id).label("count")  # type: ignore[arg-type]
+    count_col = func.count(Play.game_id).label("count")
     rows = (
         await DatabaseSession.execute(
             select(Play.user_xid, User.name, count_col)
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+            .join(Game, Play.game_id == Game.id)
             .join(User, User.xid == Play.user_xid)
             .where(*filters)
             .group_by(Play.user_xid, User.name)
@@ -904,7 +902,7 @@ async def dashboard_games_per_player(period: PeriodSpec, opts: GuildFilter) -> d
         await DatabaseSession.execute(
             select(Play.user_xid, func.count(Game.id).label("count"))
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+            .join(Game, Play.game_id == Game.id)
             .where(*filters)
             .group_by(Play.user_xid),
         )
@@ -981,7 +979,7 @@ async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> d
             func.min(func.date_trunc("week", Game.started_at)).label("cohort"),
         )
         .select_from(Play)
-        .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+        .join(Game, Play.game_id == Game.id)
         .where(*inner_filters)
         .group_by(Play.user_xid)
         .subquery()
@@ -992,7 +990,7 @@ async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> d
             func.date_trunc("week", Game.started_at).label("play_week"),
         )
         .select_from(Play)
-        .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
+        .join(Game, Play.game_id == Game.id)
         .where(*inner_filters)
         .distinct()
         .subquery()
@@ -1181,13 +1179,13 @@ async def dashboard_mythic_verification(
         filters.append(Game.started_at >= period.start_dt)
     bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
     verified = func.sum(case((Play.verified_at.isnot(None), 1), else_=0))
-    total = func.count(Play.game_id)  # type: ignore[arg-type]
+    total = func.count(Play.game_id)
     rows = (
         await DatabaseSession.execute(
             select(bucket_col, verified.label("verified"), total.label("total"))
             .select_from(Play)
-            .join(Game, Play.game_id == Game.id)  # type: ignore[arg-type]
-            .join(Guild, Guild.xid == Game.guild_xid)  # type: ignore[arg-type]
+            .join(Game, Play.game_id == Game.id)
+            .join(Guild, Guild.xid == Game.guild_xid)
             .where(*filters)
             .group_by(bucket_col)
             .order_by(bucket_col),
@@ -1259,10 +1257,10 @@ async def dashboard_active_queues(period: PeriodSpec, opts: GuildFilter) -> dict
     players_col = func.count(Queue.user_xid).label("players")
     rows = (
         await DatabaseSession.execute(
-            select(  # type: ignore
+            select(
                 Game.guild_xid,
                 Guild.name.label("guild_name"),
-                Game.channel_xid,  # type: ignore
+                Game.channel_xid,
                 Channel.name.label("channel_name"),
                 FORMAT_LABEL,
                 BRACKET_LABEL,

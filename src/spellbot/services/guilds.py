@@ -69,7 +69,7 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
             set_updates["locale"] = upsert.excluded.locale
             where_clauses.append(upsert.excluded.locale != Guild.locale)
         upsert = upsert.on_conflict_do_update(
-            index_elements=[Guild.xid],  # type: ignore
+            index_elements=[Guild.xid],
             index_where=Guild.xid == values["xid"],
             set_=set_updates,
             where=or_(*where_clauses),
@@ -79,7 +79,7 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
         guild_cache[guild.id] = (name, locale, icon)
 
     result = (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))  # type: ignore
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))
     ).scalar_one_or_none()
     return await result.to_data() if guild else None
 
@@ -87,7 +87,7 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
 async def set_icon(guild_xid: int, icon: str | None) -> None:
     """Update the cached Discord icon URL for the given guild."""
     await DatabaseSession.execute(
-        update(Guild).where(Guild.xid == guild_xid).values(icon=icon),  # type: ignore
+        update(Guild).where(Guild.xid == guild_xid).values(icon=icon),
     )
     await DatabaseSession.commit()
     guild_cache.pop(guild_xid, None)
@@ -123,7 +123,7 @@ async def set_banned(guild_xid: int, banned: bool) -> None:
     }
     upsert = insert(Guild).values(**values)
     upsert = upsert.on_conflict_do_update(
-        index_elements=[Guild.xid],  # type: ignore
+        index_elements=[Guild.xid],
         index_where=Guild.xid == values["xid"],
         set_={
             "updated_at": upsert.excluded.updated_at,
@@ -137,7 +137,7 @@ async def set_banned(guild_xid: int, banned: bool) -> None:
 async def set_promote(guild_xid: int, promote: bool) -> None:
     """Set whether the given guild may be advertised on public SpellBot pages."""
     await DatabaseSession.execute(
-        update(Guild).where(Guild.xid == guild_xid).values(promote=promote),  # type: ignore
+        update(Guild).where(Guild.xid == guild_xid).values(promote=promote),
     )
     await DatabaseSession.commit()
 
@@ -155,7 +155,7 @@ async def update_settings(guild_xid: int, **fields: object) -> None:
         return
     async with audit.transaction():
         await DatabaseSession.execute(
-            update(Guild).where(Guild.xid == guild_xid).values(**safe),  # type: ignore
+            update(Guild).where(Guild.xid == guild_xid).values(**safe),
         )
     guild_cache.pop(guild_xid, None)
 
@@ -163,7 +163,7 @@ async def update_settings(guild_xid: int, **fields: object) -> None:
 async def get(guild_xid: int) -> GuildData | None:
     """Fetch the guild data for the given guild xid."""
     guild = (
-        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+        await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
     ).scalar_one_or_none()
     return await guild.to_data() if guild else None
 
@@ -178,7 +178,7 @@ async def promoted_icon(guild_xid: int) -> dict[str, Any] | None:
     icon = (
         await DatabaseSession.execute(
             select(Guild.icon).where(
-                Guild.xid == guild_xid,  # type: ignore
+                Guild.xid == guild_xid,
                 Guild.banned.is_(False),
                 Guild.promote.is_(True),
             ),
@@ -203,7 +203,7 @@ async def voiced() -> list[int]:
     """Return guild xids that have voice channel creation enabled and are active."""
     rows = (
         await DatabaseSession.execute(
-            select(Guild.xid).where(  # type: ignore
+            select(Guild.xid).where(
                 and_(
                     Guild.voice_create.is_(True),
                     Guild.active.is_(True),
@@ -219,7 +219,7 @@ async def voiced() -> list[int]:
 async def set_active(guild_xid: int, active: bool) -> None:
     """Mark the given guild as active or inactive."""
     await DatabaseSession.execute(
-        update(Guild).where(Guild.xid == guild_xid).values(active=active),  # type: ignore
+        update(Guild).where(Guild.xid == guild_xid).values(active=active),
     )
     await DatabaseSession.commit()
 
@@ -305,7 +305,7 @@ async def setup_mythic_track(guild_data: GuildData) -> GuildData:
     new_value = not guild_data.enable_mythic_track
     stmt = (
         update(Guild)
-        .where(Guild.xid == guild_data.xid)  # type: ignore
+        .where(Guild.xid == guild_data.xid)
         .values(enable_mythic_track=new_value)
         .returning(Guild)
     )

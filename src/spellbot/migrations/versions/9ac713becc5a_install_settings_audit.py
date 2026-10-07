@@ -1,12 +1,12 @@
 # Copyright (c) 2026 spellbot@lexicalunit.com
 
 """
-Install settings audit (postgresql-audit) on channels and guilds.
+Install settings audit on channels and guilds.
 
-Creates the `audit` schema (postgresql-audit `transaction`/`activity` tables, JSONB
-operators/functions) and attaches statement-level triggers that record every settings change into
-`audit.activity`. Which columns are audited is defined in `spellbot.audit` (see `audited_columns`),
-not here; this migration just calls the installer.
+Creates the `audit` schema (`transaction`/`activity` tables, JSONB operators/functions) and
+attaches statement-level triggers that record every settings change into `audit.activity`. Which
+columns are audited is defined in `spellbot.audit` (see `audited_columns`), not here; this
+migration just calls the installer.
 
 Revision ID: 9ac713becc5a
 Revises: a8252b248858

@@ -25,6 +25,7 @@ from .settings import settings
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Sequence
 
+    from sqlalchemy.orm import QueryableAttribute
     from sqlalchemy.sql.elements import ColumnElement
 
     # For type checking, use the generic version from the stubs
@@ -229,7 +230,10 @@ def delete_test_database(worker_id: str) -> None:  # pragma: no cover
     reverse_all(f"{settings.RESOLVED_DATABASE_URL}-{worker_id}")
 
 
-def any_of(column: ColumnElement[Any], values: Sequence[Any]) -> ColumnElement[bool]:
+def any_of(
+    column: ColumnElement[Any] | QueryableAttribute[Any],
+    values: Sequence[Any],
+) -> ColumnElement[bool]:
     """
     Build a `column = ANY(:values)` predicate using a single typed array bind.
 
@@ -240,6 +244,7 @@ def any_of(column: ColumnElement[Any], values: Sequence[Any]) -> ColumnElement[b
     causing affected query spans to be tagged `Non-parsable SQL query` and
     dropping their per-resource stats rollups.
     """
-    return column == any_(
-        bindparam(None, list(values), type_=ARRAY(column.type), unique=True),
+    expression = column.expression
+    return expression == any_(
+        bindparam(None, list(values), type_=ARRAY(expression.type), unique=True),
     )

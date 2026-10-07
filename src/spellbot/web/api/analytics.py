@@ -136,7 +136,7 @@ async def analytics_endpoint(request: web.Request) -> web.StreamResponse:
             return web.Response(status=403, text="Forbidden")
 
     async def get_guild_name() -> str | None:
-        result = await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))  # type: ignore
+        result = await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
         guild = result.scalar_one_or_none()
         return guild.name if guild else None
 
