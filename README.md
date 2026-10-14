@@ -57,7 +57,7 @@ Visit [live queues][queues], where you can log in with Discord to browse the gam
 
 | <!-- -->                              | <!-- -->                                                     |
 | :------------------------------------ | :----------------------------------------------------------- |
-| [Getting Started](GETTING_STARTED.md) | Add the bot, run your first game, fix Direct Messages        |
+| [Getting Started](GETTING_STARTED.md) | Add the bot and start your first game                        |
 | [Features](FEATURES.md)               | Matchmaking, live queues, and the game tracking integrations |
 | [Community](COMMUNITY.md)             | Where to play, feedback, supporters, and contributing        |
 | [Administration](ADMINISTRATION.md)   | Per-server and per-channel configuration commands            |
