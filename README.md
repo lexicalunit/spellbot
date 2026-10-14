@@ -55,18 +55,18 @@ Visit [live queues][queues], where you can log in with Discord to browse the gam
 
 ## 📚 Documentation
 
-| <!-- --> | <!-- --> |
-| :------- | :------- |
-| [Getting Started](GETTING_STARTED.md) | Add the bot, run your first game, fix Direct Messages |
-| [Features](FEATURES.md) | Matchmaking, live queues, and the Mythic Track, Playgroup Live and Castlog integrations |
-| [Community](COMMUNITY.md) | Where to play, feedback, supporters, and contributing |
-| [Administration](ADMINISTRATION.md) | Per-server and per-channel configuration commands |
-| [Contributing](CONTRIBUTING.md) | Development setup and how to submit changes |
-| [Integrations](INTEGRATIONS.md) | Adding support for a new play service |
-| [API](API.md) | The public REST API |
-| [Database](DATABASE.md) | Schema and migrations |
-| [Docker](DOCKER.md) | Running SpellBot in a container |
-| [Security](SECURITY.md) | Reporting a vulnerability |
+| <!-- -->                              | <!-- -->                                                     |
+| :------------------------------------ | :----------------------------------------------------------- |
+| [Getting Started](GETTING_STARTED.md) | Add the bot, run your first game, fix Direct Messages        |
+| [Features](FEATURES.md)               | Matchmaking, live queues, and the game tracking integrations |
+| [Community](COMMUNITY.md)             | Where to play, feedback, supporters, and contributing        |
+| [Administration](ADMINISTRATION.md)   | Per-server and per-channel configuration commands            |
+| [Contributing](CONTRIBUTING.md)       | Development setup and how to submit changes                  |
+| [Integrations](INTEGRATIONS.md)       | Adding support for a new play service                        |
+| [API](API.md)                         | The public REST API                                          |
+| [Database](DATABASE.md)               | Schema and migrations                                        |
+| [Docker](DOCKER.md)                   | Running SpellBot in a container                              |
+| [Security](SECURITY.md)               | Reporting a vulnerability                                    |
 
 ## 🐳 Docker Support
 
