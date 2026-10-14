@@ -75,11 +75,6 @@ class Settings(BaseSettings):
     # Cache
     REDIS_URL: str | None = None
 
-    # TableStream
-    TABLESTREAM_ROOT: str = "https://api.table-stream.com"
-    TABLESTREAM_AUTH_KEY: str | None = None
-    TABLESTREAM_CREATE: str = ""  # Derived from TABLESTREAM_ROOT in model_validator
-
     # Convoke
     CONVOKE_ROOT: str = "https://api.convoke.games/api"
     CONVOKE_API_KEY: str | None = None
@@ -172,14 +167,6 @@ class Settings(BaseSettings):
             url = url.replace("postgresql://", "postgresql+psycopg://", 1)
 
         object.__setattr__(self, "_database_url_resolved", url)
-
-        # Derive TABLESTREAM_CREATE if not explicitly set
-        if not self.TABLESTREAM_CREATE:
-            object.__setattr__(
-                self,
-                "TABLESTREAM_CREATE",
-                f"{self.TABLESTREAM_ROOT}/create-room",
-            )
 
         # Derive EDHLAB_CREATE if not explicitly set
         if not self.EDHLAB_CREATE:

@@ -21,7 +21,7 @@ from . import services
 from .data import GameLinkDetails
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
-from .integrations import convoke, edhlab, girudo, playgroup_live, tablestream
+from .integrations import convoke, edhlab, girudo, playgroup_live
 from .metrics import add_span_request_id, generate_request_id, setup_metrics
 from .operations import safe_delete_message
 from .settings import settings
@@ -208,9 +208,6 @@ class SpellBot(AutoShardedBot):
         match service:
             case GameService.CONVOKE.value:
                 details = await convoke.generate_link(game_data, pins)
-                return GameLinkDetails(*details)
-            case GameService.TABLE_STREAM.value:
-                details = await tablestream.generate_link(game_data)
                 return GameLinkDetails(*details)
             case GameService.GIRUDO.value:
                 details = await girudo.generate_link(game_data)

@@ -44,7 +44,6 @@ sv:
     mtg_arena: "_Använd MTG Arena för detta spel._"
     mtg_online: "_Använd MTG Online för detta spel._"
     tts: "_Använd TabletopSim för detta spel._"
-    table_stream: "_En länk till %{emoji}[Table Stream](https://table-stream.com/) skapas när alla spelare har gått med._"
     convoke: "_En länk till %{emoji}[Convoke](https://www.convoke.games/) skapas när alla spelare har gått med._"
     girudo: "_En länk till %{emoji}[Girudo](https://www.girudo.com/) skapas när alla spelare har gått med._"
     edhlab: "_En länk till %{emoji}[EDHLAB](https://edhlab.gg/) skapas när alla spelare har gått med._"

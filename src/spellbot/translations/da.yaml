@@ -44,7 +44,6 @@ da:
     mtg_arena: "_Brug MTG Arena til denne kamp._"
     mtg_online: "_Brug MTG Online til denne kamp._"
     tts: "_Brug TabletopSim til denne kamp._"
-    table_stream: "_Et %{emoji}[Table Stream](https://table-stream.com/) link vil blive oprettet, når alle spillere er tilsluttet._"
     convoke: "_Et %{emoji}[Convoke](https://www.convoke.games/) link vil blive oprettet, når alle spillere er tilsluttet._"
     girudo: "_Et %{emoji}[Girudo](https://www.girudo.com/) link vil blive oprettet, når alle spillere er tilsluttet._"
     edhlab: "_Et %{emoji}[EDHLAB](https://edhlab.gg/) link vil blive oprettet, når alle spillere er tilsluttet._"

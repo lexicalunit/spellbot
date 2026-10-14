@@ -4,7 +4,7 @@ What SpellBot does for your playgroup.
 
 ## 🤝 Matchmaking
 
-`/lfg` posts a game other players can join, and SpellBot keeps track of the seats. When the game fills it creates the table on the service your server plays on — [Convoke][convoke], [Playgroup Live][playgroup], [EDHLAB][edhlab], [Girudo][girudo] or [Table Stream][tablestream] — and shares the link with everyone who joined.
+`/lfg` posts a game other players can join, and SpellBot keeps track of the seats. When the game fills it creates the table on the service your server plays on — [Convoke][convoke], [Playgroup Live][playgroup], [EDHLAB][edhlab] or [Girudo][girudo] — and shares the link with everyone who joined.
 
 <p align="center">
     <img
@@ -53,4 +53,3 @@ Want SpellBot to support another play service? [Integrations](INTEGRATIONS.md) d
 [girudo]: https://www.girudo.com/
 [playgroup]: https://playgroup.gg/
 [queues]: https://queues.spellbot.io
-[tablestream]: https://table-stream.com/

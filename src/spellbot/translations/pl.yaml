@@ -44,7 +44,6 @@ pl:
     mtg_arena: "_Użyj MtG Arena do tego meczu._"
     mtg_online: "_Użyj MTG Online do tego meczu._"
     tts: "_Użyj TabletopSim do tego meczu._"
-    table_stream: "_Link %{emoji}[Table Stream](https://table-stream.com/) zostanie utworzony, gdy dołączą wszyscy gracze._"
     convoke: "_Link %{emoji}[Convoke](https://www.convoke.games/) zostanie utworzony, gdy dołączą wszyscy gracze._"
     girudo: "_Link %{emoji}[Girudo](https://www.girudo.com/) zostanie utworzony, gdy dołączą wszyscy gracze._"
     edhlab: "_Link %{emoji}[EDHLAB](https://edhlab.gg/) zostanie utworzony, gdy dołączą wszyscy gracze._"

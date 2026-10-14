@@ -105,14 +105,6 @@ class TestModelGame:
                 id="cockatrice",
             ),
             pytest.param(
-                GameService.TABLE_STREAM,
-                (
-                    "_A [Table Stream](https://table-stream.com/) link will "
-                    "be created when all players have joined._"
-                ),
-                id="table-stream",
-            ),
-            pytest.param(
                 GameService.CONVOKE,
                 (
                     "_A [Convoke](https://www.convoke.games/) link will "
@@ -702,7 +694,7 @@ class TestModelGame:
             "flags": 0,
         }
 
-    async def test_game_embed_started_without_tablestream_link(
+    async def test_game_embed_started_without_girudo_link(
         self,
         settings: Settings,
         factories: Factories,
@@ -715,7 +707,7 @@ class TestModelGame:
             started_at=datetime(2021, 10, 31, tzinfo=UTC),
             guild=guild,
             channel=channel,
-            service=GameService.TABLE_STREAM.value,
+            service=GameService.GIRUDO.value,
             password="fake",  # noqa: S106
         )
         factories.post.create(guild=guild, channel=channel, game=game)
@@ -737,7 +729,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Table Stream"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Girudo"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",
@@ -747,8 +739,8 @@ class TestModelGame:
             "color": settings.STARTED_EMBED_COLOR,
             "description": (
                 "Sorry but SpellBot was unable to create a link for "
-                "this game. Please go to [Table Stream]"
-                "(https://table-stream.com/) to create one."
+                "this game. Please go to [Girudo]"
+                "(https://www.girudo.com/) to create one."
                 "\n\n"
                 "Password: `fake`"
                 "\n\n"
@@ -768,7 +760,7 @@ class TestModelGame:
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
                 {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
-            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Table Stream"},
+            "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Girudo"},
             "thumbnail": {"url": settings.THUMB_URL},
             "title": "**Your game is ready!**",
             "type": "rich",

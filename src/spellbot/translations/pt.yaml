@@ -44,7 +44,6 @@ pt:
     mtg_arena: "_Utilize MTG Arena neste jogo._"
     mtg_online: "_Utilize MTG Online neste jogo._"
     tts: "_Utilize TabletopSim neste jogo._"
-    table_stream: "_Será criado um link %{emoji}[Table Stream](https://table-stream.com/) quando todos os jogadores tiverem entrado._"
     convoke: "_Será criado um link %{emoji}[Convoke](https://www.convoke.games/) quando todos os jogadores tiverem entrado._"
     girudo: "_Será criado um link %{emoji}[Girudo](https://www.girudo.com/) quando todos os jogadores tiverem entrado._"
     edhlab: "_Será criado um link %{emoji}[EDHLAB](https://edhlab.gg/) quando todos os jogadores tiverem entrado._"

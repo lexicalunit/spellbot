@@ -53,12 +53,6 @@ class TestSpellBot:
             ),
             pytest.param(
                 False,
-                GameService.TABLE_STREAM.value,
-                "tablestream.generate_link",
-                id="tablestream",
-            ),
-            pytest.param(
-                False,
                 GameService.CONVOKE.value,
                 "convoke.generate_link",
                 id="convoke",
@@ -118,7 +112,7 @@ class TestSpellBot:
         [
             pytest.param(False, GameService.CONVOKE.value, True, id="convoke"),
             pytest.param(True, GameService.CONVOKE.value, False, id="mock-games"),
-            pytest.param(False, GameService.TABLE_STREAM.value, False, id="other-service"),
+            pytest.param(False, GameService.GIRUDO.value, False, id="other-service"),
         ],
     )
     async def test_update_game_players(

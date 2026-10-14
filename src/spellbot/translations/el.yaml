@@ -44,7 +44,6 @@ el:
     mtg_arena: "_Χρησιμοποιήστε το MTG Arena για αυτό το παιχνίδι._"
     mtg_online: "_Χρησιμοποιήστε το MTG Online για αυτό το παιχνίδι._"
     tts: "_Χρησιμοποιήστε το TabletopSim για αυτό το παιχνίδι._"
-    table_stream: "_Ένας σύνδεσμος %{emoji}[Table Stream](https://table-stream.com/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες._"
     convoke: "_Ένας σύνδεσμος %{emoji}[Convoke](https://www.convoke.games/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες._"
     girudo: "_Ένας σύνδεσμος %{emoji}[Girudo](https://www.girudo.com/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες._"
     edhlab: "_Ένας σύνδεσμος %{emoji}[EDHLAB](https://edhlab.gg/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες._"

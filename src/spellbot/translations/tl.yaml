@@ -44,7 +44,6 @@ tl:
     mtg_arena: "_Pakigamit ang MTG Arena para sa game na ito._"
     mtg_online: "_Pakigamit ang MTG Online para sa game na ito._"
     tts: "_Pakigamit ang TabletopSim para sa game na ito._"
-    table_stream: "_Gagawa ng %{emoji}[Table Stream](https://table-stream.com/) na link kapag nakasali na ang lahat ng player._"
     convoke: "_Gagawa ng %{emoji}[Convoke](https://www.convoke.games/) na link kapag nakasali na ang lahat ng player._"
     girudo: "_Gagawa ng %{emoji}[Girudo](https://www.girudo.com/) na link kapag nakasali na ang lahat ng player._"
     edhlab: "_Gagawa ng %{emoji}[EDHLAB](https://edhlab.gg/) na link kapag nakasali na ang lahat ng player._"

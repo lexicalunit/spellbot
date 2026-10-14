@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Removed
+
+- Removed Table Stream support, the service has shut down. Channels defaulting to Table Stream are moved to Convoke by a migration.
+
 ## [v22.2.0](https://github.com/lexicalunit/spellbot/releases/tag/v22.2.0) - 2026-10-07
 
 ### Changed

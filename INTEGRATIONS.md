@@ -1,6 +1,6 @@
 # Integrations with external services
 
-At the time of this writing SpellBot can create games on [Convoke][convoke], [Girudo][girudo], [Playgroup Live][playgroup], [EDHLAB][edhlab], and [Table Stream][tablestream]. This document explains how to add support for additional services.
+At the time of this writing SpellBot can create games on [Convoke][convoke], [Girudo][girudo], [Playgroup Live][playgroup], and [EDHLAB][edhlab]. This document explains how to add support for additional services.
 
 ## Update the GameService enum
 
@@ -11,8 +11,8 @@ class GameService(Enum):
     ...
 
     # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
-    TTS = "TabletopSim", "tts", None, 10
-    TABLE_STREAM = "Table Stream", "table_stream", "https://table-stream.com/", 6
+    EDHLAB = "EDHLAB", "edhlab", "https://edhlab.gg/", 4
+    PLAYGROUP_LIVE = "Playgroup Live", "playgroup_live", "https://playgroup.gg/", 6
     # Add your new service here:
     NEW_SERVICE = "Your New Service", "new_service", "https://your-new-service.com/", 6
 ```
@@ -84,7 +84,7 @@ async def generate_link(game_data: GameData) -> tuple[str | None, str | None]:
 In `src/spellbot/client.py` there is a `create_game_link()` function. Import your new integration module and add a `case` for it:
 
 ```python
-from .integrations import convoke, edhlab, girudo, new_service, playgroup_live, tablestream
+from .integrations import convoke, edhlab, girudo, new_service, playgroup_live
 
 async def create_game_link(
     self,
@@ -108,10 +108,9 @@ In `src/spellbot/models/game.py` there is a `Game` model which represents games 
 
 ## Update the test suite
 
-Add a `tests/integrations/test_new_service.py` file mirroring the existing ones (`test_convoke.py`, `test_girudo.py`, `test_edhlab.py`, `test_tablestream.py`, `test_playgroup_live.py`). Please try to maintain the test coverage as best as you can. However, please do not add any tests that require network access. To maintain coverage you can utilize mocks to simulate network requests (preferred) or (if you're lazy like me) add `# pragma: no cover` to skip coverage checks.
+Add a `tests/integrations/test_new_service.py` file mirroring the existing ones (`test_convoke.py`, `test_girudo.py`, `test_edhlab.py`, `test_playgroup_live.py`). Please try to maintain the test coverage as best as you can. However, please do not add any tests that require network access. To maintain coverage you can utilize mocks to simulate network requests (preferred) or (if you're lazy like me) add `# pragma: no cover` to skip coverage checks.
 
 [convoke]: https://www.convoke.games/
 [edhlab]: https://edhlab.gg/
 [girudo]: https://www.girudo.com/
 [playgroup]: https://playgroup.gg/
-[tablestream]: https://table-stream.com/

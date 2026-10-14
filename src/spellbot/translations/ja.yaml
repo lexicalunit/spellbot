@@ -44,7 +44,6 @@ ja:
     mtg_arena: "_このゲームでは MTG Arena を使用してください。_"
     mtg_online: "_このゲームでは MTG Online を使用してください。_"
     tts: "_このゲームでは TabletopSim を使用してください。_"
-    table_stream: "_すべてのプレイヤーが参加すると、%{emoji}[Table Stream](https://table-stream.com/) のリンクが作成されます。_"
     convoke: "_すべてのプレイヤーが参加すると、%{emoji}[Convoke](https://www.convoke.games/) のリンクが作成されます。_"
     girudo: "_すべてのプレイヤーが参加すると、%{emoji}[Girudo](https://www.girudo.com/) のリンクが作成されます。_"
     edhlab: "_すべてのプレイヤーが参加すると、%{emoji}[EDHLAB](https://edhlab.gg/) のリンクが作成されます。_"

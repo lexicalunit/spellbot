@@ -44,7 +44,6 @@ fi:
     mtg_arena: "_Käytä tätä peliä varten MTG Arenaa._"
     mtg_online: "_Käytä tätä peliä varten MTG Onlinea._"
     tts: "_Käytä tätä peliä varten TabletopSimiä._"
-    table_stream: "_ %{emoji}[Table Stream](https://table-stream.com/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet._"
     convoke: "_ %{emoji}[Convoke](https://www.convoke.games/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet._"
     girudo: "_ %{emoji}[Girudo](https://www.girudo.com/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet._"
     edhlab: "_ %{emoji}[EDHLAB](https://edhlab.gg/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet._"
