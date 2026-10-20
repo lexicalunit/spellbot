@@ -23,8 +23,8 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^5.0.3",
     "license-checker-evergreen": "^6.3.1",
-    "oxfmt": "^0.71.0",
-    "oxlint": "^1.86.0",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
     "prettier": "^3.9.9",
     "prettier-plugin-jinja-template": "^2.2.0",
     "vitest": "^5.0.1"
