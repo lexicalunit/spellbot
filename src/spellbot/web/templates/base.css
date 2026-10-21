@@ -34,13 +34,7 @@
 }
 
 body {
-  font-family:
-    "Verdana",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-family: "Verdana", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--page-bg);
   color: var(--page-text);
   min-height: 100vh;
