@@ -23,12 +23,29 @@ from spellbot.views import GameView
 from .base_action import BaseAction
 
 if TYPE_CHECKING:
+    import discord
+
     from spellbot.data import GameData
 
 logger = logging.getLogger(__name__)
 
 
 class LeaveAction(BaseAction):
+    async def remove_post(
+        self,
+        message: discord.Message | discord.PartialMessage,
+        game_data: GameData,
+    ) -> None:
+        """Delete the post for an empty game, or blank it out if the bot can't delete it."""
+        if await safe_delete_message(message):
+            return
+        await safe_update_embed(
+            message,
+            content=t("leave.delete_failed", locale=game_data.locale),
+            embed=None,
+            view=None,
+        )
+
     @tracer.wrap()
     async def handle_click(self) -> None:
         assert self.interaction.channel is not None
@@ -59,7 +76,7 @@ class LeaveAction(BaseAction):
                 if original_response and message_xid and original_response.id == message_xid:
                     if do_delete_game:
                         assert self.interaction.message is not None
-                        await safe_delete_message(self.interaction.message)
+                        await self.remove_post(self.interaction.message, game_data)
                     else:
                         embed = game_data.to_embed(
                             guild=self.guild,
@@ -78,7 +95,7 @@ class LeaveAction(BaseAction):
                     continue
 
                 if do_delete_game:
-                    await safe_delete_message(message)
+                    await self.remove_post(message, game_data)
                 else:
                     embed = game_data.to_embed(
                         guild=self.guild,
@@ -123,7 +140,7 @@ class LeaveAction(BaseAction):
                     continue
 
                 if do_delete_game:
-                    await safe_delete_message(message)
+                    await self.remove_post(message, game_data)
                 else:
                     embed = game_data.to_embed(
                         guild=self.guild,
@@ -169,7 +186,7 @@ class LeaveAction(BaseAction):
                     message = safe_get_partial_message(channel, guild_xid, message_xid)
                     if message:
                         if do_delete_game:
-                            await safe_delete_message(message)
+                            await self.remove_post(message, game_data)
                         else:
                             embed = game_data.to_embed(
                                 guild=self.guild,

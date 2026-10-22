@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- When the last player leaves a game and SpellBot can't delete the game post, the post is now updated to say the game was deleted and to check the Manage Messages permission, instead of still showing the player in the game.
+
 ## [v23.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v23.0.0) - 2026-10-14
 
 ### Removed

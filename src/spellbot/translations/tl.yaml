@@ -136,6 +136,7 @@ tl:
   leave:
     removed_channel: "Inalis ka sa anumang pending game sa channel na ito."
     removed_all: "Inalis ka sa lahat ng pending game."
+    delete_failed: "Na-delete ang game, pero hindi maalis ang post na ito. Pakitingnan kung may Manage Messages na permission ang SpellBot."
   # Verify action messages
   verify:
     verified: "Na-verify na si <@%{user_id}>."

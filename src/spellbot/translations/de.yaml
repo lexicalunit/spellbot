@@ -136,6 +136,7 @@ de:
   leave:
     removed_channel: "Sie wurden von allen anstehenden Spielen in diesem Kanal entfernt."
     removed_all: "Sie wurden von allen anstehenden Spielen entfernt."
+    delete_failed: "Spiel gelöscht, aber dieser Beitrag konnte nicht entfernt werden. Bitte prüfe, ob SpellBot die Berechtigung „Nachrichten verwalten“ hat."
   # Verify action messages
   verify:
     verified: "<@%{user_id}> verifiziert."

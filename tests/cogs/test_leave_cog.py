@@ -30,6 +30,11 @@ CONVOKE_PENDING_MSG = (
     "_A [Convoke](https://www.convoke.games/) link will be created when all players have joined._"
 )
 
+DELETE_FAILED_MSG = (
+    "Game deleted, but this post could not be removed. "
+    "Please check that SpellBot has the Manage Messages permission."
+)
+
 
 SUPPORT_CTA = (
     "\n\n-# **Support SpellBot** — "
@@ -112,6 +117,29 @@ class TestCogLeaveGame:
             )
             leave_action.safe_update_embed.assert_not_called()
             leave_action.safe_delete_message.assert_called_once_with(message)
+
+    async def test_leave_then_delete_fails(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        game: Game,
+        player: User,
+        interaction: discord.Interaction,
+    ) -> None:
+        with mock_operations(leave_action):
+            leave_action.safe_fetch_text_channel.return_value = interaction.channel
+            leave_action.safe_get_partial_message.return_value = message
+            leave_action.safe_delete_message.return_value = False
+
+            await run_command(cog.leave_command, interaction)
+
+            leave_action.safe_delete_message.assert_called_once_with(message)
+            leave_action.safe_update_embed.assert_called_once_with(
+                message,
+                content=DELETE_FAILED_MSG,
+                embed=None,
+                view=None,
+            )
 
     async def test_leave_all(
         self,
@@ -380,6 +408,30 @@ class TestCogLeaveGame:
 
             leave_action.safe_update_embed_origin.assert_not_called()
             leave_action.safe_delete_message.assert_called_once_with(interaction.message)
+
+    async def test_leave_button_then_delete_fails(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        game: Game,
+        player: User,
+        interaction: discord.Interaction,
+        bot: SpellBot,
+    ) -> None:
+        with mock_operations(leave_action):
+            leave_action.safe_original_response.return_value = message
+            leave_action.safe_delete_message.return_value = False
+            view = GameView(bot)
+
+            await view.leave(interaction)
+
+            leave_action.safe_delete_message.assert_called_once_with(interaction.message)
+            leave_action.safe_update_embed.assert_called_once_with(
+                interaction.message,
+                content=DELETE_FAILED_MSG,
+                embed=None,
+                view=None,
+            )
 
     async def test_leave_button_with_other_players(
         self,

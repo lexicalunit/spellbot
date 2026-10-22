@@ -136,6 +136,7 @@ en:
   leave:
     removed_channel: "You were removed from any pending games in this channel."
     removed_all: "You were removed from all pending games."
+    delete_failed: "Game deleted, but this post could not be removed. Please check that SpellBot has the Manage Messages permission."
   # Verify action messages
   verify:
     verified: "Verified <@%{user_id}>."

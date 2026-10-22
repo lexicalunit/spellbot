@@ -136,6 +136,7 @@ ja:
   leave:
     removed_channel: "このチャンネル内の保留中のゲームからすべて退出しました。"
     removed_all: "すべての保留中のゲームから退出しました。"
+    delete_failed: "ゲームは削除されましたが、この投稿を削除できませんでした。SpellBotに「メッセージの管理」権限があるか確認してください。"
   # Verify action messages
   verify:
     verified: "<@%{user_id}> を認証済みにしました。"

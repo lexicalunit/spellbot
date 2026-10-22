@@ -136,6 +136,7 @@ it:
   leave:
     removed_channel: "Sei stato rimosso da qualsiasi partita in attesa in questo canale."
     removed_all: "Sei stato rimosso da tutte le partite in attesa."
+    delete_failed: "Partita eliminata, ma non è stato possibile rimuovere questo post. Verifica che SpellBot abbia il permesso Gestisci messaggi."
   # Verify action messages
   verify:
     verified: "Verificato <@%{user_id}>."
