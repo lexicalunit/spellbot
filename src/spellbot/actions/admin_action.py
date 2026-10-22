@@ -176,7 +176,7 @@ class AdminAction(BaseAction):
                     results.append(
                         t("admin.expire_deleting", locale=user_loc, message_id=message_xid),
                     )
-                    if not await safe_delete_message(post):
+                    if not await safe_delete_message(post, own_message=True):
                         results.append(t("admin.expire_no_permission", locale=user_loc))
                 else:
                     results.append(

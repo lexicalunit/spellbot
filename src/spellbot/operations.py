@@ -385,11 +385,22 @@ def is_missing_access(ex: BaseException) -> bool:
 
 
 @tracer.wrap()
-async def safe_delete_message(message: discord.Message | discord.PartialMessage) -> bool:
+async def safe_delete_message(
+    message: discord.Message | discord.PartialMessage,
+    *,
+    own_message: bool = False,
+) -> bool:
+    """
+    Delete the given message, returning whether it was deleted.
+
+    Discord always lets the bot delete its own messages, so pass `own_message=True` for
+    SpellBot's posts to skip the Manage Messages check, which only matters for other users'
+    messages.
+    """
     if span := tracer.current_span():  # pragma: no cover
         span.set_tags({"message_xid": str(message.id)})
 
-    if not bot_can_delete_message(message):
+    if not own_message and not bot_can_delete_message(message):
         maybe_guild = getattr(message, "guild", None)
         maybe_guild_xid = getattr(maybe_guild, "id", None)
         logger.warning(

@@ -136,7 +136,6 @@ pt:
   leave:
     removed_channel: "Foi removido de todos os jogos pendentes neste canal."
     removed_all: "Foi removido de todos os jogos pendentes."
-    delete_failed: "Jogo eliminado, mas não foi possível remover esta publicação. Verifique se o SpellBot tem a permissão Gerir mensagens."
   # Verify action messages
   verify:
     verified: "Verificado <@%{user_id}>."

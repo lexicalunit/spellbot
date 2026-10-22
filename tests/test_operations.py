@@ -1044,6 +1044,17 @@ class TestOperationsDeleteMessage:
         assert not await safe_delete_message(message)
         message.delete.assert_not_called()
 
+    async def test_own_message_skips_permission_check(self) -> None:
+        permissions = discord.Permissions(discord.Permissions.read_messages.flag)
+        message = MagicMock(spec=discord.Message)
+        message.guild = MagicMock(spec=discord.Guild)
+        message.guild.id = 101
+        message.guild.me = MagicMock()
+        message.guild.me.guild_permissions = permissions
+        message.delete = AsyncMock()
+        assert await safe_delete_message(message, own_message=True)
+        message.delete.assert_called_once_with()
+
     async def test_forbidden_other_code(self) -> None:
         message = MagicMock(spec=discord.Message)
         message.id = 123

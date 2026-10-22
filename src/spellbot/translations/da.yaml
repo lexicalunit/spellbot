@@ -136,7 +136,6 @@ da:
   leave:
     removed_channel: "Du blev fjernet fra alle afventende kampe i denne kanal."
     removed_all: "Du blev fjernet fra alle afventende kampe."
-    delete_failed: "Kampen er slettet, men dette opslag kunne ikke fjernes. Kontrollér, at SpellBot har tilladelsen Administrer beskeder."
   # Verify action messages
   verify:
     verified: "Bekræftet <@%{user_id}>."

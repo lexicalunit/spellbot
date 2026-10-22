@@ -136,7 +136,6 @@ fr:
   leave:
     removed_channel: "Vous avez été retiré des parties en attente de ce canal."
     removed_all: "Vous avez été retiré de toutes les parties en attente."
-    delete_failed: "Partie supprimée, mais ce message n'a pas pu être retiré. Veuillez vérifier que SpellBot dispose de l'autorisation Gérer les messages."
   # Verify action messages
   verify:
     verified: "Utilisateur <@%{user_id}> vérifié."

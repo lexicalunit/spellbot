@@ -136,7 +136,6 @@ sv:
   leave:
     removed_channel: "Du har tagits bort från eventuella pågående spel i denna kanal."
     removed_all: "Du har tagits bort från alla pågående spel."
-    delete_failed: "Spelet har tagits bort, men det här inlägget kunde inte tas bort. Kontrollera att SpellBot har behörigheten Hantera meddelanden."
   # Verify action messages
   verify:
     verified: "Verifierad <@%{user_id}>."

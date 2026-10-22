@@ -208,7 +208,7 @@ class TestCogAdminExpireGames:
             admin_action.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            admin_action.safe_delete_message.assert_called_once_with(mock_message)
+            admin_action.safe_delete_message.assert_called_once_with(mock_message, own_message=True)
             call_args = admin_action.safe_send_channel.call_args
             assert f"Expiring game #SB{game.id}" in call_args[0][1]
             assert "Deleting message 1234" in call_args[0][1]

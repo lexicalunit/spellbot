@@ -136,7 +136,6 @@ es:
   leave:
     removed_channel: "Lo/a han eliminado de todas las partidas pendientes en este canal."
     removed_all: "Lo/a han eliminado de todas las partidas pendientes."
-    delete_failed: "Partida eliminada, pero no se pudo quitar esta publicación. Comprueba que SpellBot tenga el permiso Gestionar mensajes."
   # Verify action messages
   verify:
     verified: "<@%{user_id}> verificado."

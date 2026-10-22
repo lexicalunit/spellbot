@@ -136,7 +136,6 @@ fi:
   leave:
     removed_channel: "Sinut poistettiin kaikista avoimista peleistä tällä kanavalla."
     removed_all: "Sinut poistettiin kaikista avoimista peleistä."
-    delete_failed: "Peli poistettu, mutta tätä viestiä ei voitu poistaa. Tarkista, että SpellBotilla on Hallitse viestejä -oikeus."
   # Verify action messages
   verify:
     verified: "Vahvistettu <@%{user_id}>."

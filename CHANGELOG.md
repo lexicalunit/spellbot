@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- SpellBot no longer requires the Manage Messages permission to delete its own game posts.
+
 ## [v23.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v23.0.1) - 2026-10-22
 
 ### Fixed

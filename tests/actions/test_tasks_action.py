@@ -309,7 +309,7 @@ class TestTaskExpireInactiveChannels:
                 if post is not None:
                     mock_services.channels.select.assert_called_once_with(channel.xid)
                     if delete_expired:
-                        mock_delete_message.assert_called_once_with(post)
+                        mock_delete_message.assert_called_once_with(post, own_message=True)
                     else:
                         mock_update_embed.assert_called_once_with(
                             post,
