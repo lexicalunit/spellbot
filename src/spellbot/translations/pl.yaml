@@ -136,6 +136,7 @@ pl:
   leave:
     removed_channel: "Usunięto Cię ze wszystkich oczekujących meczów na tym kanale."
     removed_all: "Usunięto Cię ze wszystkich oczekujących meczów."
+    delete_failed: "Mecz usunięty, ale nie udało się usunąć tego posta. Sprawdź, czy SpellBot ma uprawnienie Zarządzanie wiadomościami."
   # Verify action messages
   verify:
     verified: "Zweryfikowany użytkownik <@%{user_id}>."
