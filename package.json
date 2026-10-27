@@ -21,7 +21,7 @@
     "jquery": "^4.0.0"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^5.0.3",
+    "@vitest/coverage-v8": "^5.0.4",
     "license-checker-evergreen": "^6.3.1",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
