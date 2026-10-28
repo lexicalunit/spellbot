@@ -32,8 +32,8 @@ el:
       voice_channel: "🔊 Προτεινόμενο φωνητικό κανάλι"
       support: "Υποστήριξη SpellBot"
       support_text: "Γίνετε [προστάτης](%{subscribe}) ή δώστε μια [εφάπαξ συμβουλή](%{donate})."
-      notify: "🔔 Ειδοποιήσεις"
-      notify_text: "[Γνωστοποιείται](%{queues}) όταν ανοίγουν τα παιχνίδια!"
+      convoke_guild: "Παίξε περισσότερο με το **%{name}** στο Convoke. [Γίνε μέλος του guild!](%{url})"
+      queues_text: "Μπορείς να δεις [ζωντανά παιχνίδια](%{queues}) και να [λαμβάνεις ειδοποιήσεις](%{notify})."
     footer: "ID παιχνιδιού SpellBot: #SB%{game_id} — Υπηρεσία: %{service}"
   # Game services pending messages
   service:
@@ -335,6 +335,7 @@ el:
       voice_create: "Αυτόματη δημιουργία καναλιών φωνής"
       use_max_bitrate: "Χρήση μέγιστου ρυθμού bit"
       enable_mythic_track: "Ενεργοποίηση mythic track"
+      show_convoke_guild: "Εμφάνιση συνδεδεμένου guild του Convoke"
       save: "Αποθήκευση ρυθμίσεων διακομιστή"
       player_awards: "Βραβεία παικτών"
       manage_awards: "Διαχείριση βραβείων παικτών"

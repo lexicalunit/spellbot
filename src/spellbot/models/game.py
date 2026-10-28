@@ -153,6 +153,16 @@ class Game(Base):
         nullable=True,
         doc="Cached Convoke Guild War title for embeds",
     )
+    convoke_guild_name: Mapped[str | None] = mapped_column(
+        String(128),
+        nullable=True,
+        doc="Name of the Convoke guild linked to this game's Discord server, for embeds",
+    )
+    convoke_guild_url: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        doc="Convoke page of the guild linked to this game's Discord server, for embeds",
+    )
     blind: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -257,6 +267,8 @@ class Game(Base):
             rules=self.rules,
             war_id=self.war_id,
             war_title=self.war_title,
+            convoke_guild_name=self.convoke_guild_name,
+            convoke_guild_url=self.convoke_guild_url,
             blind=self.blind,
             locale=self.locale,
             players=[player.to_data() for player in players],

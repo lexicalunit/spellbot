@@ -620,6 +620,8 @@ class TestLookingForGameAction:
             war_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
             game_link="https://convoke.games/en/play/already",
             password="kept",  # noqa: S106
+            convoke_guild_name="Cool Guild",
+            convoke_guild_url="https://convoke.games/en/guild/cool",
         )
         create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
         update_players = mocker.patch.object(action.bot, "update_game_players", AsyncMock())
@@ -634,10 +636,15 @@ class TestLookingForGameAction:
         create_link.assert_not_called()
         make_ready.assert_awaited_once()
         assert make_ready.await_args is not None
-        assert make_ready.await_args.args[1] == "https://convoke.games/en/play/already"
-        assert make_ready.await_args.args[2] == "kept"
+        # The guild found when the table was opened is kept, not wiped by the early link.
+        assert make_ready.await_args.args[1] == GameLinkDetails(
+            "https://convoke.games/en/play/already",
+            "kept",
+            "Cool Guild",
+            "https://convoke.games/en/guild/cool",
+        )
         # The pins sent to Convoke with the final roster are the pins the players are given.
-        pins = make_ready.await_args.args[3]
+        pins = make_ready.await_args.args[2]
         assert set(pins) == {123, 456}
         update_players.assert_awaited_once_with(game_data, pins)
 
@@ -663,7 +670,7 @@ class TestLookingForGameAction:
 
         update_players.assert_not_called()
         assert make_ready.await_args is not None
-        pins = make_ready.await_args.args[3]
+        pins = make_ready.await_args.args[2]
         assert set(pins) == {123, 456}
         create_link.assert_awaited_once_with(game_data, pins, original_seats=None)
 
@@ -696,7 +703,10 @@ class TestLookingForGameAction:
         result = await action.ensure_guild_war_convoke_link(game_data)
 
         create_link.assert_awaited_once_with(game_data)
-        attach.assert_awaited_once_with(game_data, "https://convoke.games/en/play/new", None)
+        attach.assert_awaited_once_with(
+            game_data,
+            GameLinkDetails("https://convoke.games/en/play/new", None),
+        )
         assert result.game_link == "https://convoke.games/en/play/new"
 
     async def test_ensure_guild_war_convoke_link_skips_when_already_open(

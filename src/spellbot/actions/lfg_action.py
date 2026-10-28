@@ -352,7 +352,7 @@ class LookingForGameAction(BaseAction):
         details = await self.bot.create_game_link(game_data)
         if not details.link:
             return game_data
-        return await services.games.attach_game_link(game_data, details.link, details.password)
+        return await services.games.attach_game_link(game_data, details)
 
     @tracer.wrap()
     async def execute(  # noqa: C901
@@ -580,7 +580,12 @@ class LookingForGameAction(BaseAction):
             # Guild War tables are opened before the queue fills, so the link already exists.
             # Send the service the final roster along with the pins players are about to get.
             await self.bot.update_game_players(game_data, pins)
-            details = GameLinkDetails(game_data.game_link, game_data.password)
+            details = GameLinkDetails(
+                game_data.game_link,
+                game_data.password,
+                game_data.convoke_guild_name,
+                game_data.convoke_guild_url,
+            )
         else:
             details = await self.bot.create_game_link(
                 game_data,
@@ -616,8 +621,7 @@ class LookingForGameAction(BaseAction):
 
         ready_game = await services.games.make_ready(
             game_data,
-            details.link,
-            details.password,
+            details,
             pins,
         )
         return ready_game, suggested_vc

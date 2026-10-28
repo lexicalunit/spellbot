@@ -30,5 +30,6 @@ class GuildData:
     locale: str = "en"
     icon: str | None = None
     promote: bool = True
+    show_convoke_guild: bool = True
     channels: list[ChannelData] = field(default_factory=list)
     awards: list[GuildAwardData] = field(default_factory=list)

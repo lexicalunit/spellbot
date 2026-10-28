@@ -101,6 +101,15 @@ class Guild(Base):
         server_default=false(),
         doc=web_editable("If true, enable Mythic Track for this guild."),
     )
+    show_convoke_guild: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+        doc=web_editable(
+            "When enabled, Convoke games show a link to this server's linked Convoke guild.",
+        ),
+    )
     active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -176,6 +185,7 @@ class Guild(Base):
             notice=self.notice,
             suggest_voice_category=self.suggest_voice_category,
             enable_mythic_track=self.enable_mythic_track,
+            show_convoke_guild=self.show_convoke_guild,
             active=self.active,
             locale=self.locale,
             icon=self.icon,

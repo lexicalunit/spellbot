@@ -14,6 +14,7 @@ from spellbot.data import GameData
 from spellbot.enums import GameBracket, GameService
 from spellbot.models import Game, GameStatus
 from spellbot.operations import VoiceChannelSuggestion
+from spellbot.settings import settings as runtime_settings
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -28,11 +29,14 @@ CONVOKE_PENDING_MSG = (
 )
 
 
-SUPPORT_CTA = (
-    "\n\n-# **Support SpellBot** — "
-    "Become [a patron](https://www.patreon.com/lexicalunit) "
-    "or give a [one-off tip](https://ko-fi.com/lexicalunit)."
-)
+def support_cta(guild_xid: int) -> str:
+    return (
+        f"\n\n-# You can view [live games]({runtime_settings.API_BASE_URL}/queues) "
+        f"and [get notified]({runtime_settings.API_BASE_URL}/queues/g/{guild_xid}).\n"
+        "-# **Support SpellBot** — "
+        "Become [a patron](https://www.patreon.com/lexicalunit) "
+        "or give a [one-off tip](https://ko-fi.com/lexicalunit)."
+    )
 
 
 @pytest.mark.asyncio
@@ -67,6 +71,8 @@ class TestModelGame:
             "rules": game.rules,
             "war_id": game.war_id,
             "war_title": game.war_title,
+            "convoke_guild_name": game.convoke_guild_name,
+            "convoke_guild_url": game.convoke_guild_url,
             "blind": game.blind,
             "players": [asdict(player.to_data()) for player in await game.players()],
             "player_pins": await game.player_pins(),
@@ -149,12 +155,9 @@ class TestModelGame:
             {"inline": True, "name": "Bracket", "value": "✦ 2: Core"},
             {"inline": True, "name": "Updated at", "value": "<t:1635638400>"},
         ]
-        expected_fields.append(
-            {"inline": False, "name": "🔔 Notifications", "value": ANY},
-        )
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.EMPTY_EMBED_COLOR,
-            "description": description + SUPPORT_CTA,
+            "description": description + support_cta(guild.xid),
             "fields": expected_fields,
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: {service}"},
             "thumbnail": {
@@ -173,12 +176,11 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": CONVOKE_PENDING_MSG + SUPPORT_CTA,
+            "description": CONVOKE_PENDING_MSG + support_cta(guild.xid),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
@@ -208,7 +210,7 @@ class TestModelGame:
 
         assert embed["description"] == (
             "# [Join your Convoke game now!](https://www.convoke.games/en/play/war-table)"
-            + SUPPORT_CTA
+            + support_cta(guild.xid)
         )
         assert {
             "inline": False,
@@ -268,12 +270,11 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": CONVOKE_PENDING_MSG + SUPPORT_CTA,
+            "description": CONVOKE_PENDING_MSG + support_cta(guild.xid),
             "fields": [
                 {"inline": False, "name": "Players", "value": "**1 player name is hidden**"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
@@ -297,12 +298,11 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": CONVOKE_PENDING_MSG + SUPPORT_CTA,
+            "description": CONVOKE_PENDING_MSG + support_cta(guild.xid),
             "fields": [
                 {"inline": False, "name": "Players", "value": "**2 player names are hidden**"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
@@ -325,12 +325,11 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None, dm=True).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": CONVOKE_PENDING_MSG + SUPPORT_CTA,
+            "description": CONVOKE_PENDING_MSG + support_cta(guild.xid),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
@@ -349,13 +348,12 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.PENDING_EMBED_COLOR,
-            "description": CONVOKE_PENDING_MSG + SUPPORT_CTA,
+            "description": CONVOKE_PENDING_MSG + support_cta(guild.xid),
             "fields": [
                 {"inline": False, "name": "⚠️ Additional Rules:", "value": "test rules"},
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
@@ -381,12 +379,11 @@ class TestModelGame:
             "description": (
                 f"{CONVOKE_PENDING_MSG}\n\nplayer 1: {player.name}\n\ngame id: {game.id}"
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {"inline": False, "name": "Players", "value": f"• <@{player.xid}> ({player.name})"},
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Updated at", "value": ANY},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {
@@ -418,7 +415,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -429,7 +427,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -446,7 +443,7 @@ class TestModelGame:
                 "(https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -457,7 +454,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -488,7 +484,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -499,7 +496,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Not any"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -515,7 +511,7 @@ class TestModelGame:
                 "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -526,7 +522,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Not any"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -557,7 +552,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -568,7 +564,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: MTG Arena"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -584,7 +579,7 @@ class TestModelGame:
                 "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -595,7 +590,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: MTG Arena"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -622,7 +616,7 @@ class TestModelGame:
         factories.user.create(game=game)
         assert (await game.to_data()).to_embed(guild=None).to_dict()["description"] == (
             "this is a notice\n\nPlease check your Direct Messages for your game details."
-            + SUPPORT_CTA
+            + support_cta(guild.xid)
         )
 
     async def test_game_embed_started_without_game_link(
@@ -645,7 +639,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -656,7 +651,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -674,7 +668,7 @@ class TestModelGame:
                 "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -685,7 +679,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -716,7 +709,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -727,7 +721,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Girudo"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -747,7 +740,7 @@ class TestModelGame:
                 "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -758,7 +751,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Girudo"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -789,7 +781,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -800,7 +793,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -818,7 +810,7 @@ class TestModelGame:
                 "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -829,7 +821,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -861,7 +852,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=None).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -872,7 +864,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -891,7 +882,7 @@ class TestModelGame:
                 "(https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -902,7 +893,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -936,7 +926,7 @@ class TestModelGame:
                 "Please check your Direct Messages for your game details.\n\n"
                 "this is a message of the day"
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -947,7 +937,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -965,7 +954,7 @@ class TestModelGame:
                 f"in <#{channel.xid}>.\n\n"
                 "this is a message of the day"
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -976,7 +965,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -1014,7 +1002,8 @@ class TestModelGame:
 
         assert (await game.to_data()).to_embed(guild=dg, suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
-            "description": "Please check your Direct Messages for your game details." + SUPPORT_CTA,
+            "description": "Please check your Direct Messages for your game details."
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -1030,7 +1019,6 @@ class TestModelGame:
                     "name": "🔊 Suggested Voice Channel",
                     "value": f"<#{dc.id}>",
                 },
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -1053,7 +1041,7 @@ class TestModelGame:
                 "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -1069,7 +1057,6 @@ class TestModelGame:
                     "name": "🔊 Suggested Voice Channel",
                     "value": f"<#{dc.id}>",
                 },
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -1095,7 +1082,7 @@ class TestModelGame:
                 "You can also [jump to the original game post](https://discord.com/channels/"
                 f"{guild.xid}/{channel.xid}/{game.posts[0].message_xid}) in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -1111,7 +1098,6 @@ class TestModelGame:
                     "name": "🔊 Suggested Voice Channel",
                     "value": f"<#{suggested_vc.already_picked}>",
                 },
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
             "thumbnail": {"url": settings.THUMB_URL},
@@ -1148,7 +1134,7 @@ class TestModelGame:
                 f"(https://discord.com/channels/{guild.xid}/{channel.xid}/{post.message_xid})"
                 f" in <#{channel.xid}>."
             )
-            + SUPPORT_CTA,
+            + support_cta(guild.xid),
             "fields": [
                 {
                     "inline": False,
@@ -1162,7 +1148,6 @@ class TestModelGame:
                 },
                 {"inline": True, "name": "Format", "value": "Commander"},
                 {"inline": True, "name": "Started at", "value": "<t:1635638400>"},
-                {"inline": False, "name": "🔔 Notifications", "value": ANY},
             ],
             "flags": 0,
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
@@ -1305,3 +1290,63 @@ class TestModelGameGuildWarEmbed:
 
         fields = (await game.to_data()).to_embed(guild=None, dm=True).to_dict()["fields"]
         assert {"inline": False, "name": "⚔️ Guild War", "value": "Summer Clash"} in fields
+
+
+CONVOKE_GUILD_CTA = (
+    "\n\n-# Play more with **Cool Guild** on Convoke. "
+    "[Join the guild!](https://convoke.games/en/guild/cool)"
+)
+
+
+def description(game: GameData, *, dm: bool = False) -> str:
+    return game.to_embed(guild=None, dm=dm).description or ""
+
+
+@pytest.mark.asyncio
+class TestConvokeGuildCta:
+    async def make_game(
+        self,
+        factories: Factories,
+        *,
+        show_convoke_guild: bool = True,
+        service: int = GameService.CONVOKE.value,
+        name: str | None = "Cool Guild",
+        url: str | None = "https://convoke.games/en/guild/cool",
+    ) -> GameData:
+        guild = factories.guild.create(motd=None, show_convoke_guild=show_convoke_guild)
+        channel = factories.channel.create(guild=guild, motd=None)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            service=service,
+            convoke_guild_name=name,
+            convoke_guild_url=url,
+        )
+        return await game.to_data()
+
+    async def test_cta_is_shown(self, factories: Factories) -> None:
+        game = await self.make_game(factories)
+        assert description(game).endswith(CONVOKE_GUILD_CTA + support_cta(game.guild_xid))
+
+    async def test_cta_can_be_turned_off(self, factories: Factories) -> None:
+        game = await self.make_game(factories, show_convoke_guild=False)
+        assert "Cool Guild" not in description(game)
+
+    async def test_cta_is_only_for_convoke_games(self, factories: Factories) -> None:
+        game = await self.make_game(factories, service=GameService.GIRUDO.value)
+        assert "Cool Guild" not in description(game)
+
+    async def test_cta_needs_a_linked_guild(self, factories: Factories) -> None:
+        for game in (
+            await self.make_game(factories, name=None),
+            await self.make_game(factories, url=None),
+        ):
+            assert "on Convoke." not in description(game)
+
+    async def test_cta_is_not_sent_in_direct_messages(self, factories: Factories) -> None:
+        game = await self.make_game(factories)
+        assert "Cool Guild" not in description(game, dm=True)
+
+    async def test_cta_is_not_a_field(self, factories: Factories) -> None:
+        game = await self.make_game(factories)
+        assert "Cool Guild" not in str(game.to_embed(guild=None).fields)

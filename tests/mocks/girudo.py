@@ -234,6 +234,8 @@ def create_mock_game(
         rules=None,
         war_id=kwargs.get("war_id"),
         war_title=kwargs.get("war_title"),
+        convoke_guild_name=kwargs.get("convoke_guild_name"),
+        convoke_guild_url=kwargs.get("convoke_guild_url"),
         blind=False,
         players=[],
         posts=[],

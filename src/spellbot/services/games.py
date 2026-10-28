@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Any
 
-    from spellbot.data import GameData
+    from spellbot.data import GameData, GameLinkDetails
 
 
 logger = logging.getLogger(__name__)
@@ -635,14 +635,15 @@ async def shrink_game(game_data: GameData) -> GameData:
 @tracer.wrap()
 async def attach_game_link(
     game_data: GameData,
-    game_link: str | None,
-    password: str | None,
+    details: GameLinkDetails,
 ) -> GameData:
     """Store a generated game link without starting the SpellBot queue."""
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
-    assert len(game_link or "") <= MAX_GAME_LINK_LEN
-    game.game_link = game_link  # column is "game_link" for legacy reasons
-    game.password = password
+    assert len(details.link or "") <= MAX_GAME_LINK_LEN
+    game.game_link = details.link  # column is "game_link" for legacy reasons
+    game.password = details.password
+    game.convoke_guild_name = details.convoke_guild_name
+    game.convoke_guild_url = details.convoke_guild_url
     await DatabaseSession.commit()
     return await game.to_data()
 
@@ -650,13 +651,12 @@ async def attach_game_link(
 @tracer.wrap()
 async def make_ready(
     game_data: GameData,
-    game_link: str | None,
-    password: str | None,
+    details: GameLinkDetails,
     pins: dict[int, str],
 ) -> GameData:
     """Start the pending game."""
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
-    assert len(game_link or "") <= MAX_GAME_LINK_LEN
+    assert len(details.link or "") <= MAX_GAME_LINK_LEN
     queues: list[QueueData] = [
         queue.to_data()
         for queue in (
@@ -669,8 +669,10 @@ async def make_ready(
     ]
 
     # update game's state
-    game.game_link = game_link  # column is "game_link" for legacy reasons
-    game.password = password
+    game.game_link = details.link  # column is "game_link" for legacy reasons
+    game.password = details.password
+    game.convoke_guild_name = details.convoke_guild_name
+    game.convoke_guild_url = details.convoke_guild_url
     game.status = GameStatus.STARTED.value
     game.started_at = datetime.now(tz=UTC)
 

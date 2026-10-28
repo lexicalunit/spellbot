@@ -13,6 +13,7 @@ from spellbot.actions import leave_action
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild, Post, Queue, User
+from spellbot.settings import settings as runtime_settings
 from spellbot.views.lfg_view import GameView
 from tests.fixtures import Factories, run_command
 from tests.mocks import mock_operations
@@ -30,11 +31,15 @@ CONVOKE_PENDING_MSG = (
     "_A [Convoke](https://www.convoke.games/) link will be created when all players have joined._"
 )
 
-SUPPORT_CTA = (
-    "\n\n-# **Support SpellBot** — "
-    "Become [a patron](https://www.patreon.com/lexicalunit) "
-    "or give a [one-off tip](https://ko-fi.com/lexicalunit)."
-)
+
+def support_cta(guild_xid: int) -> str:
+    return (
+        f"\n\n-# You can view [live games]({runtime_settings.API_BASE_URL}/queues) "
+        f"and [get notified]({runtime_settings.API_BASE_URL}/queues/g/{guild_xid}).\n"
+        "-# **Support SpellBot** — "
+        "Become [a patron](https://www.patreon.com/lexicalunit) "
+        "or give a [one-off tip](https://ko-fi.com/lexicalunit)."
+    )
 
 
 @pytest_asyncio.fixture
@@ -76,12 +81,11 @@ class TestCogLeaveGame:
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
-                + SUPPORT_CTA,
+                + support_cta(guild.xid),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
-                    {"inline": False, "name": "🔔 Notifications", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
@@ -144,12 +148,11 @@ class TestCogLeaveGame:
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
-                + SUPPORT_CTA,
+                + support_cta(guild.xid),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
-                    {"inline": False, "name": "🔔 Notifications", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
@@ -348,12 +351,11 @@ class TestCogLeaveGame:
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
-                + SUPPORT_CTA,
+                + support_cta(guild.xid),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
-                    {"inline": False, "name": "🔔 Notifications", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
@@ -414,12 +416,11 @@ class TestCogLeaveGame:
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
-                + SUPPORT_CTA,
+                + support_cta(guild.xid),
                 "fields": [
                     {"inline": False, "name": "Players", "value": f"• <@{p2.xid}> ({p2.name})"},
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
-                    {"inline": False, "name": "🔔 Notifications", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},

@@ -32,8 +32,8 @@ ja:
       voice_channel: "🔊 推奨ボイスチャンネル"
       support: "SpellBot を支援"
       support_text: "[額で支援する](%{subscribe})か、[単発で支援する](%{donate})ことができます。"
-      notify: "🔔 お知らせ"
-      notify_text: "ゲームを開くと、[通知を受け取る](%{queues})！"
+      convoke_guild: "Convoke の **%{name}** でもっと遊ぼう。[ギルドに参加する！](%{url})"
+      queues_text: "[ライブ中のゲーム](%{queues})を見たり、[通知を受け取ったり](%{notify})できます。"
     footer: "SpellBot ゲームID：#SB%{game_id} — サービス：%{service}"
   # Game services pending messages
   service:
@@ -335,6 +335,7 @@ ja:
       voice_create: "ボイスチャンネルを自動作成"
       use_max_bitrate: "最大ビットレートを使用"
       enable_mythic_track: "Mythic Track を有効化"
+      show_convoke_guild: "リンクされた Convoke ギルドを表示"
       save: "サーバー設定を保存"
       player_awards: "プレイヤー報酬"
       manage_awards: "プレイヤー報酬を管理"
