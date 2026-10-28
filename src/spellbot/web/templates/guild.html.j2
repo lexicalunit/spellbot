@@ -89,6 +89,14 @@
                     </div>
                     <p class="hint">{{ guild_help['enable_mythic_track'] }}</p>
                 </div>
+                <div class="field">
+                    <div class="toggle-row">
+                        <input type="checkbox" id="guild-show-convoke-guild" name="show_convoke_guild" value="true"
+                               {{ 'checked' if guild_settings.show_convoke_guild else '' }}>
+                        <label for="guild-show-convoke-guild">{{ t("web.guild.show_convoke_guild") }}</label>
+                    </div>
+                    <p class="hint">{{ guild_help['show_convoke_guild'] }}</p>
+                </div>
             </div>
             <div class="actions">
                 <button type="submit" class="button">{{ t("web.guild.save") }}</button>

@@ -338,6 +338,7 @@ def parse_guild_settings(form: Any) -> dict[str, Any]:
         "voice_create": form_bool(form, "voice_create"),
         "use_max_bitrate": form_bool(form, "use_max_bitrate"),
         "enable_mythic_track": form_bool(form, "enable_mythic_track"),
+        "show_convoke_guild": form_bool(form, "show_convoke_guild"),
         "motd": form_str(form, "motd", Guild.motd.property.columns[0].type.length),
         "suggest_voice_category": form_str(
             form,

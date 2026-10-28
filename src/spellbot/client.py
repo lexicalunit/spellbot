@@ -207,8 +207,7 @@ class SpellBot(AutoShardedBot):
             span.set_tag("link_service", GameService(service).name)
         match service:
             case GameService.CONVOKE.value:
-                details = await convoke.generate_link(game_data, pins)
-                return GameLinkDetails(*details)
+                return await convoke.generate_link(game_data, pins)
             case GameService.GIRUDO.value:
                 details = await girudo.generate_link(game_data)
                 return GameLinkDetails(details.link, details.password)

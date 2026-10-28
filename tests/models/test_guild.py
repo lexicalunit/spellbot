@@ -50,5 +50,6 @@ class TestModelGuild:
             "locale": guild.locale,
             "icon": guild.icon,
             "promote": guild.promote,
+            "show_convoke_guild": guild.show_convoke_guild,
             "xid": guild.xid,
         }

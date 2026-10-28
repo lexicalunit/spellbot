@@ -63,6 +63,8 @@ class GameData:
     posts: list[PostData] = field(default_factory=list)
     player_pins: dict[int, str | None] = field(default_factory=dict)
     locale: str = "en"
+    convoke_guild_name: str | None = None
+    convoke_guild_url: str | None = None
 
     @property
     def placeholders(self) -> dict[str, str]:
@@ -163,8 +165,44 @@ class GameData:
         )
         parts.extend(self.embed_description_extras(dm, suggested_vc, locale))
         parts.extend(self.embed_motd())
-        parts.append(self.embed_support(locale))
+        parts.extend(self.embed_convoke_guild(effective_service, dm, locale))
+        parts.append(f"{self.embed_queues(locale)}\n{self.embed_support(locale)}")
         return "\n\n".join(parts)
+
+    def embed_convoke_guild(
+        self,
+        effective_service: GameService,
+        dm: bool,
+        locale: str | None = None,
+    ) -> list[str]:
+        """Advertise the Convoke guild linked to this Discord server, when there is one."""
+        if (
+            dm
+            or effective_service != GameService.CONVOKE
+            or not self.guild.show_convoke_guild
+            or not self.convoke_guild_name
+            or not self.convoke_guild_url
+        ):
+            return []
+        locale = locale or self.locale
+        return [
+            "-# "
+            + t(
+                "game.field.convoke_guild",
+                locale=locale,
+                name=self.convoke_guild_name,
+                url=self.convoke_guild_url,
+            ),
+        ]
+
+    def embed_queues(self, locale: str | None = None) -> str:
+        locale = locale or self.locale
+        return "-# " + t(
+            "game.field.queues_text",
+            locale=locale,
+            queues=f"{settings.API_BASE_URL}/queues",
+            notify=f"{settings.API_BASE_URL}/queues/g/{self.guild_xid}",
+        )
 
     def embed_support(self, locale: str | None = None) -> str:
         locale = locale or self.locale
@@ -254,15 +292,6 @@ class GameData:
                 value=f"<#{vc_xid}>",
                 inline=False,
             )
-        embed.add_field(
-            name=t("game.field.notify", locale=locale),
-            value=t(
-                "game.field.notify_text",
-                locale=locale,
-                queues=f"{settings.API_BASE_URL}/queues",
-            ),
-            inline=False,
-        )
         embed.set_footer(text=self.embed_footer(locale))
         return embed
 
@@ -424,3 +453,5 @@ class GameData:
 class GameLinkDetails:
     link: str | None = None
     password: str | None = None
+    convoke_guild_name: str | None = None
+    convoke_guild_url: str | None = None

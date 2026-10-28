@@ -32,8 +32,8 @@ sv:
       voice_channel: "🔊 Föreslagen röstkanal"
       support: "Stötta SpellBot"
       support_text: "Bli [donator](%{subscribe}) eller ge ett [engångsbidrag](%{donate})."
-      notify: "🔔 Aviseringar"
-      notify_text: "[Bli meddelad](%{queues}) när spel öppnas upp!"
+      convoke_guild: "Spela mer med **%{name}** på Convoke. [Gå med i gillet!](%{url})"
+      queues_text: "Du kan se [livespel](%{queues}) och [få notiser](%{notify})."
     footer: "SpellBot-spel-ID: #SB%{game_id} — Tjänst: %{service}"
   # Game services pending messages
   service:
@@ -335,6 +335,7 @@ sv:
       voice_create: "Skapa röstkanaler automatiskt"
       use_max_bitrate: "Använd maximal bithastighet"
       enable_mythic_track: "Aktivera mythic track"
+      show_convoke_guild: "Visa länkat Convoke-gille"
       save: "Spara serverinställningar"
       player_awards: "Spelarpriser"
       manage_awards: "Hantera spelarpriser"

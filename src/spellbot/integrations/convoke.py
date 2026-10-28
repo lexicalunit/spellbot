@@ -9,9 +9,11 @@ from typing import TYPE_CHECKING, Any, TypedDict
 import httpx
 
 from spellbot import __version__, services
+from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket, GameFormat
 from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
 from spellbot.metrics import add_span_error
+from spellbot.models import Game
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -24,6 +26,8 @@ logger = logging.getLogger(__name__)
 SUPPORTED_LOCALES = ["de", "en", "es", "fr", "it", "ja", "pt"]
 RETRY_ATTEMPTS = 3
 TIMEOUT_S = 3
+MAX_GUILD_NAME_LEN = Game.convoke_guild_name.property.columns[0].type.length
+MAX_GUILD_URL_LEN = Game.convoke_guild_url.property.columns[0].type.length
 
 
 class ConvokeGameTypes(Enum):
@@ -212,19 +216,45 @@ async def fetch_convoke_link(
     return resp.json()
 
 
+def parse_convoke_guild(data: dict[str, Any]) -> tuple[str | None, str | None]:
+    """
+    Pick the advertisable Convoke guild out of a create-game response.
+
+    Convoke includes the guild linked to the game's Discord server, when there is one. Anything
+    malformed is ignored, as are invite-only guilds because players can't join those from a link.
+    """
+    guild = data.get("guild")
+    if not isinstance(guild, dict) or guild.get("joinMode") == "invite":
+        return None, None
+    name, url = guild.get("name"), guild.get("url")
+    if not isinstance(name, str) or not isinstance(url, str):
+        return None, None
+    if not name or len(name) > MAX_GUILD_NAME_LEN or len(url) > MAX_GUILD_URL_LEN:
+        return None, None
+    if not url.startswith("https://"):
+        return None, None
+    return name, url
+
+
 async def generate_link(
     game_data: GameData,
     pins: dict[int, str] | None,
-) -> tuple[str | None, str | None]:
+) -> GameLinkDetails:
     if not settings.CONVOKE_API_KEY:
-        return None, None
+        return GameLinkDetails()
 
     data = await request_with_retries(
         lambda client: fetch_convoke_link(client, game_data, pins),
     )
     if not data:
-        return None, None
-    return data["url"], data.get("password")
+        return GameLinkDetails()
+    guild_name, guild_url = parse_convoke_guild(data)
+    return GameLinkDetails(
+        link=data["url"],
+        password=data.get("password"),
+        convoke_guild_name=guild_name,
+        convoke_guild_url=guild_url,
+    )
 
 
 def convoke_game_id(game_link: str) -> str:

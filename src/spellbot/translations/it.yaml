@@ -32,8 +32,8 @@ it:
       voice_channel: "🔊 Canale vocale consigliato"
       support: "Supporta SpellBot"
       support_text: "Diventa [un sostenitore](%{subscribe}) o lascia una [donazione singola](%{donate})."
-      notify: "🔔 Notifiche"
-      notify_text: "[Ricevi notifiche](%{queues}) quando le partite si aprono!"
+      convoke_guild: "Gioca di più con **%{name}** su Convoke. [Unisciti alla gilda!](%{url})"
+      queues_text: "Puoi guardare le [partite live](%{queues}) e [ricevere notifiche](%{notify})."
     footer: "ID partita SpellBot: #SB%{game_id} — Servizio: %{service}"
   # Game services pending messages
   service:
@@ -335,6 +335,7 @@ it:
       voice_create: "Crea automaticamente i canali vocali"
       use_max_bitrate: "Usa il bitrate massimo"
       enable_mythic_track: "Abilita Mythic Track"
+      show_convoke_guild: "Mostra la gilda Convoke collegata"
       save: "Salva impostazioni del server"
       player_awards: "Premi giocatori"
       manage_awards: "Gestisci premi giocatori"

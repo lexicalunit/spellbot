@@ -25,6 +25,7 @@ class TestWebEditable:
             "use_max_bitrate",
             "suggest_voice_category",
             "enable_mythic_track",
+            "show_convoke_guild",
         }
         # Owner-only / internal columns are never marked editable.
         assert "banned" not in guild_cols

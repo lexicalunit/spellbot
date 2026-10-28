@@ -32,8 +32,8 @@ tl:
       voice_channel: "🔊 Iminumungkahing Voice Channel"
       support: "Suportahan ang SpellBot"
       support_text: "Maging [patron](%{subscribe}) o magbigay ng [minsanang tip](%{donate})."
-      notify: "🔔 Mga abiso"
-      notify_text: "[Maabisuhan](%{queues}) kapag nagbukas ang mga laro!"
+      convoke_guild: "Maglaro nang higit pa kasama ang **%{name}** sa Convoke. [Sumali sa guild!](%{url})"
+      queues_text: "Maaari mong tingnan ang [mga live na laro](%{queues}) at [makatanggap ng abiso](%{notify})."
     footer: "SpellBot Game ID: #SB%{game_id} — Serbisyo: %{service}"
   # Game services pending messages
   service:
@@ -335,6 +335,7 @@ tl:
       voice_create: "Awtomatikong gumawa ng mga voice channel"
       use_max_bitrate: "Gamitin ang pinakamataas na bitrate"
       enable_mythic_track: "I-enable ang mythic track"
+      show_convoke_guild: "Ipakita ang naka-link na Convoke guild"
       save: "I-save ang mga setting ng server"
       player_awards: "Mga Award ng Player"
       manage_awards: "Pamahalaan ang mga award ng player"

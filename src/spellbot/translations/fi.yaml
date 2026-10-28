@@ -32,8 +32,8 @@ fi:
       voice_channel: "🔊 Ehdotettu äänikanava"
       support: "Tue SpellBotia"
       support_text: "Ryhdy [kuukausitukijaksi](%{subscribe}) tai anna [kertalahjoitus](%{donate})."
-      notify: "🔔 Ilmoitukset"
-      notify_text: "[Saat ilmoituksen](%{queues}) kun pelit avataan!"
+      convoke_guild: "Pelaa enemmän killan **%{name}** kanssa Convokessa. [Liity kiltaan!](%{url})"
+      queues_text: "Voit katsoa [live-pelejä](%{queues}) ja [saada ilmoituksia](%{notify})."
     footer: "SpellBot-pelitunnus: #SB%{game_id}, palvelu: %{service}"
   # Game services pending messages
   service:
@@ -335,6 +335,7 @@ fi:
       voice_create: "Luo äänikanavat automaattisesti"
       use_max_bitrate: "Käytä suurinta bittinopeutta"
       enable_mythic_track: "Ota mythic track käyttöön"
+      show_convoke_guild: "Näytä linkitetty Convoke-kilta"
       save: "Tallenna palvelimen asetukset"
       player_awards: "Pelaajapalkinnot"
       manage_awards: "Hallitse pelaajapalkintoja"

@@ -9,12 +9,14 @@ import httpx
 import pytest
 
 import spellbot.integrations.convoke as convoke_module
+from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket, GameFormat
 from spellbot.integrations.convoke import (
     ConvokeGameTypes,
     convoke_game_format,
     fetch_convoke_link,
     generate_link,
+    parse_convoke_guild,
     update_players,
 )
 from tests.mocks import create_mock_game
@@ -378,6 +380,75 @@ class TestFetchConvokeLink:
         assert payload["language"] == "en"
 
 
+class TestConvokeGuild:
+    GUILD: ClassVar[dict[str, str]] = {
+        "name": "Cool Guild",
+        "url": "https://convoke.games/en/guild/cool",
+        "joinMode": "open",
+    }
+
+    @pytest.mark.parametrize(
+        ("data", "expected"),
+        [
+            pytest.param({}, (None, None), id="missing"),
+            pytest.param({"guild": "nope"}, (None, None), id="not-a-dict"),
+            pytest.param(
+                {"guild": {**GUILD, "joinMode": "invite"}},
+                (None, None),
+                id="invite-only",
+            ),
+            pytest.param({"guild": {**GUILD, "name": 1}}, (None, None), id="bad-name-type"),
+            pytest.param({"guild": {**GUILD, "url": None}}, (None, None), id="bad-url-type"),
+            pytest.param({"guild": {**GUILD, "name": ""}}, (None, None), id="empty-name"),
+            pytest.param({"guild": {**GUILD, "name": "x" * 500}}, (None, None), id="long-name"),
+            pytest.param(
+                {"guild": {**GUILD, "url": "https://x.co/" + "a" * 300}},
+                (None, None),
+                id="long-url",
+            ),
+            pytest.param(
+                {"guild": {**GUILD, "url": "javascript:alert(1)"}},
+                (None, None),
+                id="non-https-url",
+            ),
+            pytest.param(
+                {"guild": GUILD},
+                ("Cool Guild", "https://convoke.games/en/guild/cool"),
+                id="open",
+            ),
+            pytest.param(
+                {"guild": {**GUILD, "joinMode": "approval"}},
+                ("Cool Guild", "https://convoke.games/en/guild/cool"),
+                id="approval",
+            ),
+        ],
+    )
+    def test_parse_convoke_guild(
+        self,
+        data: dict[str, object],
+        expected: tuple[str | None, str | None],
+    ) -> None:
+        assert parse_convoke_guild(data) == expected
+
+    @pytest.mark.asyncio
+    async def test_generate_link_includes_guild(self) -> None:
+        game = create_mock_game(game_id=1)
+        response = {"url": "https://convoke.gg/game/123", "guild": self.GUILD}
+
+        with (
+            patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
+            patch.object(convoke_module, "fetch_convoke_link", AsyncMock(return_value=response)),
+        ):
+            result = await generate_link(game, pins=None)
+
+        assert result == GameLinkDetails(
+            "https://convoke.gg/game/123",
+            None,
+            "Cool Guild",
+            "https://convoke.games/en/guild/cool",
+        )
+
+
 class TestGenerateLink:
     @pytest.mark.asyncio
     async def test_generate_link_no_api_key(self) -> None:
@@ -386,7 +457,7 @@ class TestGenerateLink:
         with patch.object(convoke_module.settings, "CONVOKE_API_KEY", ""):
             result = await generate_link(game, pins=None)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
     @pytest.mark.asyncio
     async def test_generate_link_success(self) -> None:
@@ -409,7 +480,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game, pins=None)
 
-        assert result == ("https://convoke.gg/game/123", None)
+        assert result == GameLinkDetails("https://convoke.gg/game/123")
 
     @pytest.mark.asyncio
     async def test_generate_link_success_with_password_from_response(self) -> None:
@@ -434,7 +505,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game, pins=None)
 
-        assert result == ("https://convoke.gg/game/123", "resp_pass")
+        assert result == GameLinkDetails("https://convoke.gg/game/123", "resp_pass")
 
     @pytest.mark.asyncio
     async def test_generate_link_retries_on_failure_then_succeeds(self) -> None:
@@ -472,7 +543,7 @@ class TestGenerateLink:
             result = await generate_link(game, pins=None)
 
         # First attempt fails, second succeeds
-        assert result == ("https://convoke.gg/game/789", None)
+        assert result == GameLinkDetails("https://convoke.gg/game/789")
         assert mock_client.post.call_count == 2
 
     @pytest.mark.asyncio
@@ -504,7 +575,7 @@ class TestGenerateLink:
             result = await generate_link(game, pins=None)
 
         # All attempts fail, returns None
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         # Verify that the post method was called RETRY_ATTEMPTS times (2)
         assert mock_client.post.call_count == convoke_module.RETRY_ATTEMPTS
 
@@ -540,7 +611,7 @@ class TestGenerateLink:
             result = await generate_link(game, pins=None)
 
         # Empty dict is falsy, so returns None
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
     @pytest.mark.asyncio
     async def test_generate_link_zero_retry_attempts(self) -> None:
@@ -560,7 +631,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game, pins=None)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
 
 def client_context(client: MagicMock) -> MagicMock:
@@ -813,7 +884,7 @@ class TestConvokeTerminalClientErrors:
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(self.make_game(), pins=None)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         assert mock_client.post.call_count == 1
 
     @pytest.mark.asyncio
@@ -859,7 +930,7 @@ class TestConvokeTerminalClientErrors:
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(self.make_game(), pins=None)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         assert mock_client.post.call_count == convoke_module.RETRY_ATTEMPTS
 
     @pytest.mark.asyncio
@@ -881,5 +952,5 @@ class TestConvokeTerminalClientErrors:
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(self.make_game(), pins=None)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         assert mock_client.post.call_count == convoke_module.RETRY_ATTEMPTS

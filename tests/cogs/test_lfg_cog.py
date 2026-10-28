@@ -17,6 +17,7 @@ from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.integrations import convoke
 from spellbot.models import Channel, Game, GameStatus, Guild, Queue, User
+from spellbot.settings import settings as runtime_settings
 from spellbot.views import GameView
 from tests.fixtures import Factories, run_command
 from tests.mocks import mock_discord_object, mock_operations
@@ -36,11 +37,14 @@ CONVOKE_PENDING_MSG = (
 )
 
 
-SUPPORT_CTA = (
-    "\n\n-# **Support SpellBot** — "
-    "Become [a patron](https://www.patreon.com/lexicalunit) "
-    "or give a [one-off tip](https://ko-fi.com/lexicalunit)."
-)
+def support_cta(guild_xid: int) -> str:
+    return (
+        f"\n\n-# You can view [live games]({runtime_settings.API_BASE_URL}/queues) "
+        f"and [get notified]({runtime_settings.API_BASE_URL}/queues/g/{guild_xid}).\n"
+        "-# **Support SpellBot** — "
+        "Become [a patron](https://www.patreon.com/lexicalunit) "
+        "or give a [one-off tip](https://ko-fi.com/lexicalunit)."
+    )
 
 
 @pytest.fixture
@@ -147,7 +151,7 @@ class TestCogLookingForGame:
                     "Please check your Direct Messages for your game details.\n\n"
                     f"{guild.motd}\n\n{channel.motd}"
                 )
-                + SUPPORT_CTA,
+                + support_cta(guild.xid),
                 "fields": [
                     {
                         "inline": False,
@@ -164,7 +168,6 @@ class TestCogLookingForGame:
                         "name": "Started at",
                         "value": f"<t:{started_at_timestamp}>",
                     },
-                    {"inline": False, "name": "🔔 Notifications", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Cockatrice"},
                 "thumbnail": {"url": settings.THUMB_URL},
@@ -481,7 +484,7 @@ class TestCogLookingForGameJoinButton:
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
-                + SUPPORT_CTA,
+                + support_cta(guild.xid),
                 "fields": [
                     {
                         "inline": False,
@@ -490,7 +493,6 @@ class TestCogLookingForGameJoinButton:
                     },
                     {"inline": True, "name": "Format", "value": "Commander"},
                     {"inline": True, "name": "Updated at", "value": ANY},
-                    {"inline": False, "name": "🔔 Notifications", "value": ANY},
                 ],
                 "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
                 "thumbnail": {"url": settings.THUMB_URL},
