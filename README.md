@@ -60,6 +60,7 @@ Visit [live queues][queues], where you can log in with Discord to browse the gam
 | [Getting Started](GETTING_STARTED.md) | Add the bot and start your first game                        |
 | [Features](FEATURES.md)               | Matchmaking, live queues, and the game tracking integrations |
 | [Community](COMMUNITY.md)             | Where to play, feedback, supporters, and contributing        |
+| [Media Kit][media-kit]                | Logos, colors, and type for writing about SpellBot           |
 | [Administration](ADMINISTRATION.md)   | Per-server and per-channel configuration commands            |
 | [Contributing](CONTRIBUTING.md)       | Development setup and how to submit changes                  |
 | [Integrations](INTEGRATIONS.md)       | Adding support for a new play service                        |
@@ -116,6 +117,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [kofi-button]: https://img.shields.io/badge/Ko--fi-F16061?style=flat&logo=ko-fi&logoColor=white
 [kofi]: https://ko-fi.com/lexicalunit
 [lexicalunit]: http://github.com/lexicalunit
+[media-kit]: https://spellbot.io/media-kit/
 [metrics-badge]: https://img.shields.io/badge/metrics-dashboard-orange.svg
 [metrics]: http://prod.app.spellbot.io/admin/dashboard
 [mit-badge]: https://img.shields.io/badge/License-MIT-yellow.svg

@@ -749,3 +749,192 @@ ol.steps li::before {
     animation: none;
   }
 }
+
+/* --- Media kit ------------------------------------------------------------
+   Asset cards for /media-kit/. Each preview sits on the kind of background the
+   asset is made for, so a one-colour logo is never shown where it would vanish. */
+.kit-all {
+  justify-content: flex-start;
+  margin-top: 1.5rem;
+}
+
+.kit-boilerplate {
+  max-width: 68ch;
+  margin: 0 0 1rem;
+  padding: 0.9rem 1.1rem;
+  background-color: var(--sb-surface);
+  border-left: 3px solid var(--sb-purple);
+  border-radius: 12px;
+  /* The theme renders blockquotes as muted italics, which is too faint on this
+     surface for text people are meant to copy. */
+  font-style: normal;
+  color: #d7dce5;
+  line-height: 1.7;
+}
+
+.kit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.kit-grid-wide {
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+}
+
+.kit-asset {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  background-color: var(--sb-surface);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+}
+
+.kit-preview {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  padding: 1.5rem;
+}
+
+.kit-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.kit-preview-light {
+  background-color: #f4f5f8;
+}
+
+.kit-preview-dark {
+  background-color: var(--sb-ground);
+}
+
+.kit-preview-banner {
+  aspect-ratio: auto;
+  padding: 0;
+}
+
+.kit-asset figcaption {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.kit-asset h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.kit-asset p {
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
+  color: #d7dce5;
+}
+
+.kit-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.kit-downloads .btn {
+  min-height: 38px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+}
+
+.kit-gradient {
+  height: 72px;
+  margin-block: 1.5rem 1rem;
+  border-radius: 14px;
+  background: linear-gradient(45deg, #f6ad4b, #5a3efd);
+}
+
+.kit-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(120px, 100%), 1fr));
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.kit-swatches li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  background-color: var(--sb-surface);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  font-size: 0.9rem;
+}
+
+.kit-swatches span:last-child {
+  color: var(--sb-ink-muted);
+  line-height: 1.45;
+}
+
+.kit-chip {
+  display: block;
+  height: 64px;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  /* Keeps the ground swatch visible against the card it sits on. */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.kit-type {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.kit-type-sample {
+  padding: 1.25rem 1.35rem;
+  background-color: var(--sb-surface);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+}
+
+.kit-type-sample p {
+  margin: 0;
+}
+
+/* Mirrors `.hero-title`, which is where the wordmark's lettering comes from. */
+.kit-type-display {
+  font-family: var(--header-font);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.kit-type-body {
+  font-family: var(--body-font);
+  font-size: 1.5rem;
+}
+
+.kit-type-meta {
+  margin-top: 0.6rem !important;
+  font-size: 0.9rem;
+  color: var(--sb-ink-muted);
+}
+
+.kit-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
+}

@@ -44,6 +44,8 @@ Want your community to be featured here as well? Please contact me at [spellbot@
 
 Thoughts and suggestions? Come join us on the [SpellBot Discord server][discord-invite]! Please also feel free to [directly report any bugs][issues] that you encounter. Or reach out to me on BlueSky at [@spellbot.io][follow].
 
+Writing about SpellBot, or showing it off in a stream or video? Logos, colors, and fonts are in the [media kit][media-kit].
+
 ## 🙌 Supported By
 
 The continued operation of SpellBot is supported by [PlayEDH](https://www.playedh.com/) as well as generous donations from [my patrons on Patreon][patreon] and [Ko-fi][kofi]. If you would like to help support SpellBot, please consider [signing up][patreon] for as little as _one dollar a month_ or [giving me a one-off tip][kofi] for whatever you feel is appropriate.
@@ -60,5 +62,6 @@ If you'd like to become a part of the SpellBot development community please firs
 [follow]: https://bsky.app/profile/spellbot.io
 [issues]: https://github.com/lexicalunit/spellbot/issues
 [kofi]: https://ko-fi.com/lexicalunit
+[media-kit]: https://spellbot.io/media-kit/
 [patreon]: https://www.patreon.com/lexicalunit
 [queues]: https://queues.spellbot.io

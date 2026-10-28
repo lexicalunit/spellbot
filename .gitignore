@@ -16,6 +16,7 @@
 /tmp
 demo_analytics.html
 docs/_site
+docs/assets/media-kit/*.zip
 docs/.bundle/config
 docs/.DS_Store
 docs/.jekyll-cache

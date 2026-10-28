@@ -57,6 +57,11 @@ jobs:
         env:
           JEKYLL_ENV: production
 
+      # Built here rather than checked in
+      - name: Bundle media kit
+        run: zip -q -X spellbot-media-kit.zip spellbot-*.svg spellbot-*.png
+        working-directory: docs/_site/assets/media-kit
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
