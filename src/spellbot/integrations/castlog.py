@@ -15,7 +15,10 @@ from spellbot.settings import settings
 logger = logging.getLogger(__name__)
 
 RETRY_ATTEMPTS = 2
-TIMEOUT_S = 3
+# Reports are forwarded while Convoke waits on our response, and Convoke gives up on that request
+# after 10 seconds. Keep `RETRY_ATTEMPTS * TIMEOUT_S` under that so a slow Castlog never makes
+# a report that we did store look like a failure to the reporter.
+TIMEOUT_S = 4
 
 
 async def fetch_castlog_report(
