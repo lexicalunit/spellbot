@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v23.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v23.1.0) - 2026-10-28
+
 ### Added
 
 - Convoke games now show a link to the Convoke guild linked to the Discord server, so players can discover and join it. Server moderators can turn this off from the server settings page.
