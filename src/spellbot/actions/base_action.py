@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any, NoReturn, Self, cast
 
 import discord
@@ -63,6 +64,21 @@ async def handle_exception(ex: Exception) -> NoReturn:
     raise ex
 
 
+def convoke_table_post(bot: SpellBot, game: GameData) -> dict[str, Any]:
+    """
+    Return the edit that hands a game's post over to its open Convoke table.
+
+    SpellBot stops taking players for the game, so its buttons go, but the post keeps linking
+    to the table so players can still join it on Convoke.
+    """
+    embed = replace(game, players=[]).to_embed(
+        emojis=bot.emojis_cache,
+        supporters=bot.supporters,
+    )
+    content = t("game.war_convoke_only", locale=game.locale)
+    return {"content": content, "embed": embed, "view": None}
+
+
 async def expire_games(
     bot: SpellBot,
     games: list[GameData],
@@ -73,8 +89,11 @@ async def expire_games(
     Expire inactive games: dequeue their players and clear up their posts.
 
     A post is deleted when nobody was queued or its channel deletes expired games, otherwise
-    it is replaced with an "expired" notice. Progress is passed to `report` as translation keys
-    with their parameters. Games are spaced out to stay under Discord's rate limits.
+    it is replaced with an "expired" notice. A Guild War game whose Convoke table is open was
+    possibly played there, so its posts are handed over to the table instead.
+
+    Progress is passed to `report` as translation keys with their parameters. Games are spaced
+    out to stay under Discord's rate limits.
     """
 
     def note(key: str, **params: Any) -> None:
@@ -86,6 +105,7 @@ async def expire_games(
         note("admin.expire_game", game_id=game.id)
         dequeued = await services.games.delete_games([game.id])
         note("admin.expire_dequeued", count=dequeued)
+        handoff = convoke_table_post(bot, game) if game.convoke_table_open else None
         for post in game.posts:
             channel = await safe_fetch_text_channel(bot, post.guild_xid, post.channel_xid)
             if not channel:
@@ -96,7 +116,10 @@ async def expire_games(
                 note("admin.expire_no_message", message_id=post.message_xid)
                 continue
             channel_data = await services.channels.select(post.channel_xid)
-            if not dequeued or (channel_data and channel_data.delete_expired):
+            if handoff is not None:
+                note("admin.expire_updating", message_id=post.message_xid)
+                done = await safe_update_embed(message, **handoff)
+            elif not dequeued or (channel_data and channel_data.delete_expired):
                 note("admin.expire_deleting", message_id=post.message_xid)
                 done = await safe_delete_message(message, own_message=True)
             else:
@@ -175,20 +198,29 @@ class BaseAction:
         """
         Re-render every post of a game, or delete them all (and the game) once it has no players.
 
+        A Guild War game whose Convoke table is open keeps its posts when it empties: they're
+        handed over to the table instead (see `convoke_table_post`).
+
         The post whose message is `origin_message_xid` is the one the user interacted with, so it
         is updated through the interaction response rather than edited directly. When `view` is
         None the posts keep whatever view they already have.
         """
-        delete = delete_if_empty and not game_data.players
-        embed = None if delete else self.game_embed(game_data)
-        view_kwargs = {} if view is None else {"view": view}
+        empty = delete_if_empty and not game_data.players
+        # `None` deletes the posts.
+        edit: dict[str, Any] | None
+        if empty and game_data.convoke_table_open:
+            edit = convoke_table_post(self.bot, game_data)
+        elif empty:
+            edit = None
+        else:
+            edit = {"embed": self.game_embed(game_data)} | ({} if view is None else {"view": view})
         for post in game_data.posts:
             if origin_message_xid is not None and post.message_xid == origin_message_xid:
-                if delete:
+                if edit is None:
                     assert self.interaction.message is not None
                     await safe_delete_message(self.interaction.message, own_message=True)
                 else:
-                    await safe_update_embed_origin(self.interaction, embed=embed, **view_kwargs)
+                    await safe_update_embed_origin(self.interaction, **edit)
                 continue
             channel = await safe_fetch_text_channel(self.bot, post.guild_xid, post.channel_xid)
             if channel is None:
@@ -196,11 +228,11 @@ class BaseAction:
             message = safe_get_partial_message(channel, post.guild_xid, post.message_xid)
             if message is None:
                 continue
-            if delete:
+            if edit is None:
                 await safe_delete_message(message, own_message=True)
             else:
-                await safe_update_embed(message, embed=embed, **view_kwargs)
-        if delete:
+                await safe_update_embed(message, **edit)
+        if empty:
             await services.games.delete_games([game_data.id])
 
     @classmethod

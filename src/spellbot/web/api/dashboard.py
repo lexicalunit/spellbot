@@ -103,6 +103,7 @@ JSON_PANELS = (
     "competitive-adoption",
     "playgroup-adoption",
     "castlog-adoption",
+    "war-usage",
     "mythic-verification",
     "queue-depth",
     "active-queues",

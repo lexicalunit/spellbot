@@ -19,6 +19,7 @@ da:
       voice_already_picked: "## Din pod bruger allerede en stemmekanal, slut dig til dem nu: <#%{channel_id}>!"
       voice_available: "## Brug denne tilgængelige stemmekanal: <#%{channel_id}>."
       jump_to_post: "Du kan også [hoppe til det oprindelige kampopslag](%{link}) i <#%{channel_id}>."
+    war_convoke_only: "Dette gildekrigsbord tager ikke længere imod spillere via SpellBot, men du kan stadig deltage på Convoke."
     field:
       rules: "⚠️ Yderligere regler:"
       guild_war: "⚔️ Gildekrig"

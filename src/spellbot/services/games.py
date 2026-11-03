@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, cast
@@ -45,6 +46,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 MAX_GAME_LINK_LEN = column_length(Game.game_link)
+# A Discord ID is a snowflake: a positive integer that fits a `bigint`, sent as a digit string.
+DISCORD_XID = re.compile(r"[1-9][0-9]{0,18}")
+MAX_XID = 2**63 - 1
 
 
 @tracer.wrap()
@@ -54,11 +58,14 @@ async def get(game_id: int) -> GameData | None:
     return await game.to_data() if game else None
 
 
-def report_timestamp(metadata: dict[str, Any] | None) -> datetime | None:
-    """Parse a report's `reported_at` into a datetime, or `None` if absent/invalid."""
+def report_timestamp(
+    metadata: dict[str, Any] | None,
+    key: str = "reported_at",
+) -> datetime | None:
+    """Parse a report's `key` timestamp into a datetime, or `None` if absent/invalid."""
     if not metadata:
         return None
-    value = metadata.get("reported_at")
+    value = metadata.get(key)
     if not isinstance(value, str):
         return None
     try:
@@ -143,6 +150,55 @@ async def set_metadata(game_id: int, metadata: dict[str, Any]) -> MetadataWrite:
     if await DatabaseSession.scalar(select(Game.id).where(Game.id == game_id)) is None:
         return MetadataWrite.MISSING
     return MetadataWrite.STALE
+
+
+def reported_xid(value: Any) -> int | None:
+    """Parse a reported player's Discord ID, sent as a digit string or a number."""
+    if isinstance(value, str) and DISCORD_XID.fullmatch(value):
+        value = int(value)
+    if isinstance(value, int) and not isinstance(value, bool) and 0 < value <= MAX_XID:
+        return value
+    return None
+
+
+def reported_player_xids(metadata: dict[str, Any]) -> set[int]:
+    """Return the distinct Discord IDs of the players in a post-game report."""
+    players = metadata.get("players")
+    xids = (
+        reported_xid(player.get("xid"))
+        for player in (players if isinstance(players, list) else [])
+        if isinstance(player, dict)
+    )
+    return {xid for xid in xids if xid is not None}
+
+
+@tracer.wrap()
+async def start_from_report(game_id: int, metadata: dict[str, Any]) -> None:
+    """
+    Start a game that was played without ever starting here, now that it has been reported.
+
+    A Guild War game opens its Convoke table before it fills, so it can be played on Convoke
+    while still pending here, or even after it expired. Its post-game report says when it
+    started and who played. Each reported player SpellBot knows gets a play; players without
+    a Discord ID, or unknown to SpellBot, can't be credited and are ignored. Anyone still
+    queued for the game is dropped, since it's over.
+    """
+    game: Game | None = await DatabaseSession.get(Game, game_id)
+    if game is None or game.started_at is not None:
+        return
+    game.status = GameStatus.STARTED.value
+    game.started_at = report_timestamp(metadata, "started_at") or datetime.now(tz=UTC)
+    game.deleted_at = None
+    await DatabaseSession.execute(delete(Queue).where(Queue.game_id == game_id))
+    if xids := reported_player_xids(metadata):
+        known = await DatabaseSession.scalars(select(User.xid).where(any_of(User.xid, list(xids))))
+        plays = [
+            {"user_xid": xid, "game_id": game_id, "og_guild_xid": game.guild_xid}
+            for xid in sorted(known)
+        ]
+        if plays:
+            await DatabaseSession.execute(insert(Play).values(plays).on_conflict_do_nothing())
+    await DatabaseSession.commit()
 
 
 @tracer.wrap()

@@ -68,6 +68,17 @@ class GameData:
     convoke_guild_url: str | None = None
 
     @property
+    def convoke_table_open(self) -> bool:
+        """
+        Whether this is a pending Guild War game whose Convoke table is already open.
+
+        Players can sit at that table straight from Convoke, so the game may be played even
+        though it never fills here. It's never abandoned: when SpellBot stops taking players
+        for it, its posts keep linking to the table instead.
+        """
+        return bool(self.war_id and self.game_link and not self.started_at)
+
+    @property
     def placeholders(self) -> dict[str, str]:
         game_start = f"<t:{self.started_at_timestamp}>" if self.started_at else "pending"
         placeholders = {

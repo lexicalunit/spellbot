@@ -1283,6 +1283,78 @@
     );
   }
 
+  function dateColumn(header, field) {
+    return {
+      header: header,
+      cell: function (r) {
+        return escapeHtml(r[field].slice(0, 10));
+      },
+    };
+  }
+
+  function numberColumn(header, field) {
+    return {
+      header: header,
+      cls: "num",
+      cell: function (r) {
+        return fmt(r[field]);
+      },
+    };
+  }
+
+  const loadWarUsage = panel(
+    "war-usage",
+    ["warUsageSection", "warServersTable", "warsTable"],
+    function (d) {
+      destroyChart("warUsage");
+      if (!d.played.length) {
+        document.getElementById("warUsageSection").innerHTML =
+          '<div class="no-data">No data yet.</div>';
+      } else {
+        const series = [
+          { name: "Played", points: d.played },
+          { name: "Not played", points: d.unplayed },
+        ];
+        state.charts.warUsage = new Chart(addCanvas("warUsageSection"), {
+          type: "line",
+          data: buildStackedFromSeries(series, false),
+          options: lineOpts(true),
+        });
+      }
+      document.getElementById("warServersTable").innerHTML = renderTable(
+        [
+          {
+            header: "Server",
+            cell: function (r) {
+              return escapeHtml(r.name);
+            },
+          },
+          numberColumn("Games", "games"),
+          numberColumn("Played", "played"),
+          numberColumn("Wars", "wars"),
+          dateColumn("Last Game", "last_game"),
+        ],
+        d.servers,
+      );
+      document.getElementById("warsTable").innerHTML = renderTable(
+        [
+          {
+            header: "War",
+            cell: function (r) {
+              return escapeHtml(r.title);
+            },
+          },
+          numberColumn("Games", "games"),
+          numberColumn("Played", "played"),
+          numberColumn("Servers", "servers"),
+          dateColumn("First Game", "first_game"),
+          dateColumn("Last Game", "last_game"),
+        ],
+        d.wars,
+      );
+    },
+  );
+
   const loadQueueDepth = panel("queue-depth", "queueDepthSection", function (d) {
     const el = document.getElementById("queueDepthSection");
     const header =
@@ -1377,6 +1449,7 @@
     loadMythicVerification();
     loadPlaygroupAdoption();
     loadCastlogAdoption();
+    loadWarUsage();
     loadQueueDepth();
     loadActiveQueues();
     loadGamesPerPlayer();

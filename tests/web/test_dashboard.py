@@ -110,6 +110,7 @@ JSON_ENDPOINTS: list[tuple[str, set[str]]] = [
     ("/admin/dashboard/mythic-verification", {"rate"}),
     ("/admin/dashboard/playgroup-adoption", {"rate"}),
     ("/admin/dashboard/castlog-adoption", {"rate"}),
+    ("/admin/dashboard/war-usage", {"played", "unplayed", "servers", "wars"}),
     ("/admin/dashboard/queue-depth", {"total", "by_format"}),
     ("/admin/dashboard/active-queues", {"rows"}),
     ("/admin/dashboard/guilds", {"guilds"}),

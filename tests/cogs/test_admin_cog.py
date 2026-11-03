@@ -247,6 +247,54 @@ class TestCogAdminExpireGames:
             call_args = ops.safe_send_channel.call_args
             assert "Updating message 5678" in call_args[0][1]
 
+    @pytest.mark.parametrize("players", [0, 1])
+    async def test_expire_war_game_hands_post_to_convoke(
+        self,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+        players: int,
+    ) -> None:
+        channel = factories.channel.create(guild=guild, delete_expired=True)
+        old_date = datetime.now(tz=UTC) - timedelta(days=1)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            updated_at=old_date,
+            war_id="war-a",
+            war_title="War A",
+            game_link="https://www.convoke.games/table/1",
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=5678)
+        for _ in range(players):
+            factories.user.create(game=game)
+
+        mock_channel = MagicMock(spec=discord.TextChannel)
+        mock_message = MagicMock(spec=discord.PartialMessage)
+
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = mock_channel
+            ops.safe_get_partial_message.return_value = mock_message
+            ops.safe_update_embed.return_value = True
+            ops.safe_send_channel.return_value = True
+            await run_command(cog.expire_games, interaction)
+
+            ops.safe_delete_message.assert_not_called()
+            ops.safe_update_embed.assert_called_once_with(
+                mock_message,
+                content=(
+                    "This Guild War table no longer takes players through SpellBot, "
+                    "but you can still join it on Convoke."
+                ),
+                embed=matchers.Anything(),
+                view=None,
+            )
+            embed = ops.safe_update_embed.call_args.kwargs["embed"]
+            assert "https://www.convoke.games/table/1" in embed.description
+            assert "Players" not in [field.name for field in embed.fields]
+            assert "Updating message 5678" in ops.safe_send_channel.call_args[0][1]
+
     async def test_expire_game_channel_not_found(
         self,
         cog: AdminCog,

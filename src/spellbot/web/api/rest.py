@@ -380,6 +380,7 @@ async def game_metadata_endpoint(request: web.Request) -> web.Response:
             # A newer report already won locally, so forwarding this one would only make
             # Castlog regress to data we have ourselves rejected.
             return reply({"success": True})
+        await services.games.start_from_report(game_id, payload)
         # Castlog needs a stable key to tell a re-report of a match it already has from a
         # brand new match. The game id only ever arrives in the URL, so add it here rather
         # than trusting the reporter to include it in the body.

@@ -19,6 +19,7 @@ de:
       voice_already_picked: "## Ihr Pod verwendet bereits einen Sprachkanal, treten Sie jetzt bei: <#%{channel_id}>!"
       voice_available: "## Ziehen Sie bitte in Erwägung, diesen verfügbaren Sprachkanal zu verwenden: <#%{channel_id}>."
       jump_to_post: "Sie können auch [zum ursprünglichen Spiel-Beitrag in <#%{channel_id}> springen](%{link})."
+    war_convoke_only: "Dieser Gildenkrieg-Tisch nimmt keine Spieler mehr über SpellBot auf, aber Sie können ihm weiterhin auf Convoke beitreten."
     field:
       rules: "⚠️ Zusätzliche Regeln:"
       guild_war: "⚔️ Gildenkrieg"

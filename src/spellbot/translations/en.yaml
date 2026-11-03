@@ -19,6 +19,7 @@ en:
       voice_already_picked: "## Your pod is already using a voice channel, join them now: <#%{channel_id}>!"
       voice_available: "## Please consider using this available voice channel: <#%{channel_id}>."
       jump_to_post: "You can also [jump to the original game post](%{link}) in <#%{channel_id}>."
+    war_convoke_only: "This Guild War table no longer takes players through SpellBot, but you can still join it on Convoke."
     field:
       rules: "⚠️ Additional Rules:"
       guild_war: "⚔️ Guild War"

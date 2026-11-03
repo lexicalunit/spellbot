@@ -19,6 +19,7 @@ tl:
       voice_already_picked: "# # Gumagamit na ng voice channel ang pod mo, sumali sa kanila ngayon: <#%{channel_id}>!"
       voice_available: "## Pag-isipang gamitin ang available na voice channel na ito: <#%{channel_id}>."
       jump_to_post: "Puwede ka ring [pumunta sa orihinal na game post](%{link}) sa <#%{channel_id}>."
+    war_convoke_only: "Hindi na tumatanggap ng mga manlalaro sa SpellBot ang table ng Digmaan ng Guild na ito, pero puwede ka pa ring sumali sa Convoke."
     field:
       rules: "⚠️ Mga Karagdagang Panuntunan:"
       guild_war: "⚔️ Digmaan ng Guild"

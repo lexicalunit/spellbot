@@ -19,6 +19,7 @@ ja:
       voice_already_picked: "## このポッドはすでにボイスチャンネルを使用中です。今すぐ参加してください：<#%{channel_id}>!"
       voice_available: "## こちらの利用可能なボイスチャンネルも使えます：<#%{channel_id}>"
       jump_to_post: "また、[元のゲーム投稿に移動](%{link})して、<#%{channel_id}>で確認することもできます。"
+    war_convoke_only: "このギルド戦争の卓はSpellBotでの参加受付を終了しましたが、Convokeからは引き続き参加できます。"
     field:
       rules: "⚠️ 追加ルール："
       guild_war: "⚔️ ギルド戦争"

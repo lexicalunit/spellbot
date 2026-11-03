@@ -349,6 +349,107 @@ class TestReportTimestamp:
         assert result.tzinfo is not None
 
 
+class TestReportedPlayerXids:
+    def test_parses_string_and_numeric_ids(self) -> None:
+        players = [{"xid": "1471341302359785685"}, {"xid": 42}, {"xid": "42"}]
+        assert games.reported_player_xids({"players": players}) == {1471341302359785685, 42}
+
+    @pytest.mark.parametrize(
+        "xid",
+        [None, "", "abc", "-5", "0", "012", "²", True, 0, -5, 2**63, "9" * 20, 1.5],
+    )
+    def test_ignores_invalid_ids(self, xid: object) -> None:
+        assert games.reported_player_xids({"players": [{"xid": xid}]}) == set()
+
+    def test_ignores_malformed_players(self) -> None:
+        assert games.reported_player_xids({"players": "nope"}) == set()
+        assert games.reported_player_xids({"players": ["nope", 7]}) == set()
+        assert games.reported_player_xids({}) == set()
+
+
+@pytest.mark.asyncio
+class TestServiceGamesStartFromReport:
+    REPORT_STARTED_AT = datetime(2026, 9, 19, 19, 22, 22, tzinfo=UTC)
+
+    def report(self, *xids: object) -> dict[str, object]:
+        return {
+            "started_at": "2026-09-19T19:22:22Z",
+            "players": [{"xid": xid, "name": f"p{i}"} for i, xid in enumerate(xids)],
+        }
+
+    def make_game(self, **kwargs: object) -> Game:
+        guild = GuildFactory.create()
+        return GameFactory.create(guild=guild, channel=ChannelFactory.create(guild=guild), **kwargs)
+
+    async def plays(self, game: Game) -> list[int]:
+        rows = await DatabaseSession.scalars(select(Play.user_xid).where(Play.game_id == game.id))
+        return sorted(rows)
+
+    async def test_starts_expired_war_game(self) -> None:
+        guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild)
+        known = UserFactory.create()
+        queued = UserFactory.create()
+        game = GameFactory.create(
+            guild=guild,
+            channel=channel,
+            war_id="war-a",
+            deleted_at=datetime.now(tz=UTC),
+        )
+        DatabaseSession.add(Queue(user_xid=queued.xid, game_id=game.id, og_guild_xid=guild.xid))
+        await DatabaseSession.commit()
+
+        # A duplicated ID is credited once; unknown and missing IDs are ignored.
+        report = self.report(str(known.xid), str(known.xid), "123456789", None)
+        await games.start_from_report(game.id, report)
+
+        DatabaseSession.expire_all()
+        started = await DatabaseSession.get(Game, game.id)
+        assert started is not None
+        assert started.status == GameStatus.STARTED.value
+        assert started.started_at == self.REPORT_STARTED_AT.replace(tzinfo=None)
+        assert started.deleted_at is None
+        assert await self.plays(game) == [known.xid]
+        play = await DatabaseSession.scalar(select(Play).where(Play.game_id == game.id))
+        assert play is not None
+        assert play.og_guild_xid == guild.xid
+        assert await DatabaseSession.scalar(select(Queue).where(Queue.game_id == game.id)) is None
+
+    async def test_falls_back_to_now_without_a_start_time(self) -> None:
+        game = self.make_game()
+        before = datetime.now(tz=UTC).replace(tzinfo=None)
+        await games.start_from_report(game.id, {"players": []})
+        DatabaseSession.expire_all()
+        started = await DatabaseSession.get(Game, game.id)
+        assert started is not None
+        assert started.started_at is not None
+        assert started.started_at >= before
+        assert await self.plays(game) == []
+
+    async def test_no_known_players(self) -> None:
+        game = self.make_game()
+        await games.start_from_report(game.id, self.report("123456789"))
+        DatabaseSession.expire_all()
+        started = await DatabaseSession.get(Game, game.id)
+        assert started is not None
+        assert started.status == GameStatus.STARTED.value
+        assert await self.plays(game) == []
+
+    async def test_leaves_started_game_alone(self) -> None:
+        user = UserFactory.create()
+        started_at = datetime(2026, 1, 1, tzinfo=UTC)
+        game = self.make_game(status=GameStatus.STARTED.value, started_at=started_at)
+        await games.start_from_report(game.id, self.report(str(user.xid)))
+        DatabaseSession.expire_all()
+        unchanged = await DatabaseSession.get(Game, game.id)
+        assert unchanged is not None
+        assert unchanged.started_at == started_at.replace(tzinfo=None)
+        assert await self.plays(game) == []
+
+    async def test_missing_game(self) -> None:
+        await games.start_from_report(404, self.report("123456789"))
+
+
 @pytest.mark.asyncio
 class TestServiceGamesBlocked:
     async def test_when_blocker_in_game(self, game: Game) -> None:

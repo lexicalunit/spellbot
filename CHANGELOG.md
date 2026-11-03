@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added Guild War (`/war`) usage over time, by server, and by war to the admin dashboard.
+
+### Fixed
+
+- Guild War posts no longer expire or vanish while their Convoke table may be in use.
+- When SpellBot stops taking players for a Guild War game, its post links to the Convoke table.
+- A game reported as played on Convoke is now started, crediting its players known to SpellBot.
+
 ## [v24.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.0) - 2026-11-03
 
 ### Added

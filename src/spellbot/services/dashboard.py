@@ -1087,6 +1087,100 @@ async def dashboard_castlog_adoption(period: PeriodSpec, opts: GuildFilter) -> d
     )
 
 
+async def dashboard_war_usage(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return Convoke Guild War (`/war`) usage: every war game created within `period`.
+
+    A war game opens its Convoke table as soon as it's posted, so players often go straight to
+    Convoke without filling the game's seats here. Such a game only starts once Convoke reports
+    its results, so games are bucketed by creation time, and those that never started are
+    counted as unplayed.
+
+    - `played` / `unplayed`: bucketed counts of war games by creation time.
+    - `servers`: every server with war games, with its game, played and war counts.
+    - `wars`: every war, with its game, played and server counts.
+    """
+    filters = [Game.war_id.isnot(None), *game_guild_filter(opts)]
+    if period.start_dt is not None:
+        filters.append(Game.created_at >= period.start_dt)
+    games_col = func.count(Game.id)
+    played_col = func.count(Game.started_at)
+
+    server_rows = (
+        await DatabaseSession.execute(
+            select(
+                Game.guild_xid,
+                Guild.name,
+                games_col,
+                played_col,
+                func.count(distinct(Game.war_id)),
+                func.max(Game.created_at),
+            )
+            .select_from(Game)
+            .join(Guild, Guild.xid == Game.guild_xid)
+            .where(*filters)
+            .group_by(Game.guild_xid, Guild.name)
+            .order_by(games_col.desc(), Game.guild_xid),
+        )
+    ).all()
+    servers = [
+        {
+            "guild_xid": str(int(r[0])),
+            "name": r[1] or str(int(r[0])),
+            "games": int(r[2]),
+            "played": int(r[3]),
+            "wars": int(r[4]),
+            "last_game": iso_str(r[5]),
+        }
+        for r in server_rows
+    ]
+
+    war_rows = (
+        await DatabaseSession.execute(
+            select(
+                Game.war_id,
+                func.max(Game.war_title),
+                games_col,
+                played_col,
+                func.count(distinct(Game.guild_xid)),
+                func.min(Game.created_at),
+                func.max(Game.created_at),
+            )
+            .where(*filters)
+            .group_by(Game.war_id)
+            .order_by(games_col.desc(), Game.war_id),
+        )
+    ).all()
+    wars = [
+        {
+            "war_id": r[0],
+            "title": r[1] or r[0],
+            "games": int(r[2]),
+            "played": int(r[3]),
+            "servers": int(r[4]),
+            "first_game": iso_str(r[5]),
+            "last_game": iso_str(r[6]),
+        }
+        for r in war_rows
+    ]
+
+    bucket_col = trunc_date(Game.created_at, period.bucket).label("bucket")
+    bucket_rows = (
+        await DatabaseSession.execute(
+            select(bucket_col, played_col, games_col)
+            .where(*filters)
+            .group_by(bucket_col)
+            .order_by(bucket_col),
+        )
+    ).all()
+    return {
+        "played": [{"date": iso_str(r[0]), "count": int(r[1])} for r in bucket_rows],
+        "unplayed": [{"date": iso_str(r[0]), "count": int(r[2] - r[1])} for r in bucket_rows],
+        "servers": servers,
+        "wars": wars,
+    }
+
+
 async def dashboard_mythic_verification(
     period: PeriodSpec,
     opts: GuildFilter,

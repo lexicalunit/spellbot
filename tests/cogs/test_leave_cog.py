@@ -7,7 +7,7 @@ from unittest.mock import ANY
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import delete
+from sqlalchemy import delete, select, update
 
 from spellbot.actions import leave_action
 from spellbot.cogs import LeaveGameCog
@@ -30,6 +30,27 @@ pytestmark = pytest.mark.use_db
 CONVOKE_PENDING_MSG = (
     "_A [Convoke](https://www.convoke.games/) link will be created when all players have joined._"
 )
+
+
+WAR_CONVOKE_ONLY = (
+    "This Guild War table no longer takes players through SpellBot, "
+    "but you can still join it on Convoke."
+)
+CONVOKE_TABLE = "https://www.convoke.games/table/1"
+
+
+async def open_convoke_war_table(game: Game) -> None:
+    await DatabaseSession.execute(
+        update(Game)
+        .where(Game.id == game.id)
+        .values(war_id="war-a", war_title="War A", game_link=CONVOKE_TABLE),
+    )
+    await DatabaseSession.commit()
+
+
+async def is_deleted(game: Game) -> bool:
+    deleted_at = await DatabaseSession.scalar(select(Game.deleted_at).where(Game.id == game.id))
+    return deleted_at is not None
 
 
 def support_cta(guild_xid: int) -> str:
@@ -391,6 +412,56 @@ class TestCogLeaveGame:
                 "type": "rich",
                 "flags": 0,
             }
+
+    async def test_leave_war_game_hands_post_to_convoke(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        game: Game,
+        player: User,
+        interaction: discord.Interaction,
+    ) -> None:
+        await open_convoke_war_table(game)
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
+
+            await run_command(cog.leave_command, interaction)
+
+            ops.safe_delete_message.assert_not_called()
+            ops.safe_update_embed.assert_called_once_with(
+                message,
+                content=WAR_CONVOKE_ONLY,
+                embed=ANY,
+                view=None,
+            )
+            embed = ops.safe_update_embed.call_args.kwargs["embed"]
+            assert CONVOKE_TABLE in embed.description
+        assert await is_deleted(game)
+
+    async def test_leave_button_war_game_hands_post_to_convoke(
+        self,
+        message: discord.Message,
+        game: Game,
+        player: User,
+        interaction: discord.Interaction,
+        bot: SpellBot,
+    ) -> None:
+        await open_convoke_war_table(game)
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = message
+            view = GameView(bot)
+
+            await view.leave(interaction)
+
+            ops.safe_delete_message.assert_not_called()
+            ops.safe_update_embed_origin.assert_called_once_with(
+                interaction,
+                content=WAR_CONVOKE_ONLY,
+                embed=ANY,
+                view=None,
+            )
+        assert await is_deleted(game)
 
     async def test_leave_button_then_delete(
         self,

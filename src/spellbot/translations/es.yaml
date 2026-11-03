@@ -19,6 +19,7 @@ es:
       voice_already_picked: "## ¡En su grupo ya se está usando un canal de voz, únase a ellos ahora: <#%{channel_id}>!"
       voice_available: "## Considere usar este canal de voz disponible: <#%{channel_id}>."
       jump_to_post: "También puede [ver la publicación de la partida original](%{link}) en <#%{channel_id}>."
+    war_convoke_only: "Esta mesa de la guerra de gremios ya no acepta jugadores a través de SpellBot, pero aún puedes unirte en Convoke."
     field:
       rules: "⚠️ Reglas adicionales:"
       guild_war: "⚔️ Guerra de gremios"

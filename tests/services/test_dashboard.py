@@ -40,6 +40,11 @@ def all_guilds() -> GuildFilter:
     return GuildFilter(mode="all", xid=None)
 
 
+def naive_iso(hours_ago: float) -> str:
+    """ISO string of `hours_ago` before `NOW`, as read back from a naive UTC column."""
+    return (NOW - timedelta(hours=hours_ago)).replace(tzinfo=None).isoformat()
+
+
 class TestHelpers:
     def test_game_guild_filter_all_returns_empty(self) -> None:
         assert dashboard.game_guild_filter(all_guilds()) == []
@@ -1413,6 +1418,107 @@ class TestDashboardCastlogAdoption:
     async def test_empty(self) -> None:
         result = await dashboard.dashboard_castlog_adoption(period_30d(), all_guilds())
         assert result == {"rate": []}
+
+
+@pytest.mark.asyncio
+class TestDashboardWarUsage:
+    @pytest_asyncio.fixture
+    async def wars(self, factories: Factories, freezer: FrozenDateTimeFactory) -> Seed:
+        freezer.move_to(NOW)
+        g1 = factories.guild.create(xid=958001, name="Warriors")
+        g2 = factories.guild.create(xid=958002, name=None)
+        ch1 = factories.channel.create(xid=958011, name="ch", guild=g1)
+        ch2 = factories.channel.create(xid=958012, name="ch", guild=g2)
+
+        def make_game(
+            channel: Any,
+            hours_ago: float,
+            war_id: str | None,
+            war_title: str | None = None,
+            *,
+            started: bool = False,
+        ) -> None:
+            created = NOW - timedelta(hours=hours_ago)
+            factories.game.create(
+                guild=channel.guild,
+                channel=channel,
+                created_at=created,
+                started_at=created + timedelta(minutes=5) if started else None,
+                deleted_at=None if started else created + timedelta(minutes=45),
+                service=GameService.CONVOKE.value,
+                war_id=war_id,
+                war_title=war_title,
+            )
+
+        make_game(ch1, 1, "war-a", "War A", started=True)
+        make_game(ch1, 50, "war-a", "War A", started=True)
+        make_game(ch1, 2, "war-b", None)  # never played
+        make_game(ch2, 3, "war-a", "War A", started=True)
+        make_game(ch1, 4, None, started=True)  # not a war game
+        return {"g1": g1, "g2": g2}
+
+    async def test_servers(self, wars: Seed) -> None:
+        del wars
+        result = await dashboard.dashboard_war_usage(period_all(), all_guilds())
+        assert result["servers"] == [
+            {
+                "guild_xid": "958001",
+                "name": "Warriors",
+                "games": 3,
+                "played": 2,
+                "wars": 2,
+                "last_game": naive_iso(1),
+            },
+            {
+                "guild_xid": "958002",
+                "name": "958002",
+                "games": 1,
+                "played": 1,
+                "wars": 1,
+                "last_game": naive_iso(3),
+            },
+        ]
+
+    async def test_wars(self, wars: Seed) -> None:
+        del wars
+        result = await dashboard.dashboard_war_usage(period_all(), all_guilds())
+        assert result["wars"] == [
+            {
+                "war_id": "war-a",
+                "title": "War A",
+                "games": 3,
+                "played": 3,
+                "servers": 2,
+                "first_game": naive_iso(50),
+                "last_game": naive_iso(1),
+            },
+            {
+                "war_id": "war-b",
+                "title": "war-b",
+                "games": 1,
+                "played": 0,
+                "servers": 1,
+                "first_game": naive_iso(2),
+                "last_game": naive_iso(2),
+            },
+        ]
+
+    async def test_played_and_unplayed_over_time(self, wars: Seed) -> None:
+        del wars
+        result = await dashboard.dashboard_war_usage(period_30d(), all_guilds())
+        assert sum(p["count"] for p in result["played"]) == 3
+        assert sum(p["count"] for p in result["unplayed"]) == 1
+        assert [p["date"] for p in result["played"]] == [p["date"] for p in result["unplayed"]]
+
+    async def test_guild_filter(self, wars: Seed) -> None:
+        opts = GuildFilter(mode="include", xid=int(wars["g2"].xid))
+        result = await dashboard.dashboard_war_usage(period_all(), opts)
+        assert [s["name"] for s in result["servers"]] == ["958002"]
+        assert [w["games"] for w in result["wars"]] == [1]
+
+    async def test_empty(self) -> None:
+        result = await dashboard.dashboard_war_usage(period_30d(), all_guilds())
+        assert result == {"played": [], "unplayed": [], "servers": [], "wars": []}
 
 
 @pytest.mark.asyncio

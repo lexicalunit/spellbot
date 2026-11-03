@@ -9,10 +9,12 @@ from unittest.mock import AsyncMock
 import aiohttp
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
 
 from spellbot.data import PostData
+from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
-from spellbot.models import GameStatus
+from spellbot.models import Game, GameStatus, Play
 from spellbot.web.api import rest
 from spellbot.web.api.rest import (
     close_http_session,
@@ -923,6 +925,38 @@ class TestGameMetadataEndpoint:
         detail = await services.games.game_detail_view(game.id)
         assert detail is not None
         assert detail["metadata"] == report
+
+    async def test_game_metadata_starts_unstarted_game(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=2120, name="guild")
+        channel = factories.channel.create(xid=3120, name="channel", guild=guild)
+        game = factories.game.create(id=1120, guild=guild, channel=channel, war_id="war-a")
+        user = factories.user.create(xid=4120)
+        token = factories.token.create(key="META20")
+
+        report = {
+            "source": "convoke",
+            "started_at": "2026-09-19T19:22:22Z",
+            "players": [{"xid": str(user.xid), "name": "p1"}, {"xid": None, "name": "p2"}],
+        }
+        resp = await client.post(
+            f"/api/game/{game.id}/metadata",
+            headers={"Authorization": f"Bearer {token.key}"},
+            json=report,
+        )
+
+        assert resp.status == 200
+        DatabaseSession.expire_all()
+        started = await DatabaseSession.get(Game, game.id)
+        assert started is not None
+        assert started.status == GameStatus.STARTED.value
+        reported_start = datetime(2026, 9, 19, 19, 22, 22, tzinfo=UTC)
+        assert started.started_at == reported_start.replace(tzinfo=None)
+        plays = await DatabaseSession.scalars(select(Play.user_xid).where(Play.game_id == game.id))
+        assert list(plays) == [user.xid]
 
     async def test_game_metadata_forwards_to_castlog(
         self,

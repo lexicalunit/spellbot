@@ -19,6 +19,7 @@ fi:
       voice_already_picked: "## Ryhmäsi käyttää jo äänikanavaa, liity mukaan nyt: <#%{channel_id}>!"
       voice_available: "## Harkitse seuraavan saatavilla olevan äänikanavan käyttöä: <#%{channel_id}>."
       jump_to_post: "Voit myös [siirtyä alkuperäiseen pelijulkaisuun](%{link}) kohteessa <#%{channel_id}>."
+    war_convoke_only: "Tämä kiltasodan pöytä ei enää ota pelaajia SpellBotin kautta, mutta voit yhä liittyä siihen Convokessa."
     field:
       rules: "⚠️ Muita sääntöjä:"
       guild_war: "⚔️ Kiltasota"

@@ -19,6 +19,7 @@ fr:
       voice_already_picked: "## Votre pod utilise déjà un canal vocal, rejoignez-les maintenant : <#%{channel_id}>!"
       voice_available: "## Veuillez envisager d'utiliser ce canal vocal disponible : <#%{channel_id}>."
       jump_to_post: "Vous pouvez aussi [aller sur la publication de jeu originale](%{link}) dans <#%{channel_id}>."
+    war_convoke_only: "Cette table de guerre de guilde n'accepte plus de joueurs via SpellBot, mais vous pouvez toujours la rejoindre sur Convoke."
     field:
       rules: "⚠️ Règles supplémentaires :"
       guild_war: "⚔️ Guerre de guilde"
