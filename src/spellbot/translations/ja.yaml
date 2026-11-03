@@ -34,7 +34,8 @@ ja:
       support: "SpellBot を支援"
       support_text: "[額で支援する](%{subscribe})か、[単発で支援する](%{donate})ことができます。"
       convoke_guild: "Convoke の **%{name}** でもっと遊ぼう。[ギルドに参加する！](%{url})"
-      queues_text: "[ライブ中のゲーム](%{queues})を見たり、[通知を受け取ったり](%{notify})できます。"
+      settings: "設定"
+      settings_text: "[ライブ中のゲーム](%{queues})を見たり、[通知](%{notify})を設定したりできます。"
     footer: "SpellBot ゲームID：#SB%{game_id} — サービス：%{service}"
   # Game services pending messages
   service:

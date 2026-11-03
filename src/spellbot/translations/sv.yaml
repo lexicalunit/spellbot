@@ -34,7 +34,8 @@ sv:
       support: "Stötta SpellBot"
       support_text: "Bli [donator](%{subscribe}) eller ge ett [engångsbidrag](%{donate})."
       convoke_guild: "Spela mer med **%{name}** på Convoke. [Gå med i gillet!](%{url})"
-      queues_text: "Du kan se [livespel](%{queues}) och [få notiser](%{notify})."
+      settings: "Inställningar"
+      settings_text: "Se [livespel](%{queues}) och ställ in [dina notiser](%{notify})."
     footer: "SpellBot-spel-ID: #SB%{game_id} — Tjänst: %{service}"
   # Game services pending messages
   service:

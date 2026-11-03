@@ -12,6 +12,7 @@ import hupper
 import uvloop
 
 from . import __version__
+from .i18n import TRANSLATIONS_DIR
 from .logs import configure_logging
 from .metrics import no_metrics
 from .settings import settings
@@ -80,7 +81,8 @@ def main(
     port: int | None = None,
 ) -> None:
     if dev:
-        hupper.start_reloader("spellbot.main")
+        reloader = hupper.start_reloader("spellbot.main")
+        reloader.watch_files([str(TRANSLATIONS_DIR / "*.yaml")])
 
     # Ensure that configure_logging() is called as early as possible
     level = log_level if log_level is not None else settings.LOG_LEVEL

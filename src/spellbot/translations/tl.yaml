@@ -34,7 +34,8 @@ tl:
       support: "Suportahan ang SpellBot"
       support_text: "Maging [patron](%{subscribe}) o magbigay ng [minsanang tip](%{donate})."
       convoke_guild: "Maglaro nang higit pa kasama ang **%{name}** sa Convoke. [Sumali sa guild!](%{url})"
-      queues_text: "Maaari mong tingnan ang [mga live na laro](%{queues}) at [makatanggap ng abiso](%{notify})."
+      settings: "Mga Setting"
+      settings_text: "Tingnan ang [mga live na laro](%{queues}) at i-configure ang [iyong mga abiso](%{notify})."
     footer: "SpellBot Game ID: #SB%{game_id} — Serbisyo: %{service}"
   # Game services pending messages
   service:

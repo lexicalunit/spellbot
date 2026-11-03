@@ -55,8 +55,9 @@ async def is_deleted(game: Game) -> bool:
 
 def support_cta(guild_xid: int) -> str:
     return (
-        f"\n\n-# You can view [live games]({runtime_settings.API_BASE_URL}/queues) "
-        f"and [get notified]({runtime_settings.API_BASE_URL}/queues/g/{guild_xid}).\n"
+        "\n\n-# **Settings** — "
+        f"See [live games]({runtime_settings.API_BASE_URL}/queues) and configure "
+        f"[your notifications]({runtime_settings.API_BASE_URL}/queues/g/{guild_xid}).\n"
         "-# **Support SpellBot** — "
         "Become [a patron](https://www.patreon.com/lexicalunit) "
         "or give a [one-off tip](https://ko-fi.com/lexicalunit)."

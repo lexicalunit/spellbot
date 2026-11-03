@@ -172,7 +172,7 @@ class GameData:
         parts.extend(self.embed_description_extras(dm, suggested_vc, locale))
         parts.extend(self.embed_motd())
         parts.extend(self.embed_convoke_guild(effective_service, dm, locale))
-        parts.append(f"{self.embed_queues(locale)}\n{self.embed_support(locale)}")
+        parts.append(f"{self.embed_settings(locale)}\n{self.embed_support(locale)}")
         return "\n\n".join(parts)
 
     def embed_convoke_guild(
@@ -201,10 +201,10 @@ class GameData:
             ),
         ]
 
-    def embed_queues(self, locale: str | None = None) -> str:
+    def embed_settings(self, locale: str | None = None) -> str:
         locale = locale or self.locale
-        return "-# " + t(
-            "game.field.queues_text",
+        return f"-# **{t('game.field.settings', locale=locale)}** — " + t(
+            "game.field.settings_text",
             locale=locale,
             queues=f"{settings.API_BASE_URL}/queues",
             notify=f"{settings.API_BASE_URL}/queues/g/{self.guild_xid}",

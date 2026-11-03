@@ -34,7 +34,8 @@ pt:
       support: "Apoiar o SpellBot"
       support_text: "Torne-se [patrono](%{subscribe}) ou faça uma [doação única](%{donate})."
       convoke_guild: "Jogue mais com **%{name}** no Convoke. [Entre na guilda!](%{url})"
-      queues_text: "Você pode ver [jogos ao vivo](%{queues}) e [receber notificações](%{notify})."
+      settings: "Configurações"
+      settings_text: "Veja [jogos ao vivo](%{queues}) e configure [suas notificações](%{notify})."
     footer: "ID do jogo SpellBot: #SB%{game_id} — Serviço: %{service}"
   # Game services pending messages
   service:

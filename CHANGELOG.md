@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Improved website footer.
+- Update the CTA for SpellBot settings and notifications.
+
+### Added
+
+- Hupper reload for i18n file changes.
+
 ## [v24.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.1) - 2026-11-03
 
 ### Added
