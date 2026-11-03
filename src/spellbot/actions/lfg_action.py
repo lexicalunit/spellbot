@@ -158,6 +158,7 @@ class LookingForGameAction(BaseAction):
                 service=service,
                 blind=bool(self.channel_data.blind_games),
                 to_mode=bool(self.channel_data.to_mode),
+                competitive_mode=bool(self.channel_data.competitive_mode),
                 locale=guild_locale(self.guild),
                 war_id=war_id,
                 war_title=war_title,
@@ -548,6 +549,8 @@ class LookingForGameAction(BaseAction):
             service=game_service.value,
             create_new=True,
             blind=bool(self.channel_data.blind_games),
+            to_mode=bool(self.channel_data.to_mode),
+            competitive_mode=bool(self.channel_data.competitive_mode),
             locale=preferred_locale.language_code if preferred_locale else "en",
         )
         game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)

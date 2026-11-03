@@ -170,6 +170,20 @@ class Game(Base):
         server_default=false(),
         doc="Configuration for blind games",
     )
+    to_mode: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If the game's channel had tournament organizer mode enabled when it was created",
+    )
+    competitive_mode: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        doc="If the game's channel had competitive mode enabled when it was created",
+    )
     locale: Mapped[str] = mapped_column(
         String(255),
         nullable=False,

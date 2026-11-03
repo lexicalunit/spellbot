@@ -7,13 +7,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added TO mode, competitive mode, Playgroup Live, and Castlog graphs to the admin dashboard.
+- Games now record if their channel had TO mode or competitive mode on when they were created.
+- Added a most active server per service table to the admin dashboard.
+- Added a share column to the most active server per language table.
+
 ### Changed
 
 - Replaced pyright with ty for static type checking.
+- Dashboard cohort retention uses monthly cohorts for wide date ranges and shows up to 12 periods.
 
 ### Removed
 
-- Removed the user verification feature: the `/verify` and `/unverify` commands, the auto-verify, verified only, and unverified only channel settings, and the verified only and unverified only award settings. The underlying data is kept in the database.
+- Removed the `/verify` and `/unverify` commands.
+- Removed the auto-verify, verified only, and unverified only channel settings.
+- Removed the verified only and unverified only award settings.
+- User verification data is kept in the database.
 
 ### Fixed
 

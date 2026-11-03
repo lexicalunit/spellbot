@@ -189,30 +189,6 @@ class TestSpellBot:
         assert "unhandled exception" in caplog.text
         assert "test-bot-unhandled-exception" in caplog.text
 
-    async def test_on_message_no_guild(
-        self,
-        bot: SpellBot,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(AutoShardedBot, "on_message", super_on_message_mock)
-        message = MagicMock()
-        message.guild = None
-        await bot.on_message(message)
-        super_on_message_mock.assert_called_once_with(message)
-
-    async def test_on_message_guild_ignored(
-        self,
-        bot: SpellBot,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        super_on_message_mock = AsyncMock()
-        monkeypatch.setattr(AutoShardedBot, "on_message", super_on_message_mock)
-        message = MagicMock()
-        message.guild = MagicMock()
-        await bot.on_message(message)
-        super_on_message_mock.assert_not_called()
-
     async def test_on_message_delete_happy_path(
         self,
         dpy_message: discord.Message,

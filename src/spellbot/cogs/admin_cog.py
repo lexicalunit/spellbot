@@ -39,7 +39,7 @@ class AdminCog(commands.Cog):
         name="setup_mythic_track",
         description="Setup Mythic Track on your server.",
     )
-    @tracer.wrap(name="interaction", resource="setup")
+    @tracer.wrap(name="interaction", resource="setup_mythic_track")
     async def setup_mythic_track(self, interaction: discord.Interaction) -> None:
         add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:

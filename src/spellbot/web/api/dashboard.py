@@ -167,6 +167,16 @@ async def dashboard_game_languages_endpoint(request: web.Request) -> web.Respons
     return await dashboard_json_endpoint(request, services.dashboard.dashboard_game_languages)
 
 
+@routes.get("/admin/dashboard/top-guild-per-service")
+@tracer.wrap(name="web", resource="dashboard_top_guild_per_service")
+async def dashboard_top_guild_per_service_endpoint(request: web.Request) -> web.Response:
+    """Return the most active guild for each game service."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(
+        request, services.dashboard.dashboard_top_guild_per_service
+    )
+
+
 @routes.get("/admin/dashboard/top-guild-per-game-language")
 @tracer.wrap(name="web", resource="dashboard_top_guild_per_game_language")
 async def dashboard_top_guild_per_game_language_endpoint(request: web.Request) -> web.Response:
@@ -299,6 +309,38 @@ async def dashboard_blind_adoption_endpoint(request: web.Request) -> web.Respons
     """Return bucketed adoption rate (percent) of started games created as blind."""
     add_span_request_id(generate_request_id())
     return await dashboard_json_endpoint(request, services.dashboard.dashboard_blind_adoption)
+
+
+@routes.get("/admin/dashboard/to-mode-adoption")
+@tracer.wrap(name="web", resource="dashboard_to_mode_adoption")
+async def dashboard_to_mode_adoption_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed adoption rate (percent) of started games created in TO mode."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_to_mode_adoption)
+
+
+@routes.get("/admin/dashboard/competitive-adoption")
+@tracer.wrap(name="web", resource="dashboard_competitive_adoption")
+async def dashboard_competitive_adoption_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed adoption rate (percent) of started Convoke games in competitive mode."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_competitive_adoption)
+
+
+@routes.get("/admin/dashboard/playgroup-adoption")
+@tracer.wrap(name="web", resource="dashboard_playgroup_adoption")
+async def dashboard_playgroup_adoption_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed adoption rate (percent) of started games played on Playgroup Live."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_playgroup_adoption)
+
+
+@routes.get("/admin/dashboard/castlog-adoption")
+@tracer.wrap(name="web", resource="dashboard_castlog_adoption")
+async def dashboard_castlog_adoption_endpoint(request: web.Request) -> web.Response:
+    """Return bucketed rate (percent) of started Convoke games that have a Castlog report."""
+    add_span_request_id(generate_request_id())
+    return await dashboard_json_endpoint(request, services.dashboard.dashboard_castlog_adoption)
 
 
 @routes.get("/admin/dashboard/mythic-verification")

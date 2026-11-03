@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from sqlalchemy import case, distinct, extract, func, or_, select, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -21,6 +21,9 @@ from spellbot.models import Block, Channel, Game, Guild, Play, Queue, User
 from spellbot.services.plays import extract_ngrams, normalize_rule
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sqlalchemy.orm import InstrumentedAttribute
     from sqlalchemy.sql import ColumnElement
 
     from spellbot.web.dashboard_filters import GuildFilter, PeriodSpec
@@ -565,11 +568,19 @@ async def dashboard_game_languages(period: PeriodSpec, opts: GuildFilter) -> dic
     return {"rows": [{"locale": row[0], "count": int(row[1])} for row in rows]}
 
 
-async def dashboard_top_guild_per_game_language(
+async def top_guild_per_group(
     period: PeriodSpec,
     opts: GuildFilter,
+    group_col: InstrumentedAttribute[Any],
+    key: str,
+    label: Callable[[Any], str] = str,
 ) -> dict[str, Any]:
-    """Return the most active guild for each distinct game locale."""
+    """
+    Return the most active guild for each distinct value of `group_col` among started games.
+
+    Each row is keyed by `key` (the group value rendered by `label`) and carries the top guild,
+    its game count, and its `share` (percent) of all games in that group.
+    """
     filters: list[ColumnElement[bool]] = [
         Game.started_at.isnot(None),
         Guild.name.isnot(None),
@@ -580,27 +591,53 @@ async def dashboard_top_guild_per_game_language(
     count_col = func.count(Game.id)
     rows = (
         await DatabaseSession.execute(
-            select(Game.locale, Guild.xid, Guild.name, count_col)
+            select(group_col, Guild.xid, Guild.name, count_col)
             .select_from(Game)
             .join(Guild, Guild.xid == Game.guild_xid)
             .where(*filters)
-            .group_by(Game.locale, Guild.xid, Guild.name)
-            .order_by(Game.locale, count_col.desc(), Guild.name),
+            .group_by(group_col, Guild.xid, Guild.name)
+            .order_by(group_col, count_col.desc(), Guild.name),
         )
     ).all()
 
-    top_by_locale: dict[str, dict[str, Any]] = {}
-    for locale, guild_xid, guild_name, count in rows:
-        if locale in top_by_locale:
+    top_by_group: dict[Any, dict[str, Any]] = {}
+    totals: Counter[Any] = Counter()
+    for group, guild_xid, guild_name, count in rows:
+        totals[group] += int(count)
+        if group in top_by_group:
             continue
-        top_by_locale[locale] = {
-            "locale": locale,
+        top_by_group[group] = {
+            key: label(group),
             "guild_xid": str(int(guild_xid)),
             "guild_name": guild_name,
             "count": int(count),
         }
-    ordered = sorted(top_by_locale.values(), key=lambda r: (-r["count"], r["locale"]))
+    for group, row in top_by_group.items():
+        row["share"] = round(row["count"] / totals[group] * 100.0, 1)
+    ordered = sorted(top_by_group.values(), key=lambda r: (-r["count"], r[key]))
     return {"rows": ordered}
+
+
+async def dashboard_top_guild_per_game_language(
+    period: PeriodSpec,
+    opts: GuildFilter,
+) -> dict[str, Any]:
+    """Return the most active guild for each distinct game locale."""
+    return await top_guild_per_group(period, opts, Game.locale, "locale")
+
+
+SERVICE_TITLES = {s.value: s.title for s in GameService}
+
+
+async def dashboard_top_guild_per_service(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """Return the most active guild for each game service."""
+    return await top_guild_per_group(
+        period,
+        opts,
+        Game.service,
+        "service",
+        lambda value: SERVICE_TITLES.get(value, "Unknown"),
+    )
 
 
 async def dashboard_guild_languages(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
@@ -957,20 +994,33 @@ async def dashboard_rules(period: PeriodSpec, opts: GuildFilter) -> dict[str, An
     return {"top_rules": top_rules, "rule_ngrams": rule_ngrams}
 
 
+# Most periods after the cohort start shown in the retention table; retention has flattened
+# out well before this, and more columns only make the table unreadably wide.
+COHORT_MAX_OFFSET = 12
+
+
+def cohort_offset(unit: Literal["week", "month"], cohort: datetime, played: datetime) -> int:
+    """Return how many whole `unit`s after `cohort` the `played` period starts."""
+    if unit == "month":
+        return (played.year - cohort.year) * 12 + (played.month - cohort.month)
+    return (played - cohort).days // 7
+
+
 async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """
-    Return weekly cohort retention as `cohorts[cohort][week_offset] -> percent`.
+    Return cohort retention as `cohorts[cohort].periods[offset] -> percent`.
 
-    A user's cohort is the week containing their first in-scope
-    `Game.started_at`. For each subsequent week, we report the percent of
-    that cohort who played at least one game that week. Week offsets are
-    integer multiples of 7 days from the cohort start.
+    A user's cohort is the week containing their first in-scope `Game.started_at`, or the
+    month for wide periods (bucketed by month) so the table stays a readable size. For each
+    later week (or month), we report the percent of that cohort who played at least one game
+    in it, for at most `COHORT_MAX_OFFSET` periods after the cohort start.
 
-    The result includes one cohort row per distinct first-play week within
-    the (optional) period bound, ordered ascending by cohort. `max_weeks`
-    is the largest week offset seen across all cohorts (>= 0), useful for
-    sizing the heatmap on the client.
+    The result includes one cohort row per distinct first-play period within the (optional)
+    period bound, ordered ascending by cohort. `unit` is "week" or "month", and `max_offset`
+    is the largest offset seen across all cohorts (>= 0), useful for sizing the heatmap on
+    the client.
     """
+    unit: Literal["week", "month"] = "month" if period.bucket == "month" else "week"
     inner_filters: list[ColumnElement[bool]] = [
         Game.started_at.isnot(None),
         *game_guild_filter(opts),
@@ -978,7 +1028,7 @@ async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> d
     first_play = (
         select(
             Play.user_xid.label("user_xid"),
-            func.min(func.date_trunc("week", Game.started_at)).label("cohort"),
+            func.min(func.date_trunc(unit, Game.started_at)).label("cohort"),
         )
         .select_from(Play)
         .join(Game, Play.game_id == Game.id)
@@ -986,10 +1036,10 @@ async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> d
         .group_by(Play.user_xid)
         .subquery()
     )
-    play_weeks = (
+    play_periods = (
         select(
             Play.user_xid.label("user_xid"),
-            func.date_trunc("week", Game.started_at).label("play_week"),
+            func.date_trunc(unit, Game.started_at).label("play_period"),
         )
         .select_from(Play)
         .join(Game, Play.game_id == Game.id)
@@ -1004,21 +1054,23 @@ async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> d
         await DatabaseSession.execute(
             select(
                 first_play.c.cohort,
-                play_weeks.c.play_week,
-                func.count(distinct(play_weeks.c.user_xid)).label("returners"),
+                play_periods.c.play_period,
+                func.count(distinct(play_periods.c.user_xid)).label("returners"),
             )
             .select_from(first_play)
-            .join(play_weeks, first_play.c.user_xid == play_weeks.c.user_xid)
+            .join(play_periods, first_play.c.user_xid == play_periods.c.user_xid)
             .where(*outer_filters)
-            .group_by(first_play.c.cohort, play_weeks.c.play_week)
-            .order_by(first_play.c.cohort, play_weeks.c.play_week),
+            .group_by(first_play.c.cohort, play_periods.c.play_period)
+            .order_by(first_play.c.cohort, play_periods.c.play_period),
         )
     ).all()
 
     grouped: dict[Any, dict[int, int]] = {}
     max_offset = 0
-    for cohort_dt, play_week, returners in rows:
-        offset = max(0, (play_week - cohort_dt).days // 7)
+    for cohort_dt, play_period, returners in rows:
+        offset = max(0, cohort_offset(unit, cohort_dt, play_period))
+        if offset > COHORT_MAX_OFFSET:
+            continue
         grouped.setdefault(cohort_dt, {})[offset] = int(returners)
         max_offset = max(max_offset, offset)
 
@@ -1026,12 +1078,12 @@ async def dashboard_cohort_retention(period: PeriodSpec, opts: GuildFilter) -> d
     for cohort_dt in sorted(grouped.keys()):
         offsets = grouped[cohort_dt]
         size = offsets[0]
-        weeks = [
+        periods = [
             {"offset": off, "count": count, "pct": round(100.0 * count / size, 1)}
             for off, count in sorted(offsets.items())
         ]
-        cohorts.append({"cohort": iso_str(cohort_dt), "size": size, "weeks": weeks})
-    return {"cohorts": cohorts, "max_weeks": max_offset}
+        cohorts.append({"cohort": iso_str(cohort_dt), "size": size, "periods": periods})
+    return {"cohorts": cohorts, "unit": unit, "max_offset": max_offset}
 
 
 async def dashboard_activity_heatmap(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
@@ -1129,36 +1181,82 @@ def adoption_points(rows: Any) -> list[dict[str, Any]]:
     return points
 
 
-async def dashboard_voice_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
-    """Return bucketed adoption rate (percent) of started games with a voice channel."""
+async def started_game_adoption(
+    period: PeriodSpec,
+    opts: GuildFilter,
+    adopted_predicate: ColumnElement[bool],
+    *scope: ColumnElement[bool],
+) -> dict[str, Any]:
+    """
+    Return bucketed adoption rate (percent) of started games matching `adopted_predicate`.
+
+    The denominator is every started game in the period, narrowed by any `scope` filters for
+    features that only apply to some games (e.g. Convoke-only features).
+    """
     filters: list[ColumnElement[bool]] = [
         Game.started_at.isnot(None),
         *game_guild_filter(opts),
+        *scope,
     ]
     if period.start_dt is not None:
         filters.append(Game.started_at >= period.start_dt)
     rows = (
-        await DatabaseSession.execute(
-            bucketed_adoption_rate(period, filters, Game.voice_xid.isnot(None)),
-        )
+        await DatabaseSession.execute(bucketed_adoption_rate(period, filters, adopted_predicate))
     ).all()
     return {"rate": adoption_points(rows)}
+
+
+async def dashboard_voice_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """Return bucketed adoption rate (percent) of started games with a voice channel."""
+    return await started_game_adoption(period, opts, Game.voice_xid.isnot(None))
 
 
 async def dashboard_blind_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return bucketed adoption rate (percent) of started games created as blind."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
-    rows = (
-        await DatabaseSession.execute(
-            bucketed_adoption_rate(period, filters, Game.blind.is_(True)),
-        )
-    ).all()
-    return {"rate": adoption_points(rows)}
+    return await started_game_adoption(period, opts, Game.blind.is_(True))
+
+
+async def dashboard_to_mode_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """Return bucketed adoption rate (percent) of started games created in TO mode."""
+    return await started_game_adoption(period, opts, Game.to_mode.is_(True))
+
+
+async def dashboard_competitive_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return bucketed adoption rate (percent) of started Convoke games created in competitive mode.
+
+    Competitive mode only changes Convoke games, so only those are counted.
+    """
+    return await started_game_adoption(
+        period,
+        opts,
+        Game.competitive_mode.is_(True),
+        Game.service == GameService.CONVOKE.value,
+    )
+
+
+async def dashboard_playgroup_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """Return bucketed adoption rate (percent) of started games played on Playgroup Live."""
+    return await started_game_adoption(
+        period,
+        opts,
+        Game.service == GameService.PLAYGROUP_LIVE.value,
+    )
+
+
+async def dashboard_castlog_adoption(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
+    """
+    Return bucketed rate (percent) of started Convoke games that have a Castlog report.
+
+    Castlog reports only arrive through Convoke's post-game metadata, so only Convoke games
+    are counted. A game has a report once SpellBot stores Castlog's link in its metadata.
+    """
+    return await started_game_adoption(
+        period,
+        opts,
+        func.jsonb_extract_path(Game.game_metadata, "links", "castlog").isnot(None),
+        Game.service == GameService.CONVOKE.value,
+    )
 
 
 async def dashboard_mythic_verification(

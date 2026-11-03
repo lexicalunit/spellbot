@@ -105,6 +105,27 @@ class TestCogLookingForGame:
         assert user_game is not None
         assert user_game.id == game.id
 
+    async def test_lfg_snapshots_channel_modes(
+        self,
+        cog: LookingForGameCog,
+        channel: Channel,
+        interaction: discord.Interaction,
+    ) -> None:
+        await DatabaseSession.execute(
+            update(Channel)
+            .where(Channel.xid == channel.xid)
+            .values(to_mode=True, competitive_mode=True),
+        )
+        await DatabaseSession.commit()
+
+        with mock_operations(lfg_action) as ops:
+            ops.safe_followup_channel.return_value = MagicMock(spec=discord.Message, id=123)
+            await run_command(cog.lfg, interaction)
+
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
+        assert game.to_mode is True
+        assert game.competitive_mode is True
+
     async def test_lfg_fully_seated(
         self,
         cog: LookingForGameCog,

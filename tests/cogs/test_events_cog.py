@@ -9,14 +9,14 @@ from unittest.mock import MagicMock
 import discord
 import pytest
 import pytest_asyncio
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.sql.expression import and_
 
 from spellbot.actions import lfg_action
 from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
-from spellbot.models import Game, GameStatus, Guild, Play, User
+from spellbot.models import Channel, Game, GameStatus, Guild, Play, User
 from tests.fixtures import run_command
 from tests.mocks import mock_discord_object, mock_operations
 
@@ -97,6 +97,36 @@ class TestCogEvents:
                 )
             ).scalar_one_or_none()
             assert play is not None
+
+    async def test_game_snapshots_channel_modes(
+        self,
+        cog: EventsCog,
+        message: discord.Message,
+        add_user: Callable[..., User],
+        interaction: discord.Interaction,
+        channel: Channel,
+    ) -> None:
+        await DatabaseSession.execute(
+            update(Channel)
+            .where(Channel.xid == channel.xid)
+            .values(to_mode=True, competitive_mode=True),
+        )
+        await DatabaseSession.commit()
+        player1 = add_user()
+        player2 = add_user()
+        users = [mock_discord_object(player1), mock_discord_object(player2)]
+        with mock_operations(lfg_action, users=users) as ops:
+            ops.safe_followup_channel.return_value = message
+            await run_command(
+                cog.game,
+                interaction,
+                players=f"<@{player1.xid}><@{player2.xid}>",
+                format=cast("int", GameFormat.LEGACY.value),
+            )
+
+        game = (await DatabaseSession.execute(select(Game))).scalar_one()
+        assert game.to_mode is True
+        assert game.competitive_mode is True
 
     async def test_game_with_one_player(
         self,

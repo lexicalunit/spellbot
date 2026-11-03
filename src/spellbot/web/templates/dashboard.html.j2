@@ -200,6 +200,7 @@
             text-align: left; color: #c4b5fd; white-space: nowrap; padding-right: 0.5rem;
         }
         .cohort-table td.cohort-cell { border-radius: 3px; color: #fff; font-weight: 500; }
+        .cohort-table thead th { position: sticky; top: 0; z-index: 1; background: #252545; }
         .queue-depth-total {
             font-size: 2.5rem; font-weight: 700; color: #818cf8;
             text-align: center; padding: 1rem 0 0.5rem;
@@ -320,6 +321,8 @@
         </div>
         <div class="section"><h2>Service Popularity (% of bucket)</h2><div id="servicePopularitySection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
 
+        <div class="section"><h2>Most Active Server per Service</h2><div id="topGuildPerServiceSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+
         <div class="summary">
             <div class="stat"><div id="statBracket1" class="stat-value bracket-1"><div class="section-spinner"></div></div><div class="stat-label">Bracket 1: Exhibition</div></div>
             <div class="stat"><div id="statBracket2" class="stat-value bracket-2"><div class="section-spinner"></div></div><div class="stat-label">Bracket 2: Core</div></div>
@@ -342,16 +345,26 @@
 
         <div class="section"><h2>Activity Heatmap (Day x Hour, Local Time)</h2><div id="activityHeatmapSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
 
-        <div class="section"><h2>Cohort Retention (Weekly)</h2><div id="cohortRetentionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+        <div class="section"><h2 id="cohortRetentionTitle">Cohort Retention (Weekly)</h2><div id="cohortRetentionSection" class="table-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
 
         <div class="section"><h2>Average Wait Time</h2><div id="avgWaitTimeSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
 
         <div class="section"><h2>Wait Time Distribution (p50 / p95 / p99, minutes)</h2><div id="waitTimeDistributionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
 
-        <div class="row row-three">
+        <div class="row">
             <div class="section"><h2>Voice Channel Adoption</h2><div id="voiceAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
             <div class="section"><h2>Blind Game Adoption</h2><div id="blindAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+        </div>
+
+        <div class="row">
+            <div class="section"><h2>TO Mode Adoption</h2><div id="toModeAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+            <div class="section"><h2>Competitive Mode Adoption (Convoke Games)</h2><div id="competitiveAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+        </div>
+
+        <div class="row row-three">
             <div class="section"><h2>Mythic Track Verification Rate</h2><div id="mythicVerificationSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+            <div class="section"><h2>Playgroup Live Adoption</h2><div id="playgroupAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
+            <div class="section"><h2>Castlog Report Rate (Convoke Games)</h2><div id="castlogAdoptionSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>
         </div>
 
         <div class="section"><h2 id="gamesPerPlayerTitle">Games per Player</h2><div id="gamesPerPlayerSection" class="chart-box"><div class="section-loading"><div class="section-spinner"></div><div class="section-loading-text">Loading...</div></div></div></div>

@@ -638,7 +638,7 @@
     }
   }
 
-  function renderTopGuildPerGameLanguage(sectionId, rows) {
+  function renderTopGuildTable(sectionId, rows, keyField, keyHeader) {
     const el = document.getElementById(sectionId);
     if (!rows.length) {
       el.innerHTML = '<div class="no-data">No data yet.</div>';
@@ -648,18 +648,23 @@
       .map(function (r) {
         return (
           "<tr><td>" +
-          escapeHtml(r.locale) +
+          escapeHtml(r[keyField]) +
           "</td><td>" +
           escapeHtml(r.guild_name) +
           '</td><td class="num">' +
           fmt(r.count) +
-          "</td></tr>"
+          '</td><td class="num">' +
+          r.share.toFixed(1) +
+          "%</td></tr>"
         );
       })
       .join("");
     el.innerHTML =
-      '<table class="lang-table"><thead><tr><th>Locale</th><th>Server</th>' +
-      '<th style="text-align:right">Games</th></tr></thead><tbody>' +
+      '<table class="lang-table"><thead><tr><th>' +
+      keyHeader +
+      "</th><th>Server</th>" +
+      '<th style="text-align:right">Games</th>' +
+      '<th style="text-align:right">Share</th></tr></thead><tbody>' +
       body +
       "</tbody></table>";
   }
@@ -667,9 +672,18 @@
   async function loadTopGuildPerGameLanguage() {
     try {
       const d = await fetchJson("top-guild-per-game-language");
-      renderTopGuildPerGameLanguage("topGuildPerGameLanguageSection", d.rows);
+      renderTopGuildTable("topGuildPerGameLanguageSection", d.rows, "locale", "Locale");
     } catch (ex) {
       showError("topGuildPerGameLanguageSection", "Failed to load.");
+    }
+  }
+
+  async function loadTopGuildPerService() {
+    try {
+      const d = await fetchJson("top-guild-per-service");
+      renderTopGuildTable("topGuildPerServiceSection", d.rows, "service", "Service");
+    } catch (ex) {
+      showError("topGuildPerServiceSection", "Failed to load.");
     }
   }
 
@@ -1175,21 +1189,25 @@
     try {
       const d = await fetchJson("cohort-retention");
       const el = document.getElementById("cohortRetentionSection");
+      const monthly = d.unit === "month";
+      document.getElementById("cohortRetentionTitle").textContent =
+        "Cohort Retention (" + (monthly ? "Monthly" : "Weekly") + ")";
       if (!d.cohorts.length) {
         el.innerHTML = '<div class="no-data">No data yet.</div>';
         return;
       }
-      const maxWeeks = d.max_weeks;
+      const maxOffset = d.max_offset;
+      const prefix = monthly ? "M" : "W";
       const header = ['<th class="cohort-label">Cohort (size)</th>'];
-      for (let i = 0; i <= maxWeeks; i += 1) header.push("<th>W" + i + "</th>");
+      for (let i = 0; i <= maxOffset; i += 1) header.push("<th>" + prefix + i + "</th>");
       const body = d.cohorts
         .map(function (c) {
           const byOffset = {};
-          c.weeks.forEach(function (w) {
+          c.periods.forEach(function (w) {
             byOffset[w.offset] = w;
           });
           const cells = [];
-          for (let i = 0; i <= maxWeeks; i += 1) {
+          for (let i = 0; i <= maxOffset; i += 1) {
             const w = byOffset[i];
             if (!w) {
               cells.push("<td></td>");
@@ -1209,7 +1227,7 @@
           }
           return (
             '<tr><td class="cohort-label">' +
-            escapeHtml(c.cohort.slice(0, 10)) +
+            escapeHtml(c.cohort.slice(0, monthly ? 7 : 10)) +
             " (" +
             fmt(c.size) +
             ")</td>" +
@@ -1219,11 +1237,11 @@
         })
         .join("");
       el.innerHTML =
-        '<div style="overflow-x:auto"><table class="cohort-table"><thead><tr>' +
+        '<table class="cohort-table"><thead><tr>' +
         header.join("") +
         "</tr></thead><tbody>" +
         body +
-        "</tbody></table></div>";
+        "</tbody></table>";
     } catch (ex) {
       showError("cohortRetentionSection", "Failed to load.");
     }
@@ -1366,6 +1384,46 @@
     );
   }
 
+  function loadToModeAdoption() {
+    return loadAdoptionRateChart(
+      "toModeAdoptionSection",
+      "toModeAdoption",
+      "to-mode-adoption",
+      "TO mode",
+      "#f59e0b",
+    );
+  }
+
+  function loadCompetitiveAdoption() {
+    return loadAdoptionRateChart(
+      "competitiveAdoptionSection",
+      "competitiveAdoption",
+      "competitive-adoption",
+      "Competitive",
+      "#ef4444",
+    );
+  }
+
+  function loadPlaygroupAdoption() {
+    return loadAdoptionRateChart(
+      "playgroupAdoptionSection",
+      "playgroupAdoption",
+      "playgroup-adoption",
+      "Playgroup Live",
+      "#3b82f6",
+    );
+  }
+
+  function loadCastlogAdoption() {
+    return loadAdoptionRateChart(
+      "castlogAdoptionSection",
+      "castlogAdoption",
+      "castlog-adoption",
+      "Castlog",
+      "#ec4899",
+    );
+  }
+
   async function loadQueueDepth() {
     try {
       const d = await fetchJson("queue-depth");
@@ -1459,6 +1517,7 @@
     loadCasualVsCedh();
     loadServerPopularity();
     loadServicePopularity();
+    loadTopGuildPerService();
     loadBracketAdoption();
     loadHourOfDay();
     loadDayOfWeek();
@@ -1467,7 +1526,11 @@
     loadWaitTimeDistribution();
     loadVoiceAdoption();
     loadBlindAdoption();
+    loadToModeAdoption();
+    loadCompetitiveAdoption();
     loadMythicVerification();
+    loadPlaygroupAdoption();
+    loadCastlogAdoption();
     loadQueueDepth();
     loadActiveQueues();
     loadGamesPerPlayer();

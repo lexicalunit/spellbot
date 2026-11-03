@@ -670,6 +670,30 @@ class TestServiceGamesUpsert:
 
         assert new
 
+    async def test_new_game_snapshots_channel_modes(self, game: Game) -> None:
+        user = UserFactory.create(xid=202)
+
+        new, game_data = await games.upsert(
+            guild_xid=game.guild.xid,
+            channel_xid=game.channel.xid,
+            author_xid=user.xid,
+            friends=[],
+            seats=game.seats + 2,
+            rules=None,
+            format=game.format,
+            bracket=game.bracket,
+            service=GameService.CONVOKE.value,
+            locale="en",
+            to_mode=True,
+            competitive_mode=True,
+        )
+
+        assert new
+        created = await DatabaseSession.get(Game, game_data.id)
+        assert created is not None
+        assert created.to_mode is True
+        assert created.competitive_mode is True
+
 
 @pytest.mark.asyncio
 class TestGamesPendingNotification:

@@ -224,12 +224,6 @@ class SpellBot(AutoShardedBot):
             return
         await convoke.update_players(game_data, pins)
 
-    async def on_message(self, message: discord.Message) -> None:
-        # only handle DMs, ignore all guild messages
-        if message.guild and hasattr(message.guild, "id"):
-            return None
-        return await super().on_message(message)
-
     @tracer.wrap(name="interaction", resource="on_message_delete")
     async def on_message_delete(self, message: discord.Message) -> None:
         # Generate request ID for message delete events (no interaction ID available)

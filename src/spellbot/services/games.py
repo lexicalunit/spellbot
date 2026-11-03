@@ -408,6 +408,7 @@ async def upsert(
     create_new: bool = False,
     blind: bool = False,
     to_mode: bool = False,
+    competitive_mode: bool = False,
     war_id: str | None = None,
     war_title: str | None = None,
 ) -> tuple[bool, GameData]:
@@ -443,6 +444,8 @@ async def upsert(
             bracket=bracket,
             service=service,
             blind=blind,
+            to_mode=to_mode,
+            competitive_mode=competitive_mode,
             locale=locale,
             war_id=war_id,
             war_title=war_title,
