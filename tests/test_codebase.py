@@ -9,7 +9,7 @@ import tomllib
 from os import chdir
 from pathlib import Path
 from subprocess import getoutput, run
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import pytest
 import yaml
@@ -42,14 +42,14 @@ class TestCodebase:
         )
         assert output == "", "ensure that these files import annotations from __future__"
 
-    def test_pyright(self) -> None:  # pragma: no cover
-        """Checks that the Python codebase passes pyright static analysis checks."""
+    def test_ty(self) -> None:  # pragma: no cover
+        """Checks that the Python codebase passes ty static analysis checks."""
         chdir(REPO_ROOT)
-        cmd = ["pyright", *SRC_DIRS]
+        cmd = ["ty", "check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast("int", proc.returncode)
-        assert exitcode == 0, f"pyright issues:\n{proc.stdout.decode('utf-8')}"
+        exitcode = proc.returncode
+        assert exitcode == 0, f"ty issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_ruff(self) -> None:  # pragma: no cover
         """Checks that the Python codebase passes configured ruff checks."""
@@ -57,7 +57,7 @@ class TestCodebase:
         cmd = ["ruff", "check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast("int", proc.returncode)
+        exitcode = proc.returncode
         assert exitcode == 0, (
             f"ruff issues:\n{proc.stderr.decode('utf-8')}\n{proc.stdout.decode('utf-8')}"
         )
@@ -68,7 +68,7 @@ class TestCodebase:
         cmd = ["ruff", "format", "--check", *SRC_DIRS]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast("int", proc.returncode)
+        exitcode = proc.returncode
         assert exitcode == 0, f"ruff format issues:\n{proc.stderr.decode('utf-8')}"
 
     def test_pylic(self) -> None:  # pragma: no cover
@@ -77,7 +77,7 @@ class TestCodebase:
         cmd = ["pylic", "check", "--allow-extra-safe-licenses"]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast("int", proc.returncode)
+        exitcode = proc.returncode
         assert exitcode == 0, f"pylic issues:\n{proc.stdout.decode('utf-8')}"
 
     def test_deadcode(self) -> None:  # pragma: no cover
@@ -92,7 +92,7 @@ class TestCodebase:
         cmd = ["vulture"]
         print("running:", " ".join(str(part) for part in cmd))  # noqa: T201
         proc = run(cmd, capture_output=True, check=False)  # noqa: S603
-        exitcode: int = cast("int", proc.returncode)
+        exitcode = proc.returncode
         out = proc.stdout.decode("utf-8")
         err = proc.stderr.decode("utf-8")
         assert exitcode == 0, f"vulture found dead code:\n{out}\n{err}"

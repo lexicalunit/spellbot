@@ -8,7 +8,7 @@ from collections import OrderedDict
 from contextlib import asynccontextmanager
 from pathlib import Path
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -87,7 +87,7 @@ class SpellBot(AutoShardedBot):
         intents = discord.Intents().default()
         intents.messages = True
         logger.info("intents.value: %s", intents.value)
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if settings.BOT_APPLICATION_ID is not None:  # pragma: no cover
             kwargs["application_id"] = int(settings.BOT_APPLICATION_ID)
         super().__init__(command_prefix="!", help_command=None, intents=intents, **kwargs)

@@ -42,7 +42,7 @@ from spellbot.database import DatabaseSession
 from spellbot.models import Base, Channel, Guild, web_editable_columns
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncGenerator, Generator
 
     from sqlalchemy.engine import Connection
 
@@ -133,7 +133,7 @@ def render_sql(name: str) -> str:
 # Then add a migration whose `upgrade()` (and `downgrade()`) calls
 # `audit.attach_triggers(op.get_bind())` to re-sync the triggers on existing databases — trigger
 # attachment is idempotent, so this is safe to re-run.
-AUDITED_MODELS: tuple[type, ...] = (Channel, Guild)
+AUDITED_MODELS: tuple[type[Base], ...] = (Channel, Guild)
 
 # Audited columns beyond each table's web-editable settings, keyed by table name.
 EXTRA_AUDITED_COLUMNS: dict[str, set[str]] = {}
@@ -202,7 +202,7 @@ current_actor: contextvars.ContextVar[Actor | None] = contextvars.ContextVar(
 
 
 @contextmanager
-def actor(xid: int | None, name: str | None, source: str) -> Iterator[None]:
+def actor(xid: int | None, name: str | None, source: str) -> Generator[None]:
     """Attribute settings changes made within this context to the given actor."""
     token = current_actor.set(Actor(xid=xid, name=name, source=source))
     try:
@@ -294,7 +294,7 @@ async def setting_changes(
 
 
 @asynccontextmanager
-async def transaction() -> AsyncIterator[None]:
+async def transaction() -> AsyncGenerator[None]:
     """
     Run a settings change in one real DB transaction, stamped with the current actor.
 

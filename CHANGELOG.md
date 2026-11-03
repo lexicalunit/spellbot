@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced pyright with ty for static type checking.
+
+### Fixed
+
+- Removed an always-true assertion from the game view's join handler.
+
 ## [v23.1.2](https://github.com/lexicalunit/spellbot/releases/tag/v23.1.2) - 2026-11-03
 
 ### Changed

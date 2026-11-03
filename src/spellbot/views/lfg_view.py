@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import discord
 from ddtrace.trace import tracer
@@ -15,38 +15,58 @@ from spellbot.operations import safe_defer_interaction, safe_original_response
 from . import BaseView
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from spellbot import SpellBot
+
+
+class GameButton(ui.Button["GameView"]):
+    """A button that forwards clicks to the given handler."""
+
+    def __init__(
+        self,
+        handler: Callable[[discord.Interaction[Any]], Awaitable[None]],
+        *,
+        custom_id: str,
+        emoji: str,
+        label: str,
+        style: discord.ButtonStyle,
+    ) -> None:
+        super().__init__(custom_id=custom_id, emoji=emoji, label=label, style=style)
+        self.handler = handler
+
+    async def callback(self, interaction: discord.Interaction[Any]) -> None:
+        await self.handler(interaction)
 
 
 class GameView(BaseView):
     def __init__(self, bot: SpellBot, locale: str = "en") -> None:
         super().__init__(bot)
 
-        join_button = ui.Button[GameView](
+        join_button = GameButton(
+            self.join,
             custom_id="join",
             emoji="✋",
             label=t("button.join", locale=locale),
             style=discord.ButtonStyle.blurple,
         )
-        join_button.callback = self.join
         self.add_item(join_button)
 
-        leave_button = ui.Button[GameView](
+        leave_button = GameButton(
+            self.leave,
             custom_id="leave",
             emoji="🚫",
             label=t("button.leave", locale=locale),
             style=discord.ButtonStyle.gray,
         )
-        leave_button.callback = self.leave
         self.add_item(leave_button)
 
-    async def join(self, interaction: discord.Interaction) -> None:
+    async def join(self, interaction: discord.Interaction[Any]) -> None:
         from spellbot.actions import LookingForGameAction  # allow_inline: circular import
 
         assert interaction.guild is not None
         with tracer.trace(name="interaction", resource="join"):
             add_span_context(interaction)
-            assert interaction.original_response
             if not await safe_defer_interaction(interaction):
                 return
             async with (
@@ -57,7 +77,7 @@ class GameView(BaseView):
                 if original_response:
                     await action.execute(message_xid=original_response.id)
 
-    async def leave(self, interaction: discord.Interaction) -> None:
+    async def leave(self, interaction: discord.Interaction[Any]) -> None:
         from spellbot.actions import LeaveAction  # allow_inline: circular import
 
         assert interaction.guild is not None

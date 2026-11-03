@@ -27,7 +27,7 @@ format-check: install
 
 typecheck: install
 	@echo "static code analysis..."
-	@uv run --frozen pyright
+	@uv run --frozen ty check
 
 check: lint format-check typecheck test
 

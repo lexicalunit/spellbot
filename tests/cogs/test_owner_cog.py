@@ -26,7 +26,7 @@ pytestmark = pytest.mark.use_db
 
 
 async def run_owner_command(
-    cog: commands.Cog,
+    cog: OwnerCog,
     func: commands.Command[OwnerCog, ..., None],
     *args: Any,
     **kwargs: Any,

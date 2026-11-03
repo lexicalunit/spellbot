@@ -1370,7 +1370,7 @@ class TestLookingForGameAction:
             "is_waiting",
             AsyncMock(return_value=game_data),
         )
-        mocker.patch.object(
+        shrink_game = mocker.patch.object(
             services.games,
             "shrink_game",
             AsyncMock(return_value=game_data),
@@ -1396,7 +1396,7 @@ class TestLookingForGameAction:
 
         await action.execute_start()
 
-        services.games.shrink_game.assert_called_once_with(game_data)
+        shrink_game.assert_called_once_with(game_data)
         make_game_ready.assert_called_once()
         call_args = make_game_ready.call_args
         assert call_args[0][0] == game_data

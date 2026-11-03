@@ -65,19 +65,19 @@ class TestCogLeaveGame:
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.leave_command, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from any pending games in this channel.",
                 ephemeral=True,
             )
-            leave_action.safe_update_embed.assert_called_once()
-            safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
+            ops.safe_update_embed.assert_called_once()
+            safe_update_embed_call = ops.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
@@ -102,19 +102,19 @@ class TestCogLeaveGame:
         player: User,
         interaction: discord.Interaction,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.leave_command, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from any pending games in this channel.",
                 ephemeral=True,
             )
-            leave_action.safe_update_embed.assert_not_called()
-            leave_action.safe_delete_message.assert_called_once_with(message, own_message=True)
+            ops.safe_update_embed.assert_not_called()
+            ops.safe_delete_message.assert_called_once_with(message, own_message=True)
 
     async def test_leave_all(
         self,
@@ -132,19 +132,19 @@ class TestCogLeaveGame:
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.leave_all, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from all pending games.",
                 ephemeral=True,
             )
-            leave_action.safe_update_embed.assert_called_once()
-            safe_update_embed_call = leave_action.safe_update_embed.call_args_list[0]
+            ops.safe_update_embed.assert_called_once()
+            safe_update_embed_call = ops.safe_update_embed.call_args_list[0]
             assert safe_update_embed_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
@@ -169,19 +169,19 @@ class TestCogLeaveGame:
         player: User,
         interaction: discord.Interaction,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.leave_all, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from all pending games.",
                 ephemeral=True,
             )
-            leave_action.safe_update_embed.assert_not_called()
-            leave_action.safe_delete_message.assert_called_once_with(message, own_message=True)
+            ops.safe_update_embed.assert_not_called()
+            ops.safe_delete_message.assert_called_once_with(message, own_message=True)
 
     async def test_leave_all_when_no_games(
         self,
@@ -190,18 +190,18 @@ class TestCogLeaveGame:
         user: User,
         interaction: discord.Interaction,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.leave_all, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from all pending games.",
                 ephemeral=True,
             )
-            leave_action.safe_update_embed.assert_not_called()
+            ops.safe_update_embed.assert_not_called()
 
     async def test_leave_all_when_fetch_channel_fails(
         self,
@@ -211,18 +211,18 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         game: Game,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = None
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = None
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.leave_all, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from all pending games.",
                 ephemeral=True,
             )
-            leave_action.safe_update_embed.assert_not_called()
+            ops.safe_update_embed.assert_not_called()
 
     async def test_leave_all_when_get_message_fails(
         self,
@@ -232,18 +232,18 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         game: Game,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = None
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = None
 
             await run_command(cog.leave_all, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from all pending games.",
                 ephemeral=True,
             )
-            leave_action.safe_update_embed.assert_not_called()
+            ops.safe_update_embed.assert_not_called()
 
     async def test_leave_when_no_message_xid(
         self,
@@ -257,13 +257,13 @@ class TestCogLeaveGame:
         await DatabaseSession.execute(delete(Post).where(Post.game_id == game.id))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = channel
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.leave_command, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from any pending games in this channel.",
                 ephemeral=True,
@@ -275,10 +275,10 @@ class TestCogLeaveGame:
         user: User,
         interaction: discord.Interaction,
     ) -> None:
-        with mock_operations(leave_action):
+        with mock_operations(leave_action) as ops:
             await run_command(cog.leave_command, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from any pending games in this channel.",
                 ephemeral=True,
@@ -292,12 +292,12 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         game: Game,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = None
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = None
 
             await run_command(cog.leave_command, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from any pending games in this channel.",
                 ephemeral=True,
@@ -311,13 +311,13 @@ class TestCogLeaveGame:
         game: Game,
         channel: Channel,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_fetch_text_channel.return_value = channel
-            leave_action.safe_get_partial_message.return_value = None
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = channel
+            ops.safe_get_partial_message.return_value = None
 
             await run_command(cog.leave_command, interaction)
 
-            leave_action.safe_send_channel.assert_called_once_with(
+            ops.safe_send_channel.assert_called_once_with(
                 interaction,
                 "You were removed from any pending games in this channel.",
                 ephemeral=True,
@@ -340,14 +340,14 @@ class TestCogLeaveGame:
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_called_once()
-            safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
+            ops.safe_update_embed_origin.assert_called_once()
+            safe_update_embed_origin_call = ops.safe_update_embed_origin.call_args_list[0]
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
@@ -373,14 +373,14 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         bot: SpellBot,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_not_called()
-            leave_action.safe_delete_message.assert_called_once_with(
+            ops.safe_update_embed_origin.assert_not_called()
+            ops.safe_delete_message.assert_called_once_with(
                 interaction.message,
                 own_message=True,
             )
@@ -402,17 +402,17 @@ class TestCogLeaveGame:
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_called_once_with(
+            ops.safe_update_embed_origin.assert_called_once_with(
                 interaction,
                 embed=ANY,
             )
-            safe_update_embed_origin_call = leave_action.safe_update_embed_origin.call_args_list[0]
+            safe_update_embed_origin_call = ops.safe_update_embed_origin.call_args_list[0]
             assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
@@ -429,7 +429,7 @@ class TestCogLeaveGame:
                 "flags": 0,
             }
 
-            leave_action.safe_delete_message.assert_not_called()
+            ops.safe_delete_message.assert_not_called()
 
     async def test_leave_button_when_no_game(
         self,
@@ -439,13 +439,13 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         bot: SpellBot,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_not_called()
+            ops.safe_update_embed_origin.assert_not_called()
 
     async def test_leave_button_when_message_missing(
         self,
@@ -456,16 +456,16 @@ class TestCogLeaveGame:
         game: Game,
         bot: SpellBot,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = None
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = None
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_not_called()
-            leave_action.safe_delete_message.assert_called_once_with(message, own_message=True)
+            ops.safe_update_embed_origin.assert_not_called()
+            ops.safe_delete_message.assert_called_once_with(message, own_message=True)
 
     async def test_leave_button_when_message_missing_with_other_players(
         self,
@@ -482,17 +482,17 @@ class TestCogLeaveGame:
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = None
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = None
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_not_called()
-            leave_action.safe_update_embed.assert_called_once()
-            leave_action.safe_delete_message.assert_not_called()
+            ops.safe_update_embed_origin.assert_not_called()
+            ops.safe_update_embed.assert_called_once()
+            ops.safe_delete_message.assert_not_called()
 
     async def test_leave_button_when_message_missing_and_fetch_channel_fails(
         self,
@@ -503,16 +503,16 @@ class TestCogLeaveGame:
         game: Game,
         bot: SpellBot,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = None
-            leave_action.safe_fetch_text_channel.return_value = None
-            leave_action.safe_get_partial_message.return_value = message
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = None
+            ops.safe_fetch_text_channel.return_value = None
+            ops.safe_get_partial_message.return_value = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_not_called()
-            leave_action.safe_update_embed.assert_not_called()
+            ops.safe_update_embed_origin.assert_not_called()
+            ops.safe_update_embed.assert_not_called()
 
     async def test_leave_button_when_message_missing_and_get_message_fails(
         self,
@@ -523,16 +523,16 @@ class TestCogLeaveGame:
         game: Game,
         bot: SpellBot,
     ) -> None:
-        with mock_operations(leave_action):
-            leave_action.safe_original_response.return_value = None
-            leave_action.safe_fetch_text_channel.return_value = interaction.channel
-            leave_action.safe_get_partial_message.return_value = None
+        with mock_operations(leave_action) as ops:
+            ops.safe_original_response.return_value = None
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = None
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_not_called()
-            leave_action.safe_update_embed.assert_not_called()
+            ops.safe_update_embed_origin.assert_not_called()
+            ops.safe_update_embed.assert_not_called()
 
     async def test_leave_button_when_defer_fails(
         self,
@@ -548,10 +548,10 @@ class TestCogLeaveGame:
             "spellbot.views.lfg_view.safe_defer_interaction",
             return_value=False,
         )
-        with mock_operations(leave_action):
+        with mock_operations(leave_action) as ops:
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            leave_action.safe_update_embed_origin.assert_not_called()
-            leave_action.safe_delete_message.assert_not_called()
+            ops.safe_update_embed_origin.assert_not_called()
+            ops.safe_delete_message.assert_not_called()
