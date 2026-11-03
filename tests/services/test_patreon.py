@@ -8,11 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from spellbot.services import patreon
-from spellbot.services.patreon import (
-    get_patreon_campaign_url,
-    get_patron_ids,
-    get_supporters,
-)
+from spellbot.services.patreon import get_patreon_campaign_url, get_patron_ids, get_supporters
 
 
 @pytest.fixture(autouse=True)

@@ -30,9 +30,7 @@ from spellbot.database import (
     delete_test_database,
     initialize_connection,
 )
-from spellbot.database import (
-    engine as async_engine,
-)
+from spellbot.database import engine as async_engine
 from spellbot.models import Base, Queue
 from spellbot.models import User as UserModel
 from spellbot.services.guilds import guild_cache
@@ -71,11 +69,7 @@ if TYPE_CHECKING:
     from aiohttp.test_utils import TestClient
     from decoy import Decoy
     from discord.app_commands import Command
-    from freezegun.api import (
-        FrozenDateTimeFactory,
-        StepTickTimeFactory,
-        TickingDateTimeFactory,
-    )
+    from freezegun.api import FrozenDateTimeFactory, StepTickTimeFactory, TickingDateTimeFactory
 
     FreezeTimeFactory = FrozenDateTimeFactory | StepTickTimeFactory | TickingDateTimeFactory
 

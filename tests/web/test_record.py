@@ -524,9 +524,7 @@ class TestWebRecordFilters:
         factories: Factories,
     ) -> None:
         guild_xid, channel_xid, _ = self.seed_channel(factories)
-        resp = await client.get(
-            f"/g/{guild_xid}/c/{channel_xid}?formats={GameFormat.MODERN.value}",
-        )
+        resp = await client.get(f"/g/{guild_xid}/c/{channel_xid}?formats={GameFormat.MODERN.value}")
         assert resp.status == 200
         text = await resp.text()
         assert "SB#11" in text
@@ -593,9 +591,7 @@ class TestWebRecordFilters:
         factories: Factories,
     ) -> None:
         guild_xid, channel_xid, _ = self.seed_channel(factories)
-        resp = await client.get(
-            f"/g/{guild_xid}/c/{channel_xid}?sort=evil;DROP&dir=sideways",
-        )
+        resp = await client.get(f"/g/{guild_xid}/c/{channel_xid}?sort=evil;DROP&dir=sideways")
         assert resp.status == 200
         text = await resp.text()
         # Default sort is updated_at desc; SB#13 (latest) should appear before SB#11.
@@ -714,9 +710,7 @@ class TestWebRecordFilters:
         guild_xid, channel_xid, _ = self.seed_channel(factories)
         # No timezone_offset cookie -> dates interpreted as UTC. Asking for
         # 2024-02-01..2024-02-01 should match exactly the Feb 1 game.
-        resp = await client.get(
-            f"/g/{guild_xid}/c/{channel_xid}?from=2024-02-01&to=2024-02-01",
-        )
+        resp = await client.get(f"/g/{guild_xid}/c/{channel_xid}?from=2024-02-01&to=2024-02-01")
         assert resp.status == 200
         text = await resp.text()
         assert "(1 matching)" in text

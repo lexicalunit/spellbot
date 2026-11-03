@@ -350,9 +350,7 @@ class TestGetAllShardStatuses:
                 json.dumps(shard_data),  # Second call for shard data
             ],
         )
-        mock_redis.scan_iter = MagicMock(
-            return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0"]),
-        )
+        mock_redis.scan_iter = MagicMock(return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0"]))
         mock_redis.aclose = AsyncMock()
 
         with (

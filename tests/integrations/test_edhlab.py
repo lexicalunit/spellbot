@@ -116,9 +116,7 @@ class TestGenerateLink:
         mock_response.json.return_value = {"gameUrl": "https://edhlab.gg/game/789"}
 
         mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(
-            side_effect=[Exception("Connection error"), mock_response],
-        )
+        mock_client.post = AsyncMock(side_effect=[Exception("Connection error"), mock_response])
 
         with (
             patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_key"),

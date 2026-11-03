@@ -173,9 +173,7 @@ class Channel(Base):
         nullable=False,
         default=False,
         server_default=false(),
-        doc=web_editable(
-            "Create Convoke games for this channel in competitive mode.",
-        ),
+        doc=web_editable("Create Convoke games for this channel in competitive mode."),
     )
 
     guild: Mapped["Guild"] = relationship(

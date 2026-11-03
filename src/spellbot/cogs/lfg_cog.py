@@ -12,9 +12,7 @@ from discord.ext import commands
 
 from spellbot.actions.lfg_action import LookingForGameAction
 from spellbot.cogs.choices import BRACKET_CHOICES, FORMAT_CHOICES, SEAT_CHOICES, SERVICE_CHOICES
-from spellbot.enums import (
-    GameService,
-)
+from spellbot.enums import GameService
 from spellbot.integrations import convoke
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
@@ -54,22 +52,14 @@ class LookingForGameCog(commands.Cog):
     @app_commands.command(name="lfg", description="Looking for game.")
     @app_commands.describe(friends="Mention friends to join this game with.")
     @app_commands.describe(seats="How many players can be seated at this game?")
-    @app_commands.choices(
-        seats=SEAT_CHOICES,
-    )
+    @app_commands.choices(seats=SEAT_CHOICES)
     @app_commands.describe(rules="Any additional rules or requests for this game.")
     @app_commands.describe(service="What service do you want to use to play this game?")
-    @app_commands.choices(
-        service=SERVICE_CHOICES,
-    )
+    @app_commands.choices(service=SERVICE_CHOICES)
     @app_commands.describe(format="What game format do you want to play?")
-    @app_commands.choices(
-        format=FORMAT_CHOICES,
-    )
+    @app_commands.choices(format=FORMAT_CHOICES)
     @app_commands.describe(bracket="What commander bracket do you want to play?")
-    @app_commands.choices(
-        bracket=BRACKET_CHOICES,
-    )
+    @app_commands.choices(bracket=BRACKET_CHOICES)
     @traced_interaction()
     async def lfg(
         self,
@@ -111,13 +101,9 @@ class LookingForGameCog(commands.Cog):
     )
     @app_commands.describe(rules="Any additional rules or requests for this game.")
     @app_commands.describe(format="What game format do you want to play?")
-    @app_commands.choices(
-        format=FORMAT_CHOICES,
-    )
+    @app_commands.choices(format=FORMAT_CHOICES)
     @app_commands.describe(bracket="What commander bracket do you want to play?")
-    @app_commands.choices(
-        bracket=BRACKET_CHOICES,
-    )
+    @app_commands.choices(bracket=BRACKET_CHOICES)
     @traced_interaction()
     async def war(
         self,

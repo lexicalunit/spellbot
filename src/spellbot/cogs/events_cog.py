@@ -30,17 +30,11 @@ class EventsCog(commands.Cog):
     @app_commands.command(name="game", description="Immediately create and start an ad-hoc game.")
     @app_commands.describe(players="You must mention ALL players for this game.")
     @app_commands.describe(format="What game format do you want to play?")
-    @app_commands.choices(
-        format=FORMAT_CHOICES,
-    )
+    @app_commands.choices(format=FORMAT_CHOICES)
     @app_commands.describe(bracket="What commander bracket do you want to play?")
-    @app_commands.choices(
-        bracket=BRACKET_CHOICES,
-    )
+    @app_commands.choices(bracket=BRACKET_CHOICES)
     @app_commands.describe(service="What service do you want to use to play this game?")
-    @app_commands.choices(
-        service=SERVICE_CHOICES,
-    )
+    @app_commands.choices(service=SERVICE_CHOICES)
     @traced_interaction()
     async def game(
         self,

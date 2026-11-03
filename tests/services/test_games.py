@@ -436,9 +436,7 @@ class TestServiceGamesUpsert:
 
         DatabaseSession.expire_all()
         rows = (
-            await DatabaseSession.execute(
-                select(Queue.user_xid).where(Queue.game_id == game.id),
-            )
+            await DatabaseSession.execute(select(Queue.user_xid).where(Queue.game_id == game.id))
         ).all()
         assert {row[0] for row in rows} == {101, 102}
 
@@ -497,9 +495,7 @@ class TestServiceGamesUpsert:
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
         rows = (
-            await DatabaseSession.execute(
-                select(Queue.user_xid).where(Queue.game_id == db_game.id),
-            )
+            await DatabaseSession.execute(select(Queue.user_xid).where(Queue.game_id == db_game.id))
         ).all()
         assert {row[0] for row in rows} == {101, 102}
         assert db_game.rules == "some additional rules"
@@ -535,9 +531,7 @@ class TestServiceGamesUpsert:
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
         rows = (
-            await DatabaseSession.execute(
-                select(Queue.user_xid).where(Queue.game_id == db_game.id),
-            )
+            await DatabaseSession.execute(select(Queue.user_xid).where(Queue.game_id == db_game.id))
         ).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 
@@ -581,9 +575,7 @@ class TestServiceGamesUpsert:
         assert db_game.guild_xid == guild.xid
         assert db_game.channel_xid == channel.xid
         rows = (
-            await DatabaseSession.execute(
-                select(Queue.user_xid).where(Queue.game_id == db_game.id),
-            )
+            await DatabaseSession.execute(select(Queue.user_xid).where(Queue.game_id == db_game.id))
         ).all()
         assert {row[0] for row in rows} == {101, 102, 103}
 

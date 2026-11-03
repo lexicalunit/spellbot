@@ -470,9 +470,7 @@ async def dashboard_service_popularity(period: PeriodSpec, opts: GuildFilter) ->
 
     by_service: dict[str, list[dict[str, Any]]] = {}
     for service, bucket, count in rows:
-        by_service.setdefault(service, []).append(
-            {"date": iso_str(bucket), "count": int(count)},
-        )
+        by_service.setdefault(service, []).append({"date": iso_str(bucket), "count": int(count)})
     series: list[dict[str, Any]] = [
         {"name": name, "points": pts} for name, pts in by_service.items()
     ]

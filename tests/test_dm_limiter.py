@@ -7,11 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from spellbot import dm_limiter
-from spellbot.dm_limiter import (
-    threshold_for,
-    try_consume_dm_slot,
-    window_key_for,
-)
+from spellbot.dm_limiter import threshold_for, try_consume_dm_slot, window_key_for
 from spellbot.settings import settings
 
 

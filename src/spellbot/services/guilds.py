@@ -154,9 +154,7 @@ async def update_settings(guild_xid: int, **fields: object) -> None:
     if not safe:
         return
     async with audit.transaction():
-        await DatabaseSession.execute(
-            update(Guild).where(Guild.xid == guild_xid).values(**safe),
-        )
+        await DatabaseSession.execute(update(Guild).where(Guild.xid == guild_xid).values(**safe))
     guild_cache.pop(guild_xid, None)
 
 

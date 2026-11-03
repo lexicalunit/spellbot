@@ -12,11 +12,7 @@ from ddtrace.trace import tracer
 
 from spellbot import audit, services
 from spellbot.database import DatabaseSession, db_session_manager
-from spellbot.errors import (
-    GuildBannedError,
-    SpellBotError,
-    UserBannedError,
-)
+from spellbot.errors import GuildBannedError, SpellBotError, UserBannedError
 from spellbot.i18n import guild_locale, t, user_locale
 from spellbot.metrics import add_span_request_id, setup_ignored_errors
 from spellbot.operations import (

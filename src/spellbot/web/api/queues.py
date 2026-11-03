@@ -81,9 +81,7 @@ async def _resolve_icons(rows: list[dict[str, Any]]) -> dict[int, str | None]:
     ]
     if not missing:
         return {}
-    fetched = await asyncio.gather(
-        *(services.guilds.fetch_icon_url(xid) for xid in missing),
-    )
+    fetched = await asyncio.gather(*(services.guilds.fetch_icon_url(xid) for xid in missing))
     results: dict[int, str | None] = {}
     for xid, icon in zip(missing, fetched, strict=True):
         _icon_fetch_attempts[xid] = now
@@ -215,9 +213,7 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     only_mythic_track = request.query.get("mythic_track") == "1"
     async with db_session_manager():
-        raw_rows = await services.queues.public_active_queues(
-            only_mythic_track=only_mythic_track,
-        )
+        raw_rows = await services.queues.public_active_queues(only_mythic_track=only_mythic_track)
         raw_games = await services.queues.public_active_games(
             STARTED_GAMES_WINDOW,
             only_mythic_track=only_mythic_track,

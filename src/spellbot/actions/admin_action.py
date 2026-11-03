@@ -8,9 +8,7 @@ from typing import TYPE_CHECKING
 from spellbot import services
 from spellbot.enums import GameBracket
 from spellbot.i18n import guild_locale, t, user_locale
-from spellbot.operations import (
-    safe_send_channel,
-)
+from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 
 from .base_action import BaseAction, expire_games, info_embed

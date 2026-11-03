@@ -225,11 +225,7 @@ async def game_detail_view(game_id: int) -> dict[str, Any] | None:
     user_names: dict[int, str | None] = {}
     if user_xids:
         users = (
-            (
-                await DatabaseSession.execute(
-                    select(User).where(User.xid.in_(user_xids)),
-                )
-            )
+            (await DatabaseSession.execute(select(User).where(User.xid.in_(user_xids))))
             .scalars()
             .all()
         )
@@ -640,11 +636,7 @@ async def make_ready(
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
     queues: list[QueueData] = [
         queue.to_data()
-        for queue in (
-            await DatabaseSession.execute(
-                select(Queue).where(Queue.game_id == game.id),
-            )
-        )
+        for queue in (await DatabaseSession.execute(select(Queue).where(Queue.game_id == game.id)))
         .scalars()
         .all()
     ]
@@ -727,20 +719,14 @@ async def blocked(game_data: GameData, user_xid: int) -> bool:
     """Return True iff the given user should not be allowed in the given game."""
     users_author_has_blocked = [
         row.blocked_user_xid
-        for row in (
-            await DatabaseSession.execute(
-                select(Block).where(Block.user_xid == user_xid),
-            )
-        )
+        for row in (await DatabaseSession.execute(select(Block).where(Block.user_xid == user_xid)))
         .scalars()
         .all()
     ]
     users_who_blocked_author = [
         row.user_xid
         for row in (
-            await DatabaseSession.execute(
-                select(Block).where(Block.blocked_user_xid == user_xid),
-            )
+            await DatabaseSession.execute(select(Block).where(Block.blocked_user_xid == user_xid))
         )
         .scalars()
         .all()
@@ -832,9 +818,7 @@ async def delete_games(game_ids: list[int]) -> int:
 @tracer.wrap()
 async def message_xids(game_ids: list[int]) -> list[int]:
     """Return the discord post message ids for the given game ids."""
-    query = select(
-        Post.message_xid,
-    ).where(any_of(Post.game_id, game_ids))
+    query = select(Post.message_xid).where(any_of(Post.game_id, game_ids))
     rows = (await DatabaseSession.execute(query)).all()
     return [int(row[0]) for row in rows if row[0]]
 
@@ -843,11 +827,7 @@ async def message_xids(game_ids: list[int]) -> list[int]:
 async def dequeue_players(player_xids: list[int]) -> list[int]:
     """Remove the given players from any queues that they're in; returns changed game ids."""
     queues = (
-        (
-            await DatabaseSession.execute(
-                select(Queue).where(any_of(Queue.user_xid, player_xids)),
-            )
-        )
+        (await DatabaseSession.execute(select(Queue).where(any_of(Queue.user_xid, player_xids))))
         .scalars()
         .all()
     )

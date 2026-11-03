@@ -572,9 +572,7 @@ class TestParseActiveHours:
         assert result == {"start": 17, "end": 22, "tz": "America/Los_Angeles"}
 
     def test_allows_wrap_around_within_limit(self) -> None:
-        result = alerts.parse_active_hours(
-            {"start": 22, "end": 5, "tz": "UTC"},
-        )
+        result = alerts.parse_active_hours({"start": 22, "end": 5, "tz": "UTC"})
         assert result == {"start": 22, "end": 5, "tz": "UTC"}
 
     def test_rejects_non_object(self) -> None:

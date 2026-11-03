@@ -241,9 +241,7 @@ class Game(Base):
 
         from . import Play  # allow_inline
 
-        plays_result = await DatabaseSession.execute(
-            select(Play).where(Play.game_id == self.id),
-        )
+        plays_result = await DatabaseSession.execute(select(Play).where(Play.game_id == self.id))
         guild = await self.awaitable_attrs.guild
         enable_mythic_track = guild.enable_mythic_track
         return {

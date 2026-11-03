@@ -60,9 +60,7 @@ async def compute_public_stats() -> PublicStats:
     """
     async with db_session_manager():
         queues = await services.queues.public_active_queues()
-        games = await services.queues.public_active_games(
-            services.queues.STARTED_GAMES_WINDOW,
-        )
+        games = await services.queues.public_active_games(services.queues.STARTED_GAMES_WINDOW)
 
     servers = {row["guild_xid"] for row in queues} | {game["guild_xid"] for game in games}
     players = sum(row["players"] for row in queues) + sum(game["seats"] for game in games)

@@ -51,9 +51,7 @@ class TestCogOwner:
         await run_owner_command(cog, cog.ban, decoy_context, str(target_user.id))
 
         decoy.verify(
-            await decoy_member.send(
-                f"User <@{target_user.id}> has been banned.",
-            ),
+            await decoy_member.send(f"User <@{target_user.id}> has been banned."),
         )
         user = (
             await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
@@ -129,9 +127,7 @@ class TestCogOwner:
         await run_owner_command(cog, cog.ban_guild, decoy_context, str(target_guild))
 
         decoy.verify(
-            await decoy_member.send(
-                f"Guild {target_guild} has been banned.",
-            ),
+            await decoy_member.send(f"Guild {target_guild} has been banned."),
         )
         guild = (
             await DatabaseSession.execute(select(Guild).where(Guild.xid == target_guild))
@@ -210,9 +206,7 @@ class TestCogOwner:
         await run_owner_command(cog, cog.promote, decoy_context, str(target_user.id))
 
         decoy.verify(
-            await decoy_member.send(
-                f"User <@{target_user.id}> is now an admin.",
-            ),
+            await decoy_member.send(f"User <@{target_user.id}> is now an admin."),
         )
         user = (
             await DatabaseSession.execute(select(User).where(User.xid == target_user.id))

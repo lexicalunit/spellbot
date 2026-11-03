@@ -68,9 +68,7 @@ class TestViewerIsModerator:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("1", []), member_response([])],
-            ),
+            return_value=make_httpx_client([guild_response("1", []), member_response([])]),
         )
         assert await moderation.viewer_is_moderator(1, 100) is True
 
@@ -79,9 +77,7 @@ class TestViewerIsModerator:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", roles), member_response(["500"])],
-            ),
+            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
         )
         assert await moderation.viewer_is_moderator(1, 100) is True
 
@@ -90,9 +86,7 @@ class TestViewerIsModerator:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", roles), member_response(["500"])],
-            ),
+            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
         )
         assert await moderation.viewer_is_moderator(1, 100) is True
 
@@ -101,9 +95,7 @@ class TestViewerIsModerator:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", roles), member_response(["500"])],
-            ),
+            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
         )
         assert await moderation.viewer_is_moderator(1, 100) is True
 
@@ -112,9 +104,7 @@ class TestViewerIsModerator:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", roles), member_response(["500"])],
-            ),
+            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
         )
         assert await moderation.viewer_is_moderator(1, 100) is False
 
@@ -156,9 +146,7 @@ class TestViewerIsModerator:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", roles), member_response(["500"])],
-            ),
+            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
         )
         assert await moderation.viewer_is_moderator(1, 100) is False
 
@@ -169,9 +157,7 @@ class TestViewerIsModerator:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", roles), member_response(["500"])],
-            ),
+            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
         )
         assert await moderation.viewer_is_moderator(1, 100) is False
 
@@ -203,9 +189,7 @@ class TestModeratorResolutionIsShared:
 
         mocker.patch.object(moderation, "fetch_is_moderator", slow_fetch)
 
-        results = await asyncio.gather(
-            *(moderation.viewer_is_moderator(7, 100) for _ in range(8)),
-        )
+        results = await asyncio.gather(*(moderation.viewer_is_moderator(7, 100) for _ in range(8)))
 
         assert results == [True] * 8
         assert started == 1
@@ -309,9 +293,7 @@ class TestGuildRolesCache:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", roles), member_response(["500"])],
-            ),
+            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
         )
 
         assert await moderation.viewer_is_moderator(1, 100) is True
@@ -351,9 +333,7 @@ class TestNewRoleIsPickedUpImmediately:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [member_response(["500"]), guild_response("2", fresh)],
-            ),
+            return_value=make_httpx_client([member_response(["500"]), guild_response("2", fresh)]),
         )
 
         assert await moderation.viewer_is_moderator(1, 100) is True
@@ -364,9 +344,7 @@ class TestNewRoleIsPickedUpImmediately:
         mocker.patch.object(
             moderation.httpx,
             "AsyncClient",
-            return_value=make_httpx_client(
-                [member_response(["500"]), guild_response("2", fresh)],
-            ),
+            return_value=make_httpx_client([member_response(["500"]), guild_response("2", fresh)]),
         )
 
         await moderation.viewer_is_moderator(1, 100)

@@ -195,9 +195,7 @@ class Settings(BaseSettings):
 
     @property
     def THUMB_URL(self) -> str:
-        return self.workaround_over_eager_caching(
-            f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png",
-        )
+        return self.workaround_over_eager_caching(f"{self.CONTENT_ROOT}/spellbot/main/spellbot.png")
 
     def thumb(self, guild_xid: int | None) -> str:
         """Get the thumbnail URL for a guild based on date and guild-specific branding."""

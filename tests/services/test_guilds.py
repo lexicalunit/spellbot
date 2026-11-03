@@ -256,9 +256,7 @@ class TestServiceGuilds:
         )
 
         award = (
-            await DatabaseSession.execute(
-                select(GuildAward).where(GuildAward.count == 5),
-            )
+            await DatabaseSession.execute(select(GuildAward).where(GuildAward.count == 5))
         ).scalar_one_or_none()
         assert award
         assert award.role == "a-role"

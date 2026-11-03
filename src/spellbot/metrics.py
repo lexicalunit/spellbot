@@ -14,13 +14,7 @@ from discord.app_commands import CommandOnCooldown
 from wrapt import wrap_function_wrapper
 
 from .environment import running_in_pytest
-from .errors import (
-    AdminOnlyError,
-    GuildBannedError,
-    GuildOnlyError,
-    ModOnlyError,
-    UserBannedError,
-)
+from .errors import AdminOnlyError, GuildBannedError, GuildOnlyError, ModOnlyError, UserBannedError
 from .settings import settings
 
 if TYPE_CHECKING:

@@ -44,9 +44,7 @@ ADMIN_XID_KEY = "xid"
 ADMIN_NAME_KEY = "name"
 
 # Routes inside /admin/* that do not require an authenticated session.
-PUBLIC_ADMIN_PATHS: frozenset[str] = frozenset(
-    ("/admin/login", "/admin/oauth/callback"),
-)
+PUBLIC_ADMIN_PATHS: frozenset[str] = frozenset(("/admin/login", "/admin/oauth/callback"))
 
 
 def resolve_session_key() -> Fernet:

@@ -375,9 +375,7 @@ class TestGenerateLink:
         mock_response.json.return_value = {"url": "https://playgroup.gg/live/retry"}
 
         mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(
-            side_effect=[Exception("Connection error"), mock_response],
-        )
+        mock_client.post = AsyncMock(side_effect=[Exception("Connection error"), mock_response])
 
         with (
             patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),

@@ -29,9 +29,7 @@ def make_httpx_client(*, identify_json: dict[str, Any] | None = None) -> MagicMo
     token_resp.json = MagicMock(return_value={"access_token": "tok"})
     inner.post = AsyncMock(return_value=token_resp)
     identify_resp = MagicMock(status_code=200)
-    identify_resp.json = MagicMock(
-        return_value=identify_json or {"id": "42", "username": "admin"},
-    )
+    identify_resp.json = MagicMock(return_value=identify_json or {"id": "42", "username": "admin"})
     inner.get = AsyncMock(return_value=identify_resp)
     cm = MagicMock()
     cm.__aenter__ = AsyncMock(return_value=inner)
@@ -157,9 +155,7 @@ class TestDashboardJsonEndpoints:
         self,
         admin_client: WebClient,
     ) -> None:
-        resp = await admin_client.get(
-            "/admin/dashboard/summary?period=7d&guild=12345",
-        )
+        resp = await admin_client.get("/admin/dashboard/summary?period=7d&guild=12345")
         assert resp.status == 200
         data = await resp.json()
         assert data["period"] == "7d"
@@ -168,9 +164,7 @@ class TestDashboardJsonEndpoints:
         self,
         admin_client: WebClient,
     ) -> None:
-        resp = await admin_client.get(
-            "/admin/dashboard/summary?period=all&guild=not:99",
-        )
+        resp = await admin_client.get("/admin/dashboard/summary?period=all&guild=not:99")
         assert resp.status == 200
 
     async def test_endpoint_unauthenticated_redirects(self, client: WebClient) -> None:

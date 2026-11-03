@@ -162,9 +162,7 @@ class TestCogLookingForGame:
 
             DatabaseSession.expire_all()
             game = (await DatabaseSession.execute(select(Game))).scalar_one()
-            started_at_timestamp = int(
-                game.started_at.replace(tzinfo=UTC).timestamp(),
-            )
+            started_at_timestamp = int(game.started_at.replace(tzinfo=UTC).timestamp())
             mock_call = ops.safe_update_embed
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.STARTED_EMBED_COLOR,

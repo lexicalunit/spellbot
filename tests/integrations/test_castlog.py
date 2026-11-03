@@ -105,9 +105,7 @@ class TestReportMatch:
         mock_response.json.return_value = {"match_id": "xyz-789"}
 
         mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(
-            side_effect=[Exception("Connection error"), mock_response],
-        )
+        mock_client.post = AsyncMock(side_effect=[Exception("Connection error"), mock_response])
 
         with (
             patch.object(castlog_module.settings, "CASTLOG_SECRET", "test-secret"),

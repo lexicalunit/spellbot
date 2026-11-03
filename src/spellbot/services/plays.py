@@ -195,9 +195,7 @@ def build_user_records_sql(
     return sql, params
 
 
-def build_user_records_count_sql(
-    opts: RecordFilters,
-) -> tuple[str, dict[str, Any]]:
+def build_user_records_count_sql(opts: RecordFilters) -> tuple[str, dict[str, Any]]:
     clauses = ["plays.user_xid = :user_xid"]
     shared, params = shared_filter_sql(opts, include_guild=True)
     clauses.extend(shared)
@@ -290,9 +288,7 @@ def build_channel_records_sql(
     return sql, params
 
 
-def build_channel_records_count_sql(
-    opts: RecordFilters,
-) -> tuple[str, dict[str, Any]]:
+def build_channel_records_count_sql(opts: RecordFilters) -> tuple[str, dict[str, Any]]:
     clauses = [
         "games.guild_xid = :guild_xid",
         "games.channel_xid = :channel_xid",
@@ -554,15 +550,11 @@ async def channel_export_target_exists(guild_xid: int, channel_xid: int) -> bool
     if not await guild_exists(guild_xid):
         return False
     return (
-        await DatabaseSession.execute(
-            select(Channel.xid).where(Channel.xid == channel_xid),
-        )
+        await DatabaseSession.execute(select(Channel.xid).where(Channel.xid == channel_xid))
     ).scalar_one_or_none() is not None
 
 
-async def stream_user_records(
-    user_xid: int,
-) -> AsyncIterator[dict[str, Any]]:
+async def stream_user_records(user_xid: int) -> AsyncIterator[dict[str, Any]]:
     """Stream all game records for a user across all guilds without pagination."""
     if not await user_exists(user_xid):
         return
@@ -581,16 +573,12 @@ async def stream_channel_records(
 ) -> AsyncIterator[dict[str, Any]]:
     """Stream all game records for a channel without pagination, one row per player."""
     guild_name = (
-        await DatabaseSession.execute(
-            select(Guild.name).where(Guild.xid == guild_xid),
-        )
+        await DatabaseSession.execute(select(Guild.name).where(Guild.xid == guild_xid))
     ).scalar_one_or_none()
     if guild_name is None:
         return
     channel_name = (
-        await DatabaseSession.execute(
-            select(Channel.name).where(Channel.xid == channel_xid),
-        )
+        await DatabaseSession.execute(select(Channel.name).where(Channel.xid == channel_xid))
     ).scalar_one_or_none()
     if channel_name is None:
         return

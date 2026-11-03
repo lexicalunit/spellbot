@@ -526,9 +526,7 @@ class TestGenerateLink:
 
         mock_client = MagicMock(spec=httpx.AsyncClient)
         # First call fails, second call succeeds
-        mock_client.post = AsyncMock(
-            side_effect=[Exception("Connection error"), mock_response],
-        )
+        mock_client.post = AsyncMock(side_effect=[Exception("Connection error"), mock_response])
 
         mock_player_data = AsyncMock(return_value=[])
 

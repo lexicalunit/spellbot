@@ -420,9 +420,7 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -451,9 +449,7 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -543,9 +539,7 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
             id=4001,
             name=f"XXX-Game-SB{game.id}",
@@ -575,9 +569,7 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -607,9 +599,7 @@ class TestTaskCleanupOldVoiceChannels:
         make_category_channel: Callable[..., discord.CategoryChannel],
         action: TasksAction,
     ) -> None:
-        manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -642,9 +632,7 @@ class TestTaskCleanupOldVoiceChannels:
         import spellbot.actions.tasks_action as mod  # allow_inline
 
         mocker.patch.object(mod.settings, "VOICE_CLEANUP_BATCH", 0)
-        manage_perms = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_perms = discord.Permissions(discord.Permissions.manage_channels.flag)
         voice_channel = make_voice_channel(
             id=4001,
             name=f"Game-SB{game.id}",
@@ -769,9 +757,7 @@ class TestNotifyPendingGames:
         mocker: MockerFixture,
     ) -> None:
         mocker.patch("spellbot.actions.tasks_action.services", mock_services)
-        mock_services.games.games_pending_notification = AsyncMock(
-            side_effect=RuntimeError("boom"),
-        )
+        mock_services.games.games_pending_notification = AsyncMock(side_effect=RuntimeError("boom"))
 
         await action.notify_pending_games()
 

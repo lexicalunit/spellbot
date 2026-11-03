@@ -7,12 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from spellbot.services.filters import (
-    GuildFilter,
-    PeriodSpec,
-    parse_guild,
-    parse_period,
-)
+from spellbot.services.filters import GuildFilter, PeriodSpec, parse_guild, parse_period
 
 if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory

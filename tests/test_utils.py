@@ -92,9 +92,7 @@ class TestUtilsBotCanRole:
 
 class TestUtilsBotCanManageChannels:
     def test_happy_path(self) -> None:
-        manage_permissions = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        manage_permissions = discord.Permissions(discord.Permissions.manage_channels.flag)
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         guild.me.guild_permissions = manage_permissions
@@ -230,9 +228,7 @@ class TestUtilsBotCanRead:
 
 class TestUtilsBotCanDeleteChannel:
     def test_happy_path(self) -> None:
-        del_permissions = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        del_permissions = discord.Permissions(discord.Permissions.manage_channels.flag)
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -242,9 +238,7 @@ class TestUtilsBotCanDeleteChannel:
         assert bot_can_delete_channel(channel)
 
     def test_missing_channel_type(self) -> None:
-        del_permissions = discord.Permissions(
-            discord.Permissions.manage_channels.flag,
-        )
+        del_permissions = discord.Permissions(discord.Permissions.manage_channels.flag)
         guild = MagicMock(spec=discord.Guild)
         guild.me = MagicMock()
         channel = MagicMock(spec=discord.TextChannel)
@@ -291,9 +285,7 @@ class TestUtilsIsAdmin:
         role.name = settings.ADMIN_ROLE
         guild = MagicMock(spec=discord.Guild)
         guild.owner_id = 2
-        admin_perms = discord.Permissions(
-            discord.Permissions.administrator.flag,
-        )
+        admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
         channel = MagicMock(spec=discord.TextChannel)
         channel.permissions_for = MagicMock(return_value=admin_perms)
         author = MagicMock()
@@ -514,9 +506,7 @@ class TestUtilsUserCanModerate:
         role.name = f"{settings.MOD_PREFIX}-whatever"
         guild = MagicMock(spec=discord.Guild)
         guild.owner_id = 2
-        admin_perms = discord.Permissions(
-            discord.Permissions.administrator.flag,
-        )
+        admin_perms = discord.Permissions(discord.Permissions.administrator.flag)
         channel = MagicMock(spec=discord.TextChannel)
         channel.permissions_for = MagicMock(return_value=admin_perms)
         user = MagicMock()

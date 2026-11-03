@@ -132,9 +132,7 @@ async def set_admin(user_xid: int, is_admin: bool) -> UserData:
 @tracer.wrap()
 async def is_admin(user_xid: int) -> bool:
     """Return True if the given user xid has admin dashboard access."""
-    result = await DatabaseSession.execute(
-        select(User.is_admin).where(User.xid == user_xid),
-    )
+    result = await DatabaseSession.execute(select(User.is_admin).where(User.xid == user_xid))
     return bool(result.scalar())
 
 
@@ -340,9 +338,7 @@ async def move_user(  # pragma: no cover
         for user_block in (
             (
                 await DatabaseSession.execute(
-                    select(Block).where(
-                        Block.user_xid == from_user_xid,
-                    ),
+                    select(Block).where(Block.user_xid == from_user_xid),
                 )
             )
             .scalars()
@@ -361,9 +357,7 @@ async def move_user(  # pragma: no cover
         for user_blocked in (
             (
                 await DatabaseSession.execute(
-                    select(Block).where(
-                        Block.blocked_user_xid == from_user_xid,
-                    ),
+                    select(Block).where(Block.blocked_user_xid == from_user_xid),
                 )
             )
             .scalars()
@@ -543,9 +537,7 @@ async def filter_blocked_list(author_xid: int, other_xids: list[int]) -> list[in
     users_author_has_blocked = [
         cast("int", row.blocked_user_xid)
         for row in (
-            await DatabaseSession.execute(
-                select(Block).where(Block.user_xid == author_xid),
-            )
+            await DatabaseSession.execute(select(Block).where(Block.user_xid == author_xid))
         )
         .scalars()
         .all()
@@ -555,9 +547,7 @@ async def filter_blocked_list(author_xid: int, other_xids: list[int]) -> list[in
         cast("int", row.user_xid)
         for row in (
             await DatabaseSession.execute(
-                select(Block).where(
-                    any_of(Block.blocked_user_xid, [author_xid, *other_xids]),
-                ),
+                select(Block).where(any_of(Block.blocked_user_xid, [author_xid, *other_xids])),
             )
         )
         .scalars()

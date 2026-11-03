@@ -15,13 +15,7 @@ from discord.app_commands import Command as AppCommand
 from discord.ext.commands import AutoShardedBot
 from discord.ext.commands import Command as ExtCommand
 
-from .errors import (
-    AdminOnlyError,
-    GuildBannedError,
-    GuildOnlyError,
-    ModOnlyError,
-    UserBannedError,
-)
+from .errors import AdminOnlyError, GuildBannedError, GuildOnlyError, ModOnlyError, UserBannedError
 from .i18n import t, user_locale
 from .metrics import add_span_context, add_span_error
 from .settings import settings
