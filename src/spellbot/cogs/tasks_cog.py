@@ -95,7 +95,7 @@ class TasksCog(commands.Cog):  # pragma: no cover
             self._shard_status_task = asyncio.create_task(run_shard_status_loop(bot))
             self._patreon_sync_task = asyncio.create_task(run_patreon_sync_loop(bot))
 
-    def cog_unload(self) -> None:
+    async def cog_unload(self) -> None:
         if self._shard_status_task:
             self._shard_status_task.cancel()
         if self._patreon_sync_task:

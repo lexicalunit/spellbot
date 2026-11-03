@@ -23,7 +23,7 @@ from spellbot.web.api.viewer_auth import (
 from tests.web.test_admin_auth import make_httpx_client
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncGenerator
 
     from aiohttp import web
     from aiohttp.test_utils import TestClient
@@ -214,7 +214,7 @@ class TestHasViewerSession:
 
 
 @contextlib.asynccontextmanager
-async def noop_db_session() -> AsyncIterator[None]:
+async def noop_db_session() -> AsyncGenerator[None]:
     """Stand in for `db_session_manager` without opening a real database session."""
     yield
 

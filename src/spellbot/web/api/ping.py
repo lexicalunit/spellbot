@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from aiohttp import web
 from sqlalchemy import text
@@ -11,9 +11,6 @@ from sqlalchemy import text
 from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.redis_client import get_redis
 from spellbot.settings import settings
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +46,7 @@ async def health_endpoint(_: web.Request) -> web.Response:
     if settings.REDIS_URL:
         try:
             redis = await get_redis()
-            await cast("Awaitable[bool]", redis.ping())
+            await redis.ping()
             checks["redis"] = {"status": "healthy"}
         except Exception as ex:
             checks["redis"] = {"status": "unhealthy", "error": str(ex)}

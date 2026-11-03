@@ -68,8 +68,8 @@ class TestCogEvents:
         player1 = add_user()
         player2 = add_user()
         users = [mock_discord_object(player1), mock_discord_object(player2)]
-        with mock_operations(lfg_action, users=users):
-            lfg_action.safe_followup_channel.return_value = message
+        with mock_operations(lfg_action, users=users) as ops:
+            ops.safe_followup_channel.return_value = message
 
             await run_command(
                 cog.game,
@@ -107,7 +107,7 @@ class TestCogEvents:
     ) -> None:
         player = add_user()
         users = [mock_discord_object(player)]
-        with mock_operations(lfg_action, users=users):
+        with mock_operations(lfg_action, users=users) as ops:
             await run_command(
                 cog.game,
                 interaction,
@@ -115,7 +115,7 @@ class TestCogEvents:
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
-            lfg_action.safe_followup_channel.assert_called_once_with(
+            ops.safe_followup_channel.assert_called_once_with(
                 interaction,
                 "You can't create a Legacy game with 1 players.",
             )
@@ -130,7 +130,7 @@ class TestCogEvents:
         player = add_user()
         banned = add_user(banned=True)
         users = [mock_discord_object(player), mock_discord_object(banned)]
-        with mock_operations(lfg_action, users=users):
+        with mock_operations(lfg_action, users=users) as ops:
             await run_command(
                 cog.game,
                 interaction,
@@ -138,7 +138,7 @@ class TestCogEvents:
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
-            lfg_action.safe_followup_channel.assert_called_once_with(
+            ops.safe_followup_channel.assert_called_once_with(
                 interaction,
                 f"Some of the players you mentioned can not be added to a game: <@{banned.xid}>",
             )
@@ -171,10 +171,10 @@ class TestCogEvents:
         )
         voice_invite = MagicMock(spec=discord.Invite, url="http://example")
 
-        with mock_operations(lfg_action, users=[discord_user_1, discord_user_2]):
-            lfg_action.safe_followup_channel.return_value = message
-            lfg_action.safe_create_voice_channel.return_value = voice_channel
-            lfg_action.safe_create_channel_invite.return_value = voice_invite
+        with mock_operations(lfg_action, users=[discord_user_1, discord_user_2]) as ops:
+            ops.safe_followup_channel.return_value = message
+            ops.safe_create_voice_channel.return_value = voice_channel
+            ops.safe_create_channel_invite.return_value = voice_invite
 
             await run_command(
                 cog.game,

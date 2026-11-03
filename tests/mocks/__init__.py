@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 from contextlib import contextmanager
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast, overload
 from unittest.mock import AsyncMock, MagicMock, NonCallableMock
 
@@ -89,11 +90,19 @@ def mock_client(*args: Any, **kwargs: Any) -> discord.Client:
     return cast("discord.Client", MockClient(*args, **kwargs))
 
 
+class OperationMocks(SimpleNamespace):
+    """The mocks installed by `mock_operations()`, one attribute per mocked operation."""
+
+    if TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> AsyncMock | MagicMock: ...
+
+
 @contextmanager
 def mock_operations(
     module: ModuleType,
     users: list[discord.User] | None = None,
-) -> Generator[None]:
+) -> Generator[OperationMocks]:
     """
     Mock out all operations.py functions found in a given module.
 
@@ -104,32 +113,36 @@ def mock_operations(
 
         from spellbot.interactions import lfg_interaction
 
-        with mock_operations(lfg_interaction):
-            lfg_interaction.safe_get_partial_message.return_value = MagicMock()
+        with mock_operations(lfg_interaction) as ops:
+            ops.safe_get_partial_message.return_value = MagicMock()
             cog = LookingForGameCog(bot)
             await cog.lfg.func(cog, ctx)
-            lfg_interaction.safe_get_partial_message.assert_called_once()
+            ops.safe_get_partial_message.assert_called_once()
 
     """
     _users: list[discord.User] = users or []
 
+    mocks = OperationMocks()
     monkeypatch = pytest.MonkeyPatch()
     for name in operations.__dict__:
         if name in module.__dict__:
             if name.startswith("safe_get_"):  # special handling for non-async get
-                monkeypatch.setattr(module, name, MagicMock())
+                setattr(mocks, name, MagicMock())
             elif name.startswith("safe_"):  # all others we can assume are async
                 if name == "safe_fetch_user":
 
                     async def finder(_: Any, xid: int) -> discord.User | None:
                         return next((user for user in _users if user.id == xid), None)
 
-                    monkeypatch.setattr(module, name, AsyncMock(side_effect=finder))
+                    setattr(mocks, name, AsyncMock(side_effect=finder))
                 else:
-                    monkeypatch.setattr(module, name, AsyncMock())
+                    setattr(mocks, name, AsyncMock())
+
+    for name, mock in vars(mocks).items():
+        monkeypatch.setattr(module, name, mock)
 
     try:
-        yield
+        yield mocks
     finally:
         importlib.reload(module)
 
@@ -204,7 +217,8 @@ def set_str(mock: NonCallableMock, value: str) -> None:
     Python looks up magic methods on the class, so this sets `__str__` on the mock's type. That
     is safe because `unittest.mock` gives every mock instance its own class.
     """
-    type(mock).__str__ = lambda self: value
+    mock_type: type[Any] = type(mock)
+    mock_type.__str__ = lambda _: value
 
 
 def build_message(

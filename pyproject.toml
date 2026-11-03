@@ -67,7 +67,6 @@ dev = [
   "pexpect>=4",
   "ptyprocess>=0",
   "pylic>=3",
-  "pyright>=1",
   "pytest-aiohttp>=1",
   "pytest-asyncio>=0",
   "pytest-cov>=6",
@@ -81,6 +80,7 @@ dev = [
   "syrupy>=5.1.0",
   "tomli>=2",
   "tomlkit>=0",
+  "ty>=0",
   "types-python-dateutil>=2",
   "types-pyyaml>=6",
   "virtualenv>=20",
@@ -105,14 +105,27 @@ exclude = [
 exclude = ["tests"]
 packages = ["src/spellbot"]
 
-[tool.pyright]
-enableTypeIgnoreComments = false
-ignore = [".venv", "dist"]
-reportMatchNotExhaustive = true
-reportMissingParameterType = true
-reportMissingTypeArgument = true
-reportUnnecessaryTypeIgnoreComment = "error"
-typeCheckingMode = "basic"
+[tool.ty.analysis]
+respect-type-ignore-comments = false
+
+[tool.ty.rules]
+unused-ignore-comment = "error"
+
+[tool.ty.src]
+exclude = [".vulture_allowlist.py"]
+
+[tool.ty.terminal]
+error-on-warning = true
+
+# factory_boy's nested `Meta` classes don't subclass the base factory's `Meta`.
+[[tool.ty.overrides]]
+include = ["tests/factories/**"]
+rules = { invalid-attribute-override = "ignore" }
+
+# Tests type mocks as the discord.py classes they stand in for, which use `__slots__`.
+[[tool.ty.overrides]]
+include = ["tests/**"]
+rules = { missing-slot = "ignore" }
 
 [tool.ruff]
 exclude = [

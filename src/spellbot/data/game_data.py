@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import discord
 from dateutil import tz
@@ -76,7 +76,7 @@ class GameData:
             "game_start": game_start,
         }
         for i, player in enumerate(self.players):
-            placeholders[f"player_name_{i + 1}"] = cast("str", player.name)
+            placeholders[f"player_name_{i + 1}"] = player.name
         return placeholders
 
     def apply_placeholders(self, placeholders: dict[str, str], text: str) -> str:
@@ -87,12 +87,12 @@ class GameData:
     @property
     def started_at_timestamp(self) -> int:
         assert self.started_at is not None
-        return int(cast("datetime", self.started_at).replace(tzinfo=tz.UTC).timestamp())
+        return int(self.started_at.replace(tzinfo=tz.UTC).timestamp())
 
     @property
     def updated_at_timestamp(self) -> int:
         assert self.updated_at is not None
-        return int(cast("datetime", self.updated_at).replace(tzinfo=tz.UTC).timestamp())
+        return int(self.updated_at.replace(tzinfo=tz.UTC).timestamp())
 
     @property
     def format_name(self) -> str:
@@ -102,7 +102,7 @@ class GameData:
         locale = locale or self.locale
         if self.status == GameStatus.STARTED.value:
             return t("game.title.ready", locale=locale)
-        remaining = int(cast("int", self.seats)) - len(self.players)
+        remaining = self.seats - len(self.players)
         return _plural(
             remaining,
             "game.title.waiting_one",

@@ -24,21 +24,21 @@ DATE_FMT = "%Y-%m-%d %H:%M:%S"
 class DatadogJsonFormatter(JsonFormatter):
     def add_fields(  # pragma: no cover
         self,
-        log_record: dict[str, Any],
+        log_data: dict[str, Any],
         record: logging.LogRecord,
         message_dict: dict[str, Any],
     ) -> None:
-        super().add_fields(log_record, record, message_dict)
-        if "status" not in log_record:
-            log_record["status"] = record.levelname
+        super().add_fields(log_data, record, message_dict)
+        if "status" not in log_data:
+            log_data["status"] = record.levelname
 
         # ECS configuration puts the environment in an "environment" field, but
         # we want to use "env" for consistency with other logs and metrics.
         # Otherwise, we fallback to the value set for DD_ENV.
         env = settings.DD_ENV
-        if environment := log_record.get("environment"):
+        if environment := log_data.get("environment"):
             env = environment
-        log_record["env"] = env
+        log_data["env"] = env
 
 
 def configure_logging(level: int | str = "INFO") -> None:  # pragma: no cover

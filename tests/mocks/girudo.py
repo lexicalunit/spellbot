@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Self
 
-from httpx import AsyncClient
+from httpx import URL, AsyncClient, Response
 
 from spellbot.data import ChannelData, GameData, GuildData, UserData
 from spellbot.enums import GameBracket, GameFormat, GameService
@@ -21,22 +21,18 @@ class HTTPError(Exception):
     """Mock HTTP error for testing."""
 
 
-class MockHTTPResponse:
+class MockHTTPResponse(Response):
     """Mock HTTP response for testing Girudo integration without network calls."""
 
     def __init__(self, status_code: int = 200, json_data: dict[str, Any] | None = None) -> None:
-        self.status_code = status_code
-        self._json_data = json_data or {}
+        super().__init__(status_code, json=json_data or {})
 
-    def raise_for_status(self) -> None:
+    def raise_for_status(self) -> Self:
         """Raise exception for error status codes."""
         if self.status_code >= 400:
             msg = f"HTTP {self.status_code}"
             raise HTTPError(msg)
-
-    def json(self) -> dict[str, Any]:
-        """Return JSON data."""
-        return self._json_data
+        return self
 
 
 class MockHTTPClient(AsyncClient):
@@ -46,14 +42,14 @@ class MockHTTPClient(AsyncClient):
         self.get_calls: list[tuple[str, dict[str, Any]]] = []
         self.post_calls: list[tuple[str, dict[str, Any]]] = []
 
-    async def get(self, url: str, **kwargs: Any) -> MockHTTPResponse:
+    async def get(self, url: URL | str, **kwargs: Any) -> MockHTTPResponse:
         """Mock GET request."""
-        self.get_calls.append((url, kwargs))
+        self.get_calls.append((str(url), kwargs))
         return self.response
 
-    async def post(self, url: str, **kwargs: Any) -> MockHTTPResponse:
+    async def post(self, url: URL | str, **kwargs: Any) -> MockHTTPResponse:
         """Mock POST request."""
-        self.post_calls.append((url, kwargs))
+        self.post_calls.append((str(url), kwargs))
         return self.response
 
     async def __aenter__(self) -> Self:  # pragma: no cover
@@ -61,12 +57,11 @@ class MockHTTPClient(AsyncClient):
 
     async def __aexit__(  # pragma: no cover
         self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> bool:
-        await super().__aexit__(exc_type, exc_val, exc_tb)
-        return False
+        exc_type: type[BaseException] | None = None,
+        exc_value: BaseException | None = None,
+        traceback: TracebackType | None = None,
+    ) -> None:
+        await super().__aexit__(exc_type, exc_value, traceback)
 
 
 # Test Data Constants

@@ -26,7 +26,7 @@ The Discord bot for <a href="https://convoke.games/">Convoke</a>
 |    **Deployment** |                                   [![build][build-badge]][build] [![aws][aws-badge]][aws] [![status][status-badge]][status]                                   |
 |  **Dependencies** |                                        [![python][python-badge]][python] [![discord.py][discord-py-badge]][discord-py]                                        |
 |  **Distribution** |                                  [![pypi][pypi-badge]][pypi] [![docker][docker-badge]][docker-hub] [![mit][mit-badge]][mit]                                   |
-|       **Quality** |                             [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![pyright][pyright-badge]][pyright]                             |
+|       **Quality** |                                    [![codecov][codecov-badge]][codecov] [![ruff][ruff-badge]][ruff] [![ty][ty-badge]][ty]                                     |
 | **Observability** | [![uptime][uptime-badge]][uptime] [![metrics][metrics-badge]][metrics]<br/>[![datadog][datadog-badge]][datadog] [![ganalytics][ganalytics-badge]][ganalytics] |
 |       **Socials** |                                         [![discord][discord-badge]][discord-invite] [![follow][follow-badge]][follow]                                         |
 |       **Funding** |                                              [![patreon][patreon-button]][patreon] [![kofi][kofi-button]][kofi]                                               |
@@ -127,8 +127,6 @@ Any usage of SpellBot implies that you accept the following policies.
 [playgroup]: https://playgroup.gg/
 [pypi-badge]: https://img.shields.io/pypi/v/spellbot
 [pypi]: https://pypi.org/project/spellbot/
-[pyright-badge]: https://img.shields.io/badge/types-pyright-c3c38f.svg
-[pyright]: https://github.com/microsoft/pyright
 [python-badge]: https://img.shields.io/badge/python-3.14-blue.svg
 [python]: https://www.python.org/
 [queues]: https://queues.spellbot.io
@@ -136,5 +134,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [ruff]: https://github.com/astral-sh/ruff
 [status-badge]: https://img.shields.io/badge/bot-status-green
 [status]: https://status.spellbot.io
+[ty-badge]: https://img.shields.io/badge/types-ty-261230.svg
+[ty]: https://github.com/astral-sh/ty
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282

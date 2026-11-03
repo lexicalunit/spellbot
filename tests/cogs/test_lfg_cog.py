@@ -61,14 +61,14 @@ class TestCogLookingForGame:
         interaction: discord.Interaction,
         guild: Guild,
     ) -> None:
-        with mock_operations(lfg_action):
+        with mock_operations(lfg_action) as ops:
             message = MagicMock(spec=discord.Message)
             message.id = 123
-            lfg_action.safe_followup_channel.return_value = message
+            ops.safe_followup_channel.return_value = message
 
             await run_command(cog.lfg, interaction)
 
-            lfg_action.safe_followup_channel.assert_called_once_with(
+            ops.safe_followup_channel.assert_called_once_with(
                 interaction,
                 content=None,
                 embed=ANY,
@@ -76,7 +76,7 @@ class TestCogLookingForGame:
                 allowed_mentions=ANY,
             )
             # check that the view (join/leave buttons) exists for pending games:
-            assert isinstance(lfg_action.safe_followup_channel.call_args.kwargs["view"], GameView)
+            assert isinstance(ops.safe_followup_channel.call_args.kwargs["view"], GameView)
 
         # Find the user created by this interaction
         user = (
@@ -132,10 +132,10 @@ class TestCogLookingForGame:
         other_user = factories.user.create(xid=interaction.user.id + 1, game=game)
         other_player = mock_discord_object(other_user)
 
-        with mock_operations(lfg_action, users=[other_player]):
+        with mock_operations(lfg_action, users=[other_player]) as ops:
             message = MagicMock(spec=discord.Message)
             message.id = game.posts[0].message_xid
-            lfg_action.safe_get_partial_message.return_value = message
+            ops.safe_get_partial_message.return_value = message
 
             await run_command(cog.lfg, interaction)
 
@@ -144,7 +144,7 @@ class TestCogLookingForGame:
             started_at_timestamp = int(
                 game.started_at.replace(tzinfo=UTC).timestamp(),
             )
-            mock_call = lfg_action.safe_update_embed
+            mock_call = ops.safe_update_embed
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.STARTED_EMBED_COLOR,
                 "description": (
@@ -216,11 +216,11 @@ class TestCogLookingForGame:
         channel: Channel,
         bot: SpellBot,
     ) -> None:
-        with mock_operations(lfg_action, users=[mock_discord_object(player)]):
+        with mock_operations(lfg_action, users=[mock_discord_object(player)]) as ops:
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction)
 
-            lfg_action.safe_followup_channel.assert_called_once_with(
+            ops.safe_followup_channel.assert_called_once_with(
                 interaction,
                 "You're already in a game in this channel.",
             )
@@ -267,8 +267,8 @@ class TestCogLookingForGame:
         friend1 = factories.user.create()
         friend2 = factories.user.create()
         players = [mock_discord_object(x) for x in (user, friend1, friend2)]
-        with mock_operations(lfg_action, users=players):
-            lfg_action.safe_followup_channel.return_value = message
+        with mock_operations(lfg_action, users=players) as ops:
+            ops.safe_followup_channel.return_value = message
 
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
@@ -293,8 +293,8 @@ class TestCogLookingForGame:
         friend2 = factories.user.create()
         factories.block.create(user_xid=user.xid, blocked_user_xid=friend1.xid)
         players = [mock_discord_object(x) for x in (user, friend1, friend2)]
-        with mock_operations(lfg_action, users=players):
-            lfg_action.safe_followup_channel.return_value = message
+        with mock_operations(lfg_action, users=players) as ops:
+            ops.safe_followup_channel.return_value = message
 
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
@@ -320,8 +320,8 @@ class TestCogLookingForGame:
         friend2 = factories.user.create()
         factories.block.create(user_xid=friend1.xid, blocked_user_xid=user.xid)
         players = [mock_discord_object(x) for x in (user, friend1, friend2)]
-        with mock_operations(lfg_action, users=players):
-            lfg_action.safe_followup_channel.return_value = message
+        with mock_operations(lfg_action, users=players) as ops:
+            ops.safe_followup_channel.return_value = message
 
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
@@ -348,8 +348,8 @@ class TestCogLookingForGame:
         friend3 = factories.user.create()
         friend4 = factories.user.create()
         players = [mock_discord_object(x) for x in (user, friend1, friend2, friend3, friend4)]
-        with mock_operations(lfg_action, users=players):
-            lfg_action.safe_followup_channel.return_value = message
+        with mock_operations(lfg_action, users=players) as ops:
+            ops.safe_followup_channel.return_value = message
 
             cog = LookingForGameCog(bot)
             await run_command(
@@ -404,14 +404,14 @@ class TestCogLookingForGame:
         factories.play.create(user_xid=friend.xid, game_id=game.id)
         players = [mock_discord_object(x) for x in (user, friend)]
 
-        with mock_operations(lfg_action, users=players):
+        with mock_operations(lfg_action, users=players) as ops:
             message = MagicMock(spec=discord.Message)
             message.id = 456
-            lfg_action.safe_followup_channel.return_value = message
+            ops.safe_followup_channel.return_value = message
 
             await run_command(cog.rematch, interaction)
 
-            lfg_action.safe_followup_channel.assert_called_once_with(
+            ops.safe_followup_channel.assert_called_once_with(
                 interaction,
                 content=None,
                 embed=ANY,
@@ -440,10 +440,10 @@ class TestCogLookingForGame:
         factories.queue.create(user_xid=other_user.xid, game_id=game.id, og_guild_xid=guild.xid)
         players = [mock_discord_object(x) for x in (user, other_user)]
 
-        with mock_operations(lfg_action, users=players):
+        with mock_operations(lfg_action, users=players) as ops:
             message = MagicMock(spec=discord.Message)
             message.id = 456
-            lfg_action.safe_followup_channel.return_value = message
+            ops.safe_followup_channel.return_value = message
 
             await run_command(cog.start, interaction)
 
@@ -467,19 +467,19 @@ class TestCogLookingForGameJoinButton:
         settings: Settings,
     ) -> None:
         with (
-            mock_operations(lfg_action, users=[mock_discord_object(user)]),
+            mock_operations(lfg_action, users=[mock_discord_object(user)]) as ops,
             patch(
                 "spellbot.views.lfg_view.safe_original_response",
                 return_value=message,
             ),
         ):
-            lfg_action.safe_update_embed_origin.return_value = message
+            ops.safe_update_embed_origin.return_value = message
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            mock_call = lfg_action.safe_update_embed_origin
+            mock_call = ops.safe_update_embed_origin
             mock_call.assert_called_once()
             assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
@@ -510,19 +510,19 @@ class TestCogLookingForGameJoinButton:
         bot: SpellBot,
     ) -> None:
         with (
-            mock_operations(lfg_action, users=[mock_discord_object(user)]),
+            mock_operations(lfg_action, users=[mock_discord_object(user)]) as ops,
             patch(
                 "spellbot.views.lfg_view.safe_original_response",
                 return_value=None,
             ),
         ):
-            lfg_action.safe_update_embed_origin.return_value = message
+            ops.safe_update_embed_origin.return_value = message
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            lfg_action.safe_update_embed_origin.assert_not_called()
+            ops.safe_update_embed_origin.assert_not_called()
 
     async def test_join_when_blocked(
         self,
@@ -542,13 +542,13 @@ class TestCogLookingForGameJoinButton:
                 mock_discord_object(user),
                 mock_discord_object(other_user),
             ],
-        ):
+        ) as ops:
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            lfg_action.safe_send_user.assert_called_once_with(
+            ops.safe_send_user.assert_called_once_with(
                 interaction.user,
                 "You can not join this game.",
             )
@@ -580,13 +580,13 @@ class TestCogLookingForGameJoinButton:
                 mock_discord_object(user),
                 mock_discord_object(other_user),
             ],
-        ):
+        ) as ops:
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            lfg_action.safe_send_user.assert_not_called()
+            ops.safe_send_user.assert_not_called()
 
         assert (
             (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
@@ -619,13 +619,13 @@ class TestCogLookingForGameJoinButton:
         with mock_operations(
             lfg_action,
             users=[mock_discord_object(user)],
-        ):
+        ) as ops:
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            lfg_action.safe_send_user.assert_called_once_with(
+            ops.safe_send_user.assert_called_once_with(
                 interaction.user,
                 "Sorry, that game has already started.",
             )
@@ -643,7 +643,7 @@ class TestCogLookingForGameJoinButton:
         bot: SpellBot,
     ) -> None:
         with (
-            mock_operations(lfg_action, users=[mock_discord_object(user)]),
+            mock_operations(lfg_action, users=[mock_discord_object(user)]) as ops,
             patch(
                 "spellbot.views.lfg_view.safe_defer_interaction",
                 return_value=False,
@@ -654,7 +654,7 @@ class TestCogLookingForGameJoinButton:
 
             await view.join(interaction)
 
-            lfg_action.safe_update_embed_origin.assert_not_called()
+            ops.safe_update_embed_origin.assert_not_called()
 
 
 WAR_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -683,10 +683,10 @@ class TestCogWar:
             "spellbot.integrations.convoke.resolve_live_guild_war",
             AsyncMock(return_value=live_war()),
         )
-        with mock_operations(lfg_action):
+        with mock_operations(lfg_action) as ops:
             message = MagicMock(spec=discord.Message)
             message.id = 123
-            lfg_action.safe_followup_channel.return_value = message
+            ops.safe_followup_channel.return_value = message
 
             await run_command(cog.war, interaction, war=WAR_ID)
 
@@ -723,10 +723,10 @@ class TestCogWar:
             "spellbot.integrations.convoke.resolve_live_guild_war",
             AsyncMock(return_value=live_war()),
         )
-        with mock_operations(lfg_action):
+        with mock_operations(lfg_action) as ops:
             message = MagicMock(spec=discord.Message)
             message.id = 123
-            lfg_action.safe_followup_channel.return_value = message
+            ops.safe_followup_channel.return_value = message
 
             await run_command(cog.war, interaction, war=WAR_ID)
 
@@ -744,10 +744,10 @@ class TestCogWar:
             "spellbot.integrations.convoke.resolve_live_guild_war",
             AsyncMock(return_value=None),
         )
-        with mock_operations(lfg_action):
+        with mock_operations(lfg_action) as ops:
             await run_command(cog.war, interaction, war="not-a-real-war")
 
-            reply = lfg_action.safe_followup_channel.call_args.args[1]
+            reply = ops.safe_followup_channel.call_args.args[1]
             assert "not available" in reply
 
         assert (await DatabaseSession.execute(select(func.count(Game.id)))).scalar_one() == 0

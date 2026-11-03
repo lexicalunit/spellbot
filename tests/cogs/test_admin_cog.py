@@ -177,11 +177,11 @@ class TestCogAdminExpireGames:
         guild: Guild,
         mocker: MockerFixture,
     ) -> None:
-        with mock_operations(admin_action):
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
-            admin_action.safe_send_channel.assert_called_once()
-            call_args = admin_action.safe_send_channel.call_args
+            ops.safe_send_channel.assert_called_once()
+            call_args = ops.safe_send_channel.call_args
             assert call_args[0][1] == "No games to expire."
 
     async def test_expire_game_with_post_deleted(
@@ -201,15 +201,15 @@ class TestCogAdminExpireGames:
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
 
-        with mock_operations(admin_action):
-            admin_action.safe_fetch_text_channel.return_value = mock_channel
-            admin_action.safe_get_partial_message.return_value = mock_message
-            admin_action.safe_delete_message.return_value = True
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = mock_channel
+            ops.safe_get_partial_message.return_value = mock_message
+            ops.safe_delete_message.return_value = True
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            admin_action.safe_delete_message.assert_called_once_with(mock_message, own_message=True)
-            call_args = admin_action.safe_send_channel.call_args
+            ops.safe_delete_message.assert_called_once_with(mock_message, own_message=True)
+            call_args = ops.safe_send_channel.call_args
             assert f"Expiring game #SB{game.id}" in call_args[0][1]
             assert "Deleting message 1234" in call_args[0][1]
             assert "Done" in call_args[0][1]
@@ -231,20 +231,20 @@ class TestCogAdminExpireGames:
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
 
-        with mock_operations(admin_action):
-            admin_action.safe_fetch_text_channel.return_value = mock_channel
-            admin_action.safe_get_partial_message.return_value = mock_message
-            admin_action.safe_update_embed.return_value = True
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = mock_channel
+            ops.safe_get_partial_message.return_value = mock_message
+            ops.safe_update_embed.return_value = True
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            admin_action.safe_update_embed.assert_called_once_with(
+            ops.safe_update_embed.assert_called_once_with(
                 mock_message,
                 content="Sorry, this game was expired due to inactivity.",
                 embed=None,
                 view=None,
             )
-            call_args = admin_action.safe_send_channel.call_args
+            call_args = ops.safe_send_channel.call_args
             assert "Updating message 5678" in call_args[0][1]
 
     async def test_expire_game_channel_not_found(
@@ -261,12 +261,12 @@ class TestCogAdminExpireGames:
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=9999)
         factories.user.create(game=game)
 
-        with mock_operations(admin_action):
-            admin_action.safe_fetch_text_channel.return_value = None
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = None
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            call_args = admin_action.safe_send_channel.call_args
+            call_args = ops.safe_send_channel.call_args
             assert f"Could not find channel {channel.xid}" in call_args[0][1]
 
     async def test_expire_game_message_not_found(
@@ -285,13 +285,13 @@ class TestCogAdminExpireGames:
 
         mock_channel = MagicMock(spec=discord.TextChannel)
 
-        with mock_operations(admin_action):
-            admin_action.safe_fetch_text_channel.return_value = mock_channel
-            admin_action.safe_get_partial_message.return_value = None
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = mock_channel
+            ops.safe_get_partial_message.return_value = None
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            call_args = admin_action.safe_send_channel.call_args
+            call_args = ops.safe_send_channel.call_args
             assert "Could not find message 7777" in call_args[0][1]
 
     async def test_expire_game_delete_no_permission(
@@ -311,14 +311,14 @@ class TestCogAdminExpireGames:
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
 
-        with mock_operations(admin_action):
-            admin_action.safe_fetch_text_channel.return_value = mock_channel
-            admin_action.safe_get_partial_message.return_value = mock_message
-            admin_action.safe_delete_message.return_value = False
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = mock_channel
+            ops.safe_get_partial_message.return_value = mock_message
+            ops.safe_delete_message.return_value = False
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            call_args = admin_action.safe_send_channel.call_args
+            call_args = ops.safe_send_channel.call_args
             assert "Bot does not have permission" in call_args[0][1]
 
     async def test_expire_game_update_no_permission(
@@ -338,14 +338,14 @@ class TestCogAdminExpireGames:
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
 
-        with mock_operations(admin_action):
-            admin_action.safe_fetch_text_channel.return_value = mock_channel
-            admin_action.safe_get_partial_message.return_value = mock_message
-            admin_action.safe_update_embed.return_value = False
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = mock_channel
+            ops.safe_get_partial_message.return_value = mock_message
+            ops.safe_update_embed.return_value = False
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            call_args = admin_action.safe_send_channel.call_args
+            call_args = ops.safe_send_channel.call_args
             assert "Bot does not have permission" in call_args[0][1]
 
     async def test_expire_game_no_posts(
@@ -362,11 +362,11 @@ class TestCogAdminExpireGames:
         # No posts created for this game
         factories.user.create(game=game)
 
-        with mock_operations(admin_action):
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
-            call_args = admin_action.safe_send_channel.call_args
+            call_args = ops.safe_send_channel.call_args
             assert f"Expiring game #SB{game.id}" in call_args[0][1]
             assert "Dequeued" in call_args[0][1]
 
@@ -388,16 +388,16 @@ class TestCogAdminExpireGames:
         mock_channel = MagicMock(spec=discord.TextChannel)
         mock_message = MagicMock(spec=discord.PartialMessage)
 
-        with mock_operations(admin_action):
-            admin_action.safe_fetch_text_channel.return_value = mock_channel
-            admin_action.safe_get_partial_message.return_value = mock_message
-            admin_action.safe_delete_message.return_value = True
-            admin_action.safe_send_channel.return_value = True
+        with mock_operations(admin_action) as ops:
+            ops.safe_fetch_text_channel.return_value = mock_channel
+            ops.safe_get_partial_message.return_value = mock_message
+            ops.safe_delete_message.return_value = True
+            ops.safe_send_channel.return_value = True
             await run_command(cog.expire_games, interaction)
 
             # Should delete because dequeued=0
-            admin_action.safe_delete_message.assert_called_once()
-            call_args = admin_action.safe_send_channel.call_args
+            ops.safe_delete_message.assert_called_once()
+            call_args = ops.safe_send_channel.call_args
             assert "Deleting message 3333" in call_args[0][1]
 
 

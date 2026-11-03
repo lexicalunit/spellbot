@@ -356,7 +356,7 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
 
 
 async def handle_view_errors(
-    interaction: discord.Interaction,
+    interaction: discord.Interaction[Any],
     error: Exception,
     _item: Item[Any],
 ) -> None:  # pragma: no cover
@@ -364,7 +364,7 @@ async def handle_view_errors(
 
 
 async def handle_command_errors(
-    interaction: discord.Interaction,
+    interaction: discord.Interaction[Any],
     error: AppCommandError,
 ) -> None:  # pragma: no cover
     return await handle_interaction_errors(interaction, error)
@@ -397,7 +397,7 @@ async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:  
         logger.info("syncing commands...")
         await bot.tree.sync(guild=guild)
 
-    bot.tree.on_error = handle_command_errors
+    bot.tree.error(handle_command_errors)
 
 
 def generate_signed_url(guild_xid: int, expires_in_minutes: int = 15) -> str:

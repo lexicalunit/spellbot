@@ -149,10 +149,9 @@ async def run_command[CogT: commands.Cog, **CogCallbackP](
 ) -> None:
     """Run a discord.py app command with the given interaction and kwargs."""
     kwargs["interaction"] = interaction
-    callback = command.callback
+    callback = cast("Callable[..., Awaitable[None]]", command.callback)
     if command.binding:  # pragma: no cover
         callback = partial(callback, command.binding)
-    callback = cast("Callable[..., Awaitable[None]]", callback)
     return await callback(**kwargs)
 
 
