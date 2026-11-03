@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v24.0.0](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.0) - 2026-11-03
+
 ### Added
 
 - Added TO mode, competitive mode, Playgroup Live, and Castlog graphs to the admin dashboard.
