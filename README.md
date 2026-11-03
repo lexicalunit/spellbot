@@ -134,7 +134,7 @@ Any usage of SpellBot implies that you accept the following policies.
 [ruff]: https://github.com/astral-sh/ruff
 [status-badge]: https://img.shields.io/badge/bot-status-green
 [status]: https://status.spellbot.io
-[ty-badge]: https://img.shields.io/badge/types-ty-261230.svg
+[ty-badge]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json
 [ty]: https://github.com/astral-sh/ty
 [uptime-badge]: https://img.shields.io/uptimerobot/ratio/m785764282-c51c742e56a87d802968efcc
 [uptime]: https://uptimerobot.com/dashboard#785764282
