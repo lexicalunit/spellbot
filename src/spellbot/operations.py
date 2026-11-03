@@ -230,9 +230,18 @@ def set_warning_tags(warning_type: str, ex: BaseException) -> None:
 
 
 @tracer.wrap()
-async def safe_defer_interaction(interaction: discord.Interaction) -> bool:
+async def safe_defer_interaction(
+    interaction: discord.Interaction,
+    *,
+    ephemeral: bool = False,
+) -> bool:
+    defer = (
+        (lambda: interaction.response.defer(ephemeral=True))
+        if ephemeral
+        else interaction.response.defer
+    )
     success, _ = await safe_call_with_expected(
-        interaction.response.defer,
+        defer,
         [
             ExpectedError(
                 is_unknown_interaction,
@@ -461,7 +470,7 @@ async def safe_create_category_channel(
         span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
     guild: discord.Guild | None
-    if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
+    if not (guild := await safe_fetch_guild(client, guild_xid)):
         return None
 
     if not bot_can_manage_channels(guild):
@@ -487,7 +496,7 @@ async def safe_create_voice_channel(
         span.set_tags({"guild_xid": str(guild_xid), "name": name})
 
     guild: discord.Guild | None
-    if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
+    if not (guild := await safe_fetch_guild(client, guild_xid)):
         return None
 
     return await safe_call(
@@ -511,7 +520,7 @@ async def safe_ensure_voice_category(  # noqa: C901
         span.set_tags({"guild_xid": str(guild_xid), "prefix": prefix})
 
     guild: discord.Guild | None
-    if not (guild := await retry(lambda: safe_fetch_guild(client, guild_xid))):
+    if not (guild := await safe_fetch_guild(client, guild_xid)):
         return None
 
     def category_num(cat: discord.CategoryChannel) -> int:
@@ -545,13 +554,7 @@ async def safe_ensure_voice_category(  # noqa: C901
     if available:
         return available
 
-    return await retry(
-        lambda: safe_create_category_channel(
-            client,
-            guild_xid,
-            category_name(len(full)),
-        ),
-    )
+    return await safe_create_category_channel(client, guild_xid, category_name(len(full)))
 
 
 @tracer.wrap()

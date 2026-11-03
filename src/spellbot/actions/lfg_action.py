@@ -13,7 +13,7 @@ import discord
 from ddtrace.trace import tracer
 
 from spellbot import services
-from spellbot.data import GameLinkDetails
+from spellbot.data import ChannelModes, GameCriteria, GameLinkDetails
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.i18n import guild_locale, t, user_locale
 from spellbot.integrations import convoke, playgroup_live
@@ -37,7 +37,7 @@ from spellbot.operations import (
 from spellbot.settings import settings
 from spellbot.views import BaseView, GameView
 
-from .base_action import BaseAction
+from .base_action import BaseAction, info_embed
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
@@ -66,45 +66,38 @@ class LookingForGameAction(BaseAction):
         )
         return True
 
-    @tracer.wrap()
-    async def get_friends(self, friends: str | None = None) -> str:
-        return friends or ""
-
-    @tracer.wrap()
-    async def get_seats(
+    def resolve_criteria(
         self,
-        format: int | None = None,
-        service: int | None = None,
+        *,
         seats: int | None = None,
-    ) -> int:
-        requested_seats = 0
-        if format and not seats:
-            requested_seats = GameFormat(format).players
-        else:
-            requested_seats = seats or self.channel_data.default_seats
-        return min(requested_seats, GameService(service).max_seats)
-
-    @tracer.wrap()
-    async def get_service(self, service: int | None = None) -> int:
-        if service is not None:
-            return service
-        return self.channel_data.default_service.value
-
-    @tracer.wrap()
-    async def get_format(self, format: int | None = None) -> int:
-        if format is not None:
-            return format
-        return self.channel_data.default_format.value
-
-    @tracer.wrap()
-    async def get_bracket(self, format: int | None, bracket: int | None = None) -> int:
+        rules: str | None = None,
+        format: int | None = None,
+        bracket: int | None = None,
+        service: int | None = None,
+        war_id: str | None = None,
+        war_title: str | None = None,
+    ) -> GameCriteria:
+        """Fill in whatever the user didn't ask for from the channel's defaults."""
+        if format is None:
+            format = self.channel_data.default_format.value
         if format == GameFormat.CEDH.value:
-            return GameBracket.BRACKET_5.value
-        if format == GameFormat.PRE_CONS.value:
-            return GameBracket.BRACKET_2.value
-        if bracket is not None:
-            return bracket
-        return self.channel_data.default_bracket.value
+            bracket = GameBracket.BRACKET_5.value
+        elif format == GameFormat.PRE_CONS.value:
+            bracket = GameBracket.BRACKET_2.value
+        elif bracket is None:
+            bracket = self.channel_data.default_bracket.value
+        if service is None:
+            service = self.channel_data.default_service.value
+        requested_seats = seats or GameFormat(format).players
+        return GameCriteria(
+            seats=min(requested_seats, GameService(service).max_seats),
+            format=format,
+            bracket=bracket,
+            service=service,
+            rules=rules[:MAX_RULES_LENGTH] if rules else None,
+            war_id=war_id,
+            war_title=war_title,
+        )
 
     @tracer.wrap()
     async def filter_friend_xids(self, friend_xids: list[int]) -> list[int]:
@@ -124,48 +117,28 @@ class LookingForGameAction(BaseAction):
     async def upsert_game(
         self,
         *,
+        author_xid: int,
         friend_xids: list[int],
-        seats: int,
-        rules: str | None,
-        format: int,
-        bracket: int,
-        service: int,
-        message_xid: int | None,
-        war_id: str | None = None,
-        war_title: str | None = None,
-    ) -> tuple[bool | None, GameData | None]:
-        """Return True if the game is new, False if existing, or None of user can not join."""
+        criteria: GameCriteria,
+        create_new: bool = False,
+    ) -> tuple[bool, GameData]:
+        """Queue the players into a game matching `criteria`. Returns whether the game is new."""
         assert self.guild
         assert self.channel
+        return await services.games.upsert(
+            guild_xid=self.guild.id,
+            channel_xid=self.channel.id,
+            author_xid=author_xid,
+            friends=friend_xids,
+            criteria=criteria,
+            modes=ChannelModes.from_channel(self.channel_data),
+            locale=guild_locale(self.guild),
+            create_new=create_new,
+        )
 
-        # True if user clicked on a Join Game button.
-        # False if user issued a /lfg command in chat.
-        origin = bool(message_xid is not None)
-
-        assert isinstance(service, int), "Expected service to be an integer."
-
-        if not origin:
-            assert self.interaction.guild_id is not None
-            new, game = await services.games.upsert(
-                guild_xid=self.interaction.guild_id,
-                channel_xid=self.channel.id,
-                author_xid=self.interaction.user.id,
-                friends=friend_xids,
-                seats=seats,
-                rules=rules,
-                format=format,
-                bracket=bracket,
-                service=service,
-                blind=bool(self.channel_data.blind_games),
-                to_mode=bool(self.channel_data.to_mode),
-                competitive_mode=bool(self.channel_data.competitive_mode),
-                locale=guild_locale(self.guild),
-                war_id=war_id,
-                war_title=war_title,
-            )
-            return new, game
-
-        assert message_xid
+    @tracer.wrap()
+    async def join_game(self, message_xid: int) -> GameData | None:
+        """Add the user to the game posted as `message_xid`, or tell them why they can't join."""
         found = await services.games.get_by_message_xid(message_xid)
         locale = found.locale if found else "en"
         # Tournament organizer mode disables block enforcement for this channel.
@@ -174,23 +147,25 @@ class LookingForGameAction(BaseAction):
             enforce_blocks and await services.games.blocked(found, self.interaction.user.id)
         ):
             await safe_send_user(self.interaction.user, t("lfg.cannot_join", locale=locale))
-            return None, None
+            return None
 
         if found.status == GameStatus.STARTED.value:
             logger.warning("User tried to join a game that has already started.")
-            # inform the player that their interaction failed
-            await safe_send_user(
-                self.interaction.user,
-                t("lfg.game_started", locale=locale),
-            )
-            return None, None
+            await safe_send_user(self.interaction.user, t("lfg.game_started", locale=locale))
+            return None
 
-        found = await services.games.add_player(found, self.interaction.user.id)
-        if found is None:
+        joined = await services.games.add_player(found, self.interaction.user.id)
+        if joined is None:
             # The game filled up without yet being marked as started, this can happen
             await safe_send_user(self.interaction.user, t("lfg.game_full", locale=locale))
-            return None, None
-        return False, found
+        return joined
+
+    async def reply(self, message: str, *, origin: bool) -> None:
+        """Reply privately to a button click, or in the channel to a command."""
+        if origin:
+            await safe_send_user(self.interaction.user, message)
+        else:
+            await safe_followup_channel(self.interaction, message)
 
     @tracer.wrap()
     async def execute_rematch(self) -> None:
@@ -272,24 +247,45 @@ class LookingForGameAction(BaseAction):
             game_data.seats if game_data.service == GameService.PLAYGROUP_LIVE.value else None
         )
         game_data = await services.games.shrink_game(game_data)
-        player_xids = [player.xid for player in game_data.players]
-        game_data, suggested_vc = await self.make_game_ready(
-            game_data,
-            player_xids=player_xids,
-            original_seats=original_seats,
-        )
-        assert self.interaction.guild_id
-        game_data = await self.handle_voice_creation(game_data, self.interaction.guild_id)
-        game_data = await self.handle_embed_creation(
+        await self.start_game(
             game_data,
             new=False,
             origin=False,
-            fully_seated=True,
-            suggested_vc=suggested_vc,
-            rematch=False,
             force_start=True,
+            original_seats=original_seats,
         )
-        await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=False)
+
+    @tracer.wrap()
+    async def start_game(
+        self,
+        game_data: GameData,
+        *,
+        new: bool,
+        origin: bool,
+        rematch: bool = False,
+        force_start: bool = False,
+        original_seats: int | None = None,
+    ) -> None:
+        """Start a fully seated game: link it, post it, DM its players, and refresh their queues."""
+        assert self.guild
+        # Starting pulls the players out of every other queue, so those posts need a refresh.
+        other_game_ids = await services.games.other_game_ids(game_data)
+        game_data, suggested_vc = await self.make_game_ready(
+            game_data,
+            [player.xid for player in game_data.players],
+            original_seats=original_seats,
+        )
+        game_data = await self.handle_voice_creation(game_data, self.guild.id)
+        game_data = await self.handle_embed_creation(
+            game_data,
+            new=new,
+            origin=origin,
+            suggested_vc=suggested_vc,
+            rematch=rematch,
+            force_start=force_start,
+        )
+        await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=rematch)
+        await self.update_other_game_posts(other_game_ids)
 
     async def reply_guild_war_seats(self, locale: str) -> None:
         """Tell the user a Guild War game can not be seated the way they asked."""
@@ -307,7 +303,6 @@ class LookingForGameAction(BaseAction):
         self,
         guild_war: str | None,
         *,
-        origin: bool,
         service: int | None,
         seats: int | None,
         locale: str,
@@ -319,10 +314,10 @@ class LookingForGameAction(BaseAction):
         was already sent to the user. Guild Wars only exist on Convoke, so a war game
         always comes back as a Convoke game whatever service was asked for, seated
         within the bounds Convoke allows. Since the seat count returned here is always
-        in range, nothing downstream needs to re-check it — `get_seats` can only shrink
+        in range, nothing downstream needs to re-check it — `resolve_criteria` can only shrink
         it further, and a war game never falls back to the channel's default seats.
         """
-        if not guild_war or origin:
+        if not guild_war:
             return None, None, service, seats
 
         live_war = await convoke.resolve_live_guild_war(guild_war.strip())
@@ -356,7 +351,7 @@ class LookingForGameAction(BaseAction):
         return await services.games.attach_game_link(game_data, details)
 
     @tracer.wrap()
-    async def execute(  # noqa: C901
+    async def execute(
         self,
         *,
         friends: str | None = None,
@@ -368,6 +363,7 @@ class LookingForGameAction(BaseAction):
         message_xid: int | None = None,
         guild_war: str | None = None,
     ) -> None:
+        """Handle `/lfg` (no `message_xid`) or a click on a game's Join button."""
         locale = guild_locale(self.guild)
         if not self.guild or not self.channel:
             # Someone tried to lfg in a Discord thread rather than in the channel itself.
@@ -375,123 +371,99 @@ class LookingForGameAction(BaseAction):
                 self.interaction.user,
                 t("lfg.unsupported_context", locale=locale),
             )
-            return None
+            return
 
-        # True if user clicked on a Join Game button.
-        # False if user issued a /lfg command in chat.
-        origin = bool(message_xid is not None)
+        game_data: GameData | None
+        if message_xid is not None:
+            if await self.reject_if_busy(locale, origin=True):
+                return
+            new, game_data = False, await self.join_game(message_xid)
+        else:
+            new, game_data = await self.execute_command(
+                friends=friends,
+                seats=seats,
+                rules=rules,
+                format=format,
+                bracket=bracket,
+                service=service,
+                guild_war=guild_war,
+                locale=locale,
+            )
+        if game_data is None:
+            return
 
+        origin = message_xid is not None
+        if game_data.fully_seated:
+            if await self.block_if_no_player_linked(game_data):
+                return
+            await self.start_game(game_data, new=new, origin=origin)
+            return
+        game_data = await self.ensure_guild_war_convoke_link(game_data)
+        await self.handle_embed_creation(game_data, new=new, origin=origin)
+
+    async def execute_command(
+        self,
+        *,
+        friends: str | None,
+        seats: int | None,
+        rules: str | None,
+        format: int | None,
+        bracket: int | None,
+        service: int | None,
+        guild_war: str | None,
+        locale: str,
+    ) -> tuple[bool, GameData | None]:
+        """Queue the user and their friends for a game matching their `/lfg` options."""
         resolved = await self.resolve_guild_war(
-            guild_war,
-            origin=origin,
-            service=service,
-            seats=seats,
-            locale=locale,
+            guild_war, service=service, seats=seats, locale=locale
         )
         if resolved is None:
-            return None
+            return False, None
         war_id, war_title, service, seats = resolved
-
-        actual_friends: str = await self.get_friends(friends)
-        actual_format: int = await self.get_format(format)
-        actual_bracket: int = await self.get_bracket(actual_format, bracket)
-        actual_service: int = await self.get_service(service)
-        actual_seats: int = await self.get_seats(actual_format, actual_service, seats)
-        rules = None if not rules else rules[:MAX_RULES_LENGTH]
-
-        assert self.user_data
-        if await services.users.is_waiting(self.user_data, self.channel.id):
-            msg = t("lfg.already_in_channel", locale=locale)
-            if origin:
-                return await safe_send_user(self.interaction.user, msg)
-            await safe_followup_channel(self.interaction, msg)
-            return None
-
-        if await services.users.pending_games(self.user_data) + 1 > settings.MAX_PENDING_GAMES:
-            msg = t("lfg.too_many_pending", locale=locale)
-            if origin:
-                return await safe_send_user(self.interaction.user, msg)
-            await safe_followup_channel(self.interaction, msg)
-            return None
-
-        friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", actual_friends)))
-
-        if len(friend_xids) + 1 > actual_seats:
-            await safe_send_user(self.interaction.user, t("lfg.too_many_friends", locale=locale))
-            return None
-
-        friend_xids = await self.filter_friend_xids(friend_xids)
-
-        new, game_data = await self.upsert_game(
-            friend_xids=friend_xids,
-            seats=actual_seats,
+        criteria = self.resolve_criteria(
+            seats=seats,
             rules=rules,
-            format=actual_format,
-            bracket=actual_bracket,
-            service=actual_service,
-            message_xid=message_xid,
+            format=format,
+            bracket=bracket,
+            service=service,
             war_id=war_id,
             war_title=war_title,
         )
-        if new is None:
-            return None
-        assert game_data is not None
+        if await self.reject_if_busy(locale, origin=False):
+            return False, None
 
-        if game_data.war_id and not game_data.game_link and not game_data.fully_seated:
-            game_data = await self.ensure_guild_war_convoke_link(game_data)
+        friend_xids = list(map(int, re.findall(r"<@!?(\d+)>", friends or "")))
+        if len(friend_xids) + 1 > criteria.seats:
+            await safe_send_user(self.interaction.user, t("lfg.too_many_friends", locale=locale))
+            return False, None
 
-        other_game_ids: list[int] = []
-        suggested_vc = None
-        if game_data.fully_seated:
-            if await self.block_if_no_player_linked(game_data):
-                return None
-            other_game_ids = await services.games.other_game_ids(game_data)
-            player_xids = [player.xid for player in game_data.players]
-            game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
-            game_data = await self.handle_voice_creation(game_data, self.guild.id)
-
-        game_data = await self.handle_embed_creation(
-            game_data,
-            new=new,
-            origin=origin,
-            fully_seated=game_data.fully_seated,
-            suggested_vc=suggested_vc,
+        return await self.upsert_game(
+            author_xid=self.interaction.user.id,
+            friend_xids=await self.filter_friend_xids(friend_xids),
+            criteria=criteria,
         )
 
-        if game_data.fully_seated:
-            await self.handle_direct_messages(game_data, suggested_vc=suggested_vc)
-            await self.update_other_game_posts(other_game_ids)
-            return None
-        return None
+    async def reject_if_busy(self, locale: str, *, origin: bool) -> bool:
+        """Tell the user and return True if they can't queue for another game right now."""
+        assert self.channel
+        assert self.user_data
+        if await services.users.is_waiting(self.user_data, self.channel.id):
+            await self.reply(t("lfg.already_in_channel", locale=locale), origin=origin)
+            return True
+        if await services.users.pending_games(self.user_data) + 1 > settings.MAX_PENDING_GAMES:
+            await self.reply(t("lfg.too_many_pending", locale=locale), origin=origin)
+            return True
+        return False
 
     @tracer.wrap()
     async def update_other_game_posts(self, other_game_ids: list[int]) -> None:
         """Update any other pending games to show that some players are no longer available."""
-        assert self.channel is not None
-        assert self.guild is not None
-        if not other_game_ids:
-            return
-
-        message_xids = await services.games.message_xids(other_game_ids)
-        for message_xid in message_xids:
-            data = await services.games.get_by_message_xid(message_xid)
-            if not data:
-                continue
-
-            channel_xid = data.channel_xid
-            guild_xid = data.guild_xid
-            if (channel := await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)) and (
-                message := safe_get_partial_message(channel, guild_xid, message_xid)
-            ):
-                embed = data.to_embed(
-                    guild=self.guild,
-                    emojis=self.bot.emojis_cache,
-                    supporters=self.bot.supporters,
-                )
-                await safe_update_embed(
-                    message,
-                    embed=embed,
-                    view=GameView(bot=self.bot, locale=data.locale),
+        for game_id in other_game_ids:
+            if game_data := await services.games.get(game_id):
+                await self.refresh_game_posts(
+                    game_data,
+                    delete_if_empty=False,
+                    view=GameView(bot=self.bot, locale=game_data.locale),
                 )
 
     @tracer.wrap()
@@ -535,35 +507,18 @@ class LookingForGameAction(BaseAction):
             )
             return
 
-        assert self.interaction.guild_id
-        preferred_locale = self.guild.preferred_locale if self.guild else None
-        _, game_data = await services.games.upsert(
-            guild_xid=self.interaction.guild_id,
-            channel_xid=self.channel.id,
+        _, game_data = await self.upsert_game(
             author_xid=found_players[0],
-            friends=found_players[1:],
-            seats=requested_seats,
-            rules=None,
-            format=game_format.value,
-            bracket=game_bracket.value,
-            service=game_service.value,
+            friend_xids=found_players[1:],
+            criteria=GameCriteria(
+                seats=requested_seats,
+                format=game_format.value,
+                bracket=game_bracket.value,
+                service=game_service.value,
+            ),
             create_new=True,
-            blind=bool(self.channel_data.blind_games),
-            to_mode=bool(self.channel_data.to_mode),
-            competitive_mode=bool(self.channel_data.competitive_mode),
-            locale=preferred_locale.language_code if preferred_locale else "en",
         )
-        game_data, suggested_vc = await self.make_game_ready(game_data, player_xids)
-        game_data = await self.handle_voice_creation(game_data, self.interaction.guild_id)
-        game_data = await self.handle_embed_creation(
-            game_data,
-            new=True,
-            origin=False,
-            fully_seated=True,
-            suggested_vc=suggested_vc,
-            rematch=rematch,
-        )
-        await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=rematch)
+        await self.start_game(game_data, new=True, origin=False, rematch=rematch)
 
     @tracer.wrap()
     async def make_game_ready(
@@ -710,7 +665,6 @@ class LookingForGameAction(BaseAction):
         *,
         new: bool,
         origin: bool,
-        fully_seated: bool,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
         force_start: bool = False,
@@ -719,16 +673,10 @@ class LookingForGameAction(BaseAction):
         assert self.channel
 
         # build the game post's embed and view:
-        embed: discord.Embed = game_data.to_embed(
-            guild=self.guild,
-            suggested_vc=suggested_vc,
-            rematch=rematch,
-            emojis=self.bot.emojis_cache,
-            supporters=self.bot.supporters,
-        )
+        embed = self.game_embed(game_data, suggested_vc=suggested_vc, rematch=rematch)
         content = self.channel_data.extra
 
-        view = None if fully_seated else GameView(bot=self.bot, locale=game_data.locale)
+        view = None if game_data.fully_seated else GameView(bot=self.bot, locale=game_data.locale)
         if new:  # create the initial game post:
             return await self.create_initial_post(game_data, embed, view, content)
 
@@ -793,43 +741,27 @@ class LookingForGameAction(BaseAction):
                 # failed to update the message for this post
                 continue
 
-        if force_start:
-            await self.reply_force_start_embed(game_data)
-        elif not origin:
-            await self.reply_found_embed(game_data)
+        if force_start or not origin:
+            await self.reply_game_embed(game_data, started=force_start)
 
         return game_data
 
     @tracer.wrap()
-    async def reply_found_embed(self, game_data: GameData) -> None:
+    async def reply_game_embed(self, game_data: GameData, *, started: bool) -> None:
+        """Point the user at the game they just joined (or force started)."""
         assert self.guild is not None
         locale = game_data.locale
-        embed = discord.Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
-        links = game_data.jump_links
-        format = game_data.format
-        embed.set_author(name=t("lfg.found_game", locale=locale, format=str(GameFormat(format))))
-        embed.color = settings.INFO_EMBED_COLOR
-        if link := links.get(self.guild.id):
-            embed.description = t("lfg.jump_to_game", locale=locale, link=link)
+        format = str(GameFormat(game_data.format))
+        title_key = "lfg.started_game" if started else "lfg.found_game"
+        if link := game_data.jump_links.get(self.guild.id):
+            description = t("lfg.jump_to_game", locale=locale, link=link)
+        elif started:
+            description = t("lfg.game_started_id", locale=locale, game_id=game_data.id)
         else:
-            embed.description = t("lfg.joined_game", locale=locale, game_id=game_data.id)
-        await safe_followup_channel(self.interaction, embed=embed)
-
-    @tracer.wrap()
-    async def reply_force_start_embed(self, game_data: GameData) -> None:
-        assert self.guild is not None
-        locale = game_data.locale
-        embed = discord.Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
-        links = game_data.jump_links
-        format = game_data.format
-        embed.set_author(name=t("lfg.started_game", locale=locale, format=str(GameFormat(format))))
-        embed.color = settings.INFO_EMBED_COLOR
-        if link := links.get(self.guild.id):
-            embed.description = t("lfg.jump_to_game", locale=locale, link=link)
-        else:
-            embed.description = t("lfg.game_started_id", locale=locale, game_id=game_data.id)
+            description = t("lfg.joined_game", locale=locale, game_id=game_data.id)
+        embed = info_embed(
+            author=t(title_key, locale=locale, format=format), description=description
+        )
         await safe_followup_channel(self.interaction, embed=embed)
 
     @tracer.wrap()
@@ -877,7 +809,7 @@ class LookingForGameAction(BaseAction):
                 f"/{game_data.service}"
                 f"/{player_xid}"
                 f"/{players_data}"
-                f"/{game_data.bracket - 1}"
+                f"/{GameBracket(game_data.bracket).level}"
             )
 
         async def notify_player(player_xid: int) -> None:
@@ -892,13 +824,11 @@ class LookingForGameAction(BaseAction):
             player_locale = player_locales.get(player_xid, guild_locale_fallback)
 
             # Generate a personalized embed for this player with their locale
-            embed = game_data.to_embed(
-                guild=self.guild,
+            embed = self.game_embed(
+                game_data,
                 dm=True,
                 suggested_vc=suggested_vc,
                 rematch=rematch,
-                emojis=self.bot.emojis_cache,
-                supporters=self.bot.supporters,
                 locale_override=player_locale,
             )
 

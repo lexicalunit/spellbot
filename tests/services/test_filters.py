@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from spellbot.web.dashboard_filters import (
+from spellbot.services.filters import (
     GuildFilter,
     PeriodSpec,
     parse_guild,

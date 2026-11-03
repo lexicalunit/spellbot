@@ -17,6 +17,7 @@ from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER
 from spellbot.i18n import normalize_locale
 from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.settings import settings
+from spellbot.web.api.record import bracket_choices, format_choices
 from spellbot.web.api.viewer_auth import get_viewer
 from spellbot.web.tools import redirect
 
@@ -24,6 +25,13 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 SPELLBOT_DEFAULT_LOGO = "https://spellbot.io/assets/img/avatar-icon.png"
+
+
+def logo_for(row: dict[str, Any], backfilled: dict[int, str | None]) -> str:
+    """Return a guild's icon, falling back to a backfilled one and then to SpellBot's logo."""
+    return row.get("guild_icon") or backfilled.get(row["guild_xid"]) or SPELLBOT_DEFAULT_LOGO
+
+
 ICON_FETCH_TTL = timedelta(hours=6)
 STARTED_GAMES_WINDOW = services.queues.STARTED_GAMES_WINDOW
 PLAYED_GUILDS_WINDOW = timedelta(days=365)
@@ -116,9 +124,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     rows = [
         {
             **row,
-            "logo": row.get("guild_icon")
-            or backfilled.get(row["guild_xid"])
-            or SPELLBOT_DEFAULT_LOGO,
+            "logo": logo_for(row, backfilled),
             "language": language_name(row["guild_locale"]),
         }
         for row in raw_rows
@@ -126,9 +132,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     games = [
         {
             **game,
-            "logo": game.get("guild_icon")
-            or backfilled.get(game["guild_xid"])
-            or SPELLBOT_DEFAULT_LOGO,
+            "logo": logo_for(game, backfilled),
             "language": language_name(game["guild_locale"]),
         }
         for game in raw_games
@@ -136,9 +140,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
     played_guilds = [
         {
             **pg,
-            "logo": pg.get("guild_icon")
-            or backfilled.get(pg["guild_xid"])
-            or SPELLBOT_DEFAULT_LOGO,
+            "logo": logo_for(pg, backfilled),
             "notifications_on": pg["guild_xid"] in alert_guild_xids,
         }
         for pg in raw_played_guilds
@@ -226,9 +228,7 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
             "guild_xid": row["guild_xid"],
             "guild_name": row["guild_name"],
             "guild_locale": row["guild_locale"],
-            "logo": row.get("guild_icon")
-            or backfilled.get(row["guild_xid"])
-            or SPELLBOT_DEFAULT_LOGO,
+            "logo": logo_for(row, backfilled),
             "format": row["format"],
             "bracket": row["bracket"],
             "service": row["service"],
@@ -244,9 +244,7 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
             "guild_xid": game["guild_xid"],
             "guild_name": game["guild_name"],
             "guild_locale": game["guild_locale"],
-            "logo": game.get("guild_icon")
-            or backfilled.get(game["guild_xid"])
-            or SPELLBOT_DEFAULT_LOGO,
+            "logo": logo_for(game, backfilled),
             "format": game["format"],
             "bracket": game["bracket"],
             "service": game["service"],
@@ -263,14 +261,6 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
             "games": games,
         },
     )
-
-
-def notify_format_choices() -> list[dict[str, Any]]:
-    return [{"value": f.value, "label": str(f)} for f in GAME_FORMAT_ORDER]
-
-
-def notify_bracket_choices() -> list[dict[str, Any]]:
-    return [{"value": b.value, "label": str(b)} for b in GAME_BRACKET_ORDER]
 
 
 VALID_FORMAT_VALUES = {f.value for f in GAME_FORMAT_ORDER}
@@ -315,9 +305,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         )
     guild_view = {
         **guild,
-        "logo": guild.get("guild_icon")
-        or backfilled.get(guild["guild_xid"])
-        or SPELLBOT_DEFAULT_LOGO,
+        "logo": logo_for(guild, backfilled),
         "language": language_name(guild["guild_locale"]),
     }
     channel_choices = [
@@ -335,8 +323,8 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
     context = {
         "guild": guild_view,
         "default_logo": SPELLBOT_DEFAULT_LOGO,
-        "format_choices": notify_format_choices(),
-        "bracket_choices": notify_bracket_choices(),
+        "format_choices": format_choices(),
+        "bracket_choices": bracket_choices(),
         "channel_choices": channel_choices,
         "selected_formats": selected_formats,
         "selected_brackets": selected_brackets,

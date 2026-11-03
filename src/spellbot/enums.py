@@ -11,16 +11,27 @@ from spellbot.settings import settings
 if TYPE_CHECKING:
     import discord
 
+# Emojis as discord.py hands them back: application emojis, or a mix with partial emojis.
+type Emojis = list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji]
 
-class GameService(Enum):
-    """A service for playing Magic: The Gathering games."""
+
+class NumberedEnum(Enum):
+    """
+    An enum whose members are numbered 1, 2, 3, ... in definition order.
+
+    A member's declared value is passed to `__init__` instead of being its value, so members can
+    carry attributes. The numbers are stored in the database, so never reorder members.
+    """
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG004
-        """Give each enum value an increasing numerical value starting at 1."""
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
+
+
+class GameService(NumberedEnum):
+    """A service for playing Magic: The Gathering games."""
 
     def __init__(
         self,
@@ -41,7 +52,7 @@ class GameService(Enum):
     def get_pending_msg(
         self,
         locale: str = "en",
-        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        emojis: Emojis | None = None,
     ) -> str:
         """Get the pending message for this service, with optional emoji."""
         emoji_str = ""
@@ -81,15 +92,8 @@ GAME_SERVICE_ORDER = [
 ]
 
 
-class GameFormat(Enum):
+class GameFormat(NumberedEnum):
     """A Magic: The Gathering game format."""
-
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG004
-        """Give each enum value an increasing numerical value starting at 1."""
-        value = len(cls.__members__) + 1
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
 
     def __init__(self, players: int, title: str | None = None) -> None:
         """Build a format with its default player count and an optional display title."""
@@ -154,15 +158,8 @@ GAME_FORMAT_ORDER = [
 ]
 
 
-class GameBracket(Enum):
+class GameBracket(NumberedEnum):
     """The bracket for this game."""
-
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:  # noqa: ARG004
-        """Give each enum value an increasing numerical value starting at 1."""
-        value = len(cls.__members__) + 1
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
 
     def __init__(self, title: str, icon: str | None) -> None:
         self.title = title
@@ -170,6 +167,16 @@ class GameBracket(Enum):
 
     def __str__(self) -> str:
         return self.title
+
+    @property
+    def level(self) -> int:
+        """The bracket's number: 0 for no bracket, otherwise 1 through 5."""
+        return self.value - 1
+
+    @property
+    def short_title(self) -> str:
+        """The title without its "Bracket " prefix, e.g. "1: Exhibition"."""
+        return self.title.removeprefix("Bracket ")
 
     # DO NOT REORDER -- IT WOULD INVALIDATE EXISTING DATABASE ENTRIES!
     NONE = "None", None
@@ -188,6 +195,20 @@ GAME_BRACKET_ORDER = [
     GameBracket.BRACKET_4,
     GameBracket.BRACKET_5,
 ]
+
+# The Commander variants. Integrations map extra formats onto Commander as their services allow.
+COMMANDER_FORMATS = frozenset(
+    {
+        GameFormat.COMMANDER,
+        GameFormat.EDH_MAX,
+        GameFormat.EDH_HIGH,
+        GameFormat.EDH_MID,
+        GameFormat.EDH_LOW,
+        GameFormat.EDH_BATTLECRUISER,
+        GameFormat.PRE_CONS,
+        GameFormat.CEDH,
+    },
+)
 
 MIN_SEATS = min(service.max_seats for service in GAME_SERVICE_ORDER)
 MAX_SEATS = max(service.max_seats for service in GAME_SERVICE_ORDER)

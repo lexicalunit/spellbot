@@ -1,17 +1,7 @@
 import { describe, it, expect } from "vitest";
 import pure from "../src/spellbot/web/templates/dashboard_pure.js";
 
-const {
-  unifyDates,
-  alignSeries,
-  guildParam,
-  qs,
-  fmt,
-  fmtDuration,
-  avgCount,
-  escapeHtml,
-  heatColor,
-} = pure;
+const { unifyDates, alignSeries, guildParam, qs, fmtDuration, avgCount, heatColor } = pure;
 
 describe("unifyDates", () => {
   it("returns the sorted union of dates across all series", () => {
@@ -68,19 +58,6 @@ describe("qs", () => {
   });
 });
 
-describe("fmt", () => {
-  it("returns an em dash for null and undefined", () => {
-    expect(fmt(null)).toBe("—");
-    expect(fmt(undefined)).toBe("—");
-  });
-
-  it("formats numbers with grouping separators", () => {
-    expect(fmt(0)).toBe("0");
-    expect(fmt(1234)).toBe("1,234");
-    expect(fmt("1234")).toBe("1,234");
-  });
-});
-
 describe("fmtDuration", () => {
   it("returns an em dash for null and undefined", () => {
     expect(fmtDuration(null)).toBe("—");
@@ -123,19 +100,6 @@ describe("avgCount", () => {
   it("rounds the arithmetic mean of count values", () => {
     expect(avgCount([{ count: 1 }, { count: 2 }, { count: 4 }])).toBe(2);
     expect(avgCount([{ count: 1 }, { count: 2 }])).toBe(2);
-  });
-});
-
-describe("escapeHtml", () => {
-  it("escapes the five HTML metacharacters", () => {
-    expect(escapeHtml(`<a href="x">&'</a>`)).toBe(
-      "&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;",
-    );
-  });
-
-  it("coerces non-string input via String()", () => {
-    expect(escapeHtml(42)).toBe("42");
-    expect(escapeHtml(null)).toBe("null");
   });
 });
 

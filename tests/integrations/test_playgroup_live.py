@@ -9,6 +9,7 @@ import httpx
 import pytest
 
 import spellbot.integrations.playgroup_live as playgroup_live_module
+from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.integrations.playgroup_live import (
     fetch_playgroup_live_session,
@@ -294,7 +295,7 @@ class TestGenerateLink:
         with patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", ""):
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
     @pytest.mark.asyncio
     async def test_no_linked_player(self) -> None:
@@ -304,7 +305,7 @@ class TestGenerateLink:
         with patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"):
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
     @pytest.mark.asyncio
     async def test_success(self) -> None:
@@ -329,7 +330,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game)
 
-        assert result == ("https://playgroup.gg/live/abc123", None)
+        assert result == GameLinkDetails("https://playgroup.gg/live/abc123")
 
     @pytest.mark.asyncio
     async def test_uses_original_seats(self) -> None:
@@ -352,7 +353,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game, original_seats=4)
 
-        assert result == ("https://playgroup.gg/live/abc123", None)
+        assert result == GameLinkDetails("https://playgroup.gg/live/abc123")
         call_args = mock_fetch.call_args
         assert call_args[0][3] == 4  # player_amount argument
 
@@ -386,13 +387,13 @@ class TestGenerateLink:
                 "https://playgroup.gg",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(playgroup_live_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(game)
 
-        assert result == ("https://playgroup.gg/live/retry", None)
+        assert result == GameLinkDetails("https://playgroup.gg/live/retry")
         assert mock_client.post.call_count == 2
 
     @pytest.mark.asyncio
@@ -419,13 +420,13 @@ class TestGenerateLink:
                 "https://playgroup.gg",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(playgroup_live_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         assert mock_client.post.call_count == playgroup_live_module.RETRY_ATTEMPTS
 
     @pytest.mark.asyncio
@@ -451,7 +452,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
     @pytest.mark.asyncio
     async def test_returns_none_when_no_retry_attempts(self) -> None:
@@ -472,7 +473,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
 
 def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
@@ -508,7 +509,7 @@ class TestPlaygroupLiveTerminalClientErrors:
                 "https://playgroup.gg",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(playgroup_live_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -518,11 +519,25 @@ class TestPlaygroupLiveTerminalClientErrors:
     @pytest.mark.asyncio
     async def test_400_is_not_retried(self) -> None:
         result, calls = await self.run(status_error(400, "bad session request"))
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         assert calls == 1
 
     @pytest.mark.asyncio
     async def test_500_is_still_retried(self) -> None:
         result, calls = await self.run(status_error(500))
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         assert calls == playgroup_live_module.RETRY_ATTEMPTS
+
+
+class TestFindPlaygroupUser:
+    @pytest.mark.asyncio
+    async def test_looks_up_with_a_fresh_client(self) -> None:
+        with patch.object(
+            playgroup_live_module,
+            "lookup_playgroup_user",
+            AsyncMock(return_value=(7, "seven")),
+        ) as lookup:
+            assert await playgroup_live_module.find_playgroup_user(123) == (7, "seven")
+        client, discord_id = lookup.call_args.args
+        assert isinstance(client, httpx.AsyncClient)
+        assert discord_id == 123

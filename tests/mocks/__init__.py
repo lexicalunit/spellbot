@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
 from contextlib import contextmanager
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast, overload
@@ -12,6 +11,7 @@ import discord
 import pytest
 
 from spellbot import operations
+from spellbot.actions import base_action
 from spellbot.models import Channel, Guild, User
 from tests.mocks.girudo import (
     GirudoTestData,
@@ -104,7 +104,11 @@ def mock_operations(
     users: list[discord.User] | None = None,
 ) -> Generator[OperationMocks]:
     """
-    Mock out all operations.py functions found in a given module.
+    Mock out all operations.py functions used by a given action module.
+
+    Shared action helpers live in `spellbot.actions.base_action`, so the same mocks are installed
+    there too: `ops.safe_x` controls a call whether the action makes it itself or through a
+    `BaseAction` helper.
 
     Special care is given to the mock for `safe_fetch_user()` so that users passed
     into `mock_operations()` will be findable via calls to `safe_fetch_user()`.
@@ -121,30 +125,34 @@ def mock_operations(
 
     """
     _users: list[discord.User] = users or []
+    modules = [module] if module is base_action else [module, base_action]
 
     mocks = OperationMocks()
-    monkeypatch = pytest.MonkeyPatch()
     for name in operations.__dict__:
-        if name in module.__dict__:
-            if name.startswith("safe_get_"):  # special handling for non-async get
-                setattr(mocks, name, MagicMock())
-            elif name.startswith("safe_"):  # all others we can assume are async
-                if name == "safe_fetch_user":
+        if not any(name in m.__dict__ for m in modules):
+            continue
+        if name.startswith("safe_get_"):  # special handling for non-async get
+            setattr(mocks, name, MagicMock())
+        elif name.startswith("safe_"):  # all others we can assume are async
+            if name == "safe_fetch_user":
 
-                    async def finder(_: Any, xid: int) -> discord.User | None:
-                        return next((user for user in _users if user.id == xid), None)
+                async def finder(_: Any, xid: int) -> discord.User | None:
+                    return next((user for user in _users if user.id == xid), None)
 
-                    setattr(mocks, name, AsyncMock(side_effect=finder))
-                else:
-                    setattr(mocks, name, AsyncMock())
+                setattr(mocks, name, AsyncMock(side_effect=finder))
+            else:
+                setattr(mocks, name, AsyncMock())
 
+    monkeypatch = pytest.MonkeyPatch()
     for name, mock in vars(mocks).items():
-        monkeypatch.setattr(module, name, mock)
+        for m in modules:
+            if name in m.__dict__:
+                monkeypatch.setattr(m, name, mock)
 
     try:
         yield mocks
     finally:
-        importlib.reload(module)
+        monkeypatch.undo()
 
 
 ###########################################################

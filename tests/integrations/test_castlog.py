@@ -117,7 +117,7 @@ class TestReportMatch:
                 "https://dev.api.castlog.gg/functions/v1/spellbot-webhook",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(castlog_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -141,7 +141,7 @@ class TestReportMatch:
                 "https://dev.api.castlog.gg/functions/v1/spellbot-webhook",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(castlog_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -186,7 +186,7 @@ class TestCastlogTerminalClientErrors:
                 "https://dev.api.castlog.gg/functions/v1/spellbot-webhook",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(castlog_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
@@ -208,7 +208,7 @@ class TestCastlogTerminalClientErrors:
                 "https://dev.api.castlog.gg/functions/v1/spellbot-webhook",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(castlog_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)

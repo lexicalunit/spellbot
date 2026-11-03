@@ -6,14 +6,12 @@ import logging
 from typing import TYPE_CHECKING
 
 import discord
-from ddtrace.trace import tracer
 from discord import app_commands
 from discord.ext import commands
 
 from spellbot.actions import AdminAction
-from spellbot.metrics import add_span_context
 from spellbot.settings import settings
-from spellbot.utils import for_all_callbacks, is_admin, is_guild, is_mod
+from spellbot.utils import for_all_callbacks, is_admin, is_guild, is_mod, traced_interaction
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
@@ -28,9 +26,8 @@ class AdminCog(commands.Cog):
 
     @app_commands.check(is_admin)
     @app_commands.command(name="setup", description="Setup SpellBot on your server.")
-    @tracer.wrap(name="interaction", resource="setup")
+    @traced_interaction()
     async def setup(self, interaction: discord.Interaction) -> None:
-        add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             await action.setup()
 
@@ -39,9 +36,8 @@ class AdminCog(commands.Cog):
         name="setup_mythic_track",
         description="Setup Mythic Track on your server.",
     )
-    @tracer.wrap(name="interaction", resource="setup_mythic_track")
+    @traced_interaction()
     async def setup_mythic_track(self, interaction: discord.Interaction) -> None:
-        add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             await action.setup_mythic_track()
 
@@ -51,24 +47,22 @@ class AdminCog(commands.Cog):
         description="Get a link to a game's details page.",
     )
     @app_commands.describe(game_id="SpellBot ID of the game")
-    @tracer.wrap(name="interaction", resource="game_info")
+    @traced_interaction()
     async def game_info(self, interaction: discord.Interaction, game_id: str) -> None:
-        add_span_context(interaction)
         async with AdminAction.create(self.bot, interaction) as action:
             await action.game_info(game_id)
 
     @app_commands.check(is_admin)
     @app_commands.command(name="move_user", description="Move one user's data to another user.")
-    @tracer.wrap(name="interaction", resource="move_user")
     @app_commands.describe(from_user_id="User ID of the old user")
     @app_commands.describe(to_user_id="User ID of the new user")
+    @traced_interaction()
     async def move_user(
         self,
         interaction: discord.Interaction,
         from_user_id: str,
         to_user_id: str,
     ) -> None:  # pragma: no cover
-        add_span_context(interaction)
         assert interaction.guild_id is not None
         # note: no user input validation is being done here
         from_user_xid = int(from_user_id)
@@ -85,9 +79,8 @@ class AdminCog(commands.Cog):
         name="expire_games",
         description="Expire all inactive games on your server.",
     )
-    @tracer.wrap(name="interaction", resource="expire_games")
+    @traced_interaction()
     async def expire_games(self, interaction: discord.Interaction) -> None:  # pragma: no cover
-        add_span_context(interaction)
         assert interaction.guild_id is not None
         async with AdminAction.create(self.bot, interaction) as action:
             await action.expire_games(guild_xid=interaction.guild_id)
@@ -98,18 +91,14 @@ class AdminCog(commands.Cog):
         description="Get detailed information about a user (games played, blocks, etc.).",
     )
     @app_commands.describe(target="User to get info about")
-    # @tracer.wrap(name="interaction", resource="user_info")
-    # There's a bug when combining `@tracer.wrap`, `@app_commands.describe` and discord.User.
-    # See: https://github.com/Rapptz/discord.py/issues/10317.
+    @traced_interaction()
     async def user_info(
         self,
         interaction: discord.Interaction,
         target: discord.User | discord.Member,
     ) -> None:
-        with tracer.trace("interaction", resource="user_info"):
-            add_span_context(interaction)
-            async with AdminAction.create(self.bot, interaction) as action:
-                await action.user_info(target=target)
+        async with AdminAction.create(self.bot, interaction) as action:
+            await action.user_info(target=target)
 
 
 async def setup(bot: SpellBot) -> None:  # pragma: no cover

@@ -12,9 +12,9 @@ import pytest
 from spellbot.enums import GameFormat
 from spellbot.models import GameStatus
 from spellbot.settings import settings
-from spellbot.utils import generate_signed_url
 from spellbot.web.api import analytics
 from spellbot.web.api.analytics import Membership, check_guild_member
+from spellbot.web.signing import generate_signed_url
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -42,7 +42,7 @@ class TestWebAnalyticsShell:
         freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
         guild = factories.guild.create(xid=201, name="test-guild")
 
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
         path = f"{parsed.path}?{parsed.query}"
@@ -60,7 +60,7 @@ class TestWebAnalyticsShell:
         client: ClientSession,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(99999, expires_in_minutes=10)
         parsed = urlparse(url)
         path = f"{parsed.path}?{parsed.query}"
@@ -82,12 +82,12 @@ class TestWebAnalyticsShell:
         client: ClientSession,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(201, expires_in_minutes=10)
         parsed = urlparse(url)
         path = f"{parsed.path}?{parsed.query}"
 
-        mocker.patch("spellbot.utils.time.time", return_value=2000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=2000.0)
         resp = await client.get(path, allow_redirects=False)
         assert resp.status == 302
         assert "/login" in resp.headers["Location"]
@@ -161,7 +161,7 @@ class TestWebAnalyticsSummary:
         )
         factories.play.create(game_id=game.id, user_xid=user.xid, og_guild_xid=guild.xid)
 
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
@@ -206,7 +206,7 @@ class TestWebAnalyticsSummary:
         client: ClientSession,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(99999, expires_in_minutes=10)
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
@@ -227,13 +227,13 @@ class TestWebAnalyticsSummary:
         client: ClientSession,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(201, expires_in_minutes=10)
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
         path = f"/g/201/analytics/summary?expires={query['expires'][0]}&sig={query['sig'][0]}"
 
-        mocker.patch("spellbot.utils.time.time", return_value=2000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=2000.0)
         resp = await client.get(path)
         assert resp.status == 403
 
@@ -264,7 +264,7 @@ class TestWebAnalyticsEndpoints:
         endpoint: str,
     ) -> dict[str, object]:
         guild = factories.guild.create(xid=201, name="test-guild")
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
         query = parse_qs(parsed.query)
@@ -361,7 +361,7 @@ class TestWebAnalyticsEndpoints:
             "spellbot.web.api.analytics.check_guild_member",
             return_value=Membership.MEMBER,
         )
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
@@ -395,7 +395,7 @@ class TestWebAnalyticsEndpoints:
             "spellbot.web.api.analytics.check_guild_member",
             return_value=Membership.MEMBER,
         )
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
@@ -549,7 +549,7 @@ class TestWebAnalyticsMembershipChecks:
             "spellbot.web.api.analytics.check_guild_member",
             return_value=Membership.LEFT,
         )
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
@@ -583,7 +583,7 @@ class TestWebAnalyticsMembershipChecks:
             "spellbot.web.api.analytics.check_guild_member",
             return_value=Membership.LEFT,
         )
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
@@ -657,7 +657,7 @@ class TestWebAnalyticsMembershipChecks:
     ) -> None:
         """Test that analytics_players returns error for invalid signature."""
         guild = factories.guild.create(xid=401, name="test-guild")
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         # Use invalid signature
         path = f"/g/{guild.xid}/analytics/players?expires=2000&sig=invalid"
@@ -670,7 +670,7 @@ class TestWebAnalyticsMembershipChecks:
         mocker: MockerFixture,
     ) -> None:
         """Test that analytics_players returns 404 for non-existent guild."""
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         # Use a guild xid that doesn't exist in the database
         url = generate_signed_url(99999, expires_in_minutes=10)
@@ -691,7 +691,7 @@ class TestWebAnalyticsMembershipChecks:
     ) -> None:
         """Test that analytics_blocked returns error for invalid signature."""
         guild = factories.guild.create(xid=402, name="test-guild")
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         # Use invalid signature
         path = f"/g/{guild.xid}/analytics/blocked?expires=2000&sig=invalid"
@@ -704,7 +704,7 @@ class TestWebAnalyticsMembershipChecks:
         mocker: MockerFixture,
     ) -> None:
         """Test that analytics_blocked returns 404 for non-existent guild."""
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         # Use a guild xid that doesn't exist in the database
         url = generate_signed_url(99998, expires_in_minutes=10)
@@ -725,7 +725,7 @@ class TestWebAnalyticsMembershipChecks:
     ) -> None:
         """Test analytics_players with no player data (empty top_players)."""
         guild = factories.guild.create(xid=403, name="empty-guild")
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
@@ -747,7 +747,7 @@ class TestWebAnalyticsMembershipChecks:
     ) -> None:
         """Test analytics_blocked with no blocked user data (empty top_blocked)."""
         guild = factories.guild.create(xid=404, name="empty-guild")
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
 
         url = generate_signed_url(guild.xid, expires_in_minutes=10)
         parsed = urlparse(url)
@@ -926,7 +926,7 @@ class TestWebAnalyticsDirect:
         request.query = {"expires": "9999999999", "sig": "x"}
         mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
         mocker.patch(
-            "spellbot.services.plays.analytics_players",
+            "spellbot.services.analytics.analytics_players",
             AsyncMock(return_value={"top_players": [{"user_xid": "1"}]}),
         )
         mocker.patch(
@@ -947,7 +947,7 @@ class TestWebAnalyticsDirect:
         request.query = {"expires": "9999999999", "sig": "x"}
         mocker.patch("spellbot.web.api.analytics.validate_signature", return_value=True)
         mocker.patch(
-            "spellbot.services.plays.analytics_blocked",
+            "spellbot.services.analytics.analytics_blocked",
             AsyncMock(return_value={"top_blocked": [{"user_xid": "1"}]}),
         )
         mocker.patch(

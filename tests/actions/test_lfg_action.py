@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
@@ -11,9 +12,10 @@ import pytest_asyncio
 
 from spellbot import services
 from spellbot.actions import LookingForGameAction
-from spellbot.data import GameLinkDetails, PostData
+from spellbot.data import GameCriteria, GameLinkDetails, PostData
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.integrations import convoke
+from spellbot.models import MAX_RULES_LENGTH
 from spellbot.operations import VoiceChannelSuggestion
 from spellbot.services.awards import NewAward
 from spellbot.settings import settings
@@ -57,19 +59,49 @@ async def action(bot: SpellBot, interaction: discord.Interaction) -> LookingForG
 
 @pytest.mark.asyncio
 class TestLookingForGameAction:
-    async def test_get_service(self, action: LookingForGameAction) -> None:
-        assert await action.get_service(GameService.X_MAGE.value) == GameService.X_MAGE.value
+    async def test_resolve_criteria_keeps_requested_options(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
+        criteria = action.resolve_criteria(
+            seats=2,
+            rules="be nice",
+            format=GameFormat.PAUPER.value,
+            bracket=GameBracket.BRACKET_1.value,
+            service=GameService.X_MAGE.value,
+        )
+        assert criteria == GameCriteria(
+            seats=2,
+            format=GameFormat.PAUPER.value,
+            bracket=GameBracket.BRACKET_1.value,
+            service=GameService.X_MAGE.value,
+            rules="be nice",
+        )
 
-    async def test_get_service_fallback_channel_data(self, action: LookingForGameAction) -> None:
-        action.channel_data.default_service = GameService.X_MAGE
-        assert await action.get_service(None) == GameService.X_MAGE.value
-
-    async def test_get_format(self, action: LookingForGameAction) -> None:
-        assert await action.get_format(GameFormat.PAUPER.value) == GameFormat.PAUPER.value
-
-    async def test_get_format_fallback_channel_data(self, action: LookingForGameAction) -> None:
+    async def test_resolve_criteria_falls_back_to_channel_defaults(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
         action.channel_data.default_format = GameFormat.PAUPER
-        assert await action.get_format(None) == GameFormat.PAUPER.value
+        action.channel_data.default_bracket = GameBracket.BRACKET_1
+        action.channel_data.default_service = GameService.X_MAGE
+        criteria = action.resolve_criteria()
+        assert criteria.format == GameFormat.PAUPER.value
+        assert criteria.bracket == GameBracket.BRACKET_1.value
+        assert criteria.service == GameService.X_MAGE.value
+        # Without explicit seats the game seats as many players as its format needs.
+        assert criteria.seats == GameFormat.PAUPER.players
+
+    async def test_resolve_criteria_caps_seats_at_the_service_maximum(
+        self,
+        action: LookingForGameAction,
+    ) -> None:
+        criteria = action.resolve_criteria(seats=99, service=GameService.PLAYGROUP_LIVE.value)
+        assert criteria.seats == GameService.PLAYGROUP_LIVE.max_seats
+
+    async def test_resolve_criteria_truncates_rules(self, action: LookingForGameAction) -> None:
+        criteria = action.resolve_criteria(rules="x" * (MAX_RULES_LENGTH + 10))
+        assert criteria.rules == "x" * MAX_RULES_LENGTH
 
     @pytest.mark.parametrize(
         ("format", "bracket", "actual"),
@@ -96,21 +128,21 @@ class TestLookingForGameAction:
             ),
         ],
     )
-    async def test_get_bracket(
+    async def test_resolve_criteria_bracket(
         self,
         action: LookingForGameAction,
-        format: int,
-        bracket: int,
+        format: int | None,
+        bracket: int | None,
         actual: int,
     ) -> None:
-        assert await action.get_bracket(format, bracket) == actual
+        assert action.resolve_criteria(format=format, bracket=bracket).bracket == actual
 
-    async def test_get_bracket_with_channel_default(
+    async def test_resolve_criteria_bracket_channel_default(
         self,
         action: LookingForGameAction,
     ) -> None:
         action.channel_data.default_bracket = GameBracket.BRACKET_1
-        assert await action.get_bracket(None, None) == GameBracket.BRACKET_1.value
+        assert action.resolve_criteria().bracket == GameBracket.BRACKET_1.value
 
     async def test_execute_in_non_guild_channel(
         self,
@@ -285,7 +317,7 @@ class TestLookingForGameAction:
         await action.update_other_game_posts([])
         stub.assert_not_called()
 
-    async def test_upsert_game_join_game_filled_up(
+    async def test_join_game_filled_up(
         self,
         action: LookingForGameAction,
         mocker: MockerFixture,
@@ -302,17 +334,8 @@ class TestLookingForGameAction:
         mocker.patch.object(services.games, "add_player", AsyncMock(return_value=None))
         stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
 
-        new, game = await action.upsert_game(
-            friend_xids=[],
-            seats=4,
-            rules=None,
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.SPELLTABLE.value,
-            message_xid=12345,
-        )
+        game = await action.join_game(12345)
 
-        assert new is None
         assert game is None
         stub.assert_awaited_once()
 
@@ -321,34 +344,43 @@ class TestLookingForGameAction:
         action: LookingForGameAction,
         mocker: MockerFixture,
     ) -> None:
-        """Test _update_other_game_posts updates embeds for other games."""
-        game_data = create_mock_game(game_id=1, channel_xid=12345, guild_xid=67890)
-        mocker.patch.object(services.games, "message_xids", AsyncMock(return_value=[111]))
-        mocker.patch.object(
-            services.games,
-            "get_by_message_xid",
-            AsyncMock(return_value=game_data),
+        """Every post of another game is refreshed in its own channel, by its own message id."""
+        now = datetime.now(tz=UTC)
+        posts = [
+            PostData(
+                created_at=now,
+                updated_at=now,
+                game_id=1,
+                guild_xid=67890,
+                channel_xid=channel_xid,
+                message_xid=message_xid,
+            )
+            for channel_xid, message_xid in ((12345, 111), (54321, 222))
+        ]
+        game_data = replace(
+            create_mock_game(game_id=1, channel_xid=12345, guild_xid=67890),
+            players=[create_mock_user()],
+            posts=posts,
         )
-
-        mock_channel = MagicMock(spec=discord.TextChannel)
-        mock_message = MagicMock(spec=discord.PartialMessage)
-
-        mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_text_channel",
-            AsyncMock(return_value=mock_channel),
+        mocker.patch.object(services.games, "get", AsyncMock(return_value=game_data))
+        fetch_stub = mocker.patch(
+            "spellbot.actions.base_action.safe_fetch_text_channel",
+            AsyncMock(return_value=MagicMock(spec=discord.TextChannel)),
         )
-        mocker.patch(
-            "spellbot.actions.lfg_action.safe_get_partial_message",
-            return_value=mock_message,
+        get_stub = mocker.patch(
+            "spellbot.actions.base_action.safe_get_partial_message",
+            return_value=MagicMock(spec=discord.PartialMessage),
         )
         update_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed",
+            "spellbot.actions.base_action.safe_update_embed",
             AsyncMock(return_value=True),
         )
 
         await action.update_other_game_posts([1])
 
-        update_stub.assert_called_once()
+        assert [c.args[1:] for c in fetch_stub.call_args_list] == [(67890, 12345), (67890, 54321)]
+        assert [c.args[1:] for c in get_stub.call_args_list] == [(67890, 111), (67890, 222)]
+        assert update_stub.call_count == 2
 
     async def test_update_other_game_posts_no_data(
         self,
@@ -356,14 +388,11 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _update_other_game_posts skips when no game data found."""
-        mocker.patch.object(services.games, "message_xids", AsyncMock(return_value=[111]))
-        mocker.patch.object(
-            services.games,
-            "get_by_message_xid",
-            AsyncMock(return_value=None),
+        mocker.patch.object(services.games, "get", AsyncMock(return_value=None))
+        update_stub = mocker.patch(
+            "spellbot.actions.base_action.safe_update_embed",
+            AsyncMock(return_value=True),
         )
-
-        update_stub = mocker.patch("spellbot.actions.lfg_action.safe_update_embed", AsyncMock())
 
         await action.update_other_game_posts([1])
 
@@ -810,7 +839,7 @@ class TestLookingForGameAction:
         ensure_link.assert_awaited_once_with(game_data)
         embed_stub.assert_awaited_once()
         assert embed_stub.await_args is not None
-        assert embed_stub.await_args.kwargs["fully_seated"] is False
+        assert embed_stub.await_args.args[0] == opened
 
     async def test_execute_skips_opening_table_when_link_already_exists(
         self,
@@ -839,11 +868,7 @@ class TestLookingForGameAction:
         mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
         mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
         mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(True, game_data)))
-        ensure_link = mocker.patch.object(
-            action,
-            "ensure_guild_war_convoke_link",
-            AsyncMock(return_value=game_data),
-        )
+        create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
         mocker.patch.object(
             action,
             "handle_embed_creation",
@@ -852,7 +877,7 @@ class TestLookingForGameAction:
 
         await action.execute(guild_war="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 
-        ensure_link.assert_not_called()
+        create_link.assert_not_called()
 
     async def test_create_initial_post_success(
         self,
@@ -924,7 +949,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_called_once()
 
@@ -957,7 +982,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True)
 
         origin_stub.assert_called_once()
         update_stub.assert_not_called()
@@ -996,7 +1021,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_called_once()
 
@@ -1018,7 +1043,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_not_called()
 
@@ -1043,7 +1068,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_not_called()
 
@@ -1073,7 +1098,7 @@ class TestLookingForGameAction:
         )
 
         # Should not raise an exception, just continue
-        await action.handle_embed_creation(game_data, new=False, origin=True, fully_seated=False)
+        await action.handle_embed_creation(game_data, new=False, origin=True)
 
     async def test_reply_found_embed_no_jump_link(
         self,
@@ -1089,7 +1114,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.reply_found_embed(game_data)
+        await action.reply_game_embed(game_data, started=False)
 
         followup_stub.assert_called_once()
         # Check the embed description contains the game ID
@@ -1111,7 +1136,7 @@ class TestLookingForGameAction:
             AsyncMock(),
         )
 
-        await action.reply_force_start_embed(game_data)
+        await action.reply_game_embed(game_data, started=True)
 
         followup_stub.assert_called_once()
         # Check the embed description contains the game ID and the right message
@@ -1400,7 +1425,7 @@ class TestLookingForGameAction:
         make_game_ready.assert_called_once()
         call_args = make_game_ready.call_args
         assert call_args[0][0] == game_data
-        assert set(call_args[1]["player_xids"]) == {100, 200}
+        assert set(call_args.args[1]) == {100, 200}
         voice_stub.assert_called_once_with(game_data, action.interaction.guild_id)
         embed_stub.assert_called_once()
         dm_stub.assert_called_once()
@@ -1515,7 +1540,6 @@ class TestLookingForGameActionGuildWar:
         # returned exactly as it came in.
         result = await action.resolve_guild_war(
             None,
-            origin=False,
             service=GameService.X_MAGE.value,
             seats=6,
             locale="en",
@@ -1530,14 +1554,11 @@ class TestLookingForGameActionGuildWar:
         # Joining an existing game resolves the war from the game itself, so a click
         # must not re-resolve it (which would cost a Convoke round-trip per click).
         stub = self.patch_resolver(mocker, LIVE_WAR)
-        result = await action.resolve_guild_war(
-            WAR_ID,
-            origin=True,
-            service=None,
-            seats=None,
-            locale="en",
-        )
-        assert result == (None, None, None, None)
+        mocker.patch.object(action, "reject_if_busy", AsyncMock(return_value=False))
+        mocker.patch.object(action, "join_game", AsyncMock(return_value=None))
+
+        await action.execute(message_xid=12345, guild_war=WAR_ID)
+
         stub.assert_not_called()
 
     async def test_resolves_a_live_war_and_forces_convoke(
@@ -1548,7 +1569,6 @@ class TestLookingForGameActionGuildWar:
         self.patch_resolver(mocker, LIVE_WAR)
         result = await action.resolve_guild_war(
             WAR_ID,
-            origin=False,
             service=None,
             seats=None,
             locale="en",
@@ -1568,7 +1588,6 @@ class TestLookingForGameActionGuildWar:
         stub = self.patch_resolver(mocker, LIVE_WAR)
         await action.resolve_guild_war(
             f"  {WAR_ID}  ",
-            origin=False,
             service=None,
             seats=None,
             locale="en",
@@ -1583,7 +1602,6 @@ class TestLookingForGameActionGuildWar:
         self.patch_resolver(mocker, LIVE_WAR)
         result = await action.resolve_guild_war(
             WAR_ID,
-            origin=False,
             service=None,
             seats=6,
             locale="en",
@@ -1602,7 +1620,6 @@ class TestLookingForGameActionGuildWar:
 
         result = await action.resolve_guild_war(
             WAR_ID,
-            origin=False,
             service=GameService.X_MAGE.value,
             seats=None,
             locale="en",
@@ -1621,7 +1638,6 @@ class TestLookingForGameActionGuildWar:
 
         result = await action.resolve_guild_war(
             "not-a-real-war",
-            origin=False,
             service=None,
             seats=None,
             locale="en",
@@ -1648,7 +1664,6 @@ class TestLookingForGameActionGuildWar:
 
         result = await action.resolve_guild_war(
             WAR_ID,
-            origin=False,
             service=None,
             seats=seats,
             locale="en",
@@ -1670,7 +1685,6 @@ class TestLookingForGameActionGuildWar:
         for seats in (convoke.MIN_WAR_SEATS, convoke.MAX_WAR_SEATS):
             result = await action.resolve_guild_war(
                 WAR_ID,
-                origin=False,
                 service=None,
                 seats=seats,
                 locale="en",
@@ -1699,10 +1713,11 @@ class TestLookingForGameActionGuildWar:
         mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
         mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=None))
         mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
-        upsert = mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(None, None)))
+        upsert = mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(False, None)))
 
         await action.execute(guild_war=WAR_ID)
 
         assert upsert.await_args is not None
-        assert upsert.await_args.kwargs["war_id"] == WAR_ID
-        assert upsert.await_args.kwargs["war_title"] == WAR_TITLE
+        criteria = upsert.await_args.kwargs["criteria"]
+        assert criteria.war_id == WAR_ID
+        assert criteria.war_title == WAR_TITLE

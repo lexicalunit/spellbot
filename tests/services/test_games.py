@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.sql.expression import and_
 
-from spellbot.data import GameLinkDetails
+from spellbot.data import ChannelModes, GameCriteria, GameLinkDetails
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, Game, GameStatus, Guild, Play, Post, Queue, User
@@ -93,8 +93,8 @@ class TestServiceGames:
     async def test_games_to_embed(self, game: Game) -> None:
         # The to_embed method is now on GameData, not GamesService
         game_data = await game.to_data()
-        public_embed = game_data.to_embed(guild=None).to_dict()
-        private_embed = game_data.to_embed(guild=None, dm=True).to_dict()
+        public_embed = game_data.to_embed().to_dict()
+        private_embed = game_data.to_embed(dm=True).to_dict()
 
         # Verify both embeds are created correctly
         assert public_embed is not None
@@ -385,11 +385,14 @@ class TestServiceGamesUpsert:
             channel_xid=game.channel.xid,
             author_xid=user.xid,
             friends=[],
-            seats=4,
-            rules=None,
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=4,
+                rules=None,
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.NONE.value,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
         assert not new
@@ -418,11 +421,14 @@ class TestServiceGamesUpsert:
             channel_xid=game.channel.xid,
             author_xid=user1.xid,
             friends=[user2.xid],
-            seats=4,
-            rules=None,
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=4,
+                rules=None,
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.NONE.value,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
         assert not new
@@ -442,11 +448,14 @@ class TestServiceGamesUpsert:
             channel_xid=channel.xid,
             author_xid=user.xid,
             friends=[],
-            seats=4,
-            rules=None,
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=4,
+                rules=None,
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.NONE.value,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
         assert new
@@ -470,11 +479,14 @@ class TestServiceGamesUpsert:
             channel_xid=channel.xid,
             author_xid=user1.xid,
             friends=[user2.xid],
-            seats=4,
-            rules="some additional rules",
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=4,
+                rules="some additional rules",
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.NONE.value,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
         assert new
@@ -503,11 +515,14 @@ class TestServiceGamesUpsert:
             channel_xid=channel.xid,
             author_xid=user1.xid,
             friends=[user2.xid, user3.xid],
-            seats=4,
-            rules=None,
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=4,
+                rules=None,
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.NONE.value,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
         assert new
@@ -546,11 +561,14 @@ class TestServiceGamesUpsert:
             channel_xid=channel.xid,
             author_xid=user1.xid,
             friends=[user2.xid, user3.xid],
-            seats=4,
-            rules=None,
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=4,
+                rules=None,
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.NONE.value,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
         assert new
@@ -579,11 +597,14 @@ class TestServiceGamesUpsert:
             channel_xid=game.channel.xid,
             author_xid=user2.xid,
             friends=[],
-            seats=game.seats,
-            rules=None,
-            format=game.format,
-            bracket=game.bracket,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=game.seats,
+                rules=None,
+                format=game.format,
+                bracket=game.bracket,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
 
@@ -605,11 +626,14 @@ class TestServiceGamesUpsert:
             channel_xid=game.channel.xid,
             author_xid=user2.xid,
             friends=[],
-            seats=game.seats,
-            rules=None,
-            format=game.format,
-            bracket=game.bracket,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=game.seats,
+                rules=None,
+                format=game.format,
+                bracket=game.bracket,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(),
             locale="en",
         )
 
@@ -633,13 +657,15 @@ class TestServiceGamesUpsert:
             channel_xid=game.channel.xid,
             author_xid=user2.xid,
             friends=[],
-            seats=game.seats,
-            rules=None,
-            format=game.format,
-            bracket=game.bracket,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=game.seats,
+                rules=None,
+                format=game.format,
+                bracket=game.bracket,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(to_mode=True),
             locale="en",
-            to_mode=True,
         )
 
         DatabaseSession.expire_all()
@@ -659,13 +685,15 @@ class TestServiceGamesUpsert:
             channel_xid=game.channel.xid,
             author_xid=user.xid,
             friends=[],
-            seats=unmatched_seats,
-            rules=None,
-            format=game.format,
-            bracket=game.bracket,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=unmatched_seats,
+                rules=None,
+                format=game.format,
+                bracket=game.bracket,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(to_mode=True),
             locale="en",
-            to_mode=True,
         )
 
         assert new
@@ -678,14 +706,15 @@ class TestServiceGamesUpsert:
             channel_xid=game.channel.xid,
             author_xid=user.xid,
             friends=[],
-            seats=game.seats + 2,
-            rules=None,
-            format=game.format,
-            bracket=game.bracket,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=game.seats + 2,
+                rules=None,
+                format=game.format,
+                bracket=game.bracket,
+                service=GameService.CONVOKE.value,
+            ),
+            modes=ChannelModes(to_mode=True, competitive_mode=True),
             locale="en",
-            to_mode=True,
-            competitive_mode=True,
         )
 
         assert new
@@ -806,14 +835,17 @@ class TestServiceGamesGuildWar:
             channel_xid=channel.xid,
             author_xid=author_xid,
             friends=[],
-            seats=4,
-            rules=None,
-            format=GameFormat.COMMANDER.value,
-            bracket=GameBracket.NONE.value,
-            service=GameService.CONVOKE.value,
+            criteria=GameCriteria(
+                seats=4,
+                rules=None,
+                format=GameFormat.COMMANDER.value,
+                bracket=GameBracket.NONE.value,
+                service=GameService.CONVOKE.value,
+                war_id=war_id,
+                war_title=war_title,
+            ),
+            modes=ChannelModes(),
             locale="en",
-            war_id=war_id,
-            war_title=war_title,
         )
         return new, game_data.id
 

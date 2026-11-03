@@ -37,6 +37,8 @@ from spellbot.web.api.oauth import safe_relative_path
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from aiohttp.typedefs import Handler
 
 logger = logging.getLogger(__name__)
@@ -163,38 +165,29 @@ def concat_js(*names: str) -> str:
     return "\n".join((TEMPLATES_ROOT / name).read_text(encoding="utf-8") for name in names)
 
 
-async def serve_analytics_js(_: web.Request) -> web.Response:
+def serve_js(*names: str) -> Callable[[web.Request], Awaitable[web.Response]]:
     """
-    Serve the analytics JavaScript file.
+    Serve the concatenated template-dir JS files `names`, starting with the shared helpers.
 
-    No-cache headers (like `dashboard.js`) ensure viewers pick up new analytics code
-    immediately after a deploy without a hard refresh, instead of running a stale copy.
+    The files contain no secrets, only chart wiring and fetches against endpoints that are
+    gated on their own. No-cache headers make viewers pick up new code right after a deploy
+    instead of running a stale copy.
     """
-    return web.Response(
-        body=concat_js("analytics_pure.js", "analytics.js"),
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Content-Type": "application/javascript; charset=utf-8",
-        },
-    )
+
+    async def serve(_: web.Request) -> web.Response:
+        return web.Response(
+            body=concat_js("chart_common_pure.js", *names),
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Content-Type": "application/javascript; charset=utf-8",
+            },
+        )
+
+    return serve
 
 
-async def serve_dashboard_js(_: web.Request) -> web.Response:
-    """
-    Serve the admin dashboard JavaScript file.
-
-    Served publicly (the file contains no secrets — only chart wiring and
-    fetch calls against `/admin/dashboard/*`, which are themselves gated by
-    `admin_auth_middleware`). No-cache headers ensure admins pick up new
-    dashboard code immediately after a deploy without a hard refresh.
-    """
-    return web.Response(
-        body=concat_js("dashboard_pure.js", "dashboard.js"),
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Content-Type": "application/javascript; charset=utf-8",
-        },
-    )
+serve_analytics_js = serve_js("analytics_pure.js", "analytics.js")
+serve_dashboard_js = serve_js("dashboard_pure.js", "dashboard.js")
 
 
 async def serve_robots_txt(_: web.Request) -> web.Response:

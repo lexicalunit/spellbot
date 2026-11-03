@@ -161,6 +161,34 @@ class TestCogLeaveGame:
                 "flags": 0,
             }
 
+    async def test_leave_all_updates_every_post_by_its_own_message(
+        self,
+        cog: LeaveGameCog,
+        message: discord.Message,
+        game: Game,
+        player: User,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        p2 = factories.user.create()
+        DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
+        other_channel = factories.channel.create(guild=guild)
+        factories.post.create(guild=guild, channel=other_channel, game=game, message_xid=424242)
+        await DatabaseSession.commit()
+        post_xids = sorted(post.message_xid for post in game.posts)
+        assert len(post_xids) == 2
+
+        with mock_operations(leave_action) as ops:
+            ops.safe_fetch_text_channel.return_value = interaction.channel
+            ops.safe_get_partial_message.return_value = message
+
+            await run_command(cog.leave_all, interaction)
+
+            fetched = sorted(c.args[2] for c in ops.safe_get_partial_message.call_args_list)
+            assert fetched == post_xids
+            assert ops.safe_update_embed.call_count == 2
+
     async def test_leave_all_then_delete(
         self,
         cog: LeaveGameCog,

@@ -57,6 +57,11 @@ async def make_voice_channel() -> Callable[..., discord.VoiceChannel]:
 
 @pytest.mark.asyncio
 class TestCogEvents:
+    async def test_game_options_are_described(self, cog: EventsCog) -> None:
+        descriptions = {param.name: param.description for param in cog.game.parameters}
+        assert descriptions["format"] == "What game format do you want to play?"
+        assert descriptions["bracket"] == "What commander bracket do you want to play?"
+
     async def test_game(
         self,
         cog: EventsCog,

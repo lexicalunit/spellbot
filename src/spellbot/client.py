@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from time import monotonic
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import discord
@@ -83,7 +82,6 @@ class SpellBot(AutoShardedBot):
         create_connection: bool = True,
     ) -> None:
         intents = discord.Intents().default()
-        intents.messages = True
         logger.info("intents.value: %s", intents.value)
         kwargs: dict[str, Any] = {}
         if settings.BOT_APPLICATION_ID is not None:  # pragma: no cover
@@ -207,14 +205,11 @@ class SpellBot(AutoShardedBot):
             case GameService.CONVOKE.value:
                 return await convoke.generate_link(game_data, pins)
             case GameService.GIRUDO.value:
-                details = await girudo.generate_link(game_data)
-                return GameLinkDetails(details.link, details.password)
+                return await girudo.generate_link(game_data)
             case GameService.EDHLAB.value:
-                details = await edhlab.generate_link(game_data)
-                return GameLinkDetails(*details)
+                return await edhlab.generate_link(game_data)
             case GameService.PLAYGROUP_LIVE.value:
-                details = await playgroup_live.generate_link(game_data, original_seats)
-                return GameLinkDetails(*details)
+                return await playgroup_live.generate_link(game_data, original_seats)
             case _:
                 return GameLinkDetails()
 
@@ -266,6 +261,5 @@ def build_bot(
         disable_tasks=disable_tasks,
         create_connection=create_connection,
     )
-    bot.fetch_application_emojis = AsyncMock(return_value=[])
     setup_metrics()
     return bot

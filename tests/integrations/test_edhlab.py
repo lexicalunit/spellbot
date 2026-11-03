@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 import spellbot.integrations.edhlab as edhlab_module
+from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket
 from spellbot.integrations.edhlab import fetch_edhlab_link, generate_link
 from tests.mocks import create_mock_game
@@ -81,7 +82,7 @@ class TestGenerateLink:
         with patch.object(edhlab_module.settings, "EDHLAB_API_KEY", ""):
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
     @pytest.mark.asyncio
     async def test_generate_link_success(self) -> None:
@@ -100,7 +101,7 @@ class TestGenerateLink:
         ):
             result = await generate_link(game)
 
-        assert result == ("https://edhlab.gg/game/123", None)
+        assert result == GameLinkDetails("https://edhlab.gg/game/123")
 
     @pytest.mark.asyncio
     async def test_generate_link_retries_on_failure_then_succeeds(self) -> None:
@@ -127,13 +128,13 @@ class TestGenerateLink:
                 "https://api.edhlab.gg/create-game",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(edhlab_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(game)
 
-        assert result == ("https://edhlab.gg/game/789", None)
+        assert result == GameLinkDetails("https://edhlab.gg/game/789")
         assert mock_client.post.call_count == 2
 
     @pytest.mark.asyncio
@@ -155,13 +156,13 @@ class TestGenerateLink:
                 "https://api.edhlab.gg/create-game",
             ),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(edhlab_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
         assert mock_client.post.call_count == edhlab_module.RETRY_ATTEMPTS
 
     @pytest.mark.asyncio
@@ -192,7 +193,7 @@ class TestGenerateLink:
             mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()
 
     @pytest.mark.asyncio
     async def test_generate_link_zero_retry_attempts(self) -> None:
@@ -208,4 +209,4 @@ class TestGenerateLink:
         ):
             result = await generate_link(game)
 
-        assert result == (None, None)
+        assert result == GameLinkDetails()

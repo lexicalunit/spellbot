@@ -10,7 +10,7 @@ SpellBot is free and works in any Discord server you manage. Adding it takes a m
 <a href="https://discord.com/api/oauth2/authorize?client_id=725510263251402832&permissions=2416045137&scope=applications.commands%20bot">
 <img
         alt="Add to Discord"
-        src="https://spellbot.io/assets/img/screenshots/spellbot-banner.png"
+        src="https://spellbot.io/assets/img/add-to-discord.png"
     />
 </a>
 </div>

@@ -10,7 +10,7 @@ import pytest_asyncio
 
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.services import dashboard
-from spellbot.web.dashboard_filters import GuildFilter, PeriodSpec, parse_period
+from spellbot.services.filters import GuildFilter, PeriodSpec, parse_period
 
 if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory

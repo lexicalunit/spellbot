@@ -826,49 +826,10 @@
 
   function renderRulesCloud(data) {
     if (data.rule_ngrams?.length) {
-      const section = document.getElementById("rulesCloudSection");
-      const maxCount = Math.max(...data.rule_ngrams.map((n) => n.count));
-      const minCount = Math.min(...data.rule_ngrams.map((n) => n.count));
-
-      // Use logarithmic scale to handle large disparities in counts
-      const logMin = Math.log(minCount || 1);
-      const logMax = Math.log(maxCount || 1);
-      const logRange = logMax - logMin || 1;
-
-      // Color palette for variety
-      const colors = [
-        "#a78bfa", // purple
-        "#60a5fa", // blue
-        "#4ade80", // green
-        "#f472b6", // pink
-        "#fbbf24", // amber
-        "#67e8f9", // cyan
-        "#fb923c", // orange
-        "#a3e635", // lime
-      ];
-
-      // Shuffle the ngrams for a more organic look
-      const shuffled = [...data.rule_ngrams].sort(() => Math.random() - 0.5);
-
-      // Generate word cloud as styled spans
-      const words = shuffled
-        .map((n, i) => {
-          // Logarithmic scale for better distribution
-          const logCount = Math.log(n.count || 1);
-          const scale = (logCount - logMin) / logRange;
-          // Scale font size between 0.8rem and 2rem
-          const fontSize = 0.8 + scale * 1.2;
-          // Pick color based on index for variety
-          const color = colors[i % colors.length];
-          // Slight random rotation for visual interest (-4 to 4 degrees)
-          const rotation = (Math.random() - 0.5) * 8;
-          // Vary opacity: higher count = more opaque
-          const opacity = 0.75 + scale * 0.25;
-          return `<span class="cloud-word" style="font-size:${fontSize}rem;color:${color};opacity:${opacity};transform:rotate(${rotation}deg)" title="${n.count} games">${escapeHtml(n.phrase)}</span>`;
-        })
-        .join("");
-
-      section.innerHTML = `<div class="word-cloud">${words}</div>`;
+      document.getElementById("rulesCloudSection").innerHTML = wordCloudHtml(
+        data.rule_ngrams,
+        Math.random,
+      );
     } else {
       showNoData("rulesCloudSection");
     }

@@ -6,14 +6,12 @@ import logging
 from typing import TYPE_CHECKING
 
 import discord
-from ddtrace.trace import tracer
 from discord import app_commands
 from discord.ext import commands
 
 from spellbot.actions import LeaveAction
-from spellbot.metrics import add_span_context
 from spellbot.settings import settings
-from spellbot.utils import for_all_callbacks, is_guild
+from spellbot.utils import for_all_callbacks, is_guild, traced_interaction
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
@@ -30,10 +28,9 @@ class LeaveGameCog(commands.Cog):
     # in all the other cogs. But in this case we're using `leave_command` to
     # differentiate it from the `leave` button in the LFG cog.
     @app_commands.command(name="leave", description="Leaves pending games in this channel.")
-    @tracer.wrap(name="interaction", resource="leave_command")
+    @traced_interaction()
     async def leave_command(self, interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
-        add_span_context(interaction)
         async with (
             self.bot.guild_lock(interaction.guild.id),
             LeaveAction.create(self.bot, interaction) as action,
@@ -41,10 +38,9 @@ class LeaveGameCog(commands.Cog):
             await action.execute()
 
     @app_commands.command(name="leave_all", description="Leaves all pending games.")
-    @tracer.wrap(name="interaction", resource="leave_all_command")
+    @traced_interaction("leave_all_command")
     async def leave_all(self, interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
-        add_span_context(interaction)
         async with (
             self.bot.guild_lock(interaction.guild.id),
             LeaveAction.create(self.bot, interaction) as action,

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock
 
 import aiohttp
@@ -616,6 +616,43 @@ class TestGameRecordEndpoint:
         assert resp.status == 400
         data = await resp.json()
         assert data["error"] == "No players provided"
+
+    @pytest.mark.parametrize(
+        ("body", "error"),
+        [
+            pytest.param({"data": "not json"}, "Invalid JSON body", id="malformed"),
+            pytest.param({"json": [1, 2]}, "Record must be a JSON object", id="not-object"),
+            pytest.param(
+                {"json": {"tracker": 102, "players": {"xid": 1}}},
+                "Invalid player data",
+                id="players-not-list",
+            ),
+            pytest.param(
+                {"json": {"tracker": 102, "players": ["1001"]}},
+                "Invalid player data",
+                id="player-not-object",
+            ),
+        ],
+    )
+    async def test_game_record_bad_body(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        body: dict[str, Any],
+        error: str,
+    ) -> None:
+        guild = factories.guild.create(xid=2010, name="guild")
+        channel = factories.channel.create(xid=3010, name="channel", guild=guild)
+        game = factories.game.create(id=1010, seats=2, guild=guild, channel=channel)
+        token = factories.token.create(key="RECORD10")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": f"Bearer {token.key}"},
+            **body,
+        )
+        assert resp.status == 400
+        assert (await resp.json())["error"] == error
 
     async def test_game_record_mismatched_players(
         self,

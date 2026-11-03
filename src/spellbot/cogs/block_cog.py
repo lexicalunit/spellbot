@@ -6,14 +6,12 @@ import logging
 from typing import TYPE_CHECKING
 
 import discord
-from ddtrace.trace import tracer
 from discord import app_commands
 from discord.ext import commands
 
 from spellbot.actions import BlockAction
-from spellbot.metrics import add_span_context
 from spellbot.settings import settings
-from spellbot.utils import for_all_callbacks, is_guild
+from spellbot.utils import for_all_callbacks, is_guild, traced_interaction
 
 logger = logging.getLogger(__name__)
 
@@ -31,44 +29,35 @@ class BlockCog(commands.Cog):
         description="Block another user from joining your games.",
     )
     @app_commands.describe(target="The user to block")
-    # @tracer.wrap(name="interaction", resource="block")
-    # There's a bug when combining `@tracer.wrap`, `@app_commands.describe` and discord.User.
-    # See: https://github.com/Rapptz/discord.py/issues/10317.
+    @traced_interaction()
     async def block(
         self,
         interaction: discord.Interaction,
         target: discord.User | discord.Member,
     ) -> None:
-        with tracer.trace("interaction", resource="block"):
-            add_span_context(interaction)
-            async with BlockAction.create(self.bot, interaction) as action:
-                await action.block(target=target)
+        async with BlockAction.create(self.bot, interaction) as action:
+            await action.block(target=target)
 
     @app_commands.command(
         name="unblock",
         description="Unblock a user you've previously blocked.",
     )
     @app_commands.describe(target="The user to unblock")
-    # @tracer.wrap(name="interaction", resource="unblock")
-    # There's a bug when combining `@tracer.wrap`, `@app_commands.describe` and discord.User.
-    # See: https://github.com/Rapptz/discord.py/issues/10317.
+    @traced_interaction()
     async def unblock(
         self,
         interaction: discord.Interaction,
         target: discord.User | discord.Member,
     ) -> None:
-        with tracer.trace("interaction", resource="unblock"):
-            add_span_context(interaction)
-            async with BlockAction.create(self.bot, interaction) as action:
-                await action.unblock(target=target)
+        async with BlockAction.create(self.bot, interaction) as action:
+            await action.unblock(target=target)
 
     @app_commands.command(
         name="blocked",
         description="Get a link to view and manage the users you've blocked.",
     )
-    @tracer.wrap(name="interaction", resource="blocked")
+    @traced_interaction()
     async def blocked(self, interaction: discord.Interaction) -> None:
-        add_span_context(interaction)
         async with BlockAction.create(self.bot, interaction) as action:
             await action.blocked()
 

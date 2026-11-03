@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 from typing import TYPE_CHECKING, cast
 
 from aiohttp import web
 from crawlerdetect import CrawlerDetect
+from ddtrace.trace import tracer
 
+from spellbot.database import db_session_manager
+from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.redis_client import get_redis
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -64,3 +68,21 @@ async def rate_limited(request: web.Request, key: str | None = None) -> bool:
         logger.warning("redis error in rate limiter", exc_info=True)
         return False
     return int(resp) > RATE_LIMIT
+
+
+type Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]
+
+
+def web_endpoint(resource: str) -> Callable[[Handler], Handler]:
+    """Trace a route as the `web` span `resource`, tagged with a request id, in a DB session."""
+
+    def decorate(handler: Handler) -> Handler:
+        @functools.wraps(handler)
+        async def endpoint(request: web.Request) -> web.StreamResponse:
+            add_span_request_id(generate_request_id())
+            async with db_session_manager():
+                return await handler(request)
+
+        return tracer.wrap(name="web", resource=resource)(endpoint)
+
+    return decorate

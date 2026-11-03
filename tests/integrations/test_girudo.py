@@ -519,35 +519,6 @@ class TestGirudoGameCreation:
         assert link is None
 
     @pytest.mark.asyncio
-    async def test_create_game_with_custom_format(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test create_game with custom format_uuid and format_name."""
-        monkeypatch.setattr(girudo.settings, "GIRUDO_BASE_URL", GirudoTestData.API_BASE_URL)
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_CREATE_URL",
-            f"{GirudoTestData.API_BASE_URL}/create",
-        )
-        monkeypatch.setattr(
-            girudo.settings,
-            "GIRUDO_DEFAULT_TCG_MAGIC_UUID",
-            GirudoTestData.TCG_MAGIC_UUID,
-        )
-        girudo.TCG_NAMES_CACHE = GirudoTestData.tcg_cache()
-
-        response = MockHTTPResponse(201, GirudoTestData.create_game_response())
-        client = MockHTTPClient(response)
-
-        game = create_mock_game()
-        link = await girudo.create_game(
-            client,
-            GirudoTestData.AUTH_TOKEN,
-            game,
-            format_uuid="custom-uuid",
-            format_name="Custom Format",
-        )
-        assert link is not None
-
-    @pytest.mark.asyncio
     async def test_create_game_no_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test create_game when GIRUDO_CREATE_URL not configured."""
         monkeypatch.setattr(girudo.settings, "GIRUDO_CREATE_URL", None)

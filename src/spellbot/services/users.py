@@ -21,6 +21,7 @@ from spellbot.models import (
     Queue,
     User,
     UserAward,
+    column_length,
 )
 from spellbot.settings import settings
 
@@ -42,7 +43,7 @@ async def upsert(
     """Update or insert the user into the database."""
     assert hasattr(target, "id")
     xid = target.id
-    max_name_len = User.name.property.columns[0].type.length
+    max_name_len = column_length(User.name)
     raw_name = getattr(target, "display_name", "")
     name = raw_name[:max_name_len]
     values = {
@@ -102,58 +103,30 @@ async def get(user_xid: int) -> UserData | None:
     return user.to_data() if user else None
 
 
-@tracer.wrap()
-async def set_banned(user_xid: int, banned: bool) -> UserData:
-    """Mark the given user id as banned from using this bot."""
-    values = {
-        "xid": user_xid,
-        "name": "Unknown User",
-        "updated_at": datetime.now(tz=UTC),
-        "banned": banned,
-    }
+async def upsert_flags(user_xid: int, **flags: bool) -> UserData:
+    """Set flag columns on a user, creating a placeholder user if they don't exist yet."""
+    values = {"xid": user_xid, "name": "Unknown User", "updated_at": datetime.now(tz=UTC), **flags}
     stmt = insert(User).values(**values)
-    stmt = (
-        stmt.on_conflict_do_update(
-            index_elements=[User.xid],
-            index_where=User.xid == values["xid"],
-            set_={
-                "updated_at": stmt.excluded.updated_at,
-                "banned": stmt.excluded.banned,
-            },
-        )
-        .values(values)
-        .returning(User)
-    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[User.xid],
+        index_where=User.xid == user_xid,
+        set_={column: stmt.excluded[column] for column in ("updated_at", *flags)},
+    ).returning(User)
     updated_user: User = (await DatabaseSession.execute(stmt)).scalars().one()
     await DatabaseSession.commit()
     return updated_user.to_data()
+
+
+@tracer.wrap()
+async def set_banned(user_xid: int, banned: bool) -> UserData:
+    """Mark the given user id as banned from using this bot."""
+    return await upsert_flags(user_xid, banned=banned)
 
 
 @tracer.wrap()
 async def set_admin(user_xid: int, is_admin: bool) -> UserData:
     """Grant or revoke admin dashboard access for the given user id."""
-    values = {
-        "xid": user_xid,
-        "name": "Unknown User",
-        "updated_at": datetime.now(tz=UTC),
-        "is_admin": is_admin,
-    }
-    stmt = insert(User).values(**values)
-    stmt = (
-        stmt.on_conflict_do_update(
-            index_elements=[User.xid],
-            index_where=User.xid == values["xid"],
-            set_={
-                "updated_at": stmt.excluded.updated_at,
-                "is_admin": stmt.excluded.is_admin,
-            },
-        )
-        .values(values)
-        .returning(User)
-    )
-    updated_user: User = (await DatabaseSession.execute(stmt)).scalars().one()
-    await DatabaseSession.commit()
-    return updated_user.to_data()
+    return await upsert_flags(user_xid, is_admin=is_admin)
 
 
 @tracer.wrap()
@@ -605,11 +578,11 @@ async def filter_pending_games(user_xids: list[int]) -> list[int]:
                 func.count(Queue.user_xid).label("pending"),
             )
             .join(Game)
-            .where(Game.deleted_at.is_(None))
+            .where(Game.deleted_at.is_(None), any_of(Queue.user_xid, user_xids))
             .group_by(Queue.user_xid),
         )
     ).all()
-    counts = {row[0]: row[1] for row in rows if row[0]}
+    counts = {row[0]: row[1] for row in rows}
 
     return [
         user_xid

@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, Game, Queue, User
 from spellbot.services import users
+from spellbot.settings import settings
 from tests.factories import UserFactory
 
 if TYPE_CHECKING:
@@ -264,3 +265,19 @@ class TestServiceUsers:
             await DatabaseSession.execute(select(User).where(User.xid == user.xid))
         ).scalar_one()
         assert refreshed.playgroup_user_id == 4242
+
+
+@pytest.mark.asyncio
+class TestServiceUsersFilterPendingGames:
+    async def test_drops_users_at_their_pending_limit(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        busy = factories.user.create()
+        free = factories.user.create()
+        bystander = factories.user.create()
+        for user in (busy, bystander):
+            for _ in range(settings.MAX_PENDING_GAMES - 1):
+                game = factories.game.create(guild=guild, channel=channel)
+                factories.queue.create(user_xid=user.xid, game_id=game.id, og_guild_xid=guild.xid)
+
+        assert await users.filter_pending_games([busy.xid, free.xid]) == [free.xid]

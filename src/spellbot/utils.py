@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
-import hmac
+import functools
 import logging
-import time
+import types
 from typing import TYPE_CHECKING, Any, cast
 
 import discord
-from discord.app_commands import AppCommandError, CommandOnCooldown, ContextMenu, NoPrivateMessage
+from ddtrace.trace import tracer
+from discord.app_commands import AppCommandError, CommandOnCooldown, NoPrivateMessage
 from discord.app_commands import Command as AppCommand
 from discord.ext.commands import AutoShardedBot
 from discord.ext.commands import Command as ExtCommand
@@ -23,11 +23,11 @@ from .errors import (
     UserBannedError,
 )
 from .i18n import t, user_locale
-from .metrics import add_span_error
+from .metrics import add_span_context, add_span_error
 from .settings import settings
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Coroutine, Iterable
 
     from discord.abc import MessageableChannel
     from discord.ui import Item
@@ -87,32 +87,29 @@ def safe_permissions_for(obj: Any, *args: Any) -> discord.Permissions | None:
         return None
 
 
-def bot_can_reply_to(message: discord.Message) -> bool:
-    if (
-        not hasattr(message, "channel")
-        or not hasattr(message.channel, "type")
-        or not hasattr(message.channel, "guild")
-        or not hasattr(message.channel, "permissions_for")
-        or message.channel.type != discord.ChannelType.text
-    ):
+def bot_guild_permission(guild: discord.Guild | None, name: str) -> bool:
+    """Whether the bot has the guild wide permission `name` in `guild`."""
+    if not guild or not guild.me:
         return False
-    if message.channel.guild is None:
+    return bool(getattr(guild.me.guild_permissions, name, False))
+
+
+def bot_channel_permissions(channel: MessageableChannel, *names: str) -> bool:
+    """Whether the bot has every permission in `names` in the guild channel `channel`."""
+    if not hasattr(channel, "type") or channel.type == discord.ChannelType.private:
         return False
-    perms = safe_permissions_for(message.channel, message.channel.guild.me)
+    guild_channel = cast("discord.abc.GuildChannel", channel)
+    if not hasattr(guild_channel, "guild"):
+        return False
+    perms = safe_permissions_for(guild_channel, guild_channel.guild.me)
     if perms is None:
         return False
-    for req in ("send_messages",):
-        if not hasattr(perms, req) or not getattr(perms, req):
-            return False
-    return True
+    logger.info("bot permissions (%s): %s", getattr(channel, "id", None), str(perms.value))
+    return all(getattr(perms, name, False) for name in names)
 
 
 def bot_can_role(guild: discord.Guild, role: discord.Role | None = None) -> bool:
-    if not guild.me:
-        return False
-    perms = guild.me.guild_permissions
-    req = "manage_roles"
-    if not hasattr(perms, req) or not getattr(perms, req):
+    if not bot_guild_permission(guild, "manage_roles"):
         return False
     return not (role is not None and role > guild.me.top_role)
 
@@ -135,72 +132,23 @@ def bot_can_read(channel: MessageableChannel) -> bool:
 
 
 def bot_can_manage_channels(guild: discord.Guild) -> bool:
-    if not guild.me:
-        return False
-    perms = guild.me.guild_permissions
-    req = "manage_channels"
-    return hasattr(perms, req) and getattr(perms, req)
+    return bot_guild_permission(guild, "manage_channels")
 
 
 def bot_can_delete_message(message: discord.Message | discord.PartialMessage) -> bool:
-    if not hasattr(message, "guild"):
-        return False
-    guild = message.guild
-    if not guild or not guild.me:
-        return False
-    perms = guild.me.guild_permissions
-    req = "manage_messages"
-    return hasattr(perms, req) and getattr(perms, req)
+    return bot_guild_permission(getattr(message, "guild", None), "manage_messages")
 
 
 def bot_can_delete_channel(channel: MessageableChannel) -> bool:
-    if not hasattr(channel, "type"):
-        return False
-    channel_type = channel.type
-    if channel_type == discord.ChannelType.private:
-        return False
-    guild_channel = cast("discord.abc.GuildChannel", channel)
-    if not hasattr(guild_channel, "guild"):
-        return False
-    guild: discord.Guild = guild_channel.guild
-    perms = safe_permissions_for(guild_channel, guild.me)
-    if perms is None:
-        return False
-    channel_id = getattr(channel, "id", None)
-    logger.info("bot permissions (%s): %s", channel_id, str(perms.value))
-    for req in ("manage_channels",):
-        if not hasattr(perms, req) or not getattr(perms, req):
-            return False
-    return True
+    return bot_channel_permissions(channel, "manage_channels")
 
 
 def bot_can_read_messages(guild: discord.Guild) -> bool:
-    if not guild.me:
-        return False
-    perms = guild.me.guild_permissions
-    req = "read_messages"
-    return hasattr(perms, req) and getattr(perms, req)
+    return bot_guild_permission(guild, "read_messages")
 
 
 def bot_can_send_messages(channel: MessageableChannel) -> bool:
-    if not hasattr(channel, "type"):
-        return False
-    channel_type = channel.type
-    if channel_type == discord.ChannelType.private:
-        return False
-    guild_channel = cast("discord.abc.GuildChannel", channel)
-    if not hasattr(guild_channel, "guild"):
-        return False
-    guild: discord.Guild = guild_channel.guild
-    perms = safe_permissions_for(guild_channel, guild.me)
-    if perms is None:
-        return False
-    channel_id = getattr(channel, "id", None)
-    logger.info("bot permissions (%s): %s", channel_id, str(perms.value))
-    for req in ("send_messages",):
-        if not hasattr(perms, req) or not getattr(perms, req):
-            return False
-    return True
+    return bot_channel_permissions(channel, "send_messages")
 
 
 def is_admin(interaction: discord.Interaction) -> bool:
@@ -308,35 +256,73 @@ def for_all_callbacks(decorator: Any) -> Any:
     return decorate
 
 
+def traced_interaction[F: Callable[..., Coroutine[Any, Any, Any]]](
+    resource: str | None = None,
+) -> Callable[[F], F]:
+    """
+    Trace a command callback as an `interaction` span tagged with its interaction's context.
+
+    The span's resource defaults to the callback's name. discord.py resolves a callback's
+    parameter annotations against `callback.__globals__`, so the wrapper is rebuilt with the
+    wrapped callback's globals: annotations like `discord.User` resolve exactly as they would
+    without the wrapper. The wrapper only uses names from its closure, never those globals.
+    """
+
+    def decorate(fn: F) -> F:
+        function = cast("types.FunctionType", fn)
+        trace = tracer.trace
+        tag = add_span_context
+        name = resource or function.__name__
+        # The interaction (or `commands.Context`) is the parameter right after `self`.
+        context_name = function.__code__.co_varnames[1]
+
+        async def traced(*args: Any, **kwargs: Any) -> Any:
+            with trace("interaction", resource=name):
+                tag(args[1] if len(args) > 1 else kwargs.get(context_name))
+                return await fn(*args, **kwargs)
+
+        wrapper = types.FunctionType(
+            traced.__code__,
+            function.__globals__,
+            function.__name__,
+            traced.__defaults__,
+            traced.__closure__,
+        )
+        return cast("F", functools.update_wrapper(wrapper, function))
+
+    return decorate
+
+
+# Expected errors and the translation key of the message sent to the user for each.
+ERROR_MESSAGE_KEYS: dict[type[Exception], str] = {
+    AdminOnlyError: "errors.no_permission",
+    ModOnlyError: "errors.no_permission",
+    GuildOnlyError: "errors.guild_only",
+    NoPrivateMessage: "errors.no_dms",
+    UserBannedError: "errors.banned",
+    GuildBannedError: "errors.banned",
+}
+
+
 async def handle_interaction_errors(interaction: discord.Interaction, error: Exception) -> None:
     from .operations import safe_send_user  # allow_inline: circular import
 
     locale = user_locale(interaction)
-    if isinstance(error, AdminOnlyError):
-        return await safe_send_user(interaction.user, t("errors.no_permission", locale=locale))
-    if isinstance(error, ModOnlyError):
-        return await safe_send_user(interaction.user, t("errors.no_permission", locale=locale))
-    if isinstance(error, GuildOnlyError):
-        return await safe_send_user(interaction.user, t("errors.guild_only", locale=locale))
-    if isinstance(error, NoPrivateMessage):
-        return await safe_send_user(interaction.user, t("errors.no_dms", locale=locale))
-    if isinstance(error, UserBannedError):
-        return await safe_send_user(interaction.user, t("errors.banned", locale=locale))
-    if isinstance(error, GuildBannedError):
-        return await safe_send_user(interaction.user, t("errors.banned", locale=locale))
     if isinstance(error, CommandOnCooldown):
         seconds = max(1, round(error.retry_after))
         return await safe_send_user(
             interaction.user,
             t("errors.cooldown", locale=locale, seconds=seconds),
         )
+    for error_type, key in ERROR_MESSAGE_KEYS.items():
+        if isinstance(error, error_type):
+            return await safe_send_user(interaction.user, t(key, locale=locale))
 
     add_span_error(error)
+    command = interaction.command
     ref = (
-        f"command `{interaction.command.qualified_name}`"
-        if interaction.command is not None and isinstance(interaction, AppCommand | ExtCommand)
-        else f"component `{interaction.command.qualified_name}`"
-        if interaction.command is not None and isinstance(interaction, ContextMenu)
+        f"command `{command.qualified_name}`"
+        if command is not None
         else f"interaction `{interaction.id}`"
     )
     logger.error(
@@ -392,24 +378,3 @@ async def load_extensions(bot: AutoShardedBot, do_sync: bool = False) -> None:  
         await bot.tree.sync(guild=guild)
 
     bot.tree.error(handle_command_errors)
-
-
-def generate_signed_url(guild_xid: int, expires_in_minutes: int = 15) -> str:
-    """Generate an HMAC-signed analytics URL for a guild."""
-    expires = int(time.time()) + (expires_in_minutes * 60)
-    message = f"{guild_xid}:{expires}"
-    secret = (settings.SECRET_TOKEN or "").encode()
-    sig = hmac.new(secret, message.encode(), hashlib.sha256).hexdigest()
-    return f"{settings.API_BASE_URL}/g/{guild_xid}/analytics?expires={expires}&sig={sig}"
-
-
-def validate_signature(guild_xid: int, expires: int, sig: str) -> bool:
-    """Validate an HMAC-signed analytics URL."""
-    if not settings.CHECK_SIGNATURE:
-        return True
-    if time.time() > expires:
-        return False
-    message = f"{guild_xid}:{expires}"
-    secret = (settings.SECRET_TOKEN or "").encode()
-    expected = hmac.new(secret, message.encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(sig, expected)

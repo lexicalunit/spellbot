@@ -8,17 +8,15 @@ from typing import TYPE_CHECKING, Any, TypedDict
 
 import httpx
 
-from spellbot import __version__, services
+from spellbot import services
 from spellbot.data import GameLinkDetails
-from spellbot.enums import GameBracket, GameFormat
-from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
+from spellbot.enums import COMMANDER_FORMATS, GameBracket, GameFormat
+from spellbot.integrations.http_errors import USER_AGENT, request_with_retries
 from spellbot.metrics import add_span_error
-from spellbot.models import Game
+from spellbot.models import Game, column_length
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
     from spellbot.data import GameData, PlayerDataDict
 
 logger = logging.getLogger(__name__)
@@ -26,8 +24,8 @@ logger = logging.getLogger(__name__)
 SUPPORTED_LOCALES = ["de", "en", "es", "fr", "it", "ja", "pt"]
 RETRY_ATTEMPTS = 3
 TIMEOUT_S = 3
-MAX_GUILD_NAME_LEN = Game.convoke_guild_name.property.columns[0].type.length
-MAX_GUILD_URL_LEN = Game.convoke_guild_url.property.columns[0].type.length
+MAX_GUILD_NAME_LEN = column_length(Game.convoke_guild_name)
+MAX_GUILD_URL_LEN = column_length(Game.convoke_guild_url)
 
 
 class ConvokeGameTypes(Enum):
@@ -54,19 +52,13 @@ MAX_WAR_SEATS = 8
 DEFAULT_WAR_SEATS = 4
 
 
+# Convoke also seats Pauper EDH as a Commander game.
+CONVOKE_COMMANDER_FORMATS = COMMANDER_FORMATS | {GameFormat.PAUPER_EDH}
+
+
 def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
     match format:
-        case (
-            GameFormat.COMMANDER
-            | GameFormat.EDH_MAX
-            | GameFormat.EDH_HIGH
-            | GameFormat.EDH_MID
-            | GameFormat.EDH_LOW
-            | GameFormat.EDH_BATTLECRUISER
-            | GameFormat.PRE_CONS
-            | GameFormat.CEDH
-            | GameFormat.PAUPER_EDH
-        ):
+        case _ if format in CONVOKE_COMMANDER_FORMATS:
             return ConvokeGameTypes.Commander
         case GameFormat.MODERN:
             return ConvokeGameTypes.Modern
@@ -83,7 +75,7 @@ def convoke_game_format(format: GameFormat) -> ConvokeGameTypes:
 async def fetch_live_guild_wars(client: httpx.AsyncClient) -> list[LiveGuildWar]:
     """Return Guild Wars currently open for matchmaking on Convoke."""
     endpoint = f"{settings.CONVOKE_ROOT}/guild-wars/live"
-    headers = {"user-agent": f"spellbot/{__version__}"}
+    headers = {"user-agent": USER_AGENT}
     resp = await client.get(endpoint, headers=headers)
     resp.raise_for_status()
     data = resp.json()
@@ -113,8 +105,7 @@ async def fetch_live_guild_wars(client: httpx.AsyncClient) -> list[LiveGuildWar]
 
 
 async def get_live_guild_wars() -> list[LiveGuildWar]:
-    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT_S)) as client:
         try:
             return await fetch_live_guild_wars(client)
         except Exception as ex:
@@ -146,32 +137,9 @@ def roster_payload(
 
 def request_headers() -> dict[str, str]:
     return {
-        "user-agent": f"spellbot/{__version__}",
+        "user-agent": USER_AGENT,
         "x-api-key": settings.CONVOKE_API_KEY or "",
     }
-
-
-async def request_with_retries[T](request: Callable[[httpx.AsyncClient], Awaitable[T]]) -> T | None:
-    """Run a Convoke API request, retrying on failure. Returns `None` if every attempt fails."""
-    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        for attempt in range(RETRY_ATTEMPTS):
-            try:
-                return await request(client)
-            except Exception as ex:
-                details = describe_http_error(ex)
-                is_final_attempt = attempt == RETRY_ATTEMPTS - 1
-                if is_final_attempt or is_terminal_client_error(ex):
-                    add_span_error(ex)
-                    logger.exception("Convoke API failure. %s", details)
-                    return None
-                logger.warning(
-                    "Convoke API issue (attempt %s). %s",
-                    attempt + 1,
-                    details,
-                    exc_info=True,
-                )
-    return None
 
 
 async def fetch_convoke_link(
@@ -200,7 +168,7 @@ async def fetch_convoke_link(
         "language": game_language,
     }
     if game_data.bracket != GameBracket.NONE.value:
-        payload["bracketLevel"] = f"B{game_data.bracket - 1}"
+        payload["bracketLevel"] = f"B{GameBracket(game_data.bracket).level}"
     if game_data.format == GameFormat.PRE_CONS.value:
         payload["bracketLevel"] = "PRECON"  # Convoke uses Bracket to indicate "pre-cons"
     if game_data.channel.competitive_mode:
@@ -244,7 +212,10 @@ async def generate_link(
         return GameLinkDetails()
 
     data = await request_with_retries(
+        "Convoke",
         lambda client: fetch_convoke_link(client, game_data, pins),
+        attempts=RETRY_ATTEMPTS,
+        timeout_s=TIMEOUT_S,
     )
     if not data:
         return GameLinkDetails()
@@ -285,4 +256,9 @@ async def update_players(game_data: GameData, pins: dict[int, str]) -> None:
     """
     if not settings.CONVOKE_API_KEY or not game_data.game_link:
         return
-    await request_with_retries(lambda client: put_convoke_players(client, game_data, pins))
+    await request_with_retries(
+        "Convoke",
+        lambda client: put_convoke_players(client, game_data, pins),
+        attempts=RETRY_ATTEMPTS,
+        timeout_s=TIMEOUT_S,
+    )

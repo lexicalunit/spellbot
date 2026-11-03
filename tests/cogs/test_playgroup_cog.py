@@ -11,6 +11,7 @@ from sqlalchemy import select
 
 from spellbot.cogs import PlaygroupCog
 from spellbot.database import DatabaseSession
+from spellbot.errors import UserBannedError
 from spellbot.models import User
 from tests.fixtures import Factories, run_command
 
@@ -41,7 +42,7 @@ class TestCogPlaygroup:
     ) -> None:
         factories.user.create(xid=interaction.user.id, playgroup_user_id=42)
         lookup_stub = mocker.patch(
-            "spellbot.cogs.playgroup_cog.lookup_playgroup_user",
+            "spellbot.actions.playgroup_action.find_playgroup_user",
             AsyncMock(),
         )
 
@@ -52,6 +53,7 @@ class TestCogPlaygroup:
             await interaction.followup.send(
                 "Your Discord account is already linked to Playgroup Live!",
                 ephemeral=True,
+                wait=True,
             ),
             times=1,
         )
@@ -67,10 +69,9 @@ class TestCogPlaygroup:
     ) -> None:
         factories.user.create(xid=interaction.user.id)
         mocker.patch(
-            "spellbot.cogs.playgroup_cog.lookup_playgroup_user",
+            "spellbot.actions.playgroup_action.find_playgroup_user",
             AsyncMock(return_value=(99, "testuser")),
         )
-        _patch_async_client(mocker)
 
         await run_command(cog.link, interaction)
 
@@ -85,6 +86,7 @@ class TestCogPlaygroup:
                 "Linked! Welcome, **testuser**. "
                 "Your Playgroup Live games will now be attributed to your account.",
                 ephemeral=True,
+                wait=True,
             ),
             times=1,
         )
@@ -97,10 +99,9 @@ class TestCogPlaygroup:
         mocker: MockerFixture,
     ) -> None:
         mocker.patch(
-            "spellbot.cogs.playgroup_cog.lookup_playgroup_user",
+            "spellbot.actions.playgroup_action.find_playgroup_user",
             AsyncMock(return_value=(None, None)),
         )
-        _patch_async_client(mocker)
 
         await run_command(cog.link, interaction)
 
@@ -110,13 +111,25 @@ class TestCogPlaygroup:
                 "Go to <https://playgroup.gg/profiles> and click **Link Discord**, "
                 "then run `/playgroup link` again to confirm.",
                 ephemeral=True,
+                wait=True,
             ),
             times=1,
         )
 
+    async def test_link_banned_user(
+        self,
+        cog: PlaygroupCog,
+        interaction: discord.Interaction,
+        factories: Factories,
+        mocker: MockerFixture,
+    ) -> None:
+        factories.user.create(xid=interaction.user.id, banned=True)
+        lookup_stub = mocker.patch(
+            "spellbot.actions.playgroup_action.find_playgroup_user",
+            AsyncMock(),
+        )
 
-def _patch_async_client(mocker: MockerFixture) -> None:
-    mock_client = AsyncMock()
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=None)
-    mocker.patch("spellbot.cogs.playgroup_cog.httpx.AsyncClient", return_value=mock_client)
+        with pytest.raises(UserBannedError):
+            await run_command(cog.link, interaction)
+
+        lookup_stub.assert_not_called()
