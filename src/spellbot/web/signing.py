@@ -1,7 +1,5 @@
 # Copyright (c) 2026 spellbot@lexicalunit.com
 
-"""HMAC-signed links that grant temporary access to a guild's analytics page."""
-
 from __future__ import annotations
 
 import hashlib

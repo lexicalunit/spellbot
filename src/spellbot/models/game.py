@@ -131,16 +131,23 @@ class Game(Base):
         doc="The service that will be used to create this game",
     )
     game_link: Mapped[str | None] = mapped_column(
-        String(255), doc="The generated link for this game"
+        String(255),
+        doc="The generated link for this game",
     )
     password: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, doc="The password for this game"
+        String(255),
+        nullable=True,
+        doc="The password for this game",
     )
     voice_invite_link: Mapped[str | None] = mapped_column(
-        String(255), doc="The voice channel invite link for this game"
+        String(255),
+        doc="The voice channel invite link for this game",
     )
     rules: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, index=True, doc="Additional rules for this game"
+        String(255),
+        nullable=True,
+        index=True,
+        doc="Additional rules for this game",
     )
     war_id: Mapped[str | None] = mapped_column(
         String(36),

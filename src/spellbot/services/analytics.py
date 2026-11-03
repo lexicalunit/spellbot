@@ -1,15 +1,5 @@
 # Copyright (c) 2026 spellbot@lexicalunit.com
 
-"""
-Per-guild analytics for the guild analytics page.
-
-The page answers the owner dashboard's questions for a single guild over the last 30 days or all
-time, so wherever the dashboard already computes a metric these functions call it with that
-guild selected and reshape the result into the keys the page expects. Only the metrics the
-dashboard has no equivalent for query the database here, using the dashboard's shared filters
-so both pages always count the same games.
-"""
-
 from __future__ import annotations
 
 from collections import defaultdict

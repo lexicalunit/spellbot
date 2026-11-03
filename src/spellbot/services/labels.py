@@ -1,7 +1,5 @@
 # Copyright (c) 2026 spellbot@lexicalunit.com
 
-"""SQL expressions that render a game's enum columns as their display titles."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any

@@ -36,12 +36,14 @@ THEME_CONFIGS: dict[Theme, ThemeConfig] = {
     ),
     Theme.PRIDE: ThemeConfig(Theme.PRIDE, f"{THEME_ASSET_BASE}/logos/spellbot-lgbtq.png"),
     Theme.BLACK_HISTORY: ThemeConfig(
-        Theme.BLACK_HISTORY, f"{THEME_ASSET_BASE}/logos/spellbot-black.png"
+        Theme.BLACK_HISTORY,
+        f"{THEME_ASSET_BASE}/logos/spellbot-black.png",
     ),
     Theme.TRANS: ThemeConfig(Theme.TRANS, f"{THEME_ASSET_BASE}/logos/spellbot-trans.png"),
     Theme.AUTISM: ThemeConfig(Theme.AUTISM, f"{THEME_ASSET_BASE}/logos/spellbot-autistic.png"),
     Theme.DISABILITY: ThemeConfig(
-        Theme.DISABILITY, f"{THEME_ASSET_BASE}/logos/spellbot-disability.png"
+        Theme.DISABILITY,
+        f"{THEME_ASSET_BASE}/logos/spellbot-disability.png",
     ),
     Theme.CONVOKE: ThemeConfig(Theme.CONVOKE, f"{THEME_ASSET_BASE}/servers/convoke.png"),
 }

@@ -116,7 +116,9 @@ class TestPublicActiveQueues:
         factories.queue.create(user_xid=u1.xid, game_id=deleted.id, og_guild_xid=guild.xid)
         factories.queue.create(user_xid=u2.xid, game_id=on_banned.id, og_guild_xid=banned.xid)
         factories.queue.create(
-            user_xid=u3.xid, game_id=on_unpromoted.id, og_guild_xid=unpromoted.xid
+            user_xid=u3.xid,
+            game_id=on_unpromoted.id,
+            og_guild_xid=unpromoted.xid,
         )
 
         rows = await queues.public_active_queues()

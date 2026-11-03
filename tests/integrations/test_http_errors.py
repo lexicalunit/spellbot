@@ -13,7 +13,9 @@ from spellbot.integrations.http_errors import (
 
 
 def status_error(
-    status: int, body: str = "", url: str = "https://api.example.com/thing"
+    status: int,
+    body: str = "",
+    url: str = "https://api.example.com/thing",
 ) -> httpx.HTTPStatusError:
     request = httpx.Request("POST", url)
     response = httpx.Response(status, text=body, request=request)

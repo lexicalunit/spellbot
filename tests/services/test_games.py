@@ -168,7 +168,10 @@ class TestServiceGames:
         await games.make_ready(
             game_data,
             GameLinkDetails(
-                "http://link", "whatever", "Cool Guild", "https://convoke.games/g/cool"
+                "http://link",
+                "whatever",
+                "Cool Guild",
+                "https://convoke.games/g/cool",
             ),
             pins={},
         )

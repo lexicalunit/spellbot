@@ -1,7 +1,5 @@
 # Copyright (c) 2026 spellbot@lexicalunit.com
 
-"""Slash command option choices shared by the cogs, built from the game enums."""
-
 from __future__ import annotations
 
 from discord.app_commands import Choice

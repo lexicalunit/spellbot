@@ -202,7 +202,8 @@ class TestPlaysServiceStreamingExports:
         rows = [
             r
             async for r in plays.stream_channel_records(
-                guild_xid=guild.xid, channel_xid=channel.xid
+                guild_xid=guild.xid,
+                channel_xid=channel.xid,
             )
         ]
         assert len(rows) == 1

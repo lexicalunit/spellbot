@@ -415,7 +415,10 @@ class LookingForGameAction(BaseAction):
     ) -> tuple[bool, GameData | None]:
         """Queue the user and their friends for a game matching their `/lfg` options."""
         resolved = await self.resolve_guild_war(
-            guild_war, service=service, seats=seats, locale=locale
+            guild_war,
+            service=service,
+            seats=seats,
+            locale=locale,
         )
         if resolved is None:
             return False, None
@@ -760,7 +763,8 @@ class LookingForGameAction(BaseAction):
         else:
             description = t("lfg.joined_game", locale=locale, game_id=game_data.id)
         embed = info_embed(
-            author=t(title_key, locale=locale, format=format), description=description
+            author=t(title_key, locale=locale, format=format),
+            description=description,
         )
         await safe_followup_channel(self.interaction, embed=embed)
 
