@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v24.0.1](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.1) - 2026-11-03
+
 ### Added
 
 - Added Guild War (`/war`) usage over time, by server, and by war to the admin dashboard.
