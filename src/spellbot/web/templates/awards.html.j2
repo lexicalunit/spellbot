@@ -45,22 +45,6 @@
         </div>
         <p class="hint">{{ award_help['remove'] }}</p>
     </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="verified_only" value="true"
-                   {{ 'checked' if award and award.verified_only else '' }}>
-            <label>{{ t("web.awards.verified_only") }}</label>
-        </div>
-        <p class="hint">{{ award_help['verified_only'] }}</p>
-    </div>
-    <div class="field">
-        <div class="toggle-row">
-            <input type="checkbox" name="unverified_only" value="true"
-                   {{ 'checked' if award and award.unverified_only else '' }}>
-            <label>{{ t("web.awards.unverified_only") }}</label>
-        </div>
-        <p class="hint">{{ award_help['unverified_only'] }}</p>
-    </div>
 </div>
 {% endmacro %}
 <div class="section">

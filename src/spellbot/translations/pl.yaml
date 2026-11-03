@@ -107,10 +107,6 @@ pl:
     user_info_blocked_one: "Zablokowany przez %{count} użytkownika"
     user_info_blocked_many: "Zablokowany przez %{count} użytkowników"
     user_info_block_status: "Status blokowania"
-    user_info_verified_not_set: "Nie ustawiono"
-    user_info_verified_yes: "✅ Zweryfikowano"
-    user_info_verified_no: "❌ Nie zweryfikowano"
-    user_info_verified: "Zweryfikowano"
     user_info_no_games: "Brak rozegranych meczów"
     user_info_play_range: "Zasięg gry"
     user_info_game_history: "Historia meczów"
@@ -122,10 +118,6 @@ pl:
     mythic_track_title: "Konfiguracja Mythic Track dla %{guild}"
     mythic_track_on: "✅ Funkcję Mythic Track **włączono** na tym serwerze!\n\nAby kontynuować konfigurację, [powiąż swoje konto Discord z Mythic Track](%{guide}).\n\nGdy ta funkcja jest włączona, SpellBot generuje kody PIN, które gracze wprowadzają w Mythic Track, aby umożliwić rejestrowanie swoich meczów."
     mythic_track_off: "❌ Funkcja Mythic Track została **wyłączona** dla tego serwera. Uruchom ponownie tę komendę, aby ponownie ją włączyć. Pamiętaj, że wyłączenie tej funkcji _nie_ usuwa żadnych istniejących danych Mythic Track."
-  # Award display
-  award:
-    verified_only: "tylko zweryfikowani"
-    unverified_only: "tylko niezweryfikowani"
   # Block action messages
   block:
     self_block: "Nie możesz zablokować siebie."
@@ -136,10 +128,6 @@ pl:
   leave:
     removed_channel: "Usunięto Cię ze wszystkich oczekujących meczów na tym kanale."
     removed_all: "Usunięto Cię ze wszystkich oczekujących meczów."
-  # Verify action messages
-  verify:
-    verified: "Zweryfikowany użytkownik <@%{user_id}>."
-    unverified: "Niezweryfikowany użytkownik <@%{user_id}>."
   # Score action messages
   score:
     record_title: "Rejestr rozegranych gier"
@@ -165,8 +153,6 @@ pl:
     guild_only: "To polecenie działa tylko w gildii."
     no_dms: "Ta komenda nie jest obsługiwana w DM."
     banned: "Zostałeś zbanowany w użyciu SpellBota."
-    verified_only: "Tylko zweryfikowani użytkownicy mogą to zrobić tutaj."
-    unverified_only: "Tylko niezweryfikowani użytkownicy mogą to zrobić tutaj."
     cooldown: "Spróbuj ponownie za %{seconds}s."
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ pl:
       motd: "Wiadomość dnia"
       extra: "Dodatkowa wiadomość"
       voice_category: "Kategoria głosowa"
-      auto_verify: "Automatycznie weryfikuj użytkowników"
-      verified_only: "Tylko zweryfikowani użytkownicy"
-      unverified_only: "Tylko niezweryfikowani użytkownicy"
       voice_invite: "Twórz zaproszenia głosowe"
       delete_expired: "Usuwaj wygasłe gry"
       blind_games: "Gry w ciemno"
@@ -359,8 +342,6 @@ pl:
       message: "Wiadomość"
       repeating: "Powtarzalna"
       remove: "Usuń rolę zamiast przyznawać"
-      verified_only: "Tylko zweryfikowani użytkownicy"
-      unverified_only: "Tylko niezweryfikowani użytkownicy"
       save: "Zapisz nagrodę"
       delete: "Usuń nagrodę"
       delete_confirm: "Usunąć tę nagrodę?"

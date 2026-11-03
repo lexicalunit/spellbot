@@ -107,10 +107,6 @@ el:
     user_info_blocked_one: "Αποκλείστηκε από %{count} χρήστη"
     user_info_blocked_many: "Αποκλείστηκε από %{count} χρήστες"
     user_info_block_status: "Κατάσταση αποκλεισμού"
-    user_info_verified_not_set: "Δεν έχει οριστεί"
-    user_info_verified_yes: "✅ Επαληθευμένος"
-    user_info_verified_no: "❌ Μη επαληθευμένος"
-    user_info_verified: "Επαληθευμένος"
     user_info_no_games: "Δεν έχει παίξει παιχνίδια"
     user_info_play_range: "Διάρκεια παιχνιδιού"
     user_info_game_history: "Ιστορικό παιχνιδιού"
@@ -122,10 +118,6 @@ el:
     mythic_track_title: "Ρύθμιση Mythic Track για το %{guild}"
     mythic_track_on: "✅ Το Mythic Track έχει ενεργοποιηθεί **για** αυτόν τον διακομιστή!\n\nΓια να συνεχίσετε την εγκατάσταση, [συνδέστε τον λογαριασμό σας Discord με το Mythic Track](%{guide}).\n\nΕνώ η λειτουργία είναι ενεργοποιημένη, το SpellBot θα δημιουργεί κωδικούς PIN για τους παίκτες που θα εισαγάγουν στο Mythic Track, ώστε να μπορούν να παρακολουθούνται τα παιχνίδια τους."
     mythic_track_off: "❌ Το Mythic Track έχει **απενεργοποιηθεί** για αυτόν τον διακομιστή. Εκτελέστε ξανά αυτήν την εντολή για να το ενεργοποιήσετε. Σημειώστε ότι η απενεργοποίηση αυτής της λειτουργίας _δεν_ καταργεί τυχόν υπάρχοντα δεδομένα Mythic Track."
-  # Award display
-  award:
-    verified_only: "μόνο επαληθευμένα"
-    unverified_only: "μόνο μη επαληθευμένα"
   # Block action messages
   block:
     self_block: "Δεν μπορείτε να αποκλείσετε τον εαυτό σας."
@@ -136,10 +128,6 @@ el:
   leave:
     removed_channel: "Έχετε αφαιρεθεί από οποιαδήποτε παιχνίδια σε εκκρεμότητα σε αυτό το κανάλι."
     removed_all: "Έχετε αφαιρεθεί από όλα τα παιχνίδια που είναι σε εκκρεμότητα."
-  # Verify action messages
-  verify:
-    verified: "Επαληθευμένος <@%{user_id}>."
-    unverified: "Μη επαληθευμένος <@%{user_id}>."
   # Score action messages
   score:
     record_title: "Εγγραφή παιχνιδιών που παίχτηκαν"
@@ -165,8 +153,6 @@ el:
     guild_only: "Αυτή η εντολή λειτουργεί μόνο σε ομάδα."
     no_dms: "Αυτή η εντολή δεν υποστηρίζεται στα άμεσα μηνύματα."
     banned: "Έχετε αποκλειστεί από τη χρήση του SpellBot."
-    verified_only: "Μόνο επαληθευμένοι χρήστες μπορούν να το κάνουν εδώ."
-    unverified_only: "Μόνο μη επαληθευμένοι χρήστες μπορούν να το κάνουν εδώ."
     cooldown: "Παρακαλώ δοκιμάστε ξανά σε %{seconds}s."
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ el:
       motd: "Μήνυμα της ημέρας"
       extra: "Επιπλέον μήνυμα"
       voice_category: "Κατηγορία φωνής"
-      auto_verify: "Αυτόματη επαλήθευση χρηστών"
-      verified_only: "Μόνο επαληθευμένοι χρήστες"
-      unverified_only: "Μόνο μη επαληθευμένοι χρήστες"
       voice_invite: "Δημιουργία προσκλήσεων φωνής"
       delete_expired: "Διαγραφή ληγμένων παιχνιδιών"
       blind_games: "Τυφλά παιχνίδια"
@@ -359,8 +342,6 @@ el:
       message: "Μήνυμα"
       repeating: "Επαναλαμβανόμενο"
       remove: "Αφαίρεση ρόλου αντί για απονομή"
-      verified_only: "Μόνο επαληθευμένοι χρήστες"
-      unverified_only: "Μόνο μη επαληθευμένοι χρήστες"
       save: "Αποθήκευση βραβείου"
       delete: "Διαγραφή βραβείου"
       delete_confirm: "Διαγραφή αυτού του βραβείου;"

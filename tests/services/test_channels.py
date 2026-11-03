@@ -56,27 +56,6 @@ class TestServiceChannels:
         assert data is not None
         assert data.default_seats == channel.default_seats
 
-    async def test_channels_should_auto_verify(self, guild: Guild) -> None:
-        channel = ChannelFactory.create(guild=guild, auto_verify=True)
-
-        data = await channels.select(channel.xid)
-        assert data is not None
-        assert data.auto_verify
-
-    async def test_channels_verified_only(self, guild: Guild) -> None:
-        channel = ChannelFactory.create(guild=guild, verified_only=True)
-
-        data = await channels.select(channel.xid)
-        assert data is not None
-        assert data.verified_only
-
-    async def test_channels_unverified_only(self, guild: Guild) -> None:
-        channel = ChannelFactory.create(guild=guild, unverified_only=True)
-
-        data = await channels.select(channel.xid)
-        assert data is not None
-        assert data.unverified_only
-
     async def test_channels_forget(self, guild: Guild) -> None:
         discord_channel = MagicMock()
         discord_channel.id = 999
@@ -134,13 +113,13 @@ class TestServiceChannels:
 class TestServiceChannelsUpdateSettings:
     async def test_updates_allow_listed_fields(self) -> None:
         guild = GuildFactory.create()
-        channel = ChannelFactory.create(guild=guild, xid=9101, default_seats=4, auto_verify=False)
-        await channels.update_settings(channel.xid, default_seats=2, auto_verify=True)
+        channel = ChannelFactory.create(guild=guild, xid=9101, default_seats=4, blind_games=False)
+        await channels.update_settings(channel.xid, default_seats=2, blind_games=True)
         DatabaseSession.expire_all()
         updated = await DatabaseSession.get(Channel, channel.xid)
         assert updated is not None
         assert updated.default_seats == 2
-        assert updated.auto_verify is True
+        assert updated.blind_games is True
 
     async def test_ignores_unlisted_fields(self) -> None:
         guild = GuildFactory.create()

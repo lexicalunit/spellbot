@@ -1826,7 +1826,6 @@ class TestWebGuildAwards:
                 "role": "@Veteran",
                 "message": "Congrats!",
                 "repeating": "true",
-                "verified_only": "true",
             },
             allow_redirects=False,
         )
@@ -1842,8 +1841,6 @@ class TestWebGuildAwards:
         assert award.role == "Veteran"
         assert award.message == "Congrats!"
         assert award.repeating is True
-        assert award.verified_only is True
-        assert award.unverified_only is False
 
     async def test_add_award_rejects_zero_count(
         self,
@@ -1882,34 +1879,6 @@ class TestWebGuildAwards:
         assert resp.headers["Location"] == f"/g/{guild.xid}/awards?award_error=bad_count"
         count = (
             await DatabaseSession.execute(select(func.count()).select_from(GuildAward))
-        ).scalar()
-        assert (count or 0) == 0
-
-    async def test_add_award_rejects_verified_and_unverified(
-        self,
-        mod_client: ClientSession,
-        factories: Factories,
-    ) -> None:
-        guild = factories.guild.create(xid=735, name="guild")
-        resp = await mod_client.post(
-            f"/g/{guild.xid}/awards/add",
-            data={
-                "count": "5",
-                "role": "Veteran",
-                "message": "x",
-                "verified_only": "true",
-                "unverified_only": "true",
-            },
-            allow_redirects=False,
-        )
-        assert resp.status == 302
-        assert "award_error" in resp.headers["Location"]
-        count = (
-            await DatabaseSession.execute(
-                select(func.count())
-                .select_from(GuildAward)
-                .where(GuildAward.guild_xid == guild.xid),
-            )
         ).scalar()
         assert (count or 0) == 0
 
@@ -2196,7 +2165,7 @@ class TestWebChannelSettings:
             guild=guild,
             default_seats=4,
             default_format=GameFormat.COMMANDER.value,
-            auto_verify=False,
+            blind_games=False,
         )
         resp = await mod_client.post(
             f"/g/{guild.xid}/c/{channel.xid}/settings",
@@ -2205,6 +2174,8 @@ class TestWebChannelSettings:
                 "default_format": str(GameFormat.MODERN.value),
                 "default_bracket": str(GameBracket.BRACKET_1.value),
                 "motd": "channel motd",
+                "blind_games": "true",
+                # no longer a web-editable setting, so this is ignored
                 "auto_verify": "true",
             },
             allow_redirects=False,
@@ -2218,7 +2189,8 @@ class TestWebChannelSettings:
         assert updated.default_format == GameFormat.MODERN.value
         assert updated.default_bracket == GameBracket.BRACKET_1.value
         assert updated.motd == "channel motd"
-        assert updated.auto_verify is True
+        assert updated.blind_games is True
+        assert updated.auto_verify is False
 
     async def test_settings_update_to_mode(
         self,
@@ -2373,7 +2345,7 @@ class TestWebChannelForget:
         factories: Factories,
     ) -> None:
         guild = factories.guild.create(xid=722, name="guild")
-        channel = factories.channel.create(xid=822, name="channel", guild=guild, auto_verify=True)
+        channel = factories.channel.create(xid=822, name="channel", guild=guild)
         resp = await mod_client.post(
             f"/g/{guild.xid}/c/{channel.xid}/forget",
             allow_redirects=False,

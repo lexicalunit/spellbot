@@ -445,9 +445,6 @@ class TestCogAdminUserInfo:
         factories.block.create(user_xid=blocker1.xid, blocked_user_xid=target_user.xid)
         factories.block.create(user_xid=blocker2.xid, blocked_user_xid=target_user.xid)
 
-        # Create verification
-        factories.verify.create(user_xid=target_user.xid, guild_xid=guild.xid, verified=True)
-
         # Mock the discord user
         mock_target = MagicMock(spec=discord.User)
         mock_target.id = target_user.xid
@@ -464,7 +461,6 @@ class TestCogAdminUserInfo:
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert f"2 games on {guild.name}" in fields["Games Played"]
         assert "Blocked by 2 users" in fields["Block Status"]
-        assert "✅ Verified" in fields["Verified"]
         assert "2025-01-15 to 2026-03-20" in fields["Play Range"]
         assert fields["Game History"] == (
             f"[View on spellbot.io]({settings.API_BASE_URL}/g/{guild.xid}/u/{target_user.xid})"
@@ -551,47 +547,3 @@ class TestCogAdminUserInfo:
         embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert "Blocked by 1 user" in fields["Block Status"]  # singular
-
-    async def test_user_info_verified_false(
-        self,
-        decoy: Decoy,
-        cog: AdminCog,
-        interaction: discord.Interaction,
-        guild: Guild,
-        factories: Factories,
-    ) -> None:
-        """Test user info when user is explicitly unverified."""
-        target_user = factories.user.create(xid=9005)
-        factories.verify.create(user_xid=target_user.xid, guild_xid=guild.xid, verified=False)
-
-        mock_target = MagicMock(spec=discord.User)
-        mock_target.id = target_user.xid
-        mock_target.display_name = "UnverifiedUser"
-
-        await run_command(cog.user_info, interaction, target=mock_target)
-
-        embed = await get_last_send_message(decoy, interaction, "embed")
-        fields = {f["name"]: f["value"] for f in embed["fields"]}
-        assert "❌ Unverified" in fields["Verified"]
-
-    async def test_user_info_verified_not_set(
-        self,
-        decoy: Decoy,
-        cog: AdminCog,
-        interaction: discord.Interaction,
-        guild: Guild,
-        factories: Factories,
-    ) -> None:
-        """Test user info when user has no verification record."""
-        target_user = factories.user.create(xid=9006)
-        # No verify record created
-
-        mock_target = MagicMock(spec=discord.User)
-        mock_target.id = target_user.xid
-        mock_target.display_name = "NoVerifyUser"
-
-        await run_command(cog.user_info, interaction, target=mock_target)
-
-        embed = await get_last_send_message(decoy, interaction, "embed")
-        fields = {f["name"]: f["value"] for f in embed["fields"]}
-        assert "Not set" in fields["Verified"]

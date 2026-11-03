@@ -107,10 +107,6 @@ da:
     user_info_blocked_one: "Blokeret af %{count} bruger"
     user_info_blocked_many: "Blokeret af %{count} brugere"
     user_info_block_status: "Blokeringsstatus"
-    user_info_verified_not_set: "Ikke indstillet"
-    user_info_verified_yes: "✅ Bekræftet"
-    user_info_verified_no: "❌ Ikke-bekræftet"
-    user_info_verified: "Bekræftet"
     user_info_no_games: "Ingen spillede kampe"
     user_info_play_range: "Spilletid"
     user_info_game_history: "Kamphistorik"
@@ -122,10 +118,6 @@ da:
     mythic_track_title: "Opsætning af Mythic Track for %{guild}"
     mythic_track_on: "✅ Mythic Track er blevet slået **til** for denne server!\n\nFor at fortsætte opsætningen skal du [forbinde din Discord-konto til Mythic Track](%{guide}).\n\nMens denne funktion er slået til, genererer SpellBot pinkoder, som spillerne skal indtaste i Mythic Track, så deres kampe kan spores."
     mythic_track_off: "❌ Mythic Track er blevet slået **fra** for denne server. Kør denne kommando igen for at slå det til igen. Bemærk, at deaktivering af denne funktion _ikke_ fjerner eksisterende Mythic Track-data."
-  # Award display
-  award:
-    verified_only: "kun bekræftede"
-    unverified_only: "kun ikke-bekræftede"
   # Block action messages
   block:
     self_block: "Du kan ikke blokere dig selv."
@@ -136,10 +128,6 @@ da:
   leave:
     removed_channel: "Du blev fjernet fra alle afventende kampe i denne kanal."
     removed_all: "Du blev fjernet fra alle afventende kampe."
-  # Verify action messages
-  verify:
-    verified: "Bekræftet <@%{user_id}>."
-    unverified: "Ikke-bekræftet <@%{user_id}>."
   # Score action messages
   score:
     record_title: "Registrering af kampe spillet på"
@@ -165,8 +153,6 @@ da:
     guild_only: "Denne kommando virker kun i en guild."
     no_dms: "Denne kommando er ikke understøttet i DMs."
     banned: "Du er blevet udelukket fra at bruge SpellBot."
-    verified_only: "Kun bekræftede brugere kan gøre det her."
-    unverified_only: "Kun ubekræftede brugere kan gøre det her."
     cooldown: "Prøv venligst igen om %{seconds}s."
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ da:
       motd: "Dagens besked"
       extra: "Ekstra besked"
       voice_category: "Stemmekategori"
-      auto_verify: "Verificer brugere automatisk"
-      verified_only: "Kun verificerede brugere"
-      unverified_only: "Kun ikke-verificerede brugere"
       voice_invite: "Opret stemmeinvitationer"
       delete_expired: "Slet udløbne spil"
       blind_games: "Blinde spil"
@@ -359,8 +342,6 @@ da:
       message: "Besked"
       repeating: "Gentagende"
       remove: "Fjern rolle i stedet for at give"
-      verified_only: "Kun verificerede brugere"
-      unverified_only: "Kun ikke-verificerede brugere"
       save: "Gem pris"
       delete: "Slet pris"
       delete_confirm: "Slet denne pris?"

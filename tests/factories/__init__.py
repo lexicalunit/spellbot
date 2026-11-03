@@ -14,7 +14,6 @@ from .post import PostFactory
 from .queue import QueueFactory
 from .token import TokenFactory
 from .user import UserFactory
-from .verify import VerifyFactory
 
 __all__ = [
     "AlertFactory",
@@ -30,5 +29,4 @@ __all__ = [
     "TokenFactory",
     "UserAwardFactory",
     "UserFactory",
-    "VerifyFactory",
 ]

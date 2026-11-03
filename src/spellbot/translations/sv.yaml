@@ -107,10 +107,6 @@ sv:
     user_info_blocked_one: "Blockerad av %{count} användare"
     user_info_blocked_many: "Blockerade av %{count} användare"
     user_info_block_status: "Blockeringsstatus"
-    user_info_verified_not_set: "Ej inställd"
-    user_info_verified_yes: "✅ Verifierad"
-    user_info_verified_no: "❌ Overifierad"
-    user_info_verified: "Verifierad"
     user_info_no_games: "Inga spelade spel"
     user_info_play_range: "Spelintervall"
     user_info_game_history: "Spelhistorik"
@@ -122,10 +118,6 @@ sv:
     mythic_track_title: "Mythic Track-inställning för %{guild}"
     mythic_track_on: "✅ Mythic Track har **aktiverats** för denna server!\n\nFör att fortsätta med inställningarna, [koppla ditt Discord-konto till Mythic Track](%{guide}).\n\nNär denna funktion är aktiverad kommer SpellBot att generera PIN-koder som spelarna kan ange i Mythic Track för att deras spel ska kunna spåras."
     mythic_track_off: "❌ Mythic Track har **inaktiverats** för denna server. Kör kommandot igen för att aktivera det igen. Observera att denna funktion _inte_ raderar befintliga Mythic Track-data när den inaktiveras."
-  # Award display
-  award:
-    verified_only: "endast verifierad"
-    unverified_only: "endast overifierad"
   # Block action messages
   block:
     self_block: "Du kan inte blockera dig själv."
@@ -136,10 +128,6 @@ sv:
   leave:
     removed_channel: "Du har tagits bort från eventuella pågående spel i denna kanal."
     removed_all: "Du har tagits bort från alla pågående spel."
-  # Verify action messages
-  verify:
-    verified: "Verifierad <@%{user_id}>."
-    unverified: "Overifierad <@%{user_id}>."
   # Score action messages
   score:
     record_title: "Spela in spelade partier"
@@ -165,8 +153,6 @@ sv:
     guild_only: "Detta kommando fungerar bara i en guild."
     no_dms: "Detta kommando stöds inte i DMs."
     banned: "Du har blivit bannad från att använda SpellBot."
-    verified_only: "Endast verifierade användare kan göra det här."
-    unverified_only: "Endast overifierade användare kan göra det här."
     cooldown: "Försök igen om %{seconds}s."
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ sv:
       motd: "Dagens meddelande"
       extra: "Extra meddelande"
       voice_category: "Röstkategori"
-      auto_verify: "Verifiera användare automatiskt"
-      verified_only: "Endast verifierade användare"
-      unverified_only: "Endast overifierade användare"
       voice_invite: "Skapa röstinbjudningar"
       delete_expired: "Ta bort utgångna spel"
       blind_games: "Blinda spel"
@@ -359,8 +342,6 @@ sv:
       message: "Meddelande"
       repeating: "Återkommande"
       remove: "Ta bort roll i stället för att ge"
-      verified_only: "Endast verifierade användare"
-      unverified_only: "Endast overifierade användare"
       save: "Spara pris"
       delete: "Ta bort pris"
       delete_confirm: "Ta bort det här priset?"

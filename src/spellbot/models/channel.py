@@ -92,30 +92,27 @@ class Channel(Base):
         nullable=False,
         doc=web_editable("The default service for games in this channel."),
     )
+    # Retained from the removed user verification feature so that its data isn't lost.
     auto_verify: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc=web_editable(
-            "If enabled, this channel will trigger automatic verification of users who post there.",
-        ),
+        doc="If enabled, this channel triggered automatic verification of users who posted there.",
     )
     unverified_only: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc=web_editable("Verified user posts will be deleted from this channel automatically."),
+        doc="If enabled, verified user posts were deleted from this channel automatically.",
     )
     verified_only: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc=web_editable(
-            "Unverified user posts will be deleted from this channel automatically.",
-        ),
+        doc="If enabled, unverified user posts were deleted from this channel automatically.",
     )
     motd: Mapped[str | None] = mapped_column(
         String(255),
@@ -206,9 +203,6 @@ class Channel(Base):
             default_format=GameFormat(self.default_format),
             default_bracket=GameBracket(self.default_bracket),
             default_service=GameService(self.default_service),
-            auto_verify=self.auto_verify,
-            unverified_only=self.unverified_only,
-            verified_only=self.verified_only,
             motd=self.motd,
             extra=self.extra,
             voice_category=self.voice_category,

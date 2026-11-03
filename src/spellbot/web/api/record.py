@@ -304,9 +304,6 @@ def form_choice(form: Any, name: str, valid: frozenset[int]) -> int | None:
 def parse_channel_settings(form: Any) -> dict[str, Any]:
     """Coerce + validate a channel settings form into a column->value mapping."""
     values: dict[str, Any] = {
-        "auto_verify": form_bool(form, "auto_verify"),
-        "unverified_only": form_bool(form, "unverified_only"),
-        "verified_only": form_bool(form, "verified_only"),
         "voice_invite": form_bool(form, "voice_invite"),
         "delete_expired": form_bool(form, "delete_expired"),
         "blind_games": form_bool(form, "blind_games"),
@@ -366,7 +363,6 @@ AWARD_ERRORS = {
     "message_too_long": f"An award message can't be longer than {AWARD_MESSAGE_MAX} characters.",
     "bad_count": "An award needs a whole number of games.",
     "zero_count": "An award can't be given for fewer than 1 game.",
-    "verify_conflict": "An award can't be both verified and unverified only.",
 }
 
 
@@ -385,18 +381,12 @@ def parse_award_form(form: Any) -> tuple[dict[str, Any] | None, str | None]:
         return None, "bad_count"
     if count < 1:
         return None, "zero_count"
-    verified_only = form_bool(form, "verified_only")
-    unverified_only = form_bool(form, "unverified_only")
-    if verified_only and unverified_only:
-        return None, "verify_conflict"
     return {
         "count": count,
         "role": role,
         "message": message,
         "repeating": form_bool(form, "repeating"),
         "remove": form_bool(form, "remove"),
-        "verified_only": verified_only,
-        "unverified_only": unverified_only,
     }, None
 
 
@@ -842,8 +832,6 @@ async def award_add_impl(request: web.Request) -> web.Response:
         values["message"],
         repeating=values["repeating"],
         remove=values["remove"],
-        verified_only=values["verified_only"],
-        unverified_only=values["unverified_only"],
     )
     return redirect(f"/g/{guild_xid}/awards")
 
@@ -878,8 +866,6 @@ async def award_update_impl(request: web.Request) -> web.Response:
         values["message"],
         repeating=values["repeating"],
         remove=values["remove"],
-        verified_only=values["verified_only"],
-        unverified_only=values["unverified_only"],
     )
     if updated is None:
         return web.Response(status=404)

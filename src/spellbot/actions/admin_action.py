@@ -222,10 +222,6 @@ class AdminAction(BaseAction):
             self.interaction.guild_id,
         )
         blocked_by_count = await services.users.blocked_by_count(target_xid)
-        verified_status = await services.users.is_verified(
-            target_xid,
-            self.interaction.guild_id,
-        )
         first_play, last_play = await services.users.play_date_range(
             target_xid,
             self.interaction.guild_id,
@@ -256,18 +252,6 @@ class AdminAction(BaseAction):
         embed.add_field(
             name=t("admin.user_info_block_status", locale=locale),
             value=block_text,
-            inline=True,
-        )
-
-        if verified_status is None:
-            verified_text = t("admin.user_info_verified_not_set", locale=locale)
-        elif verified_status:
-            verified_text = t("admin.user_info_verified_yes", locale=locale)
-        else:
-            verified_text = t("admin.user_info_verified_no", locale=locale)
-        embed.add_field(
-            name=t("admin.user_info_verified", locale=locale),
-            value=verified_text,
             inline=True,
         )
 

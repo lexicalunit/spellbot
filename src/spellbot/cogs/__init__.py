@@ -21,7 +21,6 @@ from .owner_cog import OwnerCog
 from .playgroup_cog import PlaygroupCog
 from .record_cog import RecordCog
 from .tasks_cog import TasksCog
-from .verify_cog import VerifyCog
 
 if TYPE_CHECKING:
     from discord.ext.commands import AutoShardedBot
@@ -41,7 +40,6 @@ __all__ = [
     "PlaygroupCog",
     "RecordCog",
     "TasksCog",
-    "VerifyCog",
 ]
 
 

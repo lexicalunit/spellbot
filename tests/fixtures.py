@@ -53,7 +53,6 @@ from tests.factories import (
     TokenFactory,
     UserAwardFactory,
     UserFactory,
-    VerifyFactory,
 )
 from tests.factories.session import FactorySession
 from tests.mocks import (
@@ -168,7 +167,6 @@ class Factories:
     queue = QueueFactory
     user = UserFactory
     user_award = UserAwardFactory
-    verify = VerifyFactory
     token = TokenFactory
 
 

@@ -83,30 +83,6 @@
                 </div>
                 <div class="field">
                     <div class="toggle-row">
-                        <input type="checkbox" id="ch-auto-verify" name="auto_verify" value="true"
-                               {{ 'checked' if channel.auto_verify else '' }}>
-                        <label for="ch-auto-verify">{{ t("web.channel_settings.auto_verify") }}</label>
-                    </div>
-                    <p class="hint">{{ channel_help['auto_verify'] }}</p>
-                </div>
-                <div class="field">
-                    <div class="toggle-row">
-                        <input type="checkbox" id="ch-verified-only" name="verified_only" value="true"
-                               {{ 'checked' if channel.verified_only else '' }}>
-                        <label for="ch-verified-only">{{ t("web.channel_settings.verified_only") }}</label>
-                    </div>
-                    <p class="hint">{{ channel_help['verified_only'] }}</p>
-                </div>
-                <div class="field">
-                    <div class="toggle-row">
-                        <input type="checkbox" id="ch-unverified-only" name="unverified_only" value="true"
-                               {{ 'checked' if channel.unverified_only else '' }}>
-                        <label for="ch-unverified-only">{{ t("web.channel_settings.unverified_only") }}</label>
-                    </div>
-                    <p class="hint">{{ channel_help['unverified_only'] }}</p>
-                </div>
-                <div class="field">
-                    <div class="toggle-row">
                         <input type="checkbox" id="ch-voice-invite" name="voice_invite" value="true"
                                {{ 'checked' if channel.voice_invite else '' }}>
                         <label for="ch-voice-invite">{{ t("web.channel_settings.voice_invite") }}</label>

@@ -109,3 +109,8 @@ _.__aenter__  # unused attribute (tests/web/test_rest.py:300)
 _._value_  # unused attribute (src/spellbot/enums.py:20)
 _._value_  # unused attribute (src/spellbot/enums.py:90)
 _._value_  # unused attribute (src/spellbot/enums.py:163)
+# Columns retained from the removed user verification feature so that its data isn't lost.
+verified_only  # unused variable (src/spellbot/models/award.py:60)
+unverified_only  # unused variable (src/spellbot/models/award.py:67)
+unverified_only  # unused variable (src/spellbot/models/channel.py:103)
+verified_only  # unused variable (src/spellbot/models/channel.py:110)

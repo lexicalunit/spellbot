@@ -14,12 +14,9 @@ from spellbot.errors import (
     GuildBannedError,
     SpellBotError,
     UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
 )
 from spellbot.i18n import guild_locale, user_locale
 from spellbot.metrics import add_span_request_id, setup_ignored_errors
-from spellbot.utils import user_can_moderate
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -89,29 +86,6 @@ class BaseAction:
 
         if self.user_data.banned:
             raise UserBannedError
-
-        if self.should_do_verification():
-            await self.handle_verification()
-
-    async def handle_verification(self) -> None:  # pragma: no cover
-        if not self.guild:
-            return
-        verified: bool | None = None
-        if self.channel_data.auto_verify:
-            verified = True
-        verify_data = await services.verifies.upsert(
-            self.guild.id,
-            self.interaction.user.id,
-            verified,
-        )
-        if not user_can_moderate(self.interaction.user, self.guild, self.channel):
-            if verify_data.verified and self.channel_data.unverified_only:
-                raise UserVerifiedError
-            if not verify_data.verified and self.channel_data.verified_only:
-                raise UserUnverifiedError
-
-    def should_do_verification(self) -> bool:
-        return bool(self.guild and self.channel)
 
     @classmethod
     @asynccontextmanager

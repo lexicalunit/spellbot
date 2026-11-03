@@ -22,9 +22,6 @@ class ChannelData:
     default_format: GameFormat
     default_bracket: GameBracket
     default_service: GameService
-    auto_verify: bool
-    unverified_only: bool
-    verified_only: bool
     motd: str | None
     extra: str | None
     voice_category: str | None

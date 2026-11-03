@@ -14,7 +14,6 @@ from . import (
     plays,
     queues,
     users,
-    verifies,
 )
 from .awards import NewAward
 
@@ -31,5 +30,4 @@ __all__ = [
     "plays",
     "queues",
     "users",
-    "verifies",
 ]
