@@ -5,16 +5,14 @@ from __future__ import annotations
 import logging
 
 import discord
-from ddtrace.trace import tracer
 from discord import Color, Embed, app_commands
 from discord.ext import commands
 
 from spellbot import SpellBot, __version__
 from spellbot.i18n import guild_locale, t
-from spellbot.metrics import add_span_context
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
-from spellbot.utils import for_all_callbacks, is_guild
+from spellbot.utils import for_all_callbacks, is_guild, traced_interaction
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +26,8 @@ class AboutCog(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="about", description="Get information about SpellBot.")
-    @tracer.wrap(name="interaction", resource="about")
+    @traced_interaction()
     async def about(self, interaction: discord.Interaction) -> None:
-        add_span_context(interaction)
         locale = guild_locale(interaction.guild)
         embed = Embed(title=t("about.title", locale=locale))
         embed.set_thumbnail(url=settings.thumb(interaction.guild_id))

@@ -13,7 +13,7 @@ from sqlalchemy.sql.expression import update
 from spellbot import audit
 from spellbot.database import DatabaseSession
 from spellbot.environment import running_in_pytest
-from spellbot.models import Channel, web_editable_columns
+from spellbot.models import Channel, column_length, web_editable_columns
 
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
@@ -57,7 +57,7 @@ async def write(channel: MessageableChannel, name: str) -> None:
 async def upsert(channel: MessageableChannel) -> ChannelData:
     """Upsert the given Discord channel into the database."""
     assert channel.guild is not None
-    name_max_len = Channel.name.property.columns[0].type.length
+    name_max_len = column_length(Channel.name)
     raw_name = getattr(channel, "name", "")
     name = raw_name[:name_max_len]
     if not is_cached(channel.id, name):

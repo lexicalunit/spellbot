@@ -13,10 +13,8 @@ from urllib.parse import quote, urlencode
 
 import aiohttp_jinja2
 from aiohttp import web
-from ddtrace.trace import tracer
 
 from spellbot import audit, services
-from spellbot.database import db_session_manager
 from spellbot.enums import (
     GAME_BRACKET_ORDER,
     GAME_FORMAT_ORDER,
@@ -27,8 +25,7 @@ from spellbot.enums import (
     VALID_FORMATS,
     VALID_SERVICES,
 )
-from spellbot.metrics import add_span_request_id, generate_request_id
-from spellbot.models import Channel, Guild, GuildAward, web_editable_docs
+from spellbot.models import Channel, Guild, GuildAward, column_length, web_editable_docs
 from spellbot.services.plays import (
     CHANNEL_PAGE_SIZE,
     CHANNEL_RECORDS_SORT_COLUMNS,
@@ -40,7 +37,7 @@ from spellbot.web.api.admin_auth import is_owner_request
 from spellbot.web.api.moderation import viewer_is_moderator
 from spellbot.web.api.oauth import safe_relative_path
 from spellbot.web.api.viewer_auth import get_viewer
-from spellbot.web.tools import is_crawler, redirect
+from spellbot.web.tools import is_crawler, redirect, web_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -206,13 +203,7 @@ async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
 
     page = max(int(request.query.get("page", 0)), 0)
 
-    tz_offset_cookie = request.cookies.get("timezone_offset")
-    tz_offset: int | None = None
-    if tz_offset_cookie:
-        with suppress(ValueError):
-            tz_offset = int(tz_offset_cookie)
-
-    tz_name = request.cookies.get("timezone_name")
+    tz_offset, tz_name = viewer_timezone(request)
     filters, raw_filters = parse_filters(request, kind, tz_offset)
 
     return Opts(
@@ -309,12 +300,12 @@ def parse_channel_settings(form: Any) -> dict[str, Any]:
         "blind_games": form_bool(form, "blind_games"),
         "to_mode": form_bool(form, "to_mode"),
         "competitive_mode": form_bool(form, "competitive_mode"),
-        "motd": form_str(form, "motd", Channel.motd.property.columns[0].type.length),
-        "extra": form_str(form, "extra", Channel.extra.property.columns[0].type.length),
+        "motd": form_str(form, "motd", column_length(Channel.motd)),
+        "extra": form_str(form, "extra", column_length(Channel.extra)),
         "voice_category": form_str(
             form,
             "voice_category",
-            Channel.voice_category.property.columns[0].type.length,
+            column_length(Channel.voice_category),
         ),
     }
     if (seats := form_choice(form, "default_seats", VALID_SEATS)) is not None:
@@ -336,17 +327,17 @@ def parse_guild_settings(form: Any) -> dict[str, Any]:
         "use_max_bitrate": form_bool(form, "use_max_bitrate"),
         "enable_mythic_track": form_bool(form, "enable_mythic_track"),
         "show_convoke_guild": form_bool(form, "show_convoke_guild"),
-        "motd": form_str(form, "motd", Guild.motd.property.columns[0].type.length),
+        "motd": form_str(form, "motd", column_length(Guild.motd)),
         "suggest_voice_category": form_str(
             form,
             "suggest_voice_category",
-            Guild.suggest_voice_category.property.columns[0].type.length,
+            column_length(Guild.suggest_voice_category),
         ),
     }
 
 
-AWARD_ROLE_MAX = GuildAward.role.property.columns[0].type.length
-AWARD_MESSAGE_MAX = GuildAward.message.property.columns[0].type.length
+AWARD_ROLE_MAX = column_length(GuildAward.role)
+AWARD_MESSAGE_MAX = column_length(GuildAward.message)
 
 
 def award_help() -> dict[str, str]:
@@ -412,6 +403,39 @@ def login_url(request: web.Request) -> str:
     # can never seed an open redirect. Path only — no query — to match the shared header.
     next_path = safe_relative_path(request.path) or "/"
     return f"/login?next={quote(next_path, safe='')}"
+
+
+def viewer_timezone(request: web.Request) -> tuple[int | None, str | None]:
+    """Return the viewer's UTC offset (in minutes) and timezone name, from their cookies."""
+    tz_offset: int | None = None
+    with suppress(TypeError, ValueError):
+        tz_offset = int(request.cookies.get("timezone_offset") or "")
+    return tz_offset, request.cookies.get("timezone_name")
+
+
+async def moderated_route(request: web.Request, *extra_ids: str) -> tuple[int, ...] | web.Response:
+    """
+    Parse the route's guild (and `extra_ids`) and require the viewer to moderate that guild.
+
+    Returns the parsed ids, guild first, or the 404 or 403 response to send instead.
+    """
+    try:
+        ids = tuple(int(request.match_info[name]) for name in ("guild", *extra_ids))
+    except KeyError, ValueError:
+        return web.Response(status=404)
+    if not await request_is_moderator(request, ids[0]):
+        return web.Response(status=403, text="Forbidden")
+    return ids
+
+
+async def require_moderator_page(request: web.Request, guild_xid: int) -> web.Response | None:
+    """For a moderator-only page: send a logged-out viewer to log in, and refuse anyone else."""
+    is_logged_in, is_moderator = await viewer_access(request, guild_xid)
+    if not is_logged_in:
+        return redirect(login_url(request))
+    if not is_moderator:
+        return web.Response(status=403, text="Forbidden")
+    return None
 
 
 async def impl(request: web.Request, kind: RecordKind) -> web.Response:
@@ -507,19 +531,15 @@ async def impl(request: web.Request, kind: RecordKind) -> web.Response:
 
 
 @routes.get(r"/g/{guild}/c/{channel}")
-@tracer.wrap(name="web", resource="channel_record")
-async def channel_endpoint(request: web.Request) -> web.Response:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await impl(request, RecordKind.CHANNEL)
+@web_endpoint("channel_record")
+async def channel_endpoint(request: web.Request) -> web.StreamResponse:
+    return await impl(request, RecordKind.CHANNEL)
 
 
 @routes.get(r"/u/{user}")
-@tracer.wrap(name="web", resource="user_record")
-async def user_endpoint(request: web.Request) -> web.Response:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await impl(request, RecordKind.USER)
+@web_endpoint("user_record")
+async def user_endpoint(request: web.Request) -> web.StreamResponse:
+    return await impl(request, RecordKind.USER)
 
 
 async def viewer_owns_profile(request: web.Request, user_xid: int) -> bool:
@@ -564,7 +584,9 @@ def block_error_redirect(user_xid: int, code: str) -> web.Response:
     return redirect(f"/u/{int(user_xid)}?{urlencode({'block_error': safe_code})}")
 
 
-async def user_block_add_impl(request: web.Request) -> web.Response:
+@routes.post(r"/u/{user}/blocks/add")
+@web_endpoint("user_block_add")
+async def user_block_add_endpoint(request: web.Request) -> web.Response:
     """Owner-only: add a user to the profile owner's block list, then redirect back."""
     try:
         user_xid = int(request.match_info["user"])
@@ -585,15 +607,9 @@ async def user_block_add_impl(request: web.Request) -> web.Response:
     return redirect(f"/u/{user_xid}")
 
 
-@routes.post(r"/u/{user}/blocks/add")
-@tracer.wrap(name="web", resource="user_block_add")
-async def user_block_add_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await user_block_add_impl(request)
-
-
-async def user_block_remove_impl(request: web.Request) -> web.Response:
+@routes.post(r"/u/{user}/blocks/{target}/remove")
+@web_endpoint("user_block_remove")
+async def user_block_remove_endpoint(request: web.Request) -> web.Response:
     """Owner-only: remove a user from the profile owner's block list, then redirect back."""
     try:
         user_xid = int(request.match_info["user"])
@@ -604,14 +620,6 @@ async def user_block_remove_impl(request: web.Request) -> web.Response:
         return web.Response(status=403, text="Forbidden")
     await services.users.unblock(user_xid, target_xid)
     return redirect(f"/u/{user_xid}")
-
-
-@routes.post(r"/u/{user}/blocks/{target}/remove")
-@tracer.wrap(name="web", resource="user_block_remove")
-async def user_block_remove_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await user_block_remove_impl(request)
 
 
 async def viewer_can_view_game_links(
@@ -635,7 +643,9 @@ async def viewer_can_view_game_links(
     return await viewer_is_moderator(viewer_xid, game["guild"]["xid"])
 
 
-async def game_impl(request: web.Request) -> web.Response:
+@routes.get(r"/game/{game_id}")
+@web_endpoint("game_detail")
+async def game_endpoint(request: web.Request) -> web.Response:
     try:
         game_id = int(request.match_info["game_id"])
     except ValueError:
@@ -644,12 +654,7 @@ async def game_impl(request: web.Request) -> web.Response:
     if game is None:
         return web.Response(status=404)
 
-    tz_offset_cookie = request.cookies.get("timezone_offset")
-    tz_offset: int | None = None
-    if tz_offset_cookie:
-        with suppress(ValueError):
-            tz_offset = int(tz_offset_cookie)
-    tz_name = request.cookies.get("timezone_name")
+    tz_offset, tz_name = viewer_timezone(request)
 
     viewer_xid, _ = await get_viewer(request)
     context = {
@@ -662,15 +667,9 @@ async def game_impl(request: web.Request) -> web.Response:
     return aiohttp_jinja2.render_template("game.html.j2", request, context)
 
 
-@routes.get(r"/game/{game_id}")
-@tracer.wrap(name="web", resource="game_detail")
-async def game_endpoint(request: web.Request) -> web.Response:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await game_impl(request)
-
-
-async def guild_impl(request: web.Request) -> web.Response:
+@routes.get(r"/g/{guild}")
+@web_endpoint("guild_detail")
+async def guild_endpoint(request: web.Request) -> web.Response:
     try:
         guild_xid = int(request.match_info["guild"])
     except ValueError:
@@ -679,12 +678,7 @@ async def guild_impl(request: web.Request) -> web.Response:
     if guild is None:
         return web.Response(status=404)
 
-    tz_offset_cookie = request.cookies.get("timezone_offset")
-    tz_offset: int | None = None
-    if tz_offset_cookie:
-        with suppress(ValueError):
-            tz_offset = int(tz_offset_cookie)
-    tz_name = request.cookies.get("timezone_name")
+    tz_offset, tz_name = viewer_timezone(request)
 
     is_logged_in, is_moderator = await viewer_access(request, guild_xid)
     guild_settings = await services.guilds.get(guild_xid) if is_moderator else None
@@ -708,15 +702,9 @@ async def guild_impl(request: web.Request) -> web.Response:
     return aiohttp_jinja2.render_template("guild.html.j2", request, context)
 
 
-@routes.get(r"/g/{guild}")
-@tracer.wrap(name="web", resource="guild_detail")
-async def guild_endpoint(request: web.Request) -> web.Response:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await guild_impl(request)
-
-
-async def guild_awards_impl(request: web.Request) -> web.Response:
+@routes.get(r"/g/{guild}/awards")
+@web_endpoint("guild_awards")
+async def guild_awards_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: render the dedicated player awards management page."""
     try:
         guild_xid = int(request.match_info["guild"])
@@ -726,11 +714,8 @@ async def guild_awards_impl(request: web.Request) -> web.Response:
     if guild is None:
         return web.Response(status=404)
 
-    is_logged_in, is_moderator = await viewer_access(request, guild_xid)
-    if not is_logged_in:
-        return redirect(login_url(request))
-    if not is_moderator:
-        return web.Response(status=403, text="Forbidden")
+    if denied := await require_moderator_page(request, guild_xid):
+        return denied
 
     viewer_xid, _ = await get_viewer(request)
     context = {
@@ -745,15 +730,9 @@ async def guild_awards_impl(request: web.Request) -> web.Response:
     return aiohttp_jinja2.render_template("awards.html.j2", request, context)
 
 
-@routes.get(r"/g/{guild}/awards")
-@tracer.wrap(name="web", resource="guild_awards")
-async def guild_awards_endpoint(request: web.Request) -> web.Response:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await guild_awards_impl(request)
-
-
-async def guild_promote_impl(request: web.Request) -> web.Response:
+@routes.post(r"/g/{guild}/promote")
+@web_endpoint("guild_promote")
+async def guild_promote_endpoint(request: web.Request) -> web.Response:
     """Owner-only: set a guild's `promote` flag, then redirect back to its page."""
     if not await is_owner_request(request):
         return web.Response(status=403, text="Forbidden")
@@ -767,35 +746,19 @@ async def guild_promote_impl(request: web.Request) -> web.Response:
     return redirect(f"/g/{guild_xid}")
 
 
-@routes.post(r"/g/{guild}/promote")
-@tracer.wrap(name="web", resource="guild_promote")
-async def guild_promote_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await guild_promote_impl(request)
-
-
-async def guild_settings_impl(request: web.Request) -> web.Response:
+@routes.post(r"/g/{guild}/settings")
+@web_endpoint("guild_settings")
+async def guild_settings_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: update a guild's settings, then redirect back to its page."""
-    try:
-        guild_xid = int(request.match_info["guild"])
-    except ValueError:
-        return web.Response(status=404)
-    if not await request_is_moderator(request, guild_xid):
-        return web.Response(status=403, text="Forbidden")
+    ids = await moderated_route(request)
+    if isinstance(ids, web.Response):
+        return ids
+    (guild_xid,) = ids
     form = await request.post()
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
         await services.guilds.update_settings(guild_xid, **parse_guild_settings(form))
     return redirect(f"/g/{guild_xid}")
-
-
-@routes.post(r"/g/{guild}/settings")
-@tracer.wrap(name="web", resource="guild_settings")
-async def guild_settings_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await guild_settings_impl(request)
 
 
 def award_error_redirect(guild_xid: int, code: str) -> web.Response:
@@ -812,14 +775,14 @@ def award_error_redirect(guild_xid: int, code: str) -> web.Response:
     return redirect(location)
 
 
-async def award_add_impl(request: web.Request) -> web.Response:
+@routes.post(r"/g/{guild}/awards/add")
+@web_endpoint("award_add")
+async def award_add_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: create a new award on the guild, then redirect back to its page."""
-    try:
-        guild_xid = int(request.match_info["guild"])
-    except ValueError:
-        return web.Response(status=404)
-    if not await request_is_moderator(request, guild_xid):
-        return web.Response(status=403, text="Forbidden")
+    ids = await moderated_route(request)
+    if isinstance(ids, web.Response):
+        return ids
+    (guild_xid,) = ids
     form = await request.post()
     values, error = parse_award_form(form)
     if values is None:
@@ -836,23 +799,14 @@ async def award_add_impl(request: web.Request) -> web.Response:
     return redirect(f"/g/{guild_xid}/awards")
 
 
-@routes.post(r"/g/{guild}/awards/add")
-@tracer.wrap(name="web", resource="award_add")
-async def award_add_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await award_add_impl(request)
-
-
-async def award_update_impl(request: web.Request) -> web.Response:
+@routes.post(r"/g/{guild}/awards/{award}/update")
+@web_endpoint("award_update")
+async def award_update_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: update one of the guild's awards, then redirect back to its page."""
-    try:
-        guild_xid = int(request.match_info["guild"])
-        award_id = int(request.match_info["award"])
-    except ValueError:
-        return web.Response(status=404)
-    if not await request_is_moderator(request, guild_xid):
-        return web.Response(status=403, text="Forbidden")
+    ids = await moderated_route(request, "award")
+    if isinstance(ids, web.Response):
+        return ids
+    guild_xid, award_id = ids
     form = await request.post()
     values, error = parse_award_form(form)
     if values is None:
@@ -872,45 +826,27 @@ async def award_update_impl(request: web.Request) -> web.Response:
     return redirect(f"/g/{guild_xid}/awards")
 
 
-@routes.post(r"/g/{guild}/awards/{award}/update")
-@tracer.wrap(name="web", resource="award_update")
-async def award_update_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await award_update_impl(request)
-
-
-async def award_delete_impl(request: web.Request) -> web.Response:
+@routes.post(r"/g/{guild}/awards/{award}/delete")
+@web_endpoint("award_delete")
+async def award_delete_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: delete one of the guild's awards, then redirect back to its page."""
-    try:
-        guild_xid = int(request.match_info["guild"])
-        award_id = int(request.match_info["award"])
-    except ValueError:
-        return web.Response(status=404)
-    if not await request_is_moderator(request, guild_xid):
-        return web.Response(status=403, text="Forbidden")
+    ids = await moderated_route(request, "award")
+    if isinstance(ids, web.Response):
+        return ids
+    guild_xid, award_id = ids
     if not await services.guilds.award_delete(guild_xid, award_id):
         return web.Response(status=404)
     return redirect(f"/g/{guild_xid}/awards")
 
 
-@routes.post(r"/g/{guild}/awards/{award}/delete")
-@tracer.wrap(name="web", resource="award_delete")
-async def award_delete_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await award_delete_impl(request)
-
-
-async def channel_settings_impl(request: web.Request) -> web.Response:
+@routes.post(r"/g/{guild}/c/{channel}/settings")
+@web_endpoint("channel_settings")
+async def channel_settings_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: update a channel's settings, then redirect back to its page."""
-    try:
-        guild_xid = int(request.match_info["guild"])
-        channel_xid = int(request.match_info["channel"])
-    except ValueError:
-        return web.Response(status=404)
-    if not await request_is_moderator(request, guild_xid):
-        return web.Response(status=403, text="Forbidden")
+    ids = await moderated_route(request, "channel")
+    if isinstance(ids, web.Response):
+        return ids
+    guild_xid, channel_xid = ids
     form = await request.post()
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
@@ -918,35 +854,18 @@ async def channel_settings_impl(request: web.Request) -> web.Response:
     return redirect(f"/g/{guild_xid}/c/{channel_xid}")
 
 
-@routes.post(r"/g/{guild}/c/{channel}/settings")
-@tracer.wrap(name="web", resource="channel_settings")
-async def channel_settings_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await channel_settings_impl(request)
-
-
-async def channel_forget_impl(request: web.Request) -> web.Response:
+@routes.post(r"/g/{guild}/c/{channel}/forget")
+@web_endpoint("channel_forget")
+async def channel_forget_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: forget (delete) a channel's settings, then redirect to its guild page."""
-    try:
-        guild_xid = int(request.match_info["guild"])
-        channel_xid = int(request.match_info["channel"])
-    except ValueError:
-        return web.Response(status=404)
-    if not await request_is_moderator(request, guild_xid):
-        return web.Response(status=403, text="Forbidden")
+    ids = await moderated_route(request, "channel")
+    if isinstance(ids, web.Response):
+        return ids
+    guild_xid, channel_xid = ids
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
         await services.channels.forget(channel_xid)
     return redirect(f"/g/{guild_xid}")
-
-
-@routes.post(r"/g/{guild}/c/{channel}/forget")
-@tracer.wrap(name="web", resource="channel_forget")
-async def channel_forget_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await channel_forget_impl(request)
 
 
 def csv_line(values: list[Any]) -> bytes:
@@ -1049,16 +968,12 @@ async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamRespo
 
 
 @routes.get(r"/g/{guild}/c/{channel}/export.csv")
-@tracer.wrap(name="web", resource="channel_record_export")
+@web_endpoint("channel_record_export")
 async def channel_export_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await export_impl(request, RecordKind.CHANNEL)
+    return await export_impl(request, RecordKind.CHANNEL)
 
 
 @routes.get(r"/u/{user}/export.csv")
-@tracer.wrap(name="web", resource="user_record_export")
+@web_endpoint("user_record_export")
 async def user_export_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await export_impl(request, RecordKind.USER)
+    return await export_impl(request, RecordKind.USER)

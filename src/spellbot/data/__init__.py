@@ -6,6 +6,7 @@ from spellbot.data.alert_data import AlertData
 from spellbot.data.award_data import GuildAwardData, UserAwardData
 from spellbot.data.block_data import BlockData
 from spellbot.data.channel_data import ChannelData
+from spellbot.data.game_criteria import ChannelModes, GameCriteria
 from spellbot.data.game_data import (
     GameBracket,
     GameData,
@@ -25,7 +26,9 @@ __all__ = [
     "AlertData",
     "BlockData",
     "ChannelData",
+    "ChannelModes",
     "GameBracket",
+    "GameCriteria",
     "GameData",
     "GameFormat",
     "GameLinkDetails",

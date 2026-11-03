@@ -50,6 +50,8 @@
     guildMode: "all",
     guildXid: "",
     charts: {},
+    // Bumped on every reload, so responses to an older selection can be dropped.
+    generation: 0,
   };
 
   // Convenience wrapper that binds the current period and clock to the pure
@@ -73,13 +75,33 @@
     };
   }
 
+  // A promise that never settles: awaiting it abandons the rest of a superseded load.
+  const SUPERSEDED = new Promise(function () {});
+
   async function fetchJson(path) {
+    const generation = state.generation;
     const res = await fetch(
       "/admin/dashboard/" + path + qs(state.period, state.guildMode, state.guildXid),
       { credentials: "same-origin" },
     );
+    // The filters changed while this was in flight: never render it over the newer data.
+    if (generation !== state.generation) return SUPERSEDED;
     if (!res.ok) throw new Error("HTTP " + res.status);
-    return res.json();
+    const data = await res.json();
+    return generation === state.generation ? data : SUPERSEDED;
+  }
+
+  // Build a loader that fetches `path` and renders it, or shows an error in its section(s).
+  function panel(path, sectionIds, render) {
+    return async function () {
+      try {
+        await render(await fetchJson(path));
+      } catch (ex) {
+        [].concat(sectionIds).forEach(function (id) {
+          showError(id, "Failed to load.");
+        });
+      }
+    };
   }
 
   function showError(sectionId, msg) {
@@ -283,30 +305,25 @@
     }
   }
 
-  async function loadCasualVsCedh() {
-    try {
-      const d = await fetchJson("casual-vs-cedh");
-      const series = [
-        { name: "Casual", points: d.casual },
-        { name: "cEDH", points: d.cedh },
-      ];
-      if (!series[0].points.length && !series[1].points.length) {
-        document.getElementById("casualVsCedhSection").innerHTML =
-          '<div class="no-data">No data yet.</div>';
-        destroyChart("casualVsCedh");
-        return;
-      }
-      const ctx = addCanvas("casualVsCedhSection");
+  const loadCasualVsCedh = panel("casual-vs-cedh", "casualVsCedhSection", function (d) {
+    const series = [
+      { name: "Casual", points: d.casual },
+      { name: "cEDH", points: d.cedh },
+    ];
+    if (!series[0].points.length && !series[1].points.length) {
+      document.getElementById("casualVsCedhSection").innerHTML =
+        '<div class="no-data">No data yet.</div>';
       destroyChart("casualVsCedh");
-      state.charts.casualVsCedh = new Chart(ctx, {
-        type: "line",
-        data: buildStackedFromSeries(series, true),
-        options: percentStackedOpts(),
-      });
-    } catch (ex) {
-      showError("casualVsCedhSection", "Failed to load.");
+      return;
     }
-  }
+    const ctx = addCanvas("casualVsCedhSection");
+    destroyChart("casualVsCedh");
+    state.charts.casualVsCedh = new Chart(ctx, {
+      type: "line",
+      data: buildStackedFromSeries(series, true),
+      options: percentStackedOpts(),
+    });
+  });
 
   function buildStackedFromSeries(seriesList, asPercent) {
     const allLabels = new Set();
@@ -376,9 +393,10 @@
     return opts;
   }
 
-  async function loadServerPopularity() {
-    try {
-      const d = await fetchJson("server-popularity");
+  const loadServerPopularity = panel(
+    "server-popularity",
+    ["serverPopularitySection", "serverPopularityTable"],
+    function (d) {
       const totals = d.totals || [];
       const colorByName = {};
       d.series.forEach(function (s, i) {
@@ -409,11 +427,8 @@
         state.charts.serverPopularity = chart;
       }
       renderServerPopularityTable(totals, colorByName, chart);
-    } catch (ex) {
-      showError("serverPopularitySection", "Failed to load.");
-      showError("serverPopularityTable", "Failed to load.");
-    }
-  }
+    },
+  );
 
   function renderServerPopularityTable(rows, colorByName, chart) {
     const el = document.getElementById("serverPopularityTable");
@@ -497,9 +512,10 @@
     return opts;
   }
 
-  async function loadBracketAdoption() {
-    try {
-      const d = await fetchJson("bracket-adoption");
+  const loadBracketAdoption = panel(
+    "bracket-adoption",
+    ["bracketAdoptionSection", "bracketLeadersTable"],
+    function (d) {
       const leaders = d.leaders || [];
       if (!d.rate.length) {
         document.getElementById("bracketAdoptionSection").innerHTML =
@@ -525,11 +541,8 @@
         });
       }
       renderBracketLeadersTable(leaders);
-    } catch (ex) {
-      showError("bracketAdoptionSection", "Failed to load.");
-      showError("bracketLeadersTable", "Failed to load.");
-    }
-  }
+    },
+  );
 
   function renderBracketLeadersTable(rows) {
     const el = document.getElementById("bracketLeadersTable");
@@ -559,9 +572,10 @@
       "</tbody></table>";
   }
 
-  async function loadServicePopularity() {
-    try {
-      const d = await fetchJson("service-popularity");
+  const loadServicePopularity = panel(
+    "service-popularity",
+    "servicePopularitySection",
+    function (d) {
       if (!d.series.length) {
         document.getElementById("servicePopularitySection").innerHTML =
           '<div class="no-data">No data yet.</div>';
@@ -575,443 +589,350 @@
         data: buildStackedFromSeries(d.series, true),
         options: percentStackedOpts(),
       });
-    } catch (ex) {
-      showError("servicePopularitySection", "Failed to load.");
-    }
+    },
+  );
+
+  // Each row's share of the total count, as a percent cell.
+  function shareColumn(rows) {
+    const total = rows.reduce(function (acc, r) {
+      return acc + r.count;
+    }, 0);
+    return {
+      header: "%",
+      cls: "pct",
+      cell: function (r) {
+        return (total > 0 ? (r.count / total) * 100 : 0).toFixed(1) + "%";
+      },
+    };
+  }
+
+  function countColumn(header) {
+    return {
+      header: header,
+      cls: "num",
+      cell: function (r) {
+        return fmt(r.count);
+      },
+    };
   }
 
   function renderLanguageTable(sectionId, rows, label) {
-    const el = document.getElementById(sectionId);
-    if (!rows.length) {
-      el.innerHTML = '<div class="no-data">No data yet.</div>';
-      return;
-    }
-    const total = rows.reduce(function (acc, r) {
-      return acc + r.count;
-    }, 0);
-    const body = rows
-      .map(function (r) {
-        const pct = total > 0 ? (r.count / total) * 100 : 0;
-        return (
-          "<tr><td>" +
-          escapeHtml(r.locale) +
-          '</td><td class="num">' +
-          fmt(r.count) +
-          '</td><td class="pct">' +
-          pct.toFixed(1) +
-          "%</td></tr>"
-        );
-      })
-      .join("");
-    el.innerHTML =
-      '<table class="lang-table"><thead><tr><th>Locale</th><th style="text-align:right">' +
-      escapeHtml(label) +
-      '</th><th style="text-align:right">%</th></tr></thead><tbody>' +
-      body +
-      "</tbody></table>";
+    document.getElementById(sectionId).innerHTML = renderTable(
+      [
+        {
+          header: "Locale",
+          cell: function (r) {
+            return escapeHtml(r.locale);
+          },
+        },
+        countColumn(label),
+        shareColumn(rows),
+      ],
+      rows,
+    );
   }
 
-  async function loadUserLanguages() {
-    try {
-      const d = await fetchJson("user-languages");
-      renderLanguageTable("userLanguagesSection", d.rows, "Users");
-    } catch (ex) {
-      showError("userLanguagesSection", "Failed to load.");
-    }
-  }
+  const loadUserLanguages = panel("user-languages", "userLanguagesSection", function (d) {
+    renderLanguageTable("userLanguagesSection", d.rows, "Users");
+  });
 
-  async function loadGameLanguages() {
-    try {
-      const d = await fetchJson("game-languages");
-      renderLanguageTable("gameLanguagesSection", d.rows, "Games");
-    } catch (ex) {
-      showError("gameLanguagesSection", "Failed to load.");
-    }
-  }
+  const loadGameLanguages = panel("game-languages", "gameLanguagesSection", function (d) {
+    renderLanguageTable("gameLanguagesSection", d.rows, "Games");
+  });
 
-  async function loadGuildLanguages() {
-    try {
-      const d = await fetchJson("guild-languages");
-      renderLanguageTable("guildLanguagesSection", d.rows, "Servers");
-    } catch (ex) {
-      showError("guildLanguagesSection", "Failed to load.");
-    }
-  }
+  const loadGuildLanguages = panel("guild-languages", "guildLanguagesSection", function (d) {
+    renderLanguageTable("guildLanguagesSection", d.rows, "Servers");
+  });
 
   function renderTopGuildTable(sectionId, rows, keyField, keyHeader) {
-    const el = document.getElementById(sectionId);
-    if (!rows.length) {
-      el.innerHTML = '<div class="no-data">No data yet.</div>';
-      return;
-    }
-    const body = rows
-      .map(function (r) {
-        return (
-          "<tr><td>" +
-          escapeHtml(r[keyField]) +
-          "</td><td>" +
-          escapeHtml(r.guild_name) +
-          '</td><td class="num">' +
-          fmt(r.count) +
-          '</td><td class="num">' +
-          r.share.toFixed(1) +
-          "%</td></tr>"
-        );
-      })
-      .join("");
-    el.innerHTML =
-      '<table class="lang-table"><thead><tr><th>' +
-      keyHeader +
-      "</th><th>Server</th>" +
-      '<th style="text-align:right">Games</th>' +
-      '<th style="text-align:right">Share</th></tr></thead><tbody>' +
-      body +
-      "</tbody></table>";
+    document.getElementById(sectionId).innerHTML = renderTable(
+      [
+        {
+          header: keyHeader,
+          cell: function (r) {
+            return escapeHtml(r[keyField]);
+          },
+        },
+        {
+          header: "Server",
+          cell: function (r) {
+            return escapeHtml(r.guild_name);
+          },
+        },
+        countColumn("Games"),
+        {
+          header: "Share",
+          cls: "num",
+          cell: function (r) {
+            return r.share.toFixed(1) + "%";
+          },
+        },
+      ],
+      rows,
+    );
   }
 
-  async function loadTopGuildPerGameLanguage() {
-    try {
-      const d = await fetchJson("top-guild-per-game-language");
+  const loadTopGuildPerGameLanguage = panel(
+    "top-guild-per-game-language",
+    "topGuildPerGameLanguageSection",
+    function (d) {
       renderTopGuildTable("topGuildPerGameLanguageSection", d.rows, "locale", "Locale");
-    } catch (ex) {
-      showError("topGuildPerGameLanguageSection", "Failed to load.");
-    }
-  }
+    },
+  );
 
-  async function loadTopGuildPerService() {
-    try {
-      const d = await fetchJson("top-guild-per-service");
+  const loadTopGuildPerService = panel(
+    "top-guild-per-service",
+    "topGuildPerServiceSection",
+    function (d) {
       renderTopGuildTable("topGuildPerServiceSection", d.rows, "service", "Service");
-    } catch (ex) {
-      showError("topGuildPerServiceSection", "Failed to load.");
-    }
-  }
+    },
+  );
 
   function renderCountTable(sectionId, rows, keyField, label) {
-    const el = document.getElementById(sectionId);
-    if (!rows.length) {
-      el.innerHTML = '<div class="no-data">No data yet.</div>';
-      return;
-    }
-    const total = rows.reduce(function (acc, r) {
-      return acc + r.count;
-    }, 0);
-    const body = rows
-      .map(function (r) {
-        const pct = total > 0 ? (r.count / total) * 100 : 0;
-        return (
-          "<tr><td>" +
-          escapeHtml(String(r[keyField])) +
-          '</td><td class="num">' +
-          fmt(r.count) +
-          '</td><td class="pct">' +
-          pct.toFixed(1) +
-          "%</td></tr>"
-        );
-      })
-      .join("");
-    el.innerHTML =
-      '<table class="lang-table"><thead><tr><th>' +
-      escapeHtml(label) +
-      '</th><th style="text-align:right">Games</th><th style="text-align:right">%</th></tr></thead><tbody>' +
-      body +
-      "</tbody></table>";
+    document.getElementById(sectionId).innerHTML = renderTable(
+      [
+        {
+          header: label,
+          cell: function (r) {
+            return escapeHtml(String(r[keyField]));
+          },
+        },
+        countColumn("Games"),
+        shareColumn(rows),
+      ],
+      rows,
+    );
   }
 
   function renderPlayerTable(sectionId, rows, countLabel) {
-    const el = document.getElementById(sectionId);
-    if (!rows.length) {
-      el.innerHTML = '<div class="no-data">No data yet.</div>';
-      return;
-    }
-    const body = rows
-      .map(function (r) {
-        const name = r.name || r.user_xid;
-        const idCell = r.name
-          ? ' <span class="player-xid">(' + escapeHtml(r.user_xid) + ")</span>"
-          : "";
-        return (
-          "<tr><td>" +
-          escapeHtml(name) +
-          idCell +
-          '</td><td class="num">' +
-          fmt(r.count) +
-          "</td></tr>"
-        );
-      })
-      .join("");
-    el.innerHTML =
-      '<table class="lang-table"><thead><tr><th>Player</th><th style="text-align:right">' +
-      escapeHtml(countLabel) +
-      "</th></tr></thead><tbody>" +
-      body +
-      "</tbody></table>";
-  }
-
-  async function loadAvgWaitTime() {
-    try {
-      const d = await fetchJson("avg-wait-time");
-      const series = d.series || [];
-      if (!series.length) {
-        document.getElementById("avgWaitTimeSection").innerHTML =
-          '<div class="no-data">No data yet.</div>';
-        destroyChart("avgWaitTime");
-        return;
-      }
-      const rawDates = series.map(function (p) {
-        return p.date;
-      });
-      const trim = trimNow(rawDates);
-      const labels = rawDates.slice(trim.startIdx).map(function (s) {
-        return s.slice(0, 10);
-      });
-      const minutes = series.slice(trim.startIdx).map(function (p) {
-        return p.minutes;
-      });
-      const dash = dashSegment(trim.partialFromIdx);
-      const ctx = addCanvas("avgWaitTimeSection");
-      destroyChart("avgWaitTime");
-      state.charts.avgWaitTime = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: labels,
-          datasets: [
-            applyDash(
-              {
-                label: "Avg Wait (minutes)",
-                data: minutes,
-                borderColor: "#fbbf24",
-                backgroundColor: "rgba(251,191,36,0.1)",
-                borderWidth: 2,
-                tension: 0.3,
-                fill: true,
-                pointRadius: 0,
-              },
-              dash,
-            ),
-          ],
-        },
-        options: lineOpts(false),
-      });
-    } catch (ex) {
-      showError("avgWaitTimeSection", "Failed to load.");
-    }
-  }
-
-  async function loadPopularFormats() {
-    try {
-      const d = await fetchJson("popular-formats");
-      renderCountTable("popularFormatsSection", d.rows, "format", "Format");
-    } catch (ex) {
-      showError("popularFormatsSection", "Failed to load.");
-    }
-  }
-
-  async function loadPopularSeats() {
-    try {
-      const d = await fetchJson("popular-seats");
-      renderCountTable("popularSeatsSection", d.rows, "seats", "Seats");
-    } catch (ex) {
-      showError("popularSeatsSection", "Failed to load.");
-    }
-  }
-
-  async function loadTopPlayers() {
-    try {
-      const d = await fetchJson("top-players");
-      renderPlayerTable("topPlayersSection", d.rows, "Games");
-    } catch (ex) {
-      showError("topPlayersSection", "Failed to load.");
-    }
-  }
-
-  async function loadTopBlocked() {
-    try {
-      const d = await fetchJson("top-blocked");
-      renderPlayerTable("topBlockedSection", d.rows, "Blocks");
-    } catch (ex) {
-      showError("topBlockedSection", "Failed to load.");
-    }
-  }
-
-  async function loadHourOfDay() {
-    try {
-      const d = await fetchJson("hour-of-day");
-      // Shift UTC bucket counts to the browser's local timezone. getTimezoneOffset
-      // returns minutes west of UTC, so localHour = (utcHour - offset/60 + 24) % 24.
-      const offsetHours = new Date().getTimezoneOffset() / 60;
-      const local = new Array(24).fill(0);
-      d.hours.forEach(function (p) {
-        const lh = (((p.hour - offsetHours) % 24) + 24) % 24;
-        local[Math.floor(lh)] += p.count;
-      });
-      const labels = local.map(function (_, i) {
-        return String(i).padStart(2, "0") + ":00";
-      });
-      const ctx = addCanvas("hourOfDaySection");
-      destroyChart("hourOfDay");
-      state.charts.hourOfDay = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: "Games",
-              data: local,
-              backgroundColor: "#818cf8",
-              borderRadius: 3,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: {
-              grid: { color: GRID },
-              ticks: { color: TICK, maxRotation: 0 },
-            },
-            y: {
-              grid: { color: GRID },
-              ticks: { color: TICK },
-              beginAtZero: true,
-            },
+    document.getElementById(sectionId).innerHTML = renderTable(
+      [
+        {
+          header: "Player",
+          cell: function (r) {
+            const idCell = r.name
+              ? ' <span class="player-xid">(' + escapeHtml(r.user_xid) + ")</span>"
+              : "";
+            return escapeHtml(r.name || r.user_xid) + idCell;
           },
         },
-      });
-    } catch (ex) {
-      showError("hourOfDaySection", "Failed to load.");
-    }
+        countColumn(countLabel),
+      ],
+      rows,
+    );
   }
+
+  const loadAvgWaitTime = panel("avg-wait-time", "avgWaitTimeSection", function (d) {
+    const series = d.series || [];
+    if (!series.length) {
+      document.getElementById("avgWaitTimeSection").innerHTML =
+        '<div class="no-data">No data yet.</div>';
+      destroyChart("avgWaitTime");
+      return;
+    }
+    const rawDates = series.map(function (p) {
+      return p.date;
+    });
+    const trim = trimNow(rawDates);
+    const labels = rawDates.slice(trim.startIdx).map(function (s) {
+      return s.slice(0, 10);
+    });
+    const minutes = series.slice(trim.startIdx).map(function (p) {
+      return p.minutes;
+    });
+    const dash = dashSegment(trim.partialFromIdx);
+    const ctx = addCanvas("avgWaitTimeSection");
+    destroyChart("avgWaitTime");
+    state.charts.avgWaitTime = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          applyDash(
+            {
+              label: "Avg Wait (minutes)",
+              data: minutes,
+              borderColor: "#fbbf24",
+              backgroundColor: "rgba(251,191,36,0.1)",
+              borderWidth: 2,
+              tension: 0.3,
+              fill: true,
+              pointRadius: 0,
+            },
+            dash,
+          ),
+        ],
+      },
+      options: lineOpts(false),
+    });
+  });
+
+  const loadPopularFormats = panel("popular-formats", "popularFormatsSection", function (d) {
+    renderCountTable("popularFormatsSection", d.rows, "format", "Format");
+  });
+
+  const loadPopularSeats = panel("popular-seats", "popularSeatsSection", function (d) {
+    renderCountTable("popularSeatsSection", d.rows, "seats", "Seats");
+  });
+
+  const loadTopPlayers = panel("top-players", "topPlayersSection", function (d) {
+    renderPlayerTable("topPlayersSection", d.rows, "Games");
+  });
+
+  const loadTopBlocked = panel("top-blocked", "topBlockedSection", function (d) {
+    renderPlayerTable("topBlockedSection", d.rows, "Blocks");
+  });
+
+  const loadHourOfDay = panel("hour-of-day", "hourOfDaySection", function (d) {
+    // Shift the UTC hour buckets into the browser's local timezone.
+    const offsetHours = getTimezoneOffsetHours(new Date());
+    const local = new Array(24).fill(0);
+    d.hours.forEach(function (p) {
+      local[utcHourToLocal(p.hour, offsetHours)] += p.count;
+    });
+    const labels = local.map(function (_, i) {
+      return String(i).padStart(2, "0") + ":00";
+    });
+    const ctx = addCanvas("hourOfDaySection");
+    destroyChart("hourOfDay");
+    state.charts.hourOfDay = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Games",
+            data: local,
+            backgroundColor: "#818cf8",
+            borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { color: GRID },
+            ticks: { color: TICK, maxRotation: 0 },
+          },
+          y: {
+            grid: { color: GRID },
+            ticks: { color: TICK },
+            beginAtZero: true,
+          },
+        },
+      },
+    });
+  });
 
   const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  async function loadDayOfWeek() {
-    try {
-      const d = await fetchJson("day-of-week");
-      const counts = new Array(7).fill(0);
-      d.days.forEach(function (p) {
-        counts[p.dow] = p.count;
-      });
-      const ctx = addCanvas("dayOfWeekSection");
-      destroyChart("dayOfWeek");
-      state.charts.dayOfWeek = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: DOW_LABELS,
-          datasets: [
-            {
-              label: "Games",
-              data: counts,
-              backgroundColor: "#22c55e",
-              borderRadius: 3,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { color: GRID }, ticks: { color: TICK } },
-            y: {
-              grid: { color: GRID },
-              ticks: { color: TICK },
-              beginAtZero: true,
-            },
+  const loadDayOfWeek = panel("day-of-week", "dayOfWeekSection", function (d) {
+    const counts = new Array(7).fill(0);
+    d.days.forEach(function (p) {
+      counts[p.dow] = p.count;
+    });
+    const ctx = addCanvas("dayOfWeekSection");
+    destroyChart("dayOfWeek");
+    state.charts.dayOfWeek = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: DOW_LABELS,
+        datasets: [
+          {
+            label: "Games",
+            data: counts,
+            backgroundColor: "#22c55e",
+            borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: GRID }, ticks: { color: TICK } },
+          y: {
+            grid: { color: GRID },
+            ticks: { color: TICK },
+            beginAtZero: true,
           },
         },
-      });
-    } catch (ex) {
-      showError("dayOfWeekSection", "Failed to load.");
-    }
-  }
+      },
+    });
+  });
 
-  async function loadGamesPerPlayer() {
-    try {
-      const d = await fetchJson("games-per-player");
-      document.getElementById("gamesPerPlayerTitle").textContent =
-        "Games per Player (Median: " + d.median + ")";
-      if (!d.histogram.length) {
-        document.getElementById("gamesPerPlayerSection").innerHTML =
-          '<div class="no-data">No data yet.</div>';
-        destroyChart("gamesPerPlayer");
-        return;
-      }
-      const medianBucket = Math.ceil(d.median);
-      const ctx = addCanvas("gamesPerPlayerSection");
+  const loadGamesPerPlayer = panel("games-per-player", "gamesPerPlayerSection", function (d) {
+    document.getElementById("gamesPerPlayerTitle").textContent =
+      "Games per Player (Median: " + d.median + ")";
+    if (!d.histogram.length) {
+      document.getElementById("gamesPerPlayerSection").innerHTML =
+        '<div class="no-data">No data yet.</div>';
       destroyChart("gamesPerPlayer");
-      state.charts.gamesPerPlayer = new Chart(ctx, {
-        type: "bar",
-        data: {
-          labels: d.histogram.map(function (b) {
-            return b.bucket;
-          }),
-          datasets: [
-            {
-              label: "Players",
-              data: d.histogram.map(function (b) {
-                return b.players;
-              }),
-              backgroundColor: d.histogram.map(function (b) {
-                const n = parseFloat(b.bucket);
-                return !isNaN(n) && n === medianBucket ? "#f59e0b" : "#60a5fa";
-              }),
-              borderRadius: 3,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            annotation: {
-              annotations: {
-                medianLine: {
-                  type: "line",
-                  xMin: d.median - 1,
-                  xMax: d.median - 1,
-                  borderColor: "#f59e0b",
-                  borderWidth: 2,
-                  borderDash: [6, 3],
-                  label: {
-                    display: true,
-                    content: "Median: " + d.median,
-                    position: "start",
-                    color: "#fbbf24",
-                    backgroundColor: "rgba(0,0,0,0.6)",
-                  },
+      return;
+    }
+    const medianBucket = Math.ceil(d.median);
+    const ctx = addCanvas("gamesPerPlayerSection");
+    destroyChart("gamesPerPlayer");
+    state.charts.gamesPerPlayer = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: d.histogram.map(function (b) {
+          return b.bucket;
+        }),
+        datasets: [
+          {
+            label: "Players",
+            data: d.histogram.map(function (b) {
+              return b.players;
+            }),
+            backgroundColor: d.histogram.map(function (b) {
+              const n = parseFloat(b.bucket);
+              return !isNaN(n) && n === medianBucket ? "#f59e0b" : "#60a5fa";
+            }),
+            borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          annotation: {
+            annotations: {
+              medianLine: {
+                type: "line",
+                xMin: d.median - 1,
+                xMax: d.median - 1,
+                borderColor: "#f59e0b",
+                borderWidth: 2,
+                borderDash: [6, 3],
+                label: {
+                  display: true,
+                  content: "Median: " + d.median,
+                  position: "start",
+                  color: "#fbbf24",
+                  backgroundColor: "rgba(0,0,0,0.6)",
                 },
               },
             },
           },
-          scales: {
-            x: { grid: { color: GRID }, ticks: { color: TICK } },
-            y: {
-              grid: { color: GRID },
-              ticks: { color: TICK },
-              beginAtZero: true,
-            },
+        },
+        scales: {
+          x: { grid: { color: GRID }, ticks: { color: TICK } },
+          y: {
+            grid: { color: GRID },
+            ticks: { color: TICK },
+            beginAtZero: true,
           },
         },
-      });
-    } catch (ex) {
-      showError("gamesPerPlayerSection", "Failed to load.");
-    }
-  }
-
-  const CLOUD_COLORS = [
-    "#a78bfa",
-    "#60a5fa",
-    "#4ade80",
-    "#f472b6",
-    "#fbbf24",
-    "#67e8f9",
-    "#fb923c",
-    "#a3e635",
-  ];
+      },
+    });
+  });
 
   function renderTopRules(rows) {
     const el = document.getElementById("topRulesSection");
@@ -1034,66 +955,15 @@
 
   function renderRulesCloud(ngrams) {
     const el = document.getElementById("rulesCloudSection");
-    if (!ngrams.length) {
-      el.innerHTML = '<div class="no-data">No data yet.</div>';
-      return;
-    }
-    const maxCount = Math.max.apply(
-      null,
-      ngrams.map(function (n) {
-        return n.count;
-      }),
-    );
-    const minCount = Math.min.apply(
-      null,
-      ngrams.map(function (n) {
-        return n.count;
-      }),
-    );
-    const logMin = Math.log(minCount || 1);
-    const logMax = Math.log(maxCount || 1);
-    const logRange = logMax - logMin || 1;
-    const shuffled = ngrams.slice().sort(function () {
-      return Math.random() - 0.5;
-    });
-    const words = shuffled
-      .map(function (n, i) {
-        const logCount = Math.log(n.count || 1);
-        const scale = (logCount - logMin) / logRange;
-        const fontSize = 0.8 + scale * 1.2;
-        const color = CLOUD_COLORS[i % CLOUD_COLORS.length];
-        const rotation = (Math.random() - 0.5) * 8;
-        const opacity = 0.75 + scale * 0.25;
-        return (
-          '<span class="cloud-word" style="font-size:' +
-          fontSize +
-          "rem;color:" +
-          color +
-          ";opacity:" +
-          opacity +
-          ";transform:rotate(" +
-          rotation +
-          'deg)" title="' +
-          n.count +
-          ' games">' +
-          escapeHtml(n.phrase) +
-          "</span>"
-        );
-      })
-      .join("");
-    el.innerHTML = '<div class="word-cloud">' + words + "</div>";
+    el.innerHTML = ngrams.length
+      ? wordCloudHtml(ngrams, Math.random)
+      : '<div class="no-data">No data yet.</div>';
   }
 
-  async function loadRules() {
-    try {
-      const d = await fetchJson("rules");
-      renderTopRules(d.top_rules);
-      renderRulesCloud(d.rule_ngrams);
-    } catch (ex) {
-      showError("topRulesSection", "Failed to load.");
-      showError("rulesCloudSection", "Failed to load.");
-    }
-  }
+  const loadRules = panel("rules", ["topRulesSection", "rulesCloudSection"], function (d) {
+    renderTopRules(d.top_rules);
+    renderRulesCloud(d.rule_ngrams);
+  });
 
   async function loadGuilds() {
     try {
@@ -1118,138 +988,129 @@
     }
   }
 
-  async function loadActivityHeatmap() {
-    try {
-      const d = await fetchJson("activity-heatmap");
-      const el = document.getElementById("activityHeatmapSection");
-      if (!d.cells.length) {
-        el.innerHTML = '<div class="no-data">No data yet.</div>';
-        return;
-      }
-      // Shift UTC dow/hour to local time. Hour shift may flip the dow.
-      const offsetHours = new Date().getTimezoneOffset() / 60;
-      const grid = [];
-      for (let i = 0; i < 7; i += 1) grid.push(new Array(24).fill(0));
-      d.cells.forEach(function (c) {
-        const totalHour = c.dow * 24 + c.hour - offsetHours;
-        const wrapped = ((totalHour % 168) + 168) % 168;
-        const lh = Math.floor(wrapped) % 24;
-        const ld = Math.floor(wrapped / 24) % 7;
-        grid[ld][lh] += c.count;
+  const loadActivityHeatmap = panel("activity-heatmap", "activityHeatmapSection", function (d) {
+    const el = document.getElementById("activityHeatmapSection");
+    if (!d.cells.length) {
+      el.innerHTML = '<div class="no-data">No data yet.</div>';
+      return;
+    }
+    // Shift UTC dow/hour to local time. Hour shift may flip the dow.
+    const offsetHours = new Date().getTimezoneOffset() / 60;
+    const grid = [];
+    for (let i = 0; i < 7; i += 1) grid.push(new Array(24).fill(0));
+    d.cells.forEach(function (c) {
+      const totalHour = c.dow * 24 + c.hour - offsetHours;
+      const wrapped = ((totalHour % 168) + 168) % 168;
+      const lh = Math.floor(wrapped) % 24;
+      const ld = Math.floor(wrapped / 24) % 7;
+      grid[ld][lh] += c.count;
+    });
+    let maxValue = 0;
+    grid.forEach(function (row) {
+      row.forEach(function (v) {
+        if (v > maxValue) maxValue = v;
       });
-      let maxValue = 0;
-      grid.forEach(function (row) {
-        row.forEach(function (v) {
-          if (v > maxValue) maxValue = v;
+    });
+    const cols = [];
+    for (let h = 0; h < 24; h += 1) {
+      cols.push(
+        '<div class="hm-col">' + (h % 3 === 0 ? String(h).padStart(2, "0") : "") + "</div>",
+      );
+    }
+    const rows = grid
+      .map(function (row, d2) {
+        const cells = row
+          .map(function (v, h) {
+            return (
+              '<div class="hm-cell" style="background:' +
+              heatColor(v, maxValue) +
+              '" title="' +
+              DOW_LABELS[d2] +
+              " " +
+              String(h).padStart(2, "0") +
+              ":00 — " +
+              v +
+              ' games"></div>'
+            );
+          })
+          .join("");
+        return '<div class="hm-row">' + DOW_LABELS[d2] + "</div>" + cells;
+      })
+      .join("");
+    el.innerHTML =
+      '<div class="heatmap" style="grid-template-columns:40px repeat(24, minmax(0, 1fr))">' +
+      '<div class="hm-corner"></div>' +
+      cols.join("") +
+      rows +
+      "</div>" +
+      '<div class="heatmap-legend"><span>less</span>' +
+      '<span class="hm-scale"></span>' +
+      "<span>more (max: " +
+      fmt(maxValue) +
+      ")</span></div>";
+  });
+
+  const loadCohortRetention = panel("cohort-retention", "cohortRetentionSection", function (d) {
+    const el = document.getElementById("cohortRetentionSection");
+    const monthly = d.unit === "month";
+    document.getElementById("cohortRetentionTitle").textContent =
+      "Cohort Retention (" + (monthly ? "Monthly" : "Weekly") + ")";
+    if (!d.cohorts.length) {
+      el.innerHTML = '<div class="no-data">No data yet.</div>';
+      return;
+    }
+    const maxOffset = d.max_offset;
+    const prefix = monthly ? "M" : "W";
+    const header = ['<th class="cohort-label">Cohort (size)</th>'];
+    for (let i = 0; i <= maxOffset; i += 1) header.push("<th>" + prefix + i + "</th>");
+    const body = d.cohorts
+      .map(function (c) {
+        const byOffset = {};
+        c.periods.forEach(function (w) {
+          byOffset[w.offset] = w;
         });
-      });
-      const cols = [];
-      for (let h = 0; h < 24; h += 1) {
-        cols.push(
-          '<div class="hm-col">' + (h % 3 === 0 ? String(h).padStart(2, "0") : "") + "</div>",
-        );
-      }
-      const rows = grid
-        .map(function (row, d2) {
-          const cells = row
-            .map(function (v, h) {
-              return (
-                '<div class="hm-cell" style="background:' +
-                heatColor(v, maxValue) +
+        const cells = [];
+        for (let i = 0; i <= maxOffset; i += 1) {
+          const w = byOffset[i];
+          if (!w) {
+            cells.push("<td></td>");
+          } else {
+            cells.push(
+              '<td class="cohort-cell" style="background:' +
+                heatColor(w.pct, 100) +
                 '" title="' +
-                DOW_LABELS[d2] +
-                " " +
-                String(h).padStart(2, "0") +
-                ":00 — " +
-                v +
-                ' games"></div>'
-              );
-            })
-            .join("");
-          return '<div class="hm-row">' + DOW_LABELS[d2] + "</div>" + cells;
-        })
-        .join("");
-      el.innerHTML =
-        '<div class="heatmap" style="grid-template-columns:40px repeat(24, minmax(0, 1fr))">' +
-        '<div class="hm-corner"></div>' +
-        cols.join("") +
-        rows +
-        "</div>" +
-        '<div class="heatmap-legend"><span>less</span>' +
-        '<span class="hm-scale"></span>' +
-        "<span>more (max: " +
-        fmt(maxValue) +
-        ")</span></div>";
-    } catch (ex) {
-      showError("activityHeatmapSection", "Failed to load.");
-    }
-  }
-
-  async function loadCohortRetention() {
-    try {
-      const d = await fetchJson("cohort-retention");
-      const el = document.getElementById("cohortRetentionSection");
-      const monthly = d.unit === "month";
-      document.getElementById("cohortRetentionTitle").textContent =
-        "Cohort Retention (" + (monthly ? "Monthly" : "Weekly") + ")";
-      if (!d.cohorts.length) {
-        el.innerHTML = '<div class="no-data">No data yet.</div>';
-        return;
-      }
-      const maxOffset = d.max_offset;
-      const prefix = monthly ? "M" : "W";
-      const header = ['<th class="cohort-label">Cohort (size)</th>'];
-      for (let i = 0; i <= maxOffset; i += 1) header.push("<th>" + prefix + i + "</th>");
-      const body = d.cohorts
-        .map(function (c) {
-          const byOffset = {};
-          c.periods.forEach(function (w) {
-            byOffset[w.offset] = w;
-          });
-          const cells = [];
-          for (let i = 0; i <= maxOffset; i += 1) {
-            const w = byOffset[i];
-            if (!w) {
-              cells.push("<td></td>");
-            } else {
-              cells.push(
-                '<td class="cohort-cell" style="background:' +
-                  heatColor(w.pct, 100) +
-                  '" title="' +
-                  w.count +
-                  " of " +
-                  c.size +
-                  ' players">' +
-                  w.pct.toFixed(0) +
-                  "%</td>",
-              );
-            }
+                w.count +
+                " of " +
+                c.size +
+                ' players">' +
+                w.pct.toFixed(0) +
+                "%</td>",
+            );
           }
-          return (
-            '<tr><td class="cohort-label">' +
-            escapeHtml(c.cohort.slice(0, monthly ? 7 : 10)) +
-            " (" +
-            fmt(c.size) +
-            ")</td>" +
-            cells.join("") +
-            "</tr>"
-          );
-        })
-        .join("");
-      el.innerHTML =
-        '<table class="cohort-table"><thead><tr>' +
-        header.join("") +
-        "</tr></thead><tbody>" +
-        body +
-        "</tbody></table>";
-    } catch (ex) {
-      showError("cohortRetentionSection", "Failed to load.");
-    }
-  }
+        }
+        return (
+          '<tr><td class="cohort-label">' +
+          escapeHtml(c.cohort.slice(0, monthly ? 7 : 10)) +
+          " (" +
+          fmt(c.size) +
+          ")</td>" +
+          cells.join("") +
+          "</tr>"
+        );
+      })
+      .join("");
+    el.innerHTML =
+      '<table class="cohort-table"><thead><tr>' +
+      header.join("") +
+      "</tr></thead><tbody>" +
+      body +
+      "</tbody></table>";
+  });
 
-  async function loadWaitTimeDistribution() {
-    try {
-      const d = await fetchJson("wait-time-distribution");
+  const loadWaitTimeDistribution = panel(
+    "wait-time-distribution",
+    "waitTimeDistributionSection",
+    function (d) {
       const sections = [d.p50, d.p95, d.p99];
       if (!sections[0].length) {
         document.getElementById("waitTimeDistributionSection").innerHTML =
@@ -1296,10 +1157,8 @@
         },
         options: lineOpts(false),
       });
-    } catch (ex) {
-      showError("waitTimeDistributionSection", "Failed to load.");
-    }
-  }
+    },
+  );
 
   function loadAdoptionRateChart(sectionId, chartKey, fetchPath, label, color) {
     return (async function () {
@@ -1424,90 +1283,77 @@
     );
   }
 
-  async function loadQueueDepth() {
-    try {
-      const d = await fetchJson("queue-depth");
-      const el = document.getElementById("queueDepthSection");
-      const header =
-        '<div class="queue-depth-total">' +
-        fmt(d.total) +
-        ' <span class="stat-unit">players waiting</span></div>';
-      if (!d.by_format.length) {
-        el.innerHTML = header + '<div class="no-data">No one is queued right now.</div>';
-        return;
-      }
-      const body = d.by_format
-        .map(function (r) {
-          return (
-            "<tr><td>" +
-            escapeHtml(r.format) +
-            '</td><td class="num">' +
-            fmt(r.count) +
-            "</td></tr>"
-          );
-        })
-        .join("");
-      el.innerHTML =
-        header +
-        '<table class="lang-table"><thead><tr><th>Format</th>' +
-        '<th style="text-align:right">Players Queued</th></tr></thead><tbody>' +
-        body +
-        "</tbody></table>";
-    } catch (ex) {
-      showError("queueDepthSection", "Failed to load.");
+  const loadQueueDepth = panel("queue-depth", "queueDepthSection", function (d) {
+    const el = document.getElementById("queueDepthSection");
+    const header =
+      '<div class="queue-depth-total">' +
+      fmt(d.total) +
+      ' <span class="stat-unit">players waiting</span></div>';
+    if (!d.by_format.length) {
+      el.innerHTML = header + '<div class="no-data">No one is queued right now.</div>';
+      return;
     }
-  }
+    const body = d.by_format
+      .map(function (r) {
+        return (
+          "<tr><td>" + escapeHtml(r.format) + '</td><td class="num">' + fmt(r.count) + "</td></tr>"
+        );
+      })
+      .join("");
+    el.innerHTML =
+      header +
+      '<table class="lang-table"><thead><tr><th>Format</th>' +
+      '<th style="text-align:right">Players Queued</th></tr></thead><tbody>' +
+      body +
+      "</tbody></table>";
+  });
 
-  async function loadActiveQueues() {
-    try {
-      const d = await fetchJson("active-queues");
-      const el = document.getElementById("activeQueuesSection");
-      if (!d.rows.length) {
-        el.innerHTML = '<div class="no-data">No active queues right now.</div>';
-        return;
-      }
-      const body = d.rows
-        .map(function (r) {
-          const url =
-            "https://discord.com/channels/" +
-            encodeURIComponent(r.guild_xid) +
-            "/" +
-            encodeURIComponent(r.channel_xid);
-          const guildName = r.guild_name || r.guild_xid;
-          const channelName = r.channel_name || r.channel_xid;
-          return (
-            "<tr><td>" +
-            escapeHtml(guildName) +
-            '</td><td><a href="' +
-            url +
-            '" target="_blank" rel="noopener noreferrer">#' +
-            escapeHtml(channelName) +
-            "</a></td><td>" +
-            escapeHtml(r.format) +
-            "</td><td>" +
-            escapeHtml(r.bracket) +
-            '</td><td class="num">' +
-            fmt(r.players) +
-            '</td><td class="num">' +
-            escapeHtml(fmtDuration(r.wait_seconds)) +
-            "</td></tr>"
-          );
-        })
-        .join("");
-      el.innerHTML =
-        '<table class="lang-table"><thead><tr><th>Server</th>' +
-        "<th>Channel</th><th>Format</th><th>Bracket</th>" +
-        '<th style="text-align:right">Players</th>' +
-        '<th style="text-align:right">Wait</th>' +
-        "</tr></thead><tbody>" +
-        body +
-        "</tbody></table>";
-    } catch (ex) {
-      showError("activeQueuesSection", "Failed to load.");
+  const loadActiveQueues = panel("active-queues", "activeQueuesSection", function (d) {
+    const el = document.getElementById("activeQueuesSection");
+    if (!d.rows.length) {
+      el.innerHTML = '<div class="no-data">No active queues right now.</div>';
+      return;
     }
-  }
+    const body = d.rows
+      .map(function (r) {
+        const url =
+          "https://discord.com/channels/" +
+          encodeURIComponent(r.guild_xid) +
+          "/" +
+          encodeURIComponent(r.channel_xid);
+        const guildName = r.guild_name || r.guild_xid;
+        const channelName = r.channel_name || r.channel_xid;
+        return (
+          "<tr><td>" +
+          escapeHtml(guildName) +
+          '</td><td><a href="' +
+          url +
+          '" target="_blank" rel="noopener noreferrer">#' +
+          escapeHtml(channelName) +
+          "</a></td><td>" +
+          escapeHtml(r.format) +
+          "</td><td>" +
+          escapeHtml(r.bracket) +
+          '</td><td class="num">' +
+          fmt(r.players) +
+          '</td><td class="num">' +
+          escapeHtml(fmtDuration(r.wait_seconds)) +
+          "</td></tr>"
+        );
+      })
+      .join("");
+    el.innerHTML =
+      '<table class="lang-table"><thead><tr><th>Server</th>' +
+      "<th>Channel</th><th>Format</th><th>Bracket</th>" +
+      '<th style="text-align:right">Players</th>' +
+      '<th style="text-align:right">Wait</th>' +
+      "</tr></thead><tbody>" +
+      body +
+      "</tbody></table>";
+  });
 
   function reloadAll() {
+    state.generation += 1;
     showAllLoading();
     loadTotals();
     loadSummary();

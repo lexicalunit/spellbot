@@ -116,7 +116,8 @@ def add_span_context(interaction: Any) -> None:  # pragma: no cover
             span.set_tag("request_id", str(interaction_id))
             span.set_tag("interaction_id", interaction_id)
         # Standardize on user_xid for the user's Discord ID
-        if (user := getattr(interaction, "user", None)) and (user_id := getattr(user, "id", None)):
+        user = getattr(interaction, "user", None) or getattr(interaction, "author", None)
+        if user_id := getattr(user, "id", None):
             span.set_tag("user_xid", str(user_id))
         if application_id := getattr(interaction, "application_id", None):
             span.set_tag("application_id", application_id)

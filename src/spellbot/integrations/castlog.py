@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import httpx
-
-from spellbot import __version__
-from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
-from spellbot.metrics import add_span_error
+from spellbot.integrations.http_errors import USER_AGENT, request_with_retries
 from spellbot.settings import settings
+
+if TYPE_CHECKING:
+    import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ async def fetch_castlog_report(
     }
     """
     headers = {
-        "user-agent": f"spellbot/{__version__}",
+        "user-agent": USER_AGENT,
         "X-SpellBot-Secret": settings.CASTLOG_SECRET or "",
     }
     response = await client.post(settings.CASTLOG_ENDPOINT, headers=headers, json=payload)
@@ -57,24 +56,9 @@ async def report_match(payload: dict[str, Any]) -> dict[str, Any] | None:
     if not settings.CASTLOG_ENDPOINT or not settings.CASTLOG_SECRET:
         return None
 
-    timeout = httpx.Timeout(TIMEOUT_S, connect=TIMEOUT_S, read=TIMEOUT_S, write=TIMEOUT_S)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        for attempt in range(RETRY_ATTEMPTS):
-            try:
-                return await fetch_castlog_report(client, payload)
-            except Exception as ex:
-                details = describe_http_error(ex)
-                is_final_attempt = attempt == RETRY_ATTEMPTS - 1
-                if is_final_attempt or is_terminal_client_error(ex):
-                    add_span_error(ex)
-                    logger.exception("Castlog API failure. %s", details)
-                    return None
-                logger.warning(
-                    "Castlog API issue (attempt %s). %s",
-                    attempt + 1,
-                    details,
-                    exc_info=True,
-                )
-                continue
-
-    return None
+    return await request_with_retries(
+        "Castlog",
+        lambda client: fetch_castlog_report(client, payload),
+        attempts=RETRY_ATTEMPTS,
+        timeout_s=TIMEOUT_S,
+    )

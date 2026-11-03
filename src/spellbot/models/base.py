@@ -36,6 +36,11 @@ class Base(AsyncAttrs, DeclarativeBase):
 WEB_EDITABLE = "[web-editable]"
 
 
+def column_length(column: Any) -> int:
+    """Return the maximum length of a string column, e.g. `column_length(Game.rules)`."""
+    return column.property.columns[0].type.length
+
+
 def web_editable(doc: str) -> str:
     """Return `doc` tagged with the web-editable marker, for use in model column docs."""
     return f"{doc} {WEB_EDITABLE}"

@@ -14,7 +14,7 @@ from sqlalchemy.sql.expression import false, text
 
 from spellbot.enums import GameBracket, GameFormat, GameService
 
-from . import Base, now
+from . import Base, column_length, now
 
 if TYPE_CHECKING:
     from spellbot.data import GameData
@@ -290,4 +290,4 @@ class Game(Base):
         )
 
 
-MAX_RULES_LENGTH: int = Game.rules.property.columns[0].type.length
+MAX_RULES_LENGTH: int = column_length(Game.rules)

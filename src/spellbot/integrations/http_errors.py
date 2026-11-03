@@ -16,7 +16,22 @@ rather than to any one integration, so they live here:
 
 from __future__ import annotations
 
+import asyncio
+import logging
+from typing import TYPE_CHECKING
+
 import httpx
+
+from spellbot import __version__
+from spellbot.metrics import add_span_error
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+logger = logging.getLogger(__name__)
+
+# Sent with every request so the services can tell SpellBot traffic and versions apart.
+USER_AGENT = f"spellbot/{__version__}"
 
 # 4xx codes that describe a transient moment rather than a malformed request, so a replay of
 # the very same request can still succeed.
@@ -50,3 +65,39 @@ def describe_http_error(ex: BaseException) -> str:
     if len(body) > MAX_BODY_CHARS:
         body = f"{body[:MAX_BODY_CHARS]}… (truncated)"
     return f"HTTP {ex.response.status_code} from {ex.request.url}: {body or '<empty body>'}"
+
+
+async def request_with_retries[T](
+    label: str,
+    request: Callable[[httpx.AsyncClient], Awaitable[T]],
+    *,
+    attempts: int,
+    timeout_s: float,
+    backoff_s: float = 0.0,
+) -> T | None:
+    """
+    Run a request against the `label` API, retrying failures. Returns `None` if it never succeeds.
+
+    A terminal client error ends the retries early. When `backoff_s` is set, the wait between
+    attempts doubles each time, starting from `backoff_s`.
+    """
+    async with httpx.AsyncClient(timeout=httpx.Timeout(timeout_s)) as client:
+        for attempt in range(attempts):
+            try:
+                return await request(client)
+            except Exception as ex:
+                details = describe_http_error(ex)
+                if attempt == attempts - 1 or is_terminal_client_error(ex):
+                    add_span_error(ex)
+                    logger.exception("%s API failure. %s", label, details)
+                    return None
+                logger.warning(
+                    "%s API issue (attempt %s). %s",
+                    label,
+                    attempt + 1,
+                    details,
+                    exc_info=True,
+                )
+                if backoff_s:
+                    await asyncio.sleep(backoff_s * (2**attempt))
+    return None  # pragma: no cover  # only reached when `attempts` is zero

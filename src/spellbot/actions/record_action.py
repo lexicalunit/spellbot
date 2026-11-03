@@ -11,7 +11,7 @@ from spellbot.i18n import t, user_locale
 from spellbot.operations import safe_send_channel
 from spellbot.settings import settings
 
-from .base_action import BaseAction
+from .base_action import BaseAction, info_embed
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,7 @@ class RecordAction(BaseAction):
         target_xid = target.id
         count = await services.plays.count(target_xid)
 
-        embed = discord.Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed = info_embed()
         embed.set_author(name=t("score.record_title", locale=locale))
         link = f"{settings.API_BASE_URL}/u/{target_xid}"
         games_key = "score.games_one" if count == 1 else "score.games_many"
@@ -35,7 +34,6 @@ class RecordAction(BaseAction):
             games=t(games_key, locale=locale, count=count),
             link=link,
         )
-        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def history(self) -> None:
@@ -45,12 +43,10 @@ class RecordAction(BaseAction):
         channel_name = self.interaction.channel.name
         channel_xid = self.interaction.channel.id
 
-        embed = discord.Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed = info_embed()
         embed.set_author(name=t("score.history_title", locale=locale, channel=channel_name))
         link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/c/{channel_xid}"
         embed.description = t("score.history_description", locale=locale, link=link)
-        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)
 
     async def top(self, monthly: bool, ago: int) -> None:
@@ -67,8 +63,7 @@ class RecordAction(BaseAction):
         assert guild_xid is not None
         data = await services.plays.top_records(guild_xid, channel_xid, monthly, ago)
 
-        embed = discord.Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed = info_embed()
         if ago:
             range_s = t("score.range_ago", locale=locale, months=ago)
         elif monthly:
@@ -82,5 +77,4 @@ class RecordAction(BaseAction):
             user_xid, count = datum
             description += f"{rank + 1:\xa0>6}\xa0{count:\xa0>20}\xa0\xa0\xa0<@{user_xid}>\n"
         embed.description = description
-        embed.color = settings.INFO_EMBED_COLOR
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

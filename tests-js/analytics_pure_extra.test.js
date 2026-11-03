@@ -1,20 +1,7 @@
 import { describe, it, expect } from "vitest";
 import pure from "../src/spellbot/web/templates/analytics_pure.js";
 
-const { escapeHtml, renderPlayerRow, renderLeftServerNote, getUserTimezone, getLanguageName } =
-  pure;
-
-describe("escapeHtml", () => {
-  it("escapes the five HTML metacharacters", () => {
-    expect(escapeHtml(`<a href="x">&'</a>`)).toBe(
-      "&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;",
-    );
-  });
-
-  it("coerces non-string input via String()", () => {
-    expect(escapeHtml(42)).toBe("42");
-  });
-});
+const { renderPlayerRow, renderLeftServerNote, getUserTimezone, getLanguageName } = pure;
 
 describe("renderPlayerRow", () => {
   it("renders a plain row when the player is still on the server", () => {

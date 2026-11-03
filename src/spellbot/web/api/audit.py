@@ -9,16 +9,13 @@ import aiohttp_jinja2
 from aiohttp import web
 
 from spellbot import audit
-from spellbot.database import db_session_manager
-from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.web.api.record import (
     bracket_choices,
     format_choices,
-    login_url,
+    require_moderator_page,
     service_choices,
-    viewer_access,
 )
-from spellbot.web.tools import redirect
+from spellbot.web.tools import web_endpoint
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -90,11 +87,8 @@ async def impl(request: web.Request, *, is_channel: bool) -> web.StreamResponse:
     except ValueError:
         return web.Response(status=404)
 
-    is_logged_in, is_moderator = await viewer_access(request, guild_xid)
-    if not is_logged_in:
-        return redirect(login_url(request))
-    if not is_moderator:
-        return web.Response(status=403, text="Forbidden")
+    if denied := await require_moderator_page(request, guild_xid):
+        return denied
 
     page = parse_page(request)
     page_size = audit.SETTINGS_CHANGE_PAGE_SIZE
@@ -118,14 +112,12 @@ async def impl(request: web.Request, *, is_channel: bool) -> web.StreamResponse:
 
 
 @routes.get(r"/g/{guild}/audit")
+@web_endpoint("guild_audit")
 async def guild_audit_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await impl(request, is_channel=False)
+    return await impl(request, is_channel=False)
 
 
 @routes.get(r"/g/{guild}/c/{channel}/audit")
+@web_endpoint("channel_audit")
 async def channel_audit_endpoint(request: web.Request) -> web.StreamResponse:
-    add_span_request_id(generate_request_id())
-    async with db_session_manager():
-        return await impl(request, is_channel=True)
+    return await impl(request, is_channel=True)

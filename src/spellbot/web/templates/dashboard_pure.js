@@ -11,7 +11,7 @@
  * pass a fixed value.
  */
 
-// Must mirror PERIOD_BUCKET / PERIOD_DAYS in dashboard_filters.py. Used
+// Must mirror PERIOD_BUCKET / PERIOD_DAYS in services/filters.py. Used
 // client-side to compute bucket boundaries in UTC so leading/trailing
 // partial buckets can be trimmed or dashed.
 var PERIOD_BUCKET = {
@@ -115,10 +115,6 @@ function qs(period, guildMode, guildXid) {
   );
 }
 
-function fmt(n) {
-  return n == null ? "—" : Number(n).toLocaleString();
-}
-
 // Formats a non-negative integer number of seconds as a compact duration:
 // "12s", "5m", "1h 23m", or "2d 4h". Negative values clamp to zero.
 function fmtDuration(seconds) {
@@ -141,18 +137,6 @@ function avgCount(series) {
   var total = 0;
   for (var i = 0; i < series.length; i += 1) total += series[i].count;
   return Math.round(total / series.length);
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, function (c) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[c];
-  });
 }
 
 // Interpolates between `lo` (default deep indigo) and `hi` (default pink)
@@ -185,10 +169,8 @@ if (typeof module !== "undefined" && module.exports) {
     alignSeries: alignSeries,
     guildParam: guildParam,
     qs: qs,
-    fmt: fmt,
     fmtDuration: fmtDuration,
     avgCount: avgCount,
-    escapeHtml: escapeHtml,
     heatColor: heatColor,
   };
 }

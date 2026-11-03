@@ -31,6 +31,7 @@ from spellbot.models import (
     Queue,
     User,
     UserAward,
+    column_length,
 )
 from spellbot.settings import settings
 
@@ -38,12 +39,12 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Any
 
-    from spellbot.data import GameData, GameLinkDetails
+    from spellbot.data import ChannelModes, GameCriteria, GameData, GameLinkDetails
 
 
 logger = logging.getLogger(__name__)
 
-MAX_GAME_LINK_LEN = Game.game_link.property.columns[0].type.length
+MAX_GAME_LINK_LEN = column_length(Game.game_link)
 
 
 @tracer.wrap()
@@ -399,34 +400,20 @@ async def upsert(
     channel_xid: int,
     author_xid: int,
     friends: list[int],
-    seats: int,
-    rules: str | None,
-    format: int,
-    bracket: int,
-    service: int,
+    criteria: GameCriteria,
+    modes: ChannelModes,
     locale: str,
     create_new: bool = False,
-    blind: bool = False,
-    to_mode: bool = False,
-    competitive_mode: bool = False,
-    war_id: str | None = None,
-    war_title: str | None = None,
 ) -> tuple[bool, GameData]:
-    """Create or update a new game matching the given criteria."""
+    """Join the author and friends to a pending game matching `criteria`, or create one."""
     existing_game: Game | None = None
     if not create_new:
-        existing_game = await _find_existing(
+        existing_game = await find_existing(
             guild_xid=guild_xid,
             channel_xid=channel_xid,
-            author_xid=author_xid,
-            friends=friends,
-            seats=seats,
-            rules=rules,
-            format=format,
-            bracket=bracket,
-            service=service,
-            to_mode=to_mode,
-            war_id=war_id,
+            joiners=[author_xid, *friends],
+            criteria=criteria,
+            enforce_blocks=not modes.to_mode,
         )
 
     new: bool
@@ -438,17 +425,17 @@ async def upsert(
         game = Game(
             guild_xid=guild_xid,
             channel_xid=channel_xid,
-            seats=seats,
-            rules=rules,
-            format=format,
-            bracket=bracket,
-            service=service,
-            blind=blind,
-            to_mode=to_mode,
-            competitive_mode=competitive_mode,
+            seats=criteria.seats,
+            rules=criteria.rules,
+            format=criteria.format,
+            bracket=criteria.bracket,
+            service=criteria.service,
+            war_id=criteria.war_id,
+            war_title=criteria.war_title,
+            blind=modes.blind,
+            to_mode=modes.to_mode,
+            competitive_mode=modes.competitive_mode,
             locale=locale,
-            war_id=war_id,
-            war_title=war_title,
         )
         DatabaseSession.add(game)
         await DatabaseSession.commit()
@@ -475,24 +462,24 @@ async def upsert(
     return new, await game.to_data()
 
 
-@tracer.wrap()
-async def _find_existing(
+async def find_existing(
     *,
     guild_xid: int,
     channel_xid: int,
-    author_xid: int,
-    friends: list[int],
-    seats: int,
-    rules: str | None,
-    format: int,
-    bracket: int,
-    service: int,
-    to_mode: bool = False,
-    war_id: str | None = None,
+    joiners: list[int],
+    criteria: GameCriteria,
+    enforce_blocks: bool,
 ) -> Game | None:
-    """Find a suitable existing game with the given criteria if one exists."""
-    required_seats = 1 + len(friends)
-    war_filter = Game.war_id == war_id if war_id is not None else Game.war_id.is_(None)
+    """
+    Find the oldest pending game matching `criteria` with room for all of `joiners`.
+
+    When `enforce_blocks` is set, games where a joiner and a queued player have blocked one
+    another (in either direction) are skipped. A game's blind and competitive modes and its
+    locale are deliberately not matched on: they follow the channel, not the player.
+    """
+    war_filter = (
+        Game.war_id == criteria.war_id if criteria.war_id is not None else Game.war_id.is_(None)
+    )
     player_count = count(Queue.user_xid).over(partition_by=Game.id)
     inner = (
         select(
@@ -505,11 +492,11 @@ async def _find_existing(
             and_(
                 Game.guild_xid == guild_xid,
                 Game.channel_xid == channel_xid,
-                Game.seats == seats,
-                Game.rules == rules,
-                Game.format == format,
-                Game.bracket == bracket,
-                Game.service == service,
+                Game.seats == criteria.seats,
+                Game.rules == criteria.rules,
+                Game.format == criteria.format,
+                Game.bracket == criteria.bracket,
+                Game.service == criteria.service,
                 war_filter,
                 Game.status == GameStatus.PENDING.value,
                 Game.deleted_at.is_(None),
@@ -525,53 +512,40 @@ async def _find_existing(
             column("player_count") == 0,
             and_(
                 column("player_count") > 0,
-                column("player_count") <= seats - required_seats,
+                column("player_count") <= criteria.seats - len(joiners),
             ),
         ),
     )
-
-    game: Game
     found_games = (await DatabaseSession.execute(found_game_stmt)).scalars().all()
-
-    if to_mode:
-        # Tournament organizer mode: user blocks are not enforced in this channel, so
-        # the first matching game is always acceptable.
+    if not enforce_blocks or not found_games:
         return found_games[0] if found_games else None
 
-    joiners = [author_xid, *friends]
-    xids_blocked_by_joiners = [
-        row.blocked_user_xid
-        for row in (
-            await DatabaseSession.execute(
-                select(Block).where(any_of(Block.user_xid, joiners)),
-            )
+    # Every block between a joiner and anyone else, in either direction, in one query.
+    blocks = (
+        await DatabaseSession.execute(
+            select(Block.user_xid, Block.blocked_user_xid).where(
+                or_(any_of(Block.user_xid, joiners), any_of(Block.blocked_user_xid, joiners)),
+            ),
         )
-        .scalars()
-        .all()
-    ]
+    ).all()
+    joiner_xids = set(joiners)
+    conflicts = {blocked if blocker in joiner_xids else blocker for blocker, blocked in blocks}
+    if not conflicts:
+        return found_games[0]
 
-    # Return the first game that doesn't match up players who have blocked each other
-    for game in found_games:
-        players = [player.xid for player in await game.players()]
-        if any(xid in players for xid in xids_blocked_by_joiners):
-            continue  # a joiner has blocked one of the players
+    # The queued players of every candidate game, in one query.
+    queued: dict[int, set[int]] = {}
+    for game_id, user_xid in (
+        await DatabaseSession.execute(
+            select(Queue.game_id, Queue.user_xid).where(
+                any_of(Queue.game_id, [game.id for game in found_games]),
+            ),
+        )
+    ).all():
+        queued.setdefault(game_id, set()).add(user_xid)
 
-        xids_blocked_by_players = [
-            row.blocked_user_xid
-            for row in (
-                await DatabaseSession.execute(
-                    select(Block).where(any_of(Block.user_xid, players)),
-                )
-            )
-            .scalars()
-            .all()
-        ]
-        if any(xid in joiners for xid in xids_blocked_by_players):
-            continue  # a player has blocked one of the joiners
-
-        return game
-
-    return None
+    # The oldest game where no queued player and joiner have blocked one another.
+    return next((game for game in found_games if not queued.get(game.id, set()) & conflicts), None)
 
 
 @tracer.wrap()
@@ -635,6 +609,15 @@ async def shrink_game(game_data: GameData) -> GameData:
     return await updated_game.to_data()
 
 
+def set_game_link(game: Game, details: GameLinkDetails) -> None:
+    """Store a game link and the details that came with it on the game."""
+    assert len(details.link or "") <= MAX_GAME_LINK_LEN
+    game.game_link = details.link  # column is "game_link" for legacy reasons
+    game.password = details.password
+    game.convoke_guild_name = details.convoke_guild_name
+    game.convoke_guild_url = details.convoke_guild_url
+
+
 @tracer.wrap()
 async def attach_game_link(
     game_data: GameData,
@@ -642,11 +625,7 @@ async def attach_game_link(
 ) -> GameData:
     """Store a generated game link without starting the SpellBot queue."""
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
-    assert len(details.link or "") <= MAX_GAME_LINK_LEN
-    game.game_link = details.link  # column is "game_link" for legacy reasons
-    game.password = details.password
-    game.convoke_guild_name = details.convoke_guild_name
-    game.convoke_guild_url = details.convoke_guild_url
+    set_game_link(game, details)
     await DatabaseSession.commit()
     return await game.to_data()
 
@@ -659,7 +638,6 @@ async def make_ready(
 ) -> GameData:
     """Start the pending game."""
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
-    assert len(details.link or "") <= MAX_GAME_LINK_LEN
     queues: list[QueueData] = [
         queue.to_data()
         for queue in (
@@ -672,10 +650,7 @@ async def make_ready(
     ]
 
     # update game's state
-    game.game_link = details.link  # column is "game_link" for legacy reasons
-    game.password = details.password
-    game.convoke_guild_name = details.convoke_guild_name
-    game.convoke_guild_url = details.convoke_guild_url
+    set_game_link(game, details)
     game.status = GameStatus.STARTED.value
     game.started_at = datetime.now(tz=UTC)
 

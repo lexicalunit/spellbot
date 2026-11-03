@@ -189,6 +189,17 @@ class TestSpellBot:
         assert "unhandled exception" in caplog.text
         assert "test-bot-unhandled-exception" in caplog.text
 
+    async def test_handle_interaction_errors_names_the_command(
+        self,
+        interaction: discord.Interaction,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        command = MagicMock()
+        command.qualified_name = "lfg"
+        interaction.command = command
+        await handle_interaction_errors(interaction, RuntimeError("boom"))
+        assert "unhandled exception in command `lfg`" in caplog.text
+
     async def test_on_message_delete_happy_path(
         self,
         dpy_message: discord.Message,

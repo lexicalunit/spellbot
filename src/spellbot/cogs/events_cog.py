@@ -6,17 +6,14 @@ import logging
 from typing import TYPE_CHECKING
 
 import discord
-from ddtrace.trace import tracer
 from discord import app_commands
-from discord.app_commands import Choice
 from discord.ext import commands
 
 from spellbot.actions import LookingForGameAction
-from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER, GAME_SERVICE_ORDER
-from spellbot.metrics import add_span_context
+from spellbot.cogs.choices import BRACKET_CHOICES, FORMAT_CHOICES, SERVICE_CHOICES
 from spellbot.operations import safe_defer_interaction
 from spellbot.settings import settings
-from spellbot.utils import for_all_callbacks, is_admin, is_guild
+from spellbot.utils import for_all_callbacks, is_admin, is_guild, traced_interaction
 
 if TYPE_CHECKING:
     from spellbot import SpellBot
@@ -34,17 +31,17 @@ class EventsCog(commands.Cog):
     @app_commands.describe(players="You must mention ALL players for this game.")
     @app_commands.describe(format="What game format do you want to play?")
     @app_commands.choices(
-        format=[Choice(name=str(format), value=format.value) for format in GAME_FORMAT_ORDER],
+        format=FORMAT_CHOICES,
     )
-    @app_commands.describe(format="What commander bracket do you want to play?")
+    @app_commands.describe(bracket="What commander bracket do you want to play?")
     @app_commands.choices(
-        bracket=[Choice(name=str(bracket), value=bracket.value) for bracket in GAME_BRACKET_ORDER],
+        bracket=BRACKET_CHOICES,
     )
     @app_commands.describe(service="What service do you want to use to play this game?")
     @app_commands.choices(
-        service=[Choice(name=str(service), value=service.value) for service in GAME_SERVICE_ORDER],
+        service=SERVICE_CHOICES,
     )
-    @tracer.wrap(name="interaction", resource="game")
+    @traced_interaction()
     async def game(
         self,
         interaction: discord.Interaction,
@@ -54,7 +51,6 @@ class EventsCog(commands.Cog):
         service: int | None = None,
     ) -> None:
         assert interaction.channel_id is not None
-        add_span_context(interaction)
         if not await safe_defer_interaction(interaction):  # pragma: no cover
             return
         async with LookingForGameAction.create(self.bot, interaction) as action:

@@ -11,39 +11,32 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from spellbot.database import DatabaseSession, any_of, engine
 from spellbot.enums import (
+    COMMANDER_FORMATS,
     GAME_BRACKET_ORDER,
-    GAME_FORMAT_ORDER,
     GameBracket,
     GameFormat,
     GameService,
 )
 from spellbot.models import Block, Channel, Game, Guild, Play, Queue, User
+from spellbot.services.labels import BRACKET_LABEL, FORMAT_LABEL, SERVICE_LABEL
 from spellbot.services.plays import extract_ngrams, normalize_rule
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from sqlalchemy import Select
     from sqlalchemy.orm import InstrumentedAttribute
     from sqlalchemy.sql import ColumnElement
 
-    from spellbot.web.dashboard_filters import GuildFilter, PeriodSpec
+    from spellbot.services.filters import GuildFilter, PeriodSpec
 
-SERVICE_LABEL = case(
-    *((Game.service == s.value, s.title) for s in GameService),
-    else_="Unknown",
-).label("service")
 
 # Formats considered "bracketable" for the bracket adoption rate.
+# Precons and cEDH always get a fixed bracket, so they say nothing about adoption.
 BRACKETABLE_FORMATS: frozenset[int] = frozenset(
-    {
-        GameFormat.COMMANDER.value,
-        GameFormat.EDH_MAX.value,
-        GameFormat.EDH_HIGH.value,
-        GameFormat.EDH_MID.value,
-        GameFormat.EDH_LOW.value,
-        GameFormat.EDH_BATTLECRUISER.value,
-        GameFormat.PLANECHASE.value,
-    },
+    game_format.value
+    for game_format in (COMMANDER_FORMATS - {GameFormat.PRE_CONS, GameFormat.CEDH})
+    | {GameFormat.PLANECHASE}
 )
 
 # Curated allowlist of cEDH guilds used by `dashboard_casual_vs_cedh`. Any
@@ -71,6 +64,51 @@ def game_guild_filter(opts: GuildFilter) -> list[ColumnElement[bool]]:
     if opts.mode == "include":
         return [Game.guild_xid == opts.xid]
     return [Game.guild_xid != opts.xid]
+
+
+def started_game_filters(
+    period: PeriodSpec,
+    opts: GuildFilter,
+    *extra: ColumnElement[bool],
+) -> list[ColumnElement[bool]]:
+    """Filter to games that started within `period`, in the guilds `opts` selects."""
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.isnot(None),
+        *game_guild_filter(opts),
+        *extra,
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.started_at >= period.start_dt)
+    return filters
+
+
+def expired_game_filters(period: PeriodSpec, opts: GuildFilter) -> list[ColumnElement[bool]]:
+    """Filter to games that expired (never started), created within `period`."""
+    filters: list[ColumnElement[bool]] = [
+        Game.started_at.is_(None),
+        Game.deleted_at.isnot(None),
+        *game_guild_filter(opts),
+    ]
+    if period.start_dt is not None:
+        filters.append(Game.created_at >= period.start_dt)
+    return filters
+
+
+async def count_rows(stmt: Select[Any]) -> int:
+    """Run a query that selects a single count."""
+    return int((await DatabaseSession.execute(stmt)).scalar() or 0)
+
+
+async def game_and_player_counts(filters: list[ColumnElement[bool]]) -> tuple[int, int]:
+    """Count the games matching `filters` and the distinct players who played in them."""
+    games = await count_rows(select(func.count(Game.id)).where(*filters))
+    players = await count_rows(
+        select(func.count(distinct(Play.user_xid)))
+        .select_from(Play)
+        .join(Game, Play.game_id == Game.id)
+        .where(*filters),
+    )
+    return games, players
 
 
 def trunc_date(column: Any, bucket: str) -> Any:
@@ -112,55 +150,18 @@ async def dashboard_guilds(*, top_n: int = 100) -> list[dict[str, Any]]:
 
 async def dashboard_summary(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return the headline totals shown across the top of the dashboard."""
-    game_filters = [Game.started_at.isnot(None), *game_guild_filter(opts)]
-    if period.start_dt is not None:
-        game_filters.append(Game.started_at >= period.start_dt)
-
-    games = int(
-        (await DatabaseSession.execute(select(func.count(Game.id)).where(*game_filters))).scalar()
-        or 0,
+    game_filters = started_game_filters(period, opts)
+    games, players = await game_and_player_counts(game_filters)
+    expired = await count_rows(
+        select(func.count(Game.id)).where(*expired_game_filters(period, opts)),
     )
-
-    expired_filters = [
-        Game.started_at.is_(None),
-        Game.deleted_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        expired_filters.append(Game.deleted_at >= period.start_dt)
-    expired = int(
-        (
-            await DatabaseSession.execute(select(func.count(Game.id)).where(*expired_filters))
-        ).scalar()
-        or 0,
-    )
-
     total_attempted = games + expired
     fill_rate = round(100.0 * games / total_attempted, 1) if total_attempted else 0.0
-
-    players = int(
-        (
-            await DatabaseSession.execute(
-                select(func.count(distinct(Play.user_xid)))
-                .select_from(Play)
-                .join(Game, Play.game_id == Game.id)
-                .where(*game_filters),
-            )
-        ).scalar()
-        or 0,
-    )
 
     server_filters: list[ColumnElement[bool]] = []
     if period.start_dt is not None:
         server_filters.append(Guild.updated_at >= period.start_dt)
-    servers = int(
-        (
-            await DatabaseSession.execute(
-                select(func.count(Guild.xid)).where(*server_filters),
-            )
-        ).scalar()
-        or 0,
-    )
+    servers = await count_rows(select(func.count(Guild.xid)).where(*server_filters))
 
     bracket_rows = (
         await DatabaseSession.execute(
@@ -191,30 +192,10 @@ async def dashboard_totals(period: PeriodSpec, opts: GuildFilter) -> dict[str, A
     `servers` is global and intentionally ignores the guild filter.
     """
     del period
-    game_filters = [Game.started_at.isnot(None), *game_guild_filter(opts)]
-    games = int(
-        (await DatabaseSession.execute(select(func.count(Game.id)).where(*game_filters))).scalar()
-        or 0,
+    games, players = await game_and_player_counts(
+        [Game.started_at.isnot(None), *game_guild_filter(opts)],
     )
-    players = int(
-        (
-            await DatabaseSession.execute(
-                select(func.count(distinct(Play.user_xid)))
-                .select_from(Play)
-                .join(Game, Play.game_id == Game.id)
-                .where(*game_filters),
-            )
-        ).scalar()
-        or 0,
-    )
-    servers = int(
-        (
-            await DatabaseSession.execute(
-                select(func.count(Guild.xid)),
-            )
-        ).scalar()
-        or 0,
-    )
+    servers = await count_rows(select(func.count(Guild.xid)))
     return {"games": games, "players": players, "servers": servers}
 
 
@@ -272,12 +253,7 @@ async def active_user_bucket_series(
     `started_at` falls in the bucket. `COUNT(DISTINCT user_xid)` per bucket
     gives a true per-period active-user count. Honors the guild filter.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     bucket_col = trunc_date(Game.started_at, bucket).label("bucket")
     rows = (
         await DatabaseSession.execute(
@@ -334,12 +310,8 @@ async def dashboard_users_activity(period: PeriodSpec, opts: GuildFilter) -> dic
 
 async def dashboard_games(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return bucketed counts of started and expired games for the period."""
-    guild_clauses = game_guild_filter(opts)
-
-    started_filters = [Game.started_at.isnot(None), *guild_clauses]
-    if period.start_dt is not None:
-        started_filters.append(Game.created_at >= period.start_dt)
-    started_bucket = trunc_date(Game.created_at, period.bucket).label("bucket")
+    started_filters = started_game_filters(period, opts)
+    started_bucket = trunc_date(Game.started_at, period.bucket).label("bucket")
     started_rows = (
         await DatabaseSession.execute(
             select(started_bucket, func.count(Game.id))
@@ -349,9 +321,8 @@ async def dashboard_games(period: PeriodSpec, opts: GuildFilter) -> dict[str, An
         )
     ).all()
 
-    expired_filters = [Game.deleted_at.isnot(None), *guild_clauses]
-    if period.start_dt is not None:
-        expired_filters.append(Game.created_at >= period.start_dt)
+    # Expired games never started, so they are placed by when they were created.
+    expired_filters = expired_game_filters(period, opts)
     expired_bucket = trunc_date(Game.created_at, period.bucket).label("bucket")
     expired_rows = (
         await DatabaseSession.execute(
@@ -408,13 +379,8 @@ async def dashboard_casual_vs_cedh(period: PeriodSpec, opts: GuildFilter) -> dic
     )
     classification = case((is_cedh, "cedh"), else_="casual").label("classification")
 
-    bucket_col = trunc_date(Game.created_at, period.bucket).label("bucket")
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.created_at >= period.start_dt)
+    bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
+    filters = started_game_filters(period, opts)
 
     rows = (
         await DatabaseSession.execute(
@@ -447,13 +413,7 @@ async def dashboard_server_popularity(
     the same filters, sorted by count descending. The table on the dashboard
     uses this to show all qualifying servers (a superset of those in the chart).
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        Guild.name.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.created_at >= period.start_dt)
+    filters = started_game_filters(period, opts, Guild.name.isnot(None))
 
     total_col = func.count(Game.id).label("total")
     all_rows = (
@@ -472,7 +432,7 @@ async def dashboard_server_popularity(
     if not top_names:
         return {"series": [], "totals": totals}
 
-    bucket_col = trunc_date(Game.created_at, period.bucket).label("bucket")
+    bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
     series_rows = (
         await DatabaseSession.execute(
             select(Guild.name, bucket_col, func.count(Game.id))
@@ -496,14 +456,9 @@ async def dashboard_server_popularity(
 
 async def dashboard_service_popularity(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return bucketed game counts grouped by game service."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.created_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
 
-    bucket_col = trunc_date(Game.created_at, period.bucket).label("bucket")
+    bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
     rows = (
         await DatabaseSession.execute(
             select(SERVICE_LABEL, bucket_col, func.count(Game.id))
@@ -527,12 +482,7 @@ async def dashboard_service_popularity(period: PeriodSpec, opts: GuildFilter) ->
 
 async def dashboard_user_languages(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return distinct active-user counts grouped by user locale, descending."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     count_col = func.count(distinct(User.xid))
     rows = (
         await DatabaseSession.execute(
@@ -550,12 +500,7 @@ async def dashboard_user_languages(period: PeriodSpec, opts: GuildFilter) -> dic
 
 async def dashboard_game_languages(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return counts of started games grouped by game locale, descending."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     count_col = func.count(Game.id)
     rows = (
         await DatabaseSession.execute(
@@ -571,9 +516,10 @@ async def dashboard_game_languages(period: PeriodSpec, opts: GuildFilter) -> dic
 async def top_guild_per_group(
     period: PeriodSpec,
     opts: GuildFilter,
-    group_col: InstrumentedAttribute[Any],
+    group_col: ColumnElement[Any] | InstrumentedAttribute[Any],
     key: str,
     label: Callable[[Any], str] = str,
+    *extra: ColumnElement[bool],
 ) -> dict[str, Any]:
     """
     Return the most active guild for each distinct value of `group_col` among started games.
@@ -581,13 +527,7 @@ async def top_guild_per_group(
     Each row is keyed by `key` (the group value rendered by `label`) and carries the top guild,
     its game count, and its `share` (percent) of all games in that group.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        Guild.name.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts, Guild.name.isnot(None), *extra)
     count_col = func.count(Game.id)
     rows = (
         await DatabaseSession.execute(
@@ -626,28 +566,19 @@ async def dashboard_top_guild_per_game_language(
     return await top_guild_per_group(period, opts, Game.locale, "locale")
 
 
-SERVICE_TITLES = {s.value: s.title for s in GameService}
-
-
 async def dashboard_top_guild_per_service(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return the most active guild for each game service."""
     return await top_guild_per_group(
         period,
         opts,
-        Game.service,
+        SERVICE_LABEL,
         "service",
-        lambda value: SERVICE_TITLES.get(value, "Unknown"),
     )
 
 
 async def dashboard_guild_languages(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return distinct active-guild counts grouped by guild locale, descending."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     count_col = func.count(distinct(Guild.xid))
     rows = (
         await DatabaseSession.execute(
@@ -669,12 +600,7 @@ async def dashboard_hour_of_day(period: PeriodSpec, opts: GuildFilter) -> dict[s
     The histogram is computed in UTC; the client shifts the bucket labels
     by the browser's timezone offset to display local hours.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     hour_col = extract("hour", Game.started_at).label("hour")
     rows = (
         await DatabaseSession.execute(
@@ -690,12 +616,7 @@ async def dashboard_hour_of_day(period: PeriodSpec, opts: GuildFilter) -> dict[s
 
 async def dashboard_day_of_week(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return counts of started games per UTC day of the week (0=Sun..6=Sat)."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     dow_col = extract("dow", Game.started_at).label("dow")
     rows = (
         await DatabaseSession.execute(
@@ -709,26 +630,9 @@ async def dashboard_day_of_week(period: PeriodSpec, opts: GuildFilter) -> dict[s
     return {"days": [{"dow": d, "count": counts.get(d, 0)} for d in range(7)]}
 
 
-FORMAT_LABEL = case(
-    *((Game.format == f.value, str(f)) for f in GAME_FORMAT_ORDER),
-    else_="Unknown",
-).label("format")
-
-
-BRACKET_LABEL = case(
-    *((Game.bracket == b.value, b.title) for b in GAME_BRACKET_ORDER),
-    else_="Unknown",
-).label("bracket")
-
-
 async def dashboard_popular_formats(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return counts of started games grouped by format, descending."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     count_col = func.count(Game.id)
     rows = (
         await DatabaseSession.execute(
@@ -743,12 +647,7 @@ async def dashboard_popular_formats(period: PeriodSpec, opts: GuildFilter) -> di
 
 async def dashboard_popular_seats(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return counts of started games grouped by seat count, descending."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     count_col = func.count(Game.id)
     rows = (
         await DatabaseSession.execute(
@@ -772,78 +671,42 @@ async def dashboard_bracket_adoption(period: PeriodSpec, opts: GuildFilter) -> d
     has the most games of that bracket under the same filters. Brackets with
     no qualifying games are included with `server=None` and `count=0`.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        Game.format.in_(BRACKETABLE_FORMATS),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.created_at >= period.start_dt)
-
-    bucket_col = trunc_date(Game.created_at, period.bucket).label("bucket")
-    adopted = func.sum(case((Game.bracket != GameBracket.NONE.value, 1), else_=0))
-    total = func.count(Game.id)
+    bracketable = Game.format.in_(BRACKETABLE_FORMATS)
+    filters = started_game_filters(period, opts, bracketable)
     rows = (
         await DatabaseSession.execute(
-            select(bucket_col, adopted.label("adopted"), total.label("total"))
-            .where(*filters)
-            .group_by(bucket_col)
-            .order_by(bucket_col),
+            bucketed_adoption_rate(period, filters, Game.bracket != GameBracket.NONE.value),
         )
     ).all()
 
-    points: list[dict[str, Any]] = []
-    for bucket, adopted_count, total_count in rows:
-        total_int = int(total_count or 0)
-        rate = (float(adopted_count or 0) / float(total_int)) * 100.0 if total_int > 0 else 0.0
-        points.append({"date": iso_str(bucket), "count": round(rate, 2)})
-
-    leader_count = func.count(Game.id).label("count")
-    leader_rows = (
-        await DatabaseSession.execute(
-            select(Game.bracket, Guild.name, leader_count)
-            .select_from(Game)
-            .join(Guild, Guild.xid == Game.guild_xid)
-            .where(
-                *filters,
-                Game.bracket != GameBracket.NONE.value,
-                Guild.name.isnot(None),
-            )
-            .group_by(Game.bracket, Guild.name),
-        )
-    ).all()
-
-    best_per_bracket: dict[int, tuple[str, int]] = {}
-    for bracket_value, name, count in leader_rows:
-        c = int(count)
-        b = int(bracket_value)
-        cur = best_per_bracket.get(b)
-        if cur is None or c > cur[1] or (c == cur[1] and name < cur[0]):
-            best_per_bracket[b] = (name, c)
-
+    top = await top_guild_per_group(
+        period,
+        opts,
+        BRACKET_LABEL,
+        "bracket",
+        str,
+        bracketable,
+        Game.bracket != GameBracket.NONE.value,
+    )
+    by_bracket = {row["bracket"]: row for row in top["rows"]}
     leaders: list[dict[str, Any]] = []
-    for b in GAME_BRACKET_ORDER:
-        if b is GameBracket.NONE:
+    for bracket in GAME_BRACKET_ORDER:
+        if bracket is GameBracket.NONE:
             continue
-        winner = best_per_bracket.get(b.value)
+        leader = by_bracket.get(bracket.title, {})
         leaders.append(
             {
-                "bracket": b.title,
-                "server": winner[0] if winner is not None else None,
-                "count": winner[1] if winner is not None else 0,
+                "bracket": bracket.title,
+                "server": leader.get("guild_name"),
+                "count": leader.get("count", 0),
             },
         )
-    return {"rate": points, "leaders": leaders}
+    return {"rate": adoption_points(rows), "leaders": leaders}
 
 
 async def dashboard_avg_wait_time(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return bucketed average wait time (in minutes) between `created_at` and `started_at`."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
     avg_col = func.avg(
         extract("epoch", Game.started_at) - extract("epoch", Game.created_at),
@@ -867,12 +730,7 @@ async def dashboard_top_players(
     top_n: int = 20,
 ) -> dict[str, Any]:
     """Return the top `top_n` players by number of started games played."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     count_col = func.count(Play.game_id).label("count")
     rows = (
         await DatabaseSession.execute(
@@ -931,12 +789,7 @@ async def dashboard_games_per_player(period: PeriodSpec, opts: GuildFilter) -> d
 
     Counts are bucketed 1..20 with an overflow `21+` bucket for tails.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     rows = (
         await DatabaseSession.execute(
             select(Play.user_xid, func.count(Game.id).label("count"))
@@ -966,14 +819,7 @@ async def dashboard_games_per_player(period: PeriodSpec, opts: GuildFilter) -> d
 
 async def dashboard_rules(period: PeriodSpec, opts: GuildFilter) -> dict[str, Any]:
     """Return the top game rules and bigram / trigram phrases for a word cloud."""
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        Game.rules.isnot(None),
-        Game.rules != "",
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts, Game.rules.isnot(None), Game.rules != "")
     rules_rows = (await DatabaseSession.execute(select(Game.rules).where(*filters))).all()
     rules_list = [r[0] for r in rules_rows if r[0]]
     rule_counter: Counter[str] = Counter()
@@ -1094,12 +940,7 @@ async def dashboard_activity_heatmap(period: PeriodSpec, opts: GuildFilter) -> d
     timezone offset to produce a local-time heatmap. `dow` follows Postgres'
     `extract('dow', ...)` convention: 0=Sunday .. 6=Saturday.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     dow_col = extract("dow", Game.started_at).label("dow")
     hour_col = extract("hour", Game.started_at).label("hour")
     rows = (
@@ -1125,12 +966,7 @@ async def dashboard_wait_time_distribution(
     Wait time per game is `started_at - created_at`. Percentiles are
     computed per bucket using Postgres' `percentile_cont` aggregate.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts)
     bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
     wait_seconds = extract("epoch", Game.started_at) - extract("epoch", Game.created_at)
     p50 = func.percentile_cont(0.5).within_group(wait_seconds).label("p50")
@@ -1193,13 +1029,7 @@ async def started_game_adoption(
     The denominator is every started game in the period, narrowed by any `scope` filters for
     features that only apply to some games (e.g. Convoke-only features).
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        *game_guild_filter(opts),
-        *scope,
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts, *scope)
     rows = (
         await DatabaseSession.execute(bucketed_adoption_rate(period, filters, adopted_predicate))
     ).all()
@@ -1270,13 +1100,7 @@ async def dashboard_mythic_verification(
     enabled; a play counts as verified when its `verified_at` is set.
     Honors the dashboard's guild filter so a single server can be inspected.
     """
-    filters: list[ColumnElement[bool]] = [
-        Game.started_at.isnot(None),
-        Guild.enable_mythic_track.is_(True),
-        *game_guild_filter(opts),
-    ]
-    if period.start_dt is not None:
-        filters.append(Game.started_at >= period.start_dt)
+    filters = started_game_filters(period, opts, Guild.enable_mythic_track.is_(True))
     bucket_col = trunc_date(Game.started_at, period.bucket).label("bucket")
     verified = func.sum(case((Play.verified_at.isnot(None), 1), else_=0))
     total = func.count(Play.game_id)

@@ -12,7 +12,7 @@ from sqlalchemy.sql.expression import and_, or_
 
 from spellbot import audit
 from spellbot.database import DatabaseSession
-from spellbot.models import Channel, Guild, GuildAward, web_editable_columns
+from spellbot.models import Channel, Guild, GuildAward, column_length, web_editable_columns
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -37,8 +37,8 @@ def _guild_icon_url(guild: discord.Guild) -> str | None:
 
 async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData | None:
     """Upsert the given Discord guild into the database."""
-    name_max_len = Guild.name.property.columns[0].type.length
-    icon_max_len = Guild.icon.property.columns[0].type.length
+    name_max_len = column_length(Guild.name)
+    icon_max_len = column_length(Guild.icon)
     raw_name = getattr(guild, "name", "")
     name = raw_name[:name_max_len]
     raw_icon = _guild_icon_url(guild)
@@ -81,15 +81,18 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
     result = (
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))
     ).scalar_one_or_none()
-    return await result.to_data() if guild else None
+    return await result.to_data() if result else None
+
+
+async def update_guild(guild_xid: int, **values: Any) -> None:
+    """Update columns of the given guild."""
+    await DatabaseSession.execute(update(Guild).where(Guild.xid == guild_xid).values(**values))
+    await DatabaseSession.commit()
 
 
 async def set_icon(guild_xid: int, icon: str | None) -> None:
     """Update the cached Discord icon URL for the given guild."""
-    await DatabaseSession.execute(
-        update(Guild).where(Guild.xid == guild_xid).values(icon=icon),
-    )
-    await DatabaseSession.commit()
+    await update_guild(guild_xid, icon=icon)
     guild_cache.pop(guild_xid, None)
 
 
@@ -136,10 +139,7 @@ async def set_banned(guild_xid: int, banned: bool) -> None:
 
 async def set_promote(guild_xid: int, promote: bool) -> None:
     """Set whether the given guild may be advertised on public SpellBot pages."""
-    await DatabaseSession.execute(
-        update(Guild).where(Guild.xid == guild_xid).values(promote=promote),
-    )
-    await DatabaseSession.commit()
+    await update_guild(guild_xid, promote=promote)
 
 
 # Guild columns that guild moderators may edit from the web admin panel, derived from
@@ -218,10 +218,7 @@ async def voiced() -> list[int]:
 
 async def set_active(guild_xid: int, active: bool) -> None:
     """Mark the given guild as active or inactive."""
-    await DatabaseSession.execute(
-        update(Guild).where(Guild.xid == guild_xid).values(active=active),
-    )
-    await DatabaseSession.commit()
+    await update_guild(guild_xid, active=active)
 
 
 async def award_list(guild_xid: int) -> list[GuildAwardData]:

@@ -535,7 +535,7 @@ class TestGenerateLink:
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(convoke_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
             patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
@@ -567,7 +567,7 @@ class TestGenerateLink:
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(convoke_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
             patch.object(convoke_module.services.games, "player_convoke_data", mock_player_data),
         ):
             mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
@@ -688,7 +688,7 @@ class TestUpdatePlayers:
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch.object(convoke_module.httpx, "AsyncClient", return_value=client_context(client)),
-            patch.object(convoke_module, "add_span_error") as add_span_error,
+            patch("spellbot.integrations.http_errors.add_span_error") as add_span_error,
             patch.object(
                 convoke_module.services.games,
                 "player_convoke_data",
@@ -873,7 +873,7 @@ class TestConvokeTerminalClientErrors:
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(convoke_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
             patch.object(
                 convoke_module.services.games,
                 "player_convoke_data",
@@ -897,7 +897,7 @@ class TestConvokeTerminalClientErrors:
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(convoke_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
             patch.object(
                 convoke_module.services.games,
                 "player_convoke_data",
@@ -919,7 +919,7 @@ class TestConvokeTerminalClientErrors:
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(convoke_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
             patch.object(
                 convoke_module.services.games,
                 "player_convoke_data",
@@ -941,7 +941,7 @@ class TestConvokeTerminalClientErrors:
         with (
             patch.object(convoke_module.settings, "CONVOKE_API_KEY", "test_key"),
             patch("httpx.AsyncClient") as mock_client_class,
-            patch.object(convoke_module, "add_span_error"),
+            patch("spellbot.integrations.http_errors.add_span_error"),
             patch.object(
                 convoke_module.services.games,
                 "player_convoke_data",

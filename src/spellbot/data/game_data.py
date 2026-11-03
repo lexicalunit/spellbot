@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from spellbot.data import ChannelData, GuildData, PostData, UserData
+    from spellbot.enums import Emojis
     from spellbot.operations import VoiceChannelSuggestion
 
 HR = "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
@@ -72,7 +73,7 @@ class GameData:
         placeholders = {
             "game_id": str(self.id),
             "game_format": self.format_name,
-            "game_bracket": f"Bracket {self.bracket_name}",
+            "game_bracket": self.bracket_name,
             "game_start": game_start,
         }
         for i, player in enumerate(self.players):
@@ -119,15 +120,11 @@ class GameData:
         return str(GameBracket(self.bracket))
 
     @property
-    def bracket_icon(self) -> str | None:
-        return GameBracket(self.bracket).icon
-
-    @property
     def bracket_title(self) -> str:
-        name = self.bracket_name[8:]
-        if icon := self.bracket_icon:
-            return f"{icon} {name}"
-        return name
+        bracket = GameBracket(self.bracket)
+        if bracket is GameBracket.NONE:
+            return ""
+        return f"{bracket.icon} {bracket.short_title}"
 
     @property
     def fully_seated(self) -> bool:
@@ -137,14 +134,12 @@ class GameData:
     def embed_description(
         self,
         *,
-        guild: discord.Guild | None = None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
-        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        emojis: Emojis | None = None,
         locale: str | None = None,
     ) -> str:
-        del guild  # unused, kept for API compatibility
         locale = locale or self.locale
         if span := tracer.current_span():  # pragma: no cover
             span.set_tags(
@@ -217,11 +212,10 @@ class GameData:
     def to_embed(
         self,
         *,
-        guild: discord.Guild | None,
         dm: bool = False,
         suggested_vc: VoiceChannelSuggestion | None = None,
         rematch: bool = False,
-        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        emojis: Emojis | None = None,
         supporters: set[int] | None = None,
         locale_override: str | None = None,
     ) -> discord.Embed:
@@ -231,7 +225,6 @@ class GameData:
         embed = discord.Embed(title=title)
         embed.set_thumbnail(url=settings.thumb(self.guild_xid))
         embed.description = self.embed_description(
-            guild=guild,
             dm=dm,
             suggested_vc=suggested_vc,
             rematch=rematch,
@@ -312,7 +305,7 @@ class GameData:
         effective_service: GameService,
         dm: bool,
         rematch: bool,
-        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        emojis: Emojis | None = None,
         locale: str | None = None,
     ) -> str:
         locale = locale or self.locale
@@ -410,7 +403,7 @@ class GameData:
 
     def embed_players(
         self,
-        emojis: list[discord.Emoji] | list[discord.PartialEmoji | discord.Emoji] | None = None,
+        emojis: Emojis | None = None,
         supporters: set[int] | None = None,
     ) -> str:
         emojis = emojis or []

@@ -10,6 +10,16 @@
  * analytics.js pass `new Date()` and tests pass a fixed instant.
  */
 
+// Shared helpers come from chart_common_pure.js, concatenated ahead of this file in the
+// browser. Under Node (Vitest) load them explicitly.
+/* v8 ignore next 4 */
+if (typeof module !== "undefined" && module.exports) {
+  var common = require("./chart_common_pure.js");
+  var fmt = common.fmt;
+  var escapeHtml = common.escapeHtml;
+  var getTimezoneOffsetHours = common.getTimezoneOffsetHours;
+}
+
 function toDayMap(arr) {
   var m = {};
   arr.forEach(function (d) {
@@ -18,24 +28,8 @@ function toDayMap(arr) {
   return m;
 }
 
-function fmt(n) {
-  return n.toLocaleString();
-}
-
 function periodLabel(period) {
   return period === "all" ? "All Time" : "Last 30 Days";
-}
-
-function getTimezoneOffsetHours(date) {
-  return -date.getTimezoneOffset() / 60;
-}
-
-// Convert UTC hour (0-23) to local hour. `offsetHours` is the result of
-// `getTimezoneOffsetHours` so positive values are east of UTC.
-function utcHourToLocal(utcHour, offsetHours) {
-  var localHour = (utcHour + offsetHours) % 24;
-  if (localHour < 0) localHour += 24;
-  return Math.floor(localHour);
 }
 
 // Today in YYYY-MM-DD (UTC).
@@ -58,18 +52,6 @@ function excludeToday(days, date) {
   var todayLocal = getTodayLocal(date);
   return days.filter(function (d) {
     return d !== todayUTC && d !== todayLocal;
-  });
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, function (c) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[c];
   });
 }
 
@@ -136,14 +118,10 @@ function getLanguageName(locale, displayNames) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     toDayMap: toDayMap,
-    fmt: fmt,
     periodLabel: periodLabel,
-    getTimezoneOffsetHours: getTimezoneOffsetHours,
-    utcHourToLocal: utcHourToLocal,
     getTodayUTC: getTodayUTC,
     getTodayLocal: getTodayLocal,
     excludeToday: excludeToday,
-    escapeHtml: escapeHtml,
     renderPlayerRow: renderPlayerRow,
     renderLeftServerNote: renderLeftServerNote,
     getUserTimezone: getUserTimezone,

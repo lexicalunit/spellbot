@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 
 import httpx
 
-from spellbot.enums import GameFormat
+from spellbot.data import GameLinkDetails
+from spellbot.enums import COMMANDER_FORMATS, GameFormat
 from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
@@ -24,6 +25,15 @@ ROUND_ROBIN: int | None = None
 ROUND_ROBIN_LOCK = asyncio.Lock()
 USER_LOCKS: dict[str, asyncio.Lock] = {}
 USER_LOCKS_LOCK = asyncio.Lock()
+
+
+# Formats Girudo hosts as Commander games.
+GIRUDO_COMMANDER_FORMATS = COMMANDER_FORMATS | {
+    GameFormat.PLANECHASE,
+    GameFormat.ARCHENEMY,
+    GameFormat.TWO_HEADED_GIANT,
+    GameFormat.HORDE_MAGIC,
+}
 
 
 class GirudoGameFormat(NamedTuple):
@@ -48,8 +58,7 @@ def get_default_tcg() -> tuple[str, str]:
 
 
 def create_timeout() -> httpx.Timeout:
-    timeout_s = settings.GIRUDO_TIMEOUT_S
-    return httpx.Timeout(timeout_s, connect=timeout_s, read=timeout_s, write=timeout_s)
+    return httpx.Timeout(settings.GIRUDO_TIMEOUT_S)
 
 
 async def fetch_and_cache_formats(
@@ -173,22 +182,7 @@ def girudo_game_format(game_format: GameFormat) -> GirudoGameFormat:
     if game_format in (GameFormat.BRAWL_TWO_PLAYER, GameFormat.BRAWL_MULTIPLAYER):
         return formats.get("brawl", default)
 
-    commander_formats = {
-        GameFormat.COMMANDER,
-        GameFormat.EDH_MAX,
-        GameFormat.EDH_HIGH,
-        GameFormat.EDH_MID,
-        GameFormat.EDH_LOW,
-        GameFormat.EDH_BATTLECRUISER,
-        GameFormat.PLANECHASE,
-        GameFormat.PRE_CONS,
-        GameFormat.CEDH,
-        GameFormat.ARCHENEMY,
-        GameFormat.TWO_HEADED_GIANT,
-        GameFormat.HORDE_MAGIC,
-    }
-
-    if game_format in commander_formats:
+    if game_format in GIRUDO_COMMANDER_FORMATS:
         return formats.get("commander_edh", default)
 
     logger.info(  # pragma: no cover
@@ -197,11 +191,6 @@ def girudo_game_format(game_format: GameFormat) -> GirudoGameFormat:
         default.name,
     )
     return default  # pragma: no cover
-
-
-class GirudoLinkDetails(NamedTuple):
-    link: str | None = None
-    password: str | None = None
 
 
 def encode_password(raw_password: str) -> str:
@@ -283,29 +272,17 @@ async def create_game(
     client: httpx.AsyncClient,
     token: str,
     game_data: GameData,
-    *,
-    game_title: str | None = None,
-    trading_card_game_uuid: str | None = None,
-    player_count: int | None = None,
-    format_uuid: str | None = None,
-    format_name: str | None = None,
 ) -> str | None:
     headers = {"Authorization": f"Bearer {token}"}
-
-    if format_uuid and format_name:
-        girudo_format = GirudoGameFormat(uuid=format_uuid, name=format_name)
-    else:
-        sb_game_format = GameFormat(game_data.format)
-        girudo_format = girudo_game_format(sb_game_format)
-
-    tcg_uuid = trading_card_game_uuid or settings.GIRUDO_DEFAULT_TCG_MAGIC_UUID or ""
+    girudo_format = girudo_game_format(GameFormat(game_data.format))
+    tcg_uuid = settings.GIRUDO_DEFAULT_TCG_MAGIC_UUID or ""
     tcg_name = (TCG_NAMES_CACHE or {}).get(tcg_uuid, get_default_tcg()[1])
 
     payload: dict[str, Any] = {
-        "game_title": game_title or f"SB{game_data.id}",
+        "game_title": f"SB{game_data.id}",
         "game_format_uuid": girudo_format.uuid,
         "game_format_name": girudo_format.name,
-        "player_count": player_count or GameFormat(game_data.format).players,
+        "player_count": GameFormat(game_data.format).players,
         "privacy": "public",
         "tagline": "game",
         "trading_card_game_uuid": tcg_uuid,
@@ -338,17 +315,11 @@ async def create_game(
         return None
 
 
-async def generate_link(
-    game_data: GameData,
-    *,
-    game_title: str | None = None,
-    trading_card_game_uuid: str | None = None,
-    player_count: int | None = None,
-) -> GirudoLinkDetails:
+async def generate_link(game_data: GameData) -> GameLinkDetails:
     accounts = get_accounts()
     if not accounts:
         logger.error("No Girudo accounts configured (GIRUDO_EMAILS/GIRUDO_PASSWORDS)")
-        return GirudoLinkDetails()
+        return GameLinkDetails()
 
     timeout = create_timeout()
     retry_attempts = settings.GIRUDO_RETRY_ATTEMPTS
@@ -375,16 +346,9 @@ async def generate_link(
                     if TCG_NAMES_CACHE is None:
                         await fetch_and_cache_tcg_names(client, auth_token)
 
-                link = await create_game(
-                    client,
-                    auth_token,
-                    game_data,
-                    game_title=game_title,
-                    trading_card_game_uuid=trading_card_game_uuid,
-                    player_count=player_count,
-                )
+                link = await create_game(client, auth_token, game_data)
                 if link:
-                    return GirudoLinkDetails(link=link)
+                    return GameLinkDetails(link)
 
             except Exception as ex:
                 details = describe_http_error(ex)
@@ -392,7 +356,7 @@ async def generate_link(
                 if is_final_attempt or is_terminal_client_error(ex):
                     add_span_error(ex)
                     logger.exception("Girudo API failure (email=%s). %s", email, details)
-                    return GirudoLinkDetails()
+                    return GameLinkDetails()
 
                 logger.warning(
                     "Girudo API issue (attempt %s/%s, email=%s). %s",
@@ -403,4 +367,4 @@ async def generate_link(
                     exc_info=True,
                 )
 
-    return GirudoLinkDetails()
+    return GameLinkDetails()

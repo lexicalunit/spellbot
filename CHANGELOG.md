@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Replaced pyright with ty for static type checking.
 - Dashboard cohort retention uses monthly cohorts for wide date ranges and shows up to 12 periods.
+- Guild analytics now use the admin dashboard's queries and definitions.
+- Dashboard charts count games by start time, and expired games by creation time.
+- Refactored the bot, services, and web code to share helpers instead of duplicating logic.
 
 ### Removed
 
@@ -28,6 +31,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- The `${game_bracket}` MOTD placeholder no longer reads "Bracket Bracket 1: ...".
+- `/leave_all` now updates every post of a game shared in more than one channel.
+- Posts of games that lose players are now refreshed in their own channels.
+- `/start` and `/game` now refresh the posts of games their players were queued in.
+- The `/game` bracket option now has a description.
+- Game notification DMs no longer show "Bracket: None" for games without a bracket.
+- Banned users can no longer link a Playgroup Live account.
+- The notice on posts of games that expire in the background is now translated.
+- Unhandled command errors are logged with the name of the command.
+- The game record API now returns 400 instead of 500 for malformed requests.
+- The admin dashboard no longer shows stale data after quickly switching filters.
+- EDHLab link requests no longer retry errors that can't succeed.
 - Removed an always-true assertion from the game view's join handler.
 
 ## [v23.1.2](https://github.com/lexicalunit/spellbot/releases/tag/v23.1.2) - 2026-11-03

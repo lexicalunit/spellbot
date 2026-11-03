@@ -3,9 +3,9 @@
 <div align="center">
 
 <img
-    width="200"
-    alt="spellbot"
-    src="https://raw.githubusercontent.com/lexicalunit/spellbot/main/spellbot.png"
+    width="600"
+    alt="SpellBot: The Discord bot for Convoke"
+    src="https://raw.githubusercontent.com/lexicalunit/spellbot/refs/heads/main/docs/assets/media-kit/spellbot-banner.png"
 />
 <br />
 <br />
@@ -13,7 +13,7 @@
 <img
         align="center"
         alt="Add to Discord"
-        src="https://spellbot.io/assets/img/screenshots/spellbot-banner.png"
+        src="https://spellbot.io/assets/img/add-to-discord.png"
     />
 </a>
 <br />

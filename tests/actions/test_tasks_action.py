@@ -18,6 +18,7 @@ from spellbot.actions import TasksAction
 from spellbot.actions.base_action import handle_exception
 from spellbot.client import build_bot
 from spellbot.database import DatabaseSession
+from spellbot.enums import GameBracket
 from spellbot.errors import SpellBotError
 from spellbot.models import Channel, Game, Guild
 from tests.mocks import create_mock_channel, decoys, mock_discord_object
@@ -171,7 +172,10 @@ class TestTaskExpireInactiveChannels:
         caplog: pytest.LogCaptureFixture,
         mocker: MockerFixture,
     ) -> None:
-        mocker.patch.object(action, "expire_games", AsyncMock(side_effect=RuntimeError))
+        mocker.patch(
+            "spellbot.actions.tasks_action.expire_games",
+            AsyncMock(side_effect=RuntimeError),
+        )
         await action.expire_inactive_games()
         assert "error: exception in background task" in caplog.text
 
@@ -279,6 +283,7 @@ class TestTaskExpireInactiveChannels:
             factories.post.create(guild=guild, channel=channel, game=game, message_xid=message_xid)
         factories.user.create(game=game)
         mocker.patch("spellbot.actions.tasks_action.services", mock_services)
+        mocker.patch("spellbot.actions.base_action.services", mock_services)
         mock_services.games.inactive_games = AsyncMock(return_value=[await game.to_data()])
         mock_services.games.delete_games = AsyncMock()
 
@@ -289,13 +294,13 @@ class TestTaskExpireInactiveChannels:
         )
         mock_services.channels.select = AsyncMock(return_value=mock_channel_data)
         mock_fetch_channel = AsyncMock(return_value=chan)
-        mocker.patch("spellbot.actions.tasks_action.safe_fetch_text_channel", mock_fetch_channel)
+        mocker.patch("spellbot.actions.base_action.safe_fetch_text_channel", mock_fetch_channel)
         mock_get_partial = MagicMock(return_value=post)
-        mocker.patch("spellbot.actions.tasks_action.safe_get_partial_message", mock_get_partial)
+        mocker.patch("spellbot.actions.base_action.safe_get_partial_message", mock_get_partial)
         mock_delete_message = AsyncMock()
-        mocker.patch("spellbot.actions.tasks_action.safe_delete_message", mock_delete_message)
+        mocker.patch("spellbot.actions.base_action.safe_delete_message", mock_delete_message)
         mock_update_embed = AsyncMock()
-        mocker.patch("spellbot.actions.tasks_action.safe_update_embed", mock_update_embed)
+        mocker.patch("spellbot.actions.base_action.safe_update_embed", mock_update_embed)
 
         await action.expire_inactive_games()
 
@@ -777,7 +782,6 @@ class TestNotifyPendingGames:
         action: TasksAction,
         factories: Factories,
     ) -> None:
-        from spellbot.enums import GameBracket  # allow_inline
 
         guild: Guild = factories.guild.create()
         channel: Channel = factories.channel.create(guild=guild)
@@ -804,7 +808,7 @@ class TestNotifyPendingGames:
         channel: Channel = factories.channel.create(guild=guild)
         game: Game = factories.game.create(guild=guild, channel=channel)
         game_data = await game.to_data()
-        game_data.bracket = 0
+        assert game_data.bracket == GameBracket.NONE.value
 
         embed = action.build_notification_embed(game_data)
 

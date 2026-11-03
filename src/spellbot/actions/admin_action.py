@@ -2,28 +2,22 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING
-
-import discord
-from discord.embeds import Embed
 
 from spellbot import services
 from spellbot.enums import GameBracket
 from spellbot.i18n import guild_locale, t, user_locale
 from spellbot.operations import (
-    safe_delete_message,
-    safe_fetch_text_channel,
-    safe_get_partial_message,
     safe_send_channel,
-    safe_update_embed,
 )
 from spellbot.settings import settings
 
-from .base_action import BaseAction
+from .base_action import BaseAction, expire_games, info_embed
 
 if TYPE_CHECKING:
+    import discord
+
     from spellbot import SpellBot
 
 logger = logging.getLogger(__name__)
@@ -55,10 +49,8 @@ class AdminAction(BaseAction):
         locale = user_locale(self.interaction)
         link = f"{settings.API_BASE_URL}/game/{found.id}"
 
-        embed = Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed = info_embed()
         embed.set_author(name=t("admin.game_info_title", locale=locale, game_id=found.id))
-        embed.color = settings.INFO_EMBED_COLOR
 
         embed.add_field(
             name=t("game.field.format", locale=locale),
@@ -99,10 +91,8 @@ class AdminAction(BaseAction):
         locale = guild_locale(self.guild)
         guild = self.guild_data
         link = f"{settings.API_BASE_URL}/g/{guild.xid}"
-        embed = Embed(title=t("admin.setup_title", locale=locale, guild=guild.name))
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed = info_embed(title=t("admin.setup_title", locale=locale, guild=guild.name))
         embed.description = t("admin.setup_description", locale=locale, link=link)
-        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
         await safe_send_channel(self.interaction, embed=embed)
 
     async def setup_mythic_track(self) -> None:
@@ -110,9 +100,9 @@ class AdminAction(BaseAction):
         assert self.guild_data is not None
         locale = guild_locale(self.guild)
         self.guild_data = await services.guilds.setup_mythic_track(self.guild_data)
-        embed = Embed(title=t("admin.mythic_track_title", locale=locale, guild=self.guild.name))
-        embed.set_thumbnail(url=settings.ICO_URL)
-        embed.color = discord.Color(settings.INFO_EMBED_COLOR)
+        embed = info_embed(
+            title=t("admin.mythic_track_title", locale=locale, guild=self.guild.name)
+        )
         GUIDE = "https://www.mythictrack.com/spellbot"
         if self.guild_data.enable_mythic_track:
             embed.description = t("admin.mythic_track_on", locale=locale, guide=GUIDE)
@@ -142,62 +132,12 @@ class AdminAction(BaseAction):
 
     async def expire_games(self, guild_xid: int) -> None:
         user_loc = user_locale(self.interaction)
-        results = []
-        games = await services.games.inactive_games(guild_xid)
-
-        batch = 0
-        for game in games:
-            game_id = game.id
-            results.append(t("admin.expire_game", locale=user_loc, game_id=game_id))
-            dequeued = await services.games.delete_games([game_id])
-            results.append(t("admin.expire_dequeued", locale=user_loc, count=dequeued))
-
-            for post_data in game.posts:
-                guild_xid = post_data.guild_xid
-                channel_xid = post_data.channel_xid
-                message_xid = post_data.message_xid
-
-                chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-                if not chan:
-                    results.append(
-                        t("admin.expire_no_channel", locale=user_loc, channel_id=channel_xid),
-                    )
-                    continue
-
-                post = safe_get_partial_message(chan, guild_xid, message_xid)
-                if not post:
-                    results.append(
-                        t("admin.expire_no_message", locale=user_loc, message_id=message_xid),
-                    )
-                    continue
-
-                channel_data = await services.channels.select(channel_xid)
-                if not dequeued or (channel_data and channel_data.delete_expired):
-                    results.append(
-                        t("admin.expire_deleting", locale=user_loc, message_id=message_xid),
-                    )
-                    if not await safe_delete_message(post, own_message=True):
-                        results.append(t("admin.expire_no_permission", locale=user_loc))
-                else:
-                    results.append(
-                        t("admin.expire_updating", locale=user_loc, message_id=message_xid),
-                    )
-                    guild_loc = guild_locale(self.guild)
-                    if not await safe_update_embed(
-                        post,
-                        content=t("admin.game_expired", locale=guild_loc),
-                        embed=None,
-                        view=None,
-                    ):
-                        results.append(t("admin.expire_no_permission", locale=user_loc))
-                results.append(t("admin.expire_done", locale=user_loc))
-
-            batch += 1
-            if batch >= 5:  # pragma: no cover
-                await asyncio.sleep(5)
-                batch = 0
-            else:
-                await asyncio.sleep(1)
+        results: list[str] = []
+        await expire_games(
+            self.bot,
+            await services.games.inactive_games(guild_xid),
+            report=lambda key, **params: results.append(t(key, locale=user_loc, **params)),
+        )
 
         message = "\n".join(results)
         if message:
@@ -227,10 +167,8 @@ class AdminAction(BaseAction):
             self.interaction.guild_id,
         )
 
-        embed = Embed()
-        embed.set_thumbnail(url=settings.ICO_URL)
+        embed = info_embed()
         embed.set_author(name=t("admin.user_info_title", locale=locale, name=target.display_name))
-        embed.color = settings.INFO_EMBED_COLOR
 
         link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/u/{target_xid}"
         games_key = (

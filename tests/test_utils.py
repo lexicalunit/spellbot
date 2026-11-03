@@ -8,6 +8,8 @@ from urllib.parse import parse_qs, urlparse
 
 import discord
 import pytest
+from discord import app_commands
+from discord.ext import commands
 
 from spellbot.errors import AdminOnlyError, GuildOnlyError, ModOnlyError
 from spellbot.utils import (
@@ -15,19 +17,18 @@ from spellbot.utils import (
     bot_can_delete_message,
     bot_can_manage_channels,
     bot_can_read,
-    bot_can_reply_to,
     bot_can_role,
     bot_can_send_messages,
-    generate_signed_url,
     is_admin,
     is_guild,
     is_mod,
     is_moderator,
     log_warning,
     safe_permissions_for,
+    traced_interaction,
     user_can_moderate,
-    validate_signature,
 )
+from spellbot.web.signing import generate_signed_url, validate_signature
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -87,69 +88,6 @@ class TestUtilsBotCanRole:
         guild.me.top_role = 1
         role = cast("discord.Role", 10)
         assert not bot_can_role(guild, role)
-
-
-class TestUtilsBotCanReplyTo:
-    def test_happy_path(self) -> None:
-        send_permissions = discord.Permissions(
-            discord.Permissions.send_messages.flag,
-        )
-        guild = MagicMock(spec=discord.Guild)
-        guild.me = MagicMock()
-        channel = MagicMock(spec=discord.TextChannel)
-        channel.type = discord.ChannelType.text
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=send_permissions)
-        message = MagicMock(spec=discord.Message)
-        message.channel = channel
-        assert bot_can_reply_to(message)
-
-    def test_missing_guild(self) -> None:
-        send_permissions = discord.Permissions(
-            discord.Permissions.send_messages.flag,
-        )
-        channel = MagicMock(spec=discord.TextChannel)
-        channel.type = discord.ChannelType.text
-        del channel.guild
-        channel.permissions_for = MagicMock(return_value=send_permissions)
-        message = MagicMock(spec=discord.Message)
-        message.channel = channel
-        assert not bot_can_reply_to(message)
-
-    def test_guild_is_none(self) -> None:
-        send_permissions = discord.Permissions(
-            discord.Permissions.send_messages.flag,
-        )
-        channel = MagicMock(spec=discord.TextChannel)
-        channel.type = discord.ChannelType.text
-        channel.guild = None
-        channel.permissions_for = MagicMock(return_value=send_permissions)
-        message = MagicMock(spec=discord.Message)
-        message.channel = channel
-        assert not bot_can_reply_to(message)
-
-    def test_bad_permissions(self) -> None:
-        bad_permissions = discord.Permissions()
-        guild = MagicMock(spec=discord.Guild)
-        guild.me = MagicMock()
-        channel = MagicMock(spec=discord.TextChannel)
-        channel.type = discord.ChannelType.text
-        channel.guild = guild
-        channel.permissions_for = MagicMock(return_value=bad_permissions)
-        message = MagicMock(spec=discord.Message)
-        message.channel = channel
-        assert not bot_can_reply_to(message)
-
-    def test_permissions_exception(self) -> None:
-        guild = MagicMock(spec=discord.Guild)
-        guild.me = MagicMock()
-        channel = MagicMock(spec=discord.TextChannel)
-        channel.type = discord.ChannelType.text
-        channel.guild = guild
-        channel.permissions_for = MagicMock(side_effect=RuntimeError("oh no"))
-        message = MagicMock(spec=discord.Message)
-        message.channel = channel
-        assert not bot_can_reply_to(message)
 
 
 class TestUtilsBotCanManageChannels:
@@ -665,14 +603,14 @@ class TestUtilsUserCanModerate:
 
 class TestGenerateSignedUrl:
     def test_generates_url_with_signature(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(12345, expires_in_minutes=10)
         assert "/g/12345/analytics?" in url
         assert "expires=1600" in url
         assert "sig=" in url
 
     def test_valid_signature_roundtrip(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         url = generate_signed_url(12345, expires_in_minutes=10)
         # Extract expires and sig from the URL
         parsed = urlparse(url)
@@ -682,16 +620,36 @@ class TestGenerateSignedUrl:
         assert validate_signature(12345, expires, sig)
 
     def test_validate_expired_signature(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=2000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=2000.0)
         # Expired in the past
         assert not validate_signature(12345, 1000, "anything")
 
     def test_validate_wrong_signature(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.utils.time.time", return_value=1000.0)
+        mocker.patch("spellbot.web.signing.time.time", return_value=1000.0)
         assert not validate_signature(12345, 2000, "bad-sig")
 
     def test_validate_signature_bypass_when_check_disabled(self, mocker: MockerFixture) -> None:
         """When CHECK_SIGNATURE is False, validate_signature should always return True."""
-        mocker.patch("spellbot.utils.settings.CHECK_SIGNATURE", False)
+        mocker.patch("spellbot.web.signing.settings.CHECK_SIGNATURE", False)
         # Even with bad/expired signature, should return True
         assert validate_signature(12345, 0, "invalid-sig")
+
+
+class TestTracedInteraction:
+    def test_discord_annotations_still_resolve(self) -> None:
+        # `@tracer.wrap` broke commands with `discord.User` parameters because discord.py
+        # resolves annotations against the callback's globals.
+        class Probe(commands.Cog):
+            @app_commands.command(name="probe", description="probe")
+            @app_commands.describe(target="who")
+            @traced_interaction()
+            async def probe(
+                self,
+                interaction: discord.Interaction,
+                target: discord.User | discord.Member,
+            ) -> None:  # pragma: no cover
+                del interaction, target
+
+        (param,) = Probe.probe.parameters
+        assert param.type is discord.AppCommandOptionType.user
+        assert param.description == "who"

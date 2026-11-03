@@ -15,6 +15,7 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager, rollback_session
+from spellbot.enums import GameBracket
 from spellbot.metrics import (
     add_span_error,
     add_span_request_id,
@@ -24,16 +25,12 @@ from spellbot.metrics import (
 from spellbot.operations import (
     bot_can_delete_channel,
     safe_delete_channel,
-    safe_delete_message,
-    safe_fetch_text_channel,
     safe_fetch_user,
-    safe_get_partial_message,
     safe_send_user,
-    safe_update_embed,
 )
 from spellbot.settings import settings
 
-from .base_action import handle_exception
+from .base_action import expire_games, handle_exception
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -164,50 +161,11 @@ class TasksAction:
         logger.info("starting task expire_inactive_games")
         try:
             games = await services.games.inactive_games()
-            await self.expire_games(games)
+            await expire_games(self.bot, games)
         except BaseException as e:  # Catch EVERYTHING so tasks don't die
             add_span_error(e)
             logger.exception("error: exception in background task")
             await rollback_session()
-
-    async def expire_games(self, game_data_list: list[GameData]) -> None:
-        batch = 0
-        for game_data in game_data_list:
-            logger.info("expiring game %s...", game_data.id)
-            dequeued = await services.games.delete_games([game_data.id])
-            await self.expire_game(game_data, dequeued)
-
-            batch += 1
-            if batch >= 5:  # pragma: no cover
-                await asyncio.sleep(5)
-                batch = 0
-            else:
-                await asyncio.sleep(1)
-
-    async def expire_game(self, game_data: GameData, dequeued: int) -> None:
-        for post_data in game_data.posts:
-            guild_xid = post_data.guild_xid
-            channel_xid = post_data.channel_xid
-            message_xid = post_data.message_xid
-
-            chan = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-            if not chan:
-                continue
-
-            post = safe_get_partial_message(chan, guild_xid, message_xid)
-            if not post:
-                continue
-
-            channel_data = await services.channels.select(channel_xid)
-            if not dequeued or (channel_data and channel_data.delete_expired):
-                await safe_delete_message(post, own_message=True)
-            else:
-                await safe_update_embed(
-                    post,
-                    content="Sorry, this game was expired due to inactivity.",
-                    embed=None,
-                    view=None,
-                )
 
     async def patreon_sync(self) -> None:
         logger.info("starting task patreon_sync")
@@ -256,7 +214,7 @@ class TasksAction:
             f"Channel: <#{game_data.channel_xid}>",
             f"Open seats: **{remaining}** of {game_data.seats}",
         ]
-        if game_data.bracket != 0:
+        if game_data.bracket != GameBracket.NONE.value:
             description_lines.append(f"Bracket: {game_data.bracket_title}")
         jump_link = game_data.jump_links.get(game_data.guild_xid)
         if jump_link:

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any
 
 import aiohttp_jinja2
@@ -13,8 +12,8 @@ from ddtrace.trace import tracer
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id
+from spellbot.services.filters import GuildFilter, PeriodSpec, parse_guild, parse_period
 from spellbot.web.api.admin_auth import is_owner_session
-from spellbot.web.dashboard_filters import GuildFilter, PeriodSpec, parse_guild, parse_period
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -51,12 +50,7 @@ async def dashboard_sql_endpoint(request: web.Request) -> web.Response:
     # `dashboard_run_sql` opens its own dedicated read-only connection, so no
     # surrounding `db_session_manager()` is needed here.
     data = await services.dashboard.dashboard_run_sql(query)
-    status = 400 if "error" in data else 200
-    return web.Response(
-        status=status,
-        content_type="application/json",
-        text=json.dumps(data),
-    )
+    return web.json_response(data, status=400 if "error" in data else 200)
 
 
 def dashboard_query(request: web.Request) -> tuple[PeriodSpec, GuildFilter]:
@@ -71,300 +65,64 @@ async def dashboard_json_endpoint(
     """Run `fetch_fn` inside a DB session and return its result as JSON."""
     period, opts = dashboard_query(request)
     async with db_session_manager():
-        data = await fetch_fn(period, opts)
-    return web.Response(
-        status=200,
-        content_type="application/json",
-        text=json.dumps(data),
-    )
-
-
-@routes.get("/admin/dashboard/summary")
-@tracer.wrap(name="web", resource="dashboard_summary")
-async def dashboard_summary_endpoint(request: web.Request) -> web.Response:
-    """Return headline totals for the dashboard (games, players, servers)."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_summary)
-
-
-@routes.get("/admin/dashboard/totals")
-@tracer.wrap(name="web", resource="dashboard_totals")
-async def dashboard_totals_endpoint(request: web.Request) -> web.Response:
-    """Return all-time totals (games, players, servers) ignoring the date range."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_totals)
-
-
-@routes.get("/admin/dashboard/users-activity")
-@tracer.wrap(name="web", resource="dashboard_users_activity")
-async def dashboard_users_activity_endpoint(request: web.Request) -> web.Response:
-    """Return user activity series (new users, DAU/WAU/MAU, DAU:MAU)."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_users_activity)
-
-
-@routes.get("/admin/dashboard/games")
-@tracer.wrap(name="web", resource="dashboard_games")
-async def dashboard_games_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed counts of started and expired games."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_games)
-
-
-@routes.get("/admin/dashboard/player-growth")
-@tracer.wrap(name="web", resource="dashboard_player_growth")
-async def dashboard_player_growth_endpoint(request: web.Request) -> web.Response:
-    """Return cumulative unique-player counts bucketed at `period.bucket`."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_player_growth)
-
-
-@routes.get("/admin/dashboard/casual-vs-cedh")
-@tracer.wrap(name="web", resource="dashboard_casual_vs_cedh")
-async def dashboard_casual_vs_cedh_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed counts of started games classified as Casual vs cEDH."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_casual_vs_cedh)
-
-
-@routes.get("/admin/dashboard/server-popularity")
-@tracer.wrap(name="web", resource="dashboard_server_popularity")
-async def dashboard_server_popularity_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed game counts for the top guilds by total games."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_server_popularity)
-
-
-@routes.get("/admin/dashboard/service-popularity")
-@tracer.wrap(name="web", resource="dashboard_service_popularity")
-async def dashboard_service_popularity_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed game counts grouped by game service."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_service_popularity)
-
-
-@routes.get("/admin/dashboard/bracket-adoption")
-@tracer.wrap(name="web", resource="dashboard_bracket_adoption")
-async def dashboard_bracket_adoption_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed bracket adoption rate among bracketable formats."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_bracket_adoption)
-
-
-@routes.get("/admin/dashboard/user-languages")
-@tracer.wrap(name="web", resource="dashboard_user_languages")
-async def dashboard_user_languages_endpoint(request: web.Request) -> web.Response:
-    """Return distinct active-user counts grouped by user locale."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_user_languages)
-
-
-@routes.get("/admin/dashboard/game-languages")
-@tracer.wrap(name="web", resource="dashboard_game_languages")
-async def dashboard_game_languages_endpoint(request: web.Request) -> web.Response:
-    """Return counts of started games grouped by game locale."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_game_languages)
-
-
-@routes.get("/admin/dashboard/top-guild-per-service")
-@tracer.wrap(name="web", resource="dashboard_top_guild_per_service")
-async def dashboard_top_guild_per_service_endpoint(request: web.Request) -> web.Response:
-    """Return the most active guild for each game service."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(
-        request, services.dashboard.dashboard_top_guild_per_service
-    )
-
-
-@routes.get("/admin/dashboard/top-guild-per-game-language")
-@tracer.wrap(name="web", resource="dashboard_top_guild_per_game_language")
-async def dashboard_top_guild_per_game_language_endpoint(request: web.Request) -> web.Response:
-    """Return the most active guild for each distinct game locale."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(
-        request,
-        services.dashboard.dashboard_top_guild_per_game_language,
-    )
-
-
-@routes.get("/admin/dashboard/guild-languages")
-@tracer.wrap(name="web", resource="dashboard_guild_languages")
-async def dashboard_guild_languages_endpoint(request: web.Request) -> web.Response:
-    """Return counts of distinct active guilds grouped by guild locale."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_guild_languages)
-
-
-@routes.get("/admin/dashboard/hour-of-day")
-@tracer.wrap(name="web", resource="dashboard_hour_of_day")
-async def dashboard_hour_of_day_endpoint(request: web.Request) -> web.Response:
-    """Return counts of started games per UTC hour of the day (0-23)."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_hour_of_day)
-
-
-@routes.get("/admin/dashboard/day-of-week")
-@tracer.wrap(name="web", resource="dashboard_day_of_week")
-async def dashboard_day_of_week_endpoint(request: web.Request) -> web.Response:
-    """Return counts of started games per UTC day of the week (0=Sun..6=Sat)."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_day_of_week)
-
-
-@routes.get("/admin/dashboard/popular-formats")
-@tracer.wrap(name="web", resource="dashboard_popular_formats")
-async def dashboard_popular_formats_endpoint(request: web.Request) -> web.Response:
-    """Return counts of started games grouped by format."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_popular_formats)
-
-
-@routes.get("/admin/dashboard/popular-seats")
-@tracer.wrap(name="web", resource="dashboard_popular_seats")
-async def dashboard_popular_seats_endpoint(request: web.Request) -> web.Response:
-    """Return counts of started games grouped by seat count."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_popular_seats)
-
-
-@routes.get("/admin/dashboard/top-players")
-@tracer.wrap(name="web", resource="dashboard_top_players")
-async def dashboard_top_players_endpoint(request: web.Request) -> web.Response:
-    """Return the top players by number of started games played."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_top_players)
-
-
-@routes.get("/admin/dashboard/top-blocked")
-@tracer.wrap(name="web", resource="dashboard_top_blocked")
-async def dashboard_top_blocked_endpoint(request: web.Request) -> web.Response:
-    """Return the top blocked users globally."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_top_blocked)
-
-
-@routes.get("/admin/dashboard/avg-wait-time")
-@tracer.wrap(name="web", resource="dashboard_avg_wait_time")
-async def dashboard_avg_wait_time_endpoint(request: web.Request) -> web.Response:
-    """Return the average wait time (in minutes) between game creation and start."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_avg_wait_time)
-
-
-@routes.get("/admin/dashboard/games-per-player")
-@tracer.wrap(name="web", resource="dashboard_games_per_player")
-async def dashboard_games_per_player_endpoint(request: web.Request) -> web.Response:
-    """Return the games-per-player histogram with the median."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_games_per_player)
-
-
-@routes.get("/admin/dashboard/rules")
-@tracer.wrap(name="web", resource="dashboard_rules")
-async def dashboard_rules_endpoint(request: web.Request) -> web.Response:
-    """Return the top game rules and rule n-grams for a word cloud."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_rules)
-
-
-@routes.get("/admin/dashboard/cohort-retention")
-@tracer.wrap(name="web", resource="dashboard_cohort_retention")
-async def dashboard_cohort_retention_endpoint(request: web.Request) -> web.Response:
-    """Return weekly cohort retention as `cohorts[cohort][week_offset] -> percent`."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_cohort_retention)
-
-
-@routes.get("/admin/dashboard/activity-heatmap")
-@tracer.wrap(name="web", resource="dashboard_activity_heatmap")
-async def dashboard_activity_heatmap_endpoint(request: web.Request) -> web.Response:
-    """Return started-game counts as a day-of-week x hour-of-day matrix."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_activity_heatmap)
-
-
-@routes.get("/admin/dashboard/wait-time-distribution")
-@tracer.wrap(name="web", resource="dashboard_wait_time_distribution")
-async def dashboard_wait_time_distribution_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed wait-time percentiles (p50 / p95 / p99) in minutes."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(
-        request,
-        services.dashboard.dashboard_wait_time_distribution,
-    )
-
-
-@routes.get("/admin/dashboard/voice-adoption")
-@tracer.wrap(name="web", resource="dashboard_voice_adoption")
-async def dashboard_voice_adoption_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed adoption rate (percent) of started games with a voice channel."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_voice_adoption)
-
-
-@routes.get("/admin/dashboard/blind-adoption")
-@tracer.wrap(name="web", resource="dashboard_blind_adoption")
-async def dashboard_blind_adoption_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed adoption rate (percent) of started games created as blind."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_blind_adoption)
-
-
-@routes.get("/admin/dashboard/to-mode-adoption")
-@tracer.wrap(name="web", resource="dashboard_to_mode_adoption")
-async def dashboard_to_mode_adoption_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed adoption rate (percent) of started games created in TO mode."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_to_mode_adoption)
-
-
-@routes.get("/admin/dashboard/competitive-adoption")
-@tracer.wrap(name="web", resource="dashboard_competitive_adoption")
-async def dashboard_competitive_adoption_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed adoption rate (percent) of started Convoke games in competitive mode."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_competitive_adoption)
-
-
-@routes.get("/admin/dashboard/playgroup-adoption")
-@tracer.wrap(name="web", resource="dashboard_playgroup_adoption")
-async def dashboard_playgroup_adoption_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed adoption rate (percent) of started games played on Playgroup Live."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_playgroup_adoption)
-
-
-@routes.get("/admin/dashboard/castlog-adoption")
-@tracer.wrap(name="web", resource="dashboard_castlog_adoption")
-async def dashboard_castlog_adoption_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed rate (percent) of started Convoke games that have a Castlog report."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_castlog_adoption)
-
-
-@routes.get("/admin/dashboard/mythic-verification")
-@tracer.wrap(name="web", resource="dashboard_mythic_verification")
-async def dashboard_mythic_verification_endpoint(request: web.Request) -> web.Response:
-    """Return bucketed Mythic Track verification rate (percent) of plays."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_mythic_verification)
-
-
-@routes.get("/admin/dashboard/queue-depth")
-@tracer.wrap(name="web", resource="dashboard_queue_depth")
-async def dashboard_queue_depth_endpoint(request: web.Request) -> web.Response:
-    """Return the current number of users waiting in pending games, by format."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_queue_depth)
-
-
-@routes.get("/admin/dashboard/active-queues")
-@tracer.wrap(name="web", resource="dashboard_active_queues")
-async def dashboard_active_queues_endpoint(request: web.Request) -> web.Response:
-    """Return one row per pending game with at least one player queued."""
-    add_span_request_id(generate_request_id())
-    return await dashboard_json_endpoint(request, services.dashboard.dashboard_active_queues)
+        return web.json_response(await fetch_fn(period, opts))
+
+
+# Panels served as JSON straight from a `services.dashboard` function. The slug `x-y` is served
+# at `/admin/dashboard/x-y` by `dashboard_x_y`, and traced as the `dashboard_x_y` resource.
+JSON_PANELS = (
+    "summary",
+    "totals",
+    "users-activity",
+    "games",
+    "player-growth",
+    "casual-vs-cedh",
+    "server-popularity",
+    "service-popularity",
+    "bracket-adoption",
+    "user-languages",
+    "game-languages",
+    "top-guild-per-service",
+    "top-guild-per-game-language",
+    "guild-languages",
+    "hour-of-day",
+    "day-of-week",
+    "popular-formats",
+    "popular-seats",
+    "top-players",
+    "top-blocked",
+    "avg-wait-time",
+    "games-per-player",
+    "rules",
+    "cohort-retention",
+    "activity-heatmap",
+    "wait-time-distribution",
+    "voice-adoption",
+    "blind-adoption",
+    "to-mode-adoption",
+    "competitive-adoption",
+    "playgroup-adoption",
+    "castlog-adoption",
+    "mythic-verification",
+    "queue-depth",
+    "active-queues",
+)
+
+
+def add_json_panel(slug: str) -> None:
+    """Serve the JSON panel `slug`, looking its service function up on each request."""
+    name = f"dashboard_{slug.replace('-', '_')}"
+
+    async def endpoint(request: web.Request) -> web.Response:
+        add_span_request_id(generate_request_id())
+        return await dashboard_json_endpoint(request, getattr(services.dashboard, name))
+
+    endpoint.__name__ = f"{name}_endpoint"
+    routes.get(f"/admin/dashboard/{slug}")(tracer.wrap(name="web", resource=name)(endpoint))
+
+
+for json_panel in JSON_PANELS:
+    add_json_panel(json_panel)
 
 
 @routes.get("/admin/dashboard/guilds")
@@ -374,9 +132,4 @@ async def dashboard_guilds_endpoint(request: web.Request) -> web.Response:
     add_span_request_id(generate_request_id())
     del request
     async with db_session_manager():
-        data = await services.dashboard.dashboard_guilds()
-    return web.Response(
-        status=200,
-        content_type="application/json",
-        text=json.dumps({"guilds": data}),
-    )
+        return web.json_response({"guilds": await services.dashboard.dashboard_guilds()})

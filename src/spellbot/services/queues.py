@@ -3,32 +3,80 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
-from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, Game, Guild, GuildMember, Play, Post, Queue
+from spellbot.services.labels import BRACKET_LABEL, FORMAT_LABEL, SERVICE_LABEL
 
-FORMAT_LABEL = case(
-    *((Game.format == f.value, str(f)) for f in GameFormat),
-    else_="Unknown",
-).label("format")
-
-BRACKET_LABEL = case(
-    *((Game.bracket == b.value, str(b)) for b in GameBracket),
-    else_="Unknown",
-).label("bracket")
-
-SERVICE_LABEL = case(
-    *((Game.service == s.value, s.title) for s in GameService),
-    else_="Unknown",
-).label("service")
+if TYPE_CHECKING:
+    from sqlalchemy import Select
 
 # How far back a started game still counts as "active". Shared by the queues page,
 # `/queues.json`, and the cached public stats so all three report the same games.
 STARTED_GAMES_WINDOW = timedelta(hours=2)
+
+
+# The columns that describe a publicly listed game, shared by the active games and queues.
+PUBLIC_GAME_COLUMNS = (
+    Game.id,
+    Game.guild_xid,
+    Guild.name.label("guild_name"),
+    Guild.locale.label("guild_locale"),
+    Guild.icon.label("guild_icon"),
+    Game.channel_xid,
+    FORMAT_LABEL,
+    BRACKET_LABEL,
+    SERVICE_LABEL,
+    Game.seats,
+)
+
+
+def publicly_visible[S: Select](
+    stmt: S,
+    *,
+    only_member_of: int | None,
+    only_mythic_track: bool,
+) -> S:
+    """
+    Restrict a games query to guilds that allow being listed publicly.
+
+    `only_member_of` further limits it to that user's guilds, and `only_mythic_track` to guilds
+    with Mythic Track enabled.
+    """
+    stmt = stmt.where(Game.deleted_at.is_(None), Guild.banned.is_(False), Guild.promote.is_(True))
+    if only_member_of is not None:
+        stmt = stmt.join(GuildMember, GuildMember.guild_xid == Guild.xid).where(
+            GuildMember.user_xid == only_member_of,
+        )
+    if only_mythic_track:
+        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
+    return stmt
+
+
+def seconds_since(moment: datetime, now: datetime) -> int:
+    """Whole seconds from a naive UTC `moment` until `now`, never negative."""
+    return max(0, int((now - moment.replace(tzinfo=UTC)).total_seconds()))
+
+
+def public_game_row(row: Any, message_xid: int | None = None) -> dict[str, Any]:
+    """Build the fields every publicly listed game has, with a link to its post (or channel)."""
+    jump_url = f"https://discord.com/channels/{int(row.guild_xid)}/{int(row.channel_xid)}"
+    if message_xid is not None:
+        jump_url = f"{jump_url}/{message_xid}"
+    return {
+        "guild_xid": int(row.guild_xid),
+        "guild_name": row.guild_name or "",
+        "guild_locale": row.guild_locale or "en",
+        "guild_icon": row.guild_icon,
+        "format": row.format,
+        "bracket": row.bracket,
+        "service": row.service,
+        "seats": int(row.seats),
+        "jump_url": jump_url,
+    }
 
 
 async def public_active_games(
@@ -37,72 +85,22 @@ async def public_active_games(
     only_member_of: int | None = None,
     only_mythic_track: bool = False,
 ) -> list[dict[str, Any]]:
-    """
-    Return rows for games started within `within` of now, ordered newest first.
-
-    The visibility, `only_member_of`, and `only_mythic_track` rules mirror
-    `public_active_queues`.
-    """
-    cutoff = datetime.now(UTC) - within
-    stmt = (
-        select(
-            Game.id,
-            Game.guild_xid,
-            Guild.name.label("guild_name"),
-            Guild.locale.label("guild_locale"),
-            Guild.icon.label("guild_icon"),
-            Game.channel_xid,
-            FORMAT_LABEL,
-            BRACKET_LABEL,
-            SERVICE_LABEL,
-            Game.seats,
-            Game.started_at,
-        )
+    """Return rows for games started within `within` of now, ordered newest first."""
+    now = datetime.now(UTC)
+    stmt = publicly_visible(
+        select(*PUBLIC_GAME_COLUMNS, Game.started_at)
         .select_from(Game)
         .join(Guild, Guild.xid == Game.guild_xid)
-        .where(
-            Game.started_at.is_not(None),
-            Game.started_at >= cutoff,
-            Game.deleted_at.is_(None),
-            Guild.banned.is_(False),
-            Guild.promote.is_(True),
-        )
-        .order_by(Game.started_at.desc())
+        .where(Game.started_at.is_not(None), Game.started_at >= now - within)
+        .order_by(Game.started_at.desc()),
+        only_member_of=only_member_of,
+        only_mythic_track=only_mythic_track,
     )
-    if only_member_of is not None:
-        stmt = stmt.join(
-            GuildMember,
-            GuildMember.guild_xid == Guild.xid,
-        ).where(GuildMember.user_xid == only_member_of)
-    if only_mythic_track:
-        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
     rows = (await DatabaseSession.execute(stmt)).all()
-    if not rows:
-        return []
-
-    now = datetime.now(UTC)
-    out: list[dict[str, Any]] = []
-    for row in rows:
-        guild_xid_int = int(row[1])
-        channel_xid = str(int(row[5]))
-        out.append(
-            {
-                "guild_xid": guild_xid_int,
-                "guild_name": row[2] or "",
-                "guild_locale": row[3] or "en",
-                "guild_icon": row[4],
-                "format": row[6],
-                "bracket": row[7],
-                "service": row[8],
-                "seats": int(row[9]),
-                "started_seconds_ago": max(
-                    0,
-                    int((now - row[10].replace(tzinfo=UTC)).total_seconds()),
-                ),
-                "jump_url": f"https://discord.com/channels/{guild_xid_int}/{channel_xid}",
-            },
-        )
-    return out
+    return [
+        public_game_row(row) | {"started_seconds_ago": seconds_since(row.started_at, now)}
+        for row in rows
+    ]
 
 
 async def public_active_queues(
@@ -110,70 +108,29 @@ async def public_active_queues(
     only_member_of: int | None = None,
     only_mythic_track: bool = False,
 ) -> list[dict[str, Any]]:
-    """
-    Return rows for pending queues, optionally limited to a user's guild memberships.
-
-    When `only_mythic_track` is `True`, results are further restricted to guilds that
-    have mythic track enabled.
-    """
+    """Return rows for pending queues, newest first, linking to each game's latest post."""
     players_col = func.count(Queue.user_xid).label("players")
-    stmt = (
-        select(
-            Game.id,
-            Game.guild_xid,
-            Guild.name.label("guild_name"),
-            Guild.locale.label("guild_locale"),
-            Guild.icon.label("guild_icon"),
-            Game.channel_xid,
-            FORMAT_LABEL,
-            BRACKET_LABEL,
-            SERVICE_LABEL,
-            Game.seats,
-            Game.created_at,
-            players_col,
-        )
+    stmt = publicly_visible(
+        select(*PUBLIC_GAME_COLUMNS, Game.created_at, players_col)
         .select_from(Game)
         .join(Queue, Queue.game_id == Game.id)
         .join(Guild, Guild.xid == Game.guild_xid)
-        .where(
-            Game.started_at.is_(None),
-            Game.deleted_at.is_(None),
-            Guild.banned.is_(False),
-            Guild.promote.is_(True),
-        )
+        .where(Game.started_at.is_(None)),
+        only_member_of=only_member_of,
+        only_mythic_track=only_mythic_track,
     )
-    if only_member_of is not None:
-        stmt = stmt.join(
-            GuildMember,
-            GuildMember.guild_xid == Guild.xid,
-        ).where(GuildMember.user_xid == only_member_of)
-    if only_mythic_track:
-        stmt = stmt.where(Guild.enable_mythic_track.is_(True))
     rows = (
         await DatabaseSession.execute(
-            stmt.group_by(
-                Game.id,
-                Game.guild_xid,
-                Guild.name,
-                Guild.locale,
-                Guild.icon,
-                Game.channel_xid,
-                Game.format,
-                Game.bracket,
-                Game.service,
-                Game.seats,
-                Game.created_at,
-            ).order_by(Game.created_at.desc()),
+            stmt.group_by(Game.id, Guild.xid).order_by(Game.created_at.desc()),
         )
     ).all()
     if not rows:
         return []
 
-    game_ids = [row[0] for row in rows]
     post_rows = (
         await DatabaseSession.execute(
             select(Post.game_id, Post.message_xid)
-            .where(Post.game_id.in_(game_ids))
+            .where(Post.game_id.in_([row.id for row in rows]))
             .order_by(Post.game_id, Post.created_at.desc()),
         )
     ).all()
@@ -182,35 +139,11 @@ async def public_active_queues(
         message_xid_by_game.setdefault(int(game_id), int(message_xid))
 
     now = datetime.now(UTC)
-    out: list[dict[str, Any]] = []
-    for row in rows:
-        guild_xid_int = int(row[1])
-        guild_xid = str(guild_xid_int)
-        channel_xid = str(int(row[5]))
-        message_xid = message_xid_by_game.get(int(row[0]))
-        if message_xid is not None:
-            jump_url = f"https://discord.com/channels/{guild_xid}/{channel_xid}/{message_xid}"
-        else:
-            jump_url = f"https://discord.com/channels/{guild_xid}/{channel_xid}"
-        out.append(
-            {
-                "guild_xid": guild_xid_int,
-                "guild_name": row[2] or "",
-                "guild_locale": row[3] or "en",
-                "guild_icon": row[4],
-                "format": row[6],
-                "bracket": row[7],
-                "service": row[8],
-                "players": int(row[11]),
-                "seats": int(row[9]),
-                "wait_seconds": max(
-                    0,
-                    int((now - row[10].replace(tzinfo=UTC)).total_seconds()),
-                ),
-                "jump_url": jump_url,
-            }
-        )
-    return out
+    return [
+        public_game_row(row, message_xid_by_game.get(int(row.id)))
+        | {"players": int(row.players), "wait_seconds": seconds_since(row.created_at, now)}
+        for row in rows
+    ]
 
 
 async def viewer_played_guilds(
