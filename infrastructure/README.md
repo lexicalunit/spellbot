@@ -117,6 +117,7 @@ Each secret contains a JSON object with:
 
 Each spellbot user gets:
 
+- `CREATE` privilege on its database, since migrations create schemas of their own (e.g. `audit`)
 - `USAGE` and `CREATE` privileges on the public schema
 - `SELECT`, `INSERT`, `UPDATE`, `DELETE` privileges on all tables
 - `USAGE` and `SELECT` privileges on all sequences

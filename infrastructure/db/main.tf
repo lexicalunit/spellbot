@@ -90,6 +90,14 @@ resource "postgresql_grant" "stage_db_privileges" {
   privileges  = ["USAGE", "CREATE"]
 }
 
+# Migrations create schemas of their own (e.g. `audit`), which needs CREATE on the database.
+resource "postgresql_grant" "stage_database_privileges" {
+  database    = postgresql_database.stage_db.name
+  role        = postgresql_role.stage_spellbot_user.name
+  object_type = "database"
+  privileges  = ["CREATE"]
+}
+
 resource "postgresql_grant" "stage_table_privileges" {
   database    = postgresql_database.stage_db.name
   role        = postgresql_role.stage_spellbot_user.name
@@ -121,6 +129,14 @@ resource "postgresql_grant" "prod_db_privileges" {
   schema      = "public"
   object_type = "schema"
   privileges  = ["USAGE", "CREATE"]
+}
+
+# Migrations create schemas of their own (e.g. `audit`), which needs CREATE on the database.
+resource "postgresql_grant" "prod_database_privileges" {
+  database    = postgresql_database.prod_db.name
+  role        = postgresql_role.prod_spellbot_user.name
+  object_type = "database"
+  privileges  = ["CREATE"]
 }
 
 resource "postgresql_grant" "prod_table_privileges" {
