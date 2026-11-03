@@ -23,9 +23,7 @@ from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .integrations import convoke, edhlab, girudo, playgroup_live
 from .metrics import add_span_request_id, generate_request_id, setup_metrics
-from .operations import safe_delete_message
 from .settings import settings
-from .utils import user_can_moderate
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 
@@ -227,31 +225,10 @@ class SpellBot(AutoShardedBot):
         await convoke.update_players(game_data, pins)
 
     async def on_message(self, message: discord.Message) -> None:
-        # handle DMs normally
-        if not message.guild or not hasattr(message.guild, "id"):
-            return await super().on_message(message)
-
-        # ignore everything except messages in text channels
-        if not hasattr(message.channel, "type") or message.channel.type != discord.ChannelType.text:
+        # only handle DMs, ignore all guild messages
+        if message.guild and hasattr(message.guild, "id"):
             return None
-
-        # ignore hidden/ephemeral messages
-        if message.flags.value & 64:
-            return None
-
-        # to verify users we need their user id
-        if not hasattr(message.author, "id"):
-            return None
-
-        message_author_xid = message.author.id
-
-        # don't try to verify the bot itself
-        if self.user and message_author_xid == self.user.id:  # pragma: no cover
-            return None
-
-        async with db_session_manager():
-            await self.handle_verification(message)
-            return None
+        return await super().on_message(message)
 
     @tracer.wrap(name="interaction", resource="on_message_delete")
     async def on_message_delete(self, message: discord.Message) -> None:
@@ -273,23 +250,6 @@ class SpellBot(AutoShardedBot):
         if isinstance(exception, CommandNotFound):
             return None
         return await super().on_command_error(context, exception)
-
-    async def handle_verification(self, message: discord.Message) -> None:
-        message_author_xid = message.author.id
-        verified: bool | None = None
-        assert message.guild is not None
-        await services.guilds.upsert(message.guild)
-        channel_data = await services.channels.upsert(message.channel)
-        if channel_data.auto_verify:
-            verified = True
-        assert message.guild
-        guild: discord.Guild = message.guild
-        verify_data = await services.verifies.upsert(guild.id, message_author_xid, verified)
-        if not user_can_moderate(message.author, guild, message.channel):
-            if verify_data.verified and channel_data.unverified_only:
-                await safe_delete_message(message)
-            if not verify_data.verified and channel_data.verified_only:
-                await safe_delete_message(message)
 
     @tracer.wrap()
     async def handle_message_deleted(self, message: discord.Message) -> None:

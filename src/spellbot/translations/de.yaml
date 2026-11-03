@@ -107,10 +107,6 @@ de:
     user_info_blocked_one: "Blockiert von %{count} Benutzer"
     user_info_blocked_many: "Blockiert von %{count} Benutzern"
     user_info_block_status: "Blockierstatus"
-    user_info_verified_not_set: "Nicht festgelegt"
-    user_info_verified_yes: "✅ Verifiziert"
-    user_info_verified_no: "❌ Nicht verifiziert"
-    user_info_verified: "Verifiziert"
     user_info_no_games: "Keine Spiele gespielt"
     user_info_play_range: "Spielzeitraum"
     user_info_game_history: "Spielverlauf"
@@ -122,10 +118,6 @@ de:
     mythic_track_title: "Mythic-Track-Einrichtung für %{guild}"
     mythic_track_on: "✅ Mythic Track wurde für diesen Server **aktiviert**!\n\nUm die Einrichtung fortzusetzen, müssen Sie [Ihr Discord-Konto mit Mythic Track verbinden](%{guide}).\n\nSolange diese Funktion aktiviert ist, generiert SpellBot PIN-Codes, die die Spieler in Mythic Track eingeben müssen, damit ihre Kämpfe verfolgt werden können."
     mythic_track_off: "❌ Mythic Track wurde für diesen Server **deaktiviert**. Führen Sie diesen Befehl erneut aus, um die Funktion wieder zu aktivieren. Beachten Sie, dass durch die Deaktivierung dieser Funktion vorhandene Mythic-Track-Daten _nicht_ gelöscht werden."
-  # Award display
-  award:
-    verified_only: "nur verifiziert"
-    unverified_only: "nur nicht verifiziert"
   # Block action messages
   block:
     self_block: "Sie können sich nicht selbst blockieren."
@@ -136,10 +128,6 @@ de:
   leave:
     removed_channel: "Sie wurden von allen anstehenden Spielen in diesem Kanal entfernt."
     removed_all: "Sie wurden von allen anstehenden Spielen entfernt."
-  # Verify action messages
-  verify:
-    verified: "<@%{user_id}> verifiziert."
-    unverified: "<@%{user_id}> nicht verifiziert."
   # Score action messages
   score:
     record_title: "Aufzeichnung der gespielten Spiele"
@@ -165,8 +153,6 @@ de:
     guild_only: "Dieser Befehl funktioniert nur in einer Gilde."
     no_dms: "Dieser Befehl wird in Direktnachrichten nicht unterstützt."
     banned: "Du wurden von der Verwendung von SpellBot gebannt."
-    verified_only: "Nur verifizierte Benutzer können das hier tun."
-    unverified_only: "Nur nicht verifizierte Benutzer können das hier tun."
     cooldown: "Bitte versuche es in %{seconds}s erneut."
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ de:
       motd: "Nachricht des Tages"
       extra: "Zusätzliche Nachricht"
       voice_category: "Sprachkategorie"
-      auto_verify: "Benutzer automatisch verifizieren"
-      verified_only: "Nur verifizierte Benutzer"
-      unverified_only: "Nur nicht verifizierte Benutzer"
       voice_invite: "Sprach-Einladungen erstellen"
       delete_expired: "Abgelaufene Spiele löschen"
       blind_games: "Blinde Spiele"
@@ -359,8 +342,6 @@ de:
       message: "Nachricht"
       repeating: "Wiederholend"
       remove: "Rolle entfernen statt vergeben"
-      verified_only: "Nur verifizierte Benutzer"
-      unverified_only: "Nur nicht verifizierte Benutzer"
       save: "Auszeichnung speichern"
       delete: "Auszeichnung löschen"
       delete_confirm: "Diese Auszeichnung löschen?"

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Replaced pyright with ty for static type checking.
 
+### Removed
+
+- Removed the user verification feature: the `/verify` and `/unverify` commands, the auto-verify, verified only, and unverified only channel settings, and the verified only and unverified only award settings. The underlying data is kept in the database.
+
 ### Fixed
 
 - Removed an always-true assertion from the game view's join handler.

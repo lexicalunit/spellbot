@@ -107,10 +107,6 @@ fi:
     user_info_blocked_one: "%{count} käyttäjän estämä"
     user_info_blocked_many: "%{count} käyttäjän estämä"
     user_info_block_status: "Eston tila"
-    user_info_verified_not_set: "Ei asetettu"
-    user_info_verified_yes: "✅ Vahvistettu"
-    user_info_verified_no: "❌ Vahvistamaton"
-    user_info_verified: "Vahvistettu"
     user_info_no_games: "Ei pelattuja pelejä"
     user_info_play_range: "Pelin aikaväli"
     user_info_game_history: "Pelihistoria"
@@ -122,10 +118,6 @@ fi:
     mythic_track_title: "Mythic Track -määritys – %{guild}"
     mythic_track_on: "✅ Mythic Track on asetettu **päälle** tässä palvelimessa!\n\nVoit jatkaa määrityksiä [yhdistämällä Discord-tilisi Mythic Trackiin](%{guide}).\n\nKun tämä ominaisuus on käytössä, SpellBot luo pelaajille PIN-koodit Mythic Trackia varten, jotta heidän pelejään voidaan seurata."
     mythic_track_off: "❌ Mythic Track on asetettu **pois päältä** tässä palvelimessa. Jos haluat asettaa sen taas päälle, suorita komento uudelleen. Huomaa, että ominaisuuden asettaminen pois päältä _ei_ poista jo olemassa olevia Mythic Track -tietoja."
-  # Award display
-  award:
-    verified_only: "vain vahvistetut"
-    unverified_only: "vain vahvistamattomat"
   # Block action messages
   block:
     self_block: "Et voi estää itseäsi."
@@ -136,10 +128,6 @@ fi:
   leave:
     removed_channel: "Sinut poistettiin kaikista avoimista peleistä tällä kanavalla."
     removed_all: "Sinut poistettiin kaikista avoimista peleistä."
-  # Verify action messages
-  verify:
-    verified: "Vahvistettu <@%{user_id}>."
-    unverified: "Vahvistamaton <@%{user_id}>."
   # Score action messages
   score:
     record_title: "Record pelatuista peleistä"
@@ -165,8 +153,6 @@ fi:
     guild_only: "Tämä komento toimii vain kiltalla."
     no_dms: "Tätä komentoa ei tueta DM:ssä."
     banned: "Sinulle on annettu porttikielto käyttää SpellBotia."
-    verified_only: "Vain todennetut käyttäjät voivat tehdä sen täällä."
-    unverified_only: "Vain vahvistamattomat käyttäjät voivat tehdä sen täällä."
     cooldown: "Yritä uudelleen %{seconds}s kuluttua."
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ fi:
       motd: "Päivän viesti"
       extra: "Lisäviesti"
       voice_category: "Äänikategoria"
-      auto_verify: "Vahvista käyttäjät automaattisesti"
-      verified_only: "Vain vahvistetut käyttäjät"
-      unverified_only: "Vain vahvistamattomat käyttäjät"
       voice_invite: "Luo äänikutsuja"
       delete_expired: "Poista vanhentuneet pelit"
       blind_games: "Sokkopelit"
@@ -359,8 +342,6 @@ fi:
       message: "Viesti"
       repeating: "Toistuva"
       remove: "Poista rooli antamisen sijaan"
-      verified_only: "Vain vahvistetut käyttäjät"
-      unverified_only: "Vain vahvistamattomat käyttäjät"
       save: "Tallenna palkinto"
       delete: "Poista palkinto"
       delete_confirm: "Poistetaanko tämä palkinto?"

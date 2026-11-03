@@ -21,7 +21,6 @@ from spellbot.models import (
     Queue,
     User,
     UserAward,
-    Verify,
 )
 from spellbot.settings import settings
 
@@ -406,39 +405,6 @@ async def move_user(  # pragma: no cover
             user_blocked_upsert = user_blocked_upsert.on_conflict_do_nothing()
             await DatabaseSession.execute(user_blocked_upsert, user_blocked_values)
 
-        # upsert verifies
-        for verify in (
-            (
-                await DatabaseSession.execute(
-                    select(Verify).where(
-                        Verify.guild_xid == guild_xid,
-                        Verify.user_xid == from_user_xid,
-                    ),
-                )
-            )
-            .scalars()
-            .all()
-        ):
-            verify_values = {
-                "guild_xid": verify.guild_xid,
-                "user_xid": to_user_xid,
-                "verified": verify.verified,
-            }
-            logger.info("upsert verify: %s", verify_values)
-            verify_upsert = insert(Verify).values(**verify_values)
-            verify_upsert = verify_upsert.on_conflict_do_update(
-                index_elements=[Verify.guild_xid, Verify.user_xid],
-                index_where=and_(
-                    Verify.guild_xid == verify_values["guild_xid"],
-                    Verify.user_xid == verify_values["user_xid"],
-                ),
-                set_={
-                    "user_xid": to_user_xid,
-                    "verified": verify_upsert.excluded.verified,
-                },
-            )
-            await DatabaseSession.execute(verify_upsert, verify_values)
-
         # upsert plays
         for play in (
             (
@@ -571,22 +537,6 @@ async def games_played_count(user_xid: int, guild_xid: int) -> int:
         ).scalar()
         or 0,
     )
-
-
-@tracer.wrap()
-async def is_verified(user_xid: int, guild_xid: int) -> bool | None:
-    """Check if user is verified in this guild. Returns None if no record exists."""
-    verify = (
-        await DatabaseSession.execute(
-            select(Verify).where(
-                and_(
-                    Verify.user_xid == user_xid,
-                    Verify.guild_xid == guild_xid,
-                ),
-            ),
-        )
-    ).scalar_one_or_none()
-    return verify.verified if verify else None
 
 
 @tracer.wrap()

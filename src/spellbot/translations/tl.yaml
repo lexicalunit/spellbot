@@ -107,10 +107,6 @@ tl:
     user_info_blocked_one: "Na-block ng %{count} user"
     user_info_blocked_many: "Na-block ng %{count} (na) user"
     user_info_block_status: "Status ng Pag-block"
-    user_info_verified_not_set: "Hindi itinakda"
-    user_info_verified_yes: "✅ Na-verify"
-    user_info_verified_no: "❌ Hindi na-verify"
-    user_info_verified: "Na-verify"
     user_info_no_games: "Walang nilarong game"
     user_info_play_range: "Range ng Paglalaro"
     user_info_game_history: "History ng Game"
@@ -122,10 +118,6 @@ tl:
     mythic_track_title: "Setup ng Mythic Track para sa %{guild}"
     mythic_track_on: "✅ **Na-on** ang Mythic Track para sa server na ito!\n\nPara ipagpatuloy ang setup, [ikonekta ang Discord account mo sa Mythic Track](%{guide}).\n\nHabang naka-on ang feature na ito, bubuo ang SpellBot ng mga PIN code para makapasok ang mga player sa Mythic Track para ma-track ang kanilang mga game."
     mythic_track_off: "❌ **Na-off** ang Mythic Track para sa server na ito. I-run ulit ang command na ito para mai-on ulit. Tandaan na kahit i-off ang feature na ito, hindi maaalis ang anumang kasalukuyang data ng Mythic Track."
-  # Award display
-  award:
-    verified_only: "na-verify lang"
-    unverified_only: "hindi na-verify lang"
   # Block action messages
   block:
     self_block: "Hindi mo puwedeng i-block ang sarili mo."
@@ -136,10 +128,6 @@ tl:
   leave:
     removed_channel: "Inalis ka sa anumang pending game sa channel na ito."
     removed_all: "Inalis ka sa lahat ng pending game."
-  # Verify action messages
-  verify:
-    verified: "Na-verify na si <@%{user_id}>."
-    unverified: "Hindi na-verify si <@%{user_id}>."
   # Score action messages
   score:
     record_title: "Record ng mga game na nilaro sa"
@@ -165,8 +153,6 @@ tl:
     guild_only: "Gumagana lamang ang command na ito sa isang guild."
     no_dms: "“Hindi suportado ang command na ito sa DMs."
     banned: "Ipinagbawal ka sa paggamit ng SpellBot."
-    verified_only: "Mga verified na user lamang ang maaaring gawin iyon dito."
-    unverified_only: "Mga hindi verified na user lamang ang maaaring gawin iyon dito."
     cooldown: "Pakisubukang muli sa %{seconds}s."
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ tl:
       motd: "Mensahe ng araw"
       extra: "Karagdagang mensahe"
       voice_category: "Kategorya ng boses"
-      auto_verify: "Awtomatikong i-verify ang mga user"
-      verified_only: "Mga verified na user lang"
-      unverified_only: "Mga hindi verified na user lang"
       voice_invite: "Gumawa ng mga voice invite"
       delete_expired: "Burahin ang mga expired na laro"
       blind_games: "Mga blind na laro"
@@ -359,8 +342,6 @@ tl:
       message: "Mensahe"
       repeating: "Umuulit"
       remove: "Alisin ang role sa halip na ibigay"
-      verified_only: "Mga verified na user lang"
-      unverified_only: "Mga hindi verified na user lang"
       save: "I-save ang award"
       delete: "Burahin ang award"
       delete_confirm: "Burahin ang award na ito?"

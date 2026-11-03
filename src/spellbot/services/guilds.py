@@ -250,8 +250,6 @@ async def award_add(
     """Add a new award configuration to the guild."""
     repeating = bool(options.get("repeating", False))
     remove = bool(options.get("remove", False))
-    verified_only = bool(options.get("verified_only", False))
-    unverified_only = bool(options.get("unverified_only", False))
     award = GuildAward(
         guild_xid=guild_xid,
         count=count,
@@ -259,8 +257,6 @@ async def award_add(
         message=message,
         repeating=repeating,
         remove=remove,
-        verified_only=verified_only,
-        unverified_only=unverified_only,
     )
     DatabaseSession.add(award)
     await DatabaseSession.commit()
@@ -284,8 +280,6 @@ async def award_update(
     award.message = message
     award.repeating = bool(options.get("repeating", False))
     award.remove = bool(options.get("remove", False))
-    award.verified_only = bool(options.get("verified_only", False))
-    award.unverified_only = bool(options.get("unverified_only", False))
     await DatabaseSession.commit()
     return award.to_data()
 

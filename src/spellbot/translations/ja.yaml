@@ -107,10 +107,6 @@ ja:
     user_info_blocked_one: "%{count}人からブロックされています"
     user_info_blocked_many: "%{count}人からブロックされています"
     user_info_block_status: "ブロック状況"
-    user_info_verified_not_set: "未設定"
-    user_info_verified_yes: "✅ 認証済み"
-    user_info_verified_no: "❌ 未認証"
-    user_info_verified: "認証状況"
     user_info_no_games: "ゲーム履歴なし"
     user_info_play_range: "プレイ期間"
     user_info_game_history: "ゲーム履歴"
@@ -122,10 +118,6 @@ ja:
     mythic_track_title: "%{guild} の Mythic Track 設定"
     mythic_track_on: "✅ このサーバーで Mythic Track を **有効** にしました！\n\n設定を続けるには、[Discord アカウントを Mythic Track に接続](%{guide})してください。\n\nこの機能が有効な間、SpellBot はプレイヤーが Mythic Track に入力する PIN コードを生成し、ゲームを追跡できるようにします。"
     mythic_track_off: "❌ このサーバーで Mythic Track を **無効** にしました。このコマンドをもう一度実行すると、再度有効にできます。なお、この機能を無効にしても、既存の Mythic Track データが _削除されることはありません_。"
-  # Award display
-  award:
-    verified_only: "認証済みのみ"
-    unverified_only: "未認証のみ"
   # Block action messages
   block:
     self_block: "自分をブロックすることはできません。"
@@ -136,10 +128,6 @@ ja:
   leave:
     removed_channel: "このチャンネル内の保留中のゲームからすべて退出しました。"
     removed_all: "すべての保留中のゲームから退出しました。"
-  # Verify action messages
-  verify:
-    verified: "<@%{user_id}> を認証済みにしました。"
-    unverified: "<@%{user_id}> を未認証にしました。"
   # Score action messages
   score:
     record_title: "プレイしたゲームの記録"
@@ -165,8 +153,6 @@ ja:
     guild_only: "このコマンドはギルド内でのみ動作します。"
     no_dms: "このコマンドはDMではサポートされていません。"
     banned: "SpellBotの使用は禁止されています。"
-    verified_only: "ここでそれを行うことができるのは検証済みユーザーのみです。"
-    unverified_only: "ここでそれを行うことができるのは未検証のユーザーのみです。"
     cooldown: "%{seconds}秒後にもう一度お試しください。"
   # Playgroup Live commands
   playgroup:
@@ -304,9 +290,6 @@ ja:
       motd: "今日のメッセージ"
       extra: "追加メッセージ"
       voice_category: "ボイスカテゴリ"
-      auto_verify: "ユーザーを自動承認"
-      verified_only: "承認済みユーザーのみ"
-      unverified_only: "未承認ユーザーのみ"
       voice_invite: "ボイス招待を作成"
       delete_expired: "期限切れのゲームを削除"
       blind_games: "ブラインドゲーム"
@@ -359,8 +342,6 @@ ja:
       message: "メッセージ"
       repeating: "繰り返し"
       remove: "付与する代わりにロールを削除"
-      verified_only: "承認済みユーザーのみ"
-      unverified_only: "未承認ユーザーのみ"
       save: "報酬を保存"
       delete: "報酬を削除"
       delete_confirm: "この報酬を削除しますか？"

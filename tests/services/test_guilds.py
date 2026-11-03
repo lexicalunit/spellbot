@@ -295,14 +295,12 @@ class TestServiceGuilds:
             role="new-role",
             message="new-message",
             repeating=True,
-            verified_only=True,
         )
         assert updated is not None
         assert updated.count == 10
         assert updated.role == "new-role"
         assert updated.message == "new-message"
         assert updated.repeating is True
-        assert updated.verified_only is True
 
         DatabaseSession.expire_all()
         refreshed = await DatabaseSession.get(GuildAward, award.id)

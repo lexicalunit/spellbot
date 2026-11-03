@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Game, GuildAward, Play, UserAward, Verify
+from spellbot.models import Game, GuildAward, Play, UserAward
 
 
 class NewAward(NamedTuple):
@@ -41,14 +41,6 @@ async def give_awards(
         if not plays:
             continue
 
-        verified_result = await DatabaseSession.execute(
-            select(Verify.verified).where(
-                Verify.user_xid == player_xid,
-                Verify.guild_xid == guild_xid,
-            ),
-        )
-        verified = bool(verified_result.scalar())
-
         user_award_result = await DatabaseSession.execute(
             select(UserAward).where(
                 and_(
@@ -78,10 +70,6 @@ async def give_awards(
             if (user_award.guild_award_id != next_award.id) or (
                 user_award.guild_award_id == next_award.id and next_award.repeating
             ):
-                if next_award.unverified_only and verified:
-                    continue
-                if next_award.verified_only and not verified:
-                    continue
                 new_roles[player_xid].append(
                     NewAward(
                         next_award.role,

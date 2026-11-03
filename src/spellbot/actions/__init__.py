@@ -8,7 +8,6 @@ from .leave_action import LeaveAction
 from .lfg_action import LookingForGameAction
 from .record_action import RecordAction
 from .tasks_action import TasksAction
-from .verify_action import VerifyAction
 
 __all__ = [
     "AdminAction",
@@ -17,5 +16,4 @@ __all__ = [
     "LookingForGameAction",
     "RecordAction",
     "TasksAction",
-    "VerifyAction",
 ]

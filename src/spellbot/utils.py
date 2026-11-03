@@ -21,8 +21,6 @@ from .errors import (
     GuildOnlyError,
     ModOnlyError,
     UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
 )
 from .i18n import t, user_locale
 from .metrics import add_span_error
@@ -326,10 +324,6 @@ async def handle_interaction_errors(interaction: discord.Interaction, error: Exc
         return await safe_send_user(interaction.user, t("errors.banned", locale=locale))
     if isinstance(error, GuildBannedError):
         return await safe_send_user(interaction.user, t("errors.banned", locale=locale))
-    if isinstance(error, UserUnverifiedError):
-        return await safe_send_user(interaction.user, t("errors.verified_only", locale=locale))
-    if isinstance(error, UserVerifiedError):
-        return await safe_send_user(interaction.user, t("errors.unverified_only", locale=locale))
     if isinstance(error, CommandOnCooldown):
         seconds = max(1, round(error.retry_after))
         return await safe_send_user(

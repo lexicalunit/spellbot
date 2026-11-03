@@ -14,8 +14,6 @@ class GuildAwardData:
     remove: bool
     role: str
     message: str
-    verified_only: bool
-    unverified_only: bool
 
 
 @dataclass

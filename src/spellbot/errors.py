@@ -32,13 +32,3 @@ class UserBannedError(SpellBotError):
 class GuildBannedError(SpellBotError):
     def __init__(self, message: str | None = None) -> None:
         super().__init__(message or "This guild has been banned from using SpellBot.")
-
-
-class UserVerifiedError(SpellBotError):
-    def __init__(self, message: str | None = None) -> None:
-        super().__init__(message or "Verified user message in a unverified only channel.")
-
-
-class UserUnverifiedError(SpellBotError):
-    def __init__(self, message: str | None = None) -> None:
-        super().__init__(message or "Unverified user message in a verified only channel.")

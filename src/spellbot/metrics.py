@@ -20,8 +20,6 @@ from .errors import (
     GuildOnlyError,
     ModOnlyError,
     UserBannedError,
-    UserUnverifiedError,
-    UserVerifiedError,
 )
 from .settings import settings
 
@@ -181,5 +179,3 @@ def setup_ignored_errors(span: Span) -> None:  # pragma: no cover
     span._ignore_exception(GuildOnlyError)  # noqa: SLF001
     span._ignore_exception(ModOnlyError)  # noqa: SLF001
     span._ignore_exception(UserBannedError)  # noqa: SLF001
-    span._ignore_exception(UserUnverifiedError)  # noqa: SLF001
-    span._ignore_exception(UserVerifiedError)  # noqa: SLF001

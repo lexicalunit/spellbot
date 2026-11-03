@@ -56,19 +56,20 @@ class GuildAward(Base):
         server_default=false(),
         doc="If true, this award should be removed from instead of given to the player",
     )
+    # Retained from the removed user verification feature so that its data isn't lost.
     verified_only: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="If true, this award will only ever apply to verified users",
+        doc="If true, this award only ever applied to verified users",
     )
     unverified_only: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
         server_default=false(),
-        doc="If true, this award will only ever apply to unverified users",
+        doc="If true, this award only ever applied to unverified users",
     )
     role: Mapped[str] = mapped_column(
         String(100),
@@ -98,8 +99,6 @@ class GuildAward(Base):
             remove=self.remove,
             role=self.role,
             message=self.message,
-            verified_only=self.verified_only,
-            unverified_only=self.unverified_only,
         )
 
 
