@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v24.1.0](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.0) - 2026-11-04
+
 ### Added
 
 - Added `make secret-token` to generate a `SECRET_TOKEN`.
