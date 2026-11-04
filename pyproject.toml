@@ -35,7 +35,6 @@ dependencies = [
   "sqlalchemy>=2.0.41",
   "tenacity>=9.0.0",
   "uvloop>=0.19",
-  "wrapt>=1,<3",
 ]
 description = "The Discord bot for Webcam Magic"
 keywords = ["discord", "magic", "bot", "mtg", "webcam"]
@@ -260,6 +259,7 @@ ignore_names = [
   "Meta", # factory_boy
   "model_config", # pydantic
   "on_*", # discord.py
+  "Params", # factory_boy
   "pytest_collection_modifyitems", # pytest
   "pytest_configure", # pytest
   "pytest_plugins", # pytest

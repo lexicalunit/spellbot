@@ -15,6 +15,6 @@ class TokenData:
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None
-    key: str
+    key_hash: str
     note: str | None
     scopes: str

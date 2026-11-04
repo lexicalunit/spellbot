@@ -1579,9 +1579,146 @@
     });
   }
 
+  // Owner-only API token admin. Like the SQL console, the panel only exists in the
+  // DOM for the bot owner and every endpoint re-checks ownership server-side.
+  function bindTokenAdmin() {
+    const panel = document.getElementById("tokenAdmin");
+    if (!panel) return;
+    const listEl = document.getElementById("tokenList");
+    const scopesEl = document.getElementById("tokenScopes");
+    const noteEl = document.getElementById("tokenNote");
+    const createBtn = document.getElementById("tokenCreateBtn");
+    const statusEl = document.getElementById("tokenStatus");
+    const createdEl = document.getElementById("tokenCreated");
+    const createdLabelEl = document.getElementById("tokenCreatedLabel");
+    const createdKeyEl = document.getElementById("tokenCreatedKey");
+    const copyBtn = document.getElementById("tokenCopyBtn");
+    let loaded = false;
+
+    async function postJson(url, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    }
+
+    function renderTokens(tokens) {
+      if (!tokens.length) {
+        listEl.innerHTML = '<div class="sql-status">No active tokens.</div>';
+        return;
+      }
+      const rows = tokens
+        .map(function (t) {
+          return (
+            "<tr><td>" +
+            t.id +
+            "</td><td>" +
+            escapeHtml(t.created_on) +
+            "</td><td>" +
+            escapeHtml(t.scopes) +
+            "</td><td>" +
+            escapeHtml(t.note || "") +
+            '</td><td><button type="button" class="token-revoke" data-id="' +
+            t.id +
+            '">Revoke</button></td></tr>'
+          );
+        })
+        .join("");
+      listEl.innerHTML =
+        '<table class="lang-table"><thead><tr><th>ID</th><th>Created</th><th>Scopes</th>' +
+        "<th>Note</th><th></th></tr></thead><tbody>" +
+        rows +
+        "</tbody></table>";
+    }
+
+    async function loadTokens() {
+      try {
+        const res = await fetch("/admin/dashboard/tokens");
+        const data = await res.json();
+        if (data.error) {
+          listEl.innerHTML = '<div class="sql-error">' + escapeHtml(data.error) + "</div>";
+          return;
+        }
+        renderTokens(data.tokens);
+      } catch (ex) {
+        listEl.innerHTML = '<div class="sql-error">' + escapeHtml(String(ex)) + "</div>";
+      }
+    }
+
+    async function createToken() {
+      createBtn.disabled = true;
+      statusEl.textContent = "Creating...";
+      createdEl.hidden = true;
+      try {
+        const data = await postJson("/admin/dashboard/tokens", {
+          scopes: scopesEl.value,
+          note: noteEl.value,
+        });
+        if (data.error) {
+          statusEl.textContent = data.error;
+          return;
+        }
+        statusEl.textContent = "";
+        noteEl.value = "";
+        createdLabelEl.textContent =
+          "Created token " + data.token.id + ". Copy the key now, it won't be shown again:";
+        createdKeyEl.textContent = data.key;
+        copyBtn.textContent = "Copy";
+        createdEl.hidden = false;
+        await loadTokens();
+      } catch (ex) {
+        statusEl.textContent = "Request failed.";
+      } finally {
+        createBtn.disabled = false;
+      }
+    }
+
+    async function revokeToken(button) {
+      const id = Number(button.dataset.id);
+      if (button.dataset.confirm !== "1") {
+        // Two clicks to revoke, since a revoked token can't be restored.
+        button.dataset.confirm = "1";
+        button.textContent = "Confirm revoke";
+        return;
+      }
+      button.disabled = true;
+      try {
+        const data = await postJson("/admin/dashboard/tokens/revoke", { id: id });
+        statusEl.textContent = data.error ? data.error : "Revoked token " + id + ".";
+        await loadTokens();
+      } catch (ex) {
+        statusEl.textContent = "Request failed.";
+        button.disabled = false;
+      }
+    }
+
+    panel.addEventListener("toggle", function () {
+      if (panel.open && !loaded) {
+        loaded = true;
+        loadTokens();
+      }
+    });
+    listEl.addEventListener("click", function (e) {
+      const button = e.target.closest("button.token-revoke");
+      if (button) revokeToken(button);
+    });
+    createBtn.addEventListener("click", createToken);
+    copyBtn.addEventListener("click", async function () {
+      try {
+        await navigator.clipboard.writeText(createdKeyEl.textContent);
+        copyBtn.textContent = "Copied";
+      } catch (ex) {
+        copyBtn.textContent = "Copy failed, select the key instead";
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     bindControls();
     bindSqlConsole();
+    bindTokenAdmin();
     loadGuilds();
     reloadAll();
   });

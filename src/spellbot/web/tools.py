@@ -52,6 +52,12 @@ def is_crawler(request: web.Request) -> bool:
 
 
 async def rate_limited(request: web.Request, key: str | None = None) -> bool:
+    """
+    Count this request against `key` (default: the client IP) and report if it's over.
+
+    Without Redis, whether unconfigured or erroring, there's no limit: an outage
+    shouldn't take the API down with it.
+    """
     if not settings.REDIS_URL:
         return False
 

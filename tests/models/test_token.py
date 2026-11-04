@@ -26,7 +26,7 @@ class TestModelToken:
             "created_at": token.created_at,
             "updated_at": token.updated_at,
             "deleted_at": token.deleted_at,
-            "key": token.key,
+            "key_hash": token.key_hash,
             "note": token.note,
             "scopes": token.scopes,
         }

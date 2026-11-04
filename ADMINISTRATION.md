@@ -14,7 +14,7 @@ The admin dashboard at `/admin/dashboard` is protected by Discord OAuth2. Only t
 | `BOT_CLIENT_SECRET`  | The bot's Discord OAuth2 client secret. Obtain from the Discord developer portal.                              |
 | `OWNER_XID`          | Discord user xid of the bot owner. Always granted dashboard access.                                            |
 | `SESSION_SECRET_KEY` | A Fernet key used to encrypt admin session cookies. See [generating a session key](#generating-a-session-key). |
-| `API_BASE_URL`       | The publicly reachable base URL of the bot's web server (e.g. `https://prod.app.spellbot.io`).                      |
+| `API_BASE_URL`       | The publicly reachable base URL of the bot's web server (e.g. `https://prod.app.spellbot.io`).                 |
 
 ### Granting and revoking admin access
 
@@ -68,11 +68,22 @@ The OAuth2 flow uses only the `identify` scope; no guild membership or message c
 5. On success an encrypted `spellbot_admin` cookie is set with a 24h TTL and the user is redirected to `/admin/dashboard`.
 6. Sign out at any time with `POST /admin/logout`.
 
-> Admin status is checked only at login. If you `!demote` a user, their existing session remains valid until it expires (up to 24h) or the session key is rotated. Rotate `SESSION_SECRET_KEY` (see below) to invalidate all sessions immediately.
+> Admin status is checked at login and again every 5 minutes, so a `!demote` takes effect within 5 minutes: the demoted user's next request after that drops their admin session. Rotate `SESSION_SECRET_KEY` (see below) to invalidate all sessions immediately.
 
 ### Rotating the session key
 
 To invalidate every existing admin session (e.g. after suspected compromise), generate a new key with `make session-key`, replace `SESSION_SECRET_KEY` in your environment, and restart the web server. All previously issued cookies will fail to decrypt and users will be prompted to sign in again.
+
+## API tokens
+
+Partner integrations (such as Mythic Track) call the `/api` endpoints with a bearer token. The bot owner manages tokens in the **API Tokens** panel at the top of `/admin/dashboard`; other admins don't see it.
+
+- **Create:** enter the scopes and a note saying who the token is for. A scope is the path segment after `/api/`, and today every endpoint is under `/api/game/`, so `game` is the usual choice; `*` allows every endpoint. The new key is shown once, with a Copy button. Only its SHA-256 hash is stored, so a lost key can't be recovered, only revoked and replaced.
+- **Revoke:** click Revoke, then Confirm revoke. The token stops working on its next request.
+
+## Running behind a load balancer
+
+The API rate limiter keys on the client's IP address. Behind a proxy or load balancer, every request appears to come from the proxy, so set `TRUSTED_PROXY_HOPS` to the number of proxies in front of the web server that append to `X-Forwarded-For` (`1` for the production AWS ALB). The server then takes the client IP from that many entries from the right of `X-Forwarded-For` and ignores anything further left, which the client could have forged. Leave it at the default `0` when clients connect directly.
 
 [fernet]: https://cryptography.io/en/latest/fernet/
 [dev-portal]: https://discord.com/developers/applications

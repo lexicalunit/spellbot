@@ -26,9 +26,9 @@ from spellbot import audit  # noqa: F401
 from spellbot.client import build_bot
 from spellbot.database import (
     DatabaseSession,
-    db_session_maker,
     delete_test_database,
     initialize_connection,
+    new_session,
 )
 from spellbot.database import engine as async_engine
 from spellbot.models import Base, Queue
@@ -177,11 +177,11 @@ async def session_context(
     event_loop = asyncio.get_event_loop()
 
     if "use_db" in request.keywords:  # pragma: no cover
-        if async_engine.__wrapped__ is not None:
-            await async_engine.__wrapped__.dispose()
+        if async_engine.value is not None:
+            await async_engine.value.dispose()
         await initialize_connection("spellbot-test", worker_id=worker_id)
 
-        test_session = db_session_maker()
+        test_session = new_session()
         DatabaseSession.set(test_session)
 
         sync_db_url = Settings().RESOLVED_DATABASE_URL + f"-{worker_id}"
@@ -210,8 +210,8 @@ async def session_context(
                     await test_session.close()
                     _truncate_all()
                     sync_engine.dispose()
-                    if async_engine.__wrapped__ is not None:
-                        await async_engine.__wrapped__.dispose()
+                    if async_engine.value is not None:
+                        await async_engine.value.dispose()
                 except Exception:  # pragma: no cover
                     logger.exception("Error cleaning up test session")
 

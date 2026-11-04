@@ -73,12 +73,12 @@ class TestWebRecord:
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
         factories.play.create(game_id=game.id, user_xid=user1.xid, og_guild_xid=guild.xid, pin="A")
         factories.play.create(game_id=game.id, user_xid=user2.xid, og_guild_xid=guild.xid, pin="B")
-        token = factories.token.create(key="XYZ")
+        factories.token.create(key="XYZ")
 
         # all data correct
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 200
@@ -87,7 +87,7 @@ class TestWebRecord:
         # user_xid wrong
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid + 200, "guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 200
@@ -96,7 +96,7 @@ class TestWebRecord:
         # guild_xid wrong
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid + 200, "pin": "A"},
         )
         assert resp.status == 200
@@ -105,7 +105,7 @@ class TestWebRecord:
         # pin wrong
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "C"},
         )
         assert resp.status == 200
@@ -114,7 +114,7 @@ class TestWebRecord:
         # game_id wrong
         resp = await client.post(
             f"/api/game/{game.id + 100}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 200
@@ -147,7 +147,7 @@ class TestWebRecord:
         # missing the user_xid
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 400
@@ -156,7 +156,7 @@ class TestWebRecord:
         # missing the guild_xid
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "pin": "A"},
         )
         assert resp.status == 400
@@ -165,7 +165,7 @@ class TestWebRecord:
         # missing the pin
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid},
         )
         assert resp.status == 400
@@ -174,7 +174,7 @@ class TestWebRecord:
         # invalid game_id
         resp = await client.post(
             "/api/game/FOO/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={},
         )
         assert resp.status == 400
@@ -189,7 +189,7 @@ class TestWebRecord:
         )
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 500
@@ -203,7 +203,7 @@ class TestWebRecord:
         mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 429
@@ -213,7 +213,7 @@ class TestWebRecord:
         mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
         resp = await client.post(
             "/api/game/FOO/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={},
         )
         assert resp.status == 429
@@ -223,7 +223,7 @@ class TestWebRecord:
         mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 429
@@ -237,7 +237,7 @@ class TestWebRecord:
         mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
         resp = await client.post(
             f"/api/game/{game.id}/verify",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer XYZ"},
             json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
         )
         assert resp.status == 429
@@ -492,13 +492,13 @@ class TestGameRecordEndpoint:
             og_guild_xid=guild.xid,
             pin="B",
         )
-        token = factories.token.create(key="RECORD1")
+        factories.token.create(key="RECORD1")
 
         mocker.patch("spellbot.web.api.rest.send_dm", return_value=None)
 
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD1"},
             json={
                 "winner": user1.xid,
                 "tracker": user2.xid,
@@ -517,11 +517,11 @@ class TestGameRecordEndpoint:
         client: ClientSession,
         factories: Factories,
     ) -> None:
-        token = factories.token.create(key="RECORD2")
+        factories.token.create(key="RECORD2")
 
         resp = await client.post(
             "/api/game/99999/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD2"},
             json={
                 "winner": 101,
                 "tracker": 102,
@@ -537,11 +537,11 @@ class TestGameRecordEndpoint:
         client: ClientSession,
         factories: Factories,
     ) -> None:
-        token = factories.token.create(key="RECORD_INVALID")
+        factories.token.create(key="RECORD_INVALID")
 
         resp = await client.post(
             "/api/game/not-a-number/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD_INVALID"},
             json={
                 "winner": 101,
                 "tracker": 102,
@@ -571,11 +571,11 @@ class TestGameRecordEndpoint:
             created_at=datetime.now(tz=UTC),
             updated_at=datetime.now(tz=UTC),
         )
-        token = factories.token.create(key="RECORD_NOTRACKER")
+        factories.token.create(key="RECORD_NOTRACKER")
 
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD_NOTRACKER"},
             json={
                 "winner": 101,
                 "players": [{"xid": 101, "commander": "Atraxa"}],
@@ -604,11 +604,11 @@ class TestGameRecordEndpoint:
             created_at=datetime.now(tz=UTC),
             updated_at=datetime.now(tz=UTC),
         )
-        token = factories.token.create(key="RECORD3")
+        factories.token.create(key="RECORD3")
 
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD3"},
             json={
                 "winner": 101,
                 "tracker": 102,
@@ -646,11 +646,11 @@ class TestGameRecordEndpoint:
         guild = factories.guild.create(xid=2010, name="guild")
         channel = factories.channel.create(xid=3010, name="channel", guild=guild)
         game = factories.game.create(id=1010, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="RECORD10")
+        factories.token.create(key="RECORD10")
 
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD10"},
             **body,
         )
         assert resp.status == 400
@@ -683,12 +683,12 @@ class TestGameRecordEndpoint:
             og_guild_xid=guild.xid,
             pin="A",
         )
-        token = factories.token.create(key="RECORD4")
+        factories.token.create(key="RECORD4")
 
         # Provide 2 players but only 1 play exists
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD4"},
             json={
                 "winner": user1.xid,
                 "tracker": user1.xid,
@@ -728,12 +728,12 @@ class TestGameRecordEndpoint:
         )
         factories.play.create(user_xid=user1.xid, game_id=game.id)
         factories.play.create(user_xid=user2.xid, game_id=game.id)
-        token = factories.token.create(key="RECORD5")
+        factories.token.create(key="RECORD5")
 
         # Use username instead of xid for tracker
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD5"},
             json={
                 "winner": user1.xid,
                 "tracker": "PlayerTwo",  # Username instead of xid
@@ -764,11 +764,11 @@ class TestGameRecordEndpoint:
             guild=guild,
             channel=channel,
         )
-        token = factories.token.create(key="RECORD6")
+        factories.token.create(key="RECORD6")
 
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD6"},
             json={
                 "tracker": "NonExistentUser",
                 "players": [{"xid": 101, "commander": "Atraxa"}],
@@ -798,12 +798,12 @@ class TestGameRecordEndpoint:
             guild=guild,
             channel=channel,
         )
-        token = factories.token.create(key="RECORD7")
+        factories.token.create(key="RECORD7")
 
         # Missing "commander" field
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD7"},
             json={
                 "tracker": user1.xid,
                 "players": [{"xid": user1.xid}],  # Missing commander
@@ -833,11 +833,11 @@ class TestGameRecordEndpoint:
             guild=guild,
             channel=channel,
         )
-        token = factories.token.create(key="RECORD8")
+        factories.token.create(key="RECORD8")
 
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD8"},
             json={
                 "tracker": user1.xid,
                 "players": [{"xid": "NonExistentPlayer", "commander": "Atraxa"}],
@@ -866,12 +866,12 @@ class TestGameRecordEndpoint:
             guild=guild,
             channel=channel,
         )
-        token = factories.token.create(key="RECORD9")
+        factories.token.create(key="RECORD9")
 
         # Use a list as tracker (not string or int)
         resp = await client.post(
             f"/api/game/{game.id}/record",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer RECORD9"},
             json={
                 "tracker": ["invalid", "type"],
                 "players": [{"xid": 101, "commander": "Atraxa"}],
@@ -899,7 +899,7 @@ class TestGameMetadataEndpoint:
             guild=guild,
             channel=channel,
         )
-        token = factories.token.create(key="META1")
+        factories.token.create(key="META1")
 
         report = {
             "source": "convoke",
@@ -913,7 +913,7 @@ class TestGameMetadataEndpoint:
         }
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META1"},
             json=report,
         )
         assert resp.status == 200
@@ -935,7 +935,7 @@ class TestGameMetadataEndpoint:
         channel = factories.channel.create(xid=3120, name="channel", guild=guild)
         game = factories.game.create(id=1120, guild=guild, channel=channel, war_id="war-a")
         user = factories.user.create(xid=4120)
-        token = factories.token.create(key="META20")
+        factories.token.create(key="META20")
 
         report = {
             "source": "convoke",
@@ -944,7 +944,7 @@ class TestGameMetadataEndpoint:
         }
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META20"},
             json=report,
         )
 
@@ -967,7 +967,7 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2110, name="guild")
         channel = factories.channel.create(xid=3110, name="channel", guild=guild)
         game = factories.game.create(id=1110, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META10")
+        factories.token.create(key="META10")
         mock_report_match = mocker.patch(
             "spellbot.web.api.rest.castlog.report_match",
             new_callable=AsyncMock,
@@ -977,7 +977,7 @@ class TestGameMetadataEndpoint:
         report = {"source": "convoke", "players": [{"xid": 501, "commander": "Atraxa"}]}
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META10"},
             json=report,
         )
 
@@ -995,13 +995,13 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2114, name="guild")
         channel = factories.channel.create(xid=3114, name="channel", guild=guild)
         game = factories.game.create(id=1114, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META14")
+        factories.token.create(key="META14")
         mock_report_match = mocker.patch(
             "spellbot.web.api.rest.castlog.report_match",
             new_callable=AsyncMock,
             return_value=None,
         )
-        headers = {"Authorization": f"Bearer {token.key}"}
+        headers = {"Authorization": "Bearer META14"}
 
         newer = {"source": "convoke", "reported_at": "2026-07-11T18:30:00+00:00", "turns": 20}
         older = {"source": "convoke", "reported_at": "2026-07-11T18:00:00+00:00", "turns": 5}
@@ -1022,8 +1022,8 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2115, name="guild")
         channel = factories.channel.create(xid=3115, name="channel", guild=guild)
         game = factories.game.create(id=1115, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META15")
-        headers = {"Authorization": f"Bearer {token.key}"}
+        factories.token.create(key="META15")
+        headers = {"Authorization": "Bearer META15"}
 
         first = await client.post(
             f"/api/game/{game.id}/metadata",
@@ -1065,7 +1065,7 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2111, name="guild")
         channel = factories.channel.create(xid=3111, name="channel", guild=guild)
         game = factories.game.create(id=1111, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META11")
+        factories.token.create(key="META11")
         mocker.patch(
             "spellbot.web.api.rest.castlog.report_match",
             new_callable=AsyncMock,
@@ -1074,7 +1074,7 @@ class TestGameMetadataEndpoint:
 
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META11"},
             json={"source": "convoke"},
         )
 
@@ -1090,7 +1090,7 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2112, name="guild")
         channel = factories.channel.create(xid=3112, name="channel", guild=guild)
         game = factories.game.create(id=1112, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META12")
+        factories.token.create(key="META12")
         mocker.patch(
             "spellbot.web.api.rest.castlog.report_match",
             new_callable=AsyncMock,
@@ -1108,7 +1108,7 @@ class TestGameMetadataEndpoint:
         }
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META12"},
             json=report,
         )
         assert resp.status == 200
@@ -1131,7 +1131,7 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2113, name="guild")
         channel = factories.channel.create(xid=3113, name="channel", guild=guild)
         game = factories.game.create(id=1113, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META13")
+        factories.token.create(key="META13")
         mocker.patch(
             "spellbot.web.api.rest.castlog.report_match",
             new_callable=AsyncMock,
@@ -1140,7 +1140,7 @@ class TestGameMetadataEndpoint:
 
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META13"},
             json={"source": "convoke"},
         )
         assert resp.status == 200
@@ -1159,17 +1159,17 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2102, name="guild")
         channel = factories.channel.create(xid=3102, name="channel", guild=guild)
         game = factories.game.create(id=1102, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META2")
+        factories.token.create(key="META2")
 
         first = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META2"},
             json={"source": "convoke", "turns": 5},
         )
         assert first.status == 200
         second = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META2"},
             json={"source": "convoke", "turns": 9},
         )
         assert second.status == 200
@@ -1185,10 +1185,10 @@ class TestGameMetadataEndpoint:
         client: ClientSession,
         factories: Factories,
     ) -> None:
-        token = factories.token.create(key="META3")
+        factories.token.create(key="META3")
         resp = await client.post(
             "/api/game/99999/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META3"},
             json={"source": "convoke"},
         )
         assert resp.status == 404
@@ -1199,10 +1199,10 @@ class TestGameMetadataEndpoint:
         client: ClientSession,
         factories: Factories,
     ) -> None:
-        token = factories.token.create(key="META4")
+        factories.token.create(key="META4")
         resp = await client.post(
             "/api/game/not-a-number/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META4"},
             json={"source": "convoke"},
         )
         assert resp.status == 400
@@ -1216,10 +1216,10 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2103, name="guild")
         channel = factories.channel.create(xid=3103, name="channel", guild=guild)
         game = factories.game.create(id=1103, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META5")
+        factories.token.create(key="META5")
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META5"},
             json=["not", "an", "object"],
         )
         assert resp.status == 400
@@ -1233,11 +1233,11 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2109, name="guild")
         channel = factories.channel.create(xid=3109, name="channel", guild=guild)
         game = factories.game.create(id=1109, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META_BADJSON")
+        factories.token.create(key="META_BADJSON")
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
             headers={
-                "Authorization": f"Bearer {token.key}",
+                "Authorization": "Bearer META_BADJSON",
                 "Content-Type": "application/json",
             },
             data="{not valid json",
@@ -1264,21 +1264,21 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2105, name="guild")
         channel = factories.channel.create(xid=3105, name="channel", guild=guild)
         game = factories.game.create(id=1105, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META_TS")
+        factories.token.create(key="META_TS")
 
         newer = {"source": "convoke", "reported_at": "2026-07-11T18:30:00+00:00", "turns": 20}
         older = {"source": "convoke", "reported_at": "2026-07-11T18:00:00+00:00", "turns": 5}
 
         r1 = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_TS"},
             json=newer,
         )
         assert r1.status == 200
         # A strictly-older report is accepted (200) but must not clobber the newer one.
         r2 = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_TS"},
             json=older,
         )
         assert r2.status == 200
@@ -1301,11 +1301,11 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2108, name="guild")
         channel = factories.channel.create(xid=3108, name="channel", guild=guild)
         game = factories.game.create(id=1108, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META_RACE")
+        factories.token.create(key="META_RACE")
 
         newer = {"source": "convoke", "reported_at": "2026-07-11T18:30:00+00:00", "turns": 20}
         older = {"source": "convoke", "reported_at": "2026-07-11T18:00:00+00:00", "turns": 5}
-        headers = {"Authorization": f"Bearer {token.key}"}
+        headers = {"Authorization": "Bearer META_RACE"}
 
         r_new, r_old = await asyncio.gather(
             client.post(f"/api/game/{game.id}/metadata", headers=headers, json=newer),
@@ -1328,11 +1328,11 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2106, name="guild")
         channel = factories.channel.create(xid=3106, name="channel", guild=guild)
         game = factories.game.create(id=1106, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META_LINKS")
+        factories.token.create(key="META_LINKS")
 
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_LINKS"},
             json={
                 "source": "convoke",
                 "links": {
@@ -1359,11 +1359,11 @@ class TestGameMetadataEndpoint:
         guild = factories.guild.create(xid=2107, name="guild")
         channel = factories.channel.create(xid=3107, name="channel", guild=guild)
         game = factories.game.create(id=1107, seats=2, guild=guild, channel=channel)
-        token = factories.token.create(key="META_BIG")
+        factories.token.create(key="META_BIG")
 
         too_many_players = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_BIG"},
             json={"players": [{"name": f"p{i}"} for i in range(65)]},
         )
         assert too_many_players.status == 400
@@ -1371,7 +1371,7 @@ class TestGameMetadataEndpoint:
 
         bad_players = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_BIG"},
             json={"players": "not-a-list"},
         )
         assert bad_players.status == 400
@@ -1379,7 +1379,7 @@ class TestGameMetadataEndpoint:
 
         bad_links = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_BIG"},
             json={"links": ["not", "an", "object"]},
         )
         assert bad_links.status == 400
@@ -1387,7 +1387,7 @@ class TestGameMetadataEndpoint:
 
         too_many_links = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_BIG"},
             json={"links": {f"k{i}": "https://x" for i in range(33)}},
         )
         assert too_many_links.status == 400
@@ -1395,7 +1395,7 @@ class TestGameMetadataEndpoint:
 
         bad_ts = await client.post(
             f"/api/game/{game.id}/metadata",
-            headers={"Authorization": f"Bearer {token.key}"},
+            headers={"Authorization": "Bearer META_BIG"},
             json={"reported_at": "not-a-timestamp"},
         )
         assert bad_ts.status == 400

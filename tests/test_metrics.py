@@ -2,10 +2,27 @@
 
 from __future__ import annotations
 
-import httpx
-from ddtrace.constants import ERROR_MSG, ERROR_TYPE
+from typing import TYPE_CHECKING, Any
+from unittest.mock import MagicMock
+from uuid import uuid4
 
-from spellbot.metrics import MAX_SPAN_ERROR_MSG, REPORTED_ERROR_TAG, span_error_tags
+import httpx
+import pytest
+from ddtrace.constants import ERROR_MSG, ERROR_TYPE
+from discord.http import HTTPClient, Route
+
+from spellbot.metrics import (
+    MAX_SPAN_ERROR_MSG,
+    REPORTED_ERROR_TAG,
+    span_error_tags,
+    trace_discord_requests,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from discord import File
+    from pytest_mock import MockerFixture
 
 
 class TestSpanErrorTags:
@@ -40,3 +57,56 @@ class TestSpanErrorTags:
         tags = span_error_tags(ex)
         assert tags[ERROR_TYPE] == "HTTPStatusError"
         assert tags[ERROR_TYPE] != "OperationalError"
+
+
+@pytest.mark.asyncio
+class TestTraceDiscordRequests:
+    async def test_span_wraps_the_whole_request(self, mocker: MockerFixture) -> None:
+        events: list[str] = []
+        span = MagicMock()
+        trace = mocker.patch("spellbot.metrics.tracer.trace")
+        trace.return_value.__enter__.side_effect = lambda: events.append("open") or span
+        trace.return_value.__exit__.side_effect = lambda *_: events.append("close")
+
+        class Client(HTTPClient):
+            async def request(
+                self,
+                route: Route,
+                *,
+                files: Sequence[File] | None = None,
+                form: Iterable[dict[str, Any]] | None = None,
+                **kwargs: Any,
+            ) -> Any:
+                events.append(f"request files={files} form={form} {kwargs}")
+                return "response"
+
+        trace_discord_requests(Client)
+        interaction_token = uuid4().hex
+        route = Route(
+            "POST",
+            "/interactions/{interaction_id}/{interaction_token}/callback",
+            interaction_id=123,
+            interaction_token=interaction_token,
+        )
+        client = MagicMock(spec=HTTPClient)
+        assert await Client.request(client, route, json={"content": "hi"}) == "response"
+
+        assert events == [
+            "open",
+            "request files=None form=None {'json': {'content': 'hi'}}",
+            "close",
+        ]
+        trace.assert_called_once_with(
+            service="discord",
+            name="http",
+            resource="/interactions/{interaction_id}/{interaction_token}/callback",
+        )
+        tags = span.set_tags.call_args.args[0]
+        assert tags == {
+            "base": Route.BASE,
+            "channel_xid": "None",
+            "guild_xid": "None",
+            "method": "POST",
+        }
+        assert interaction_token not in str(trace.call_args) + str(tags)
+        assert Client.request.__name__ == "request"

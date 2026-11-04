@@ -8,14 +8,18 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import pytest
+from aiohttp_session import Session
 from cryptography.fernet import Fernet
 
 from spellbot.web.api import admin_auth
 from spellbot.web.api.admin_auth import (
+    ADMIN_RECHECK_S,
     admin_auth_middleware,
     get_admin_user_xid,
     oauth_redirect_uri,
     resolve_session_key,
+    start_admin_session,
+    still_admin,
 )
 
 if TYPE_CHECKING:
@@ -24,6 +28,8 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
     WebClient = TestClient[web.Request, web.Application]
+
+NOW = 1_800_000_000
 
 
 class TestResolveSessionKey:
@@ -63,12 +69,88 @@ class TestGetAdminUserXid:
         )
         assert await get_admin_user_xid(MagicMock()) is None
 
-    async def test_valid_xid(self, mocker: MockerFixture) -> None:
+    async def test_owner_is_not_rechecked(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
         mocker.patch(
             "spellbot.web.api.admin_auth.get_session",
             AsyncMock(return_value={"xid": 42}),
         )
+        still_admin = mocker.patch("spellbot.web.api.admin_auth.still_admin")
         assert await get_admin_user_xid(MagicMock()) == 42
+        still_admin.assert_not_called()
+
+    async def test_recently_checked_admin_is_trusted(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(admin_auth.settings, "OWNER_XID", 1)
+        session = {"xid": 42, "admin_checked_at": NOW - ADMIN_RECHECK_S + 1}
+        mocker.patch("spellbot.web.api.admin_auth.get_session", AsyncMock(return_value=session))
+        mocker.patch("spellbot.web.api.admin_auth.time.time", return_value=NOW)
+        still_admin = mocker.patch("spellbot.web.api.admin_auth.still_admin")
+        assert await get_admin_user_xid(MagicMock()) == 42
+        still_admin.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "checked_at",
+        [
+            pytest.param(None, id="never"),
+            pytest.param(NOW - ADMIN_RECHECK_S, id="stale"),
+        ],
+    )
+    async def test_admin_is_rechecked(self, mocker: MockerFixture, checked_at: int | None) -> None:
+        mocker.patch.object(admin_auth.settings, "OWNER_XID", 1)
+        session: dict[str, Any] = {"xid": 42, "name": "admin"}
+        if checked_at is not None:
+            session["admin_checked_at"] = checked_at
+        mocker.patch("spellbot.web.api.admin_auth.get_session", AsyncMock(return_value=session))
+        mocker.patch("spellbot.web.api.admin_auth.time.time", return_value=NOW)
+        mocker.patch("spellbot.web.api.admin_auth.still_admin", AsyncMock(return_value=True))
+        assert await get_admin_user_xid(MagicMock()) == 42
+        assert session == {"xid": 42, "name": "admin", "admin_checked_at": NOW}
+
+    async def test_demoted_admin_loses_admin_keys(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(admin_auth.settings, "OWNER_XID", 1)
+        session = {
+            "xid": 42,
+            "name": "admin",
+            "admin_checked_at": NOW - ADMIN_RECHECK_S,
+            "viewer_xid": 42,
+        }
+        mocker.patch("spellbot.web.api.admin_auth.get_session", AsyncMock(return_value=session))
+        mocker.patch("spellbot.web.api.admin_auth.time.time", return_value=NOW)
+        mocker.patch("spellbot.web.api.admin_auth.still_admin", AsyncMock(return_value=False))
+        assert await get_admin_user_xid(MagicMock()) is None
+        assert session == {"viewer_xid": 42}
+
+
+@pytest.mark.asyncio
+class TestStillAdmin:
+    async def test_reuses_open_session(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.web.api.admin_auth.DatabaseSession.is_set", return_value=True)
+        manager = mocker.patch("spellbot.web.api.admin_auth.db_session_manager")
+        is_admin = mocker.patch(
+            "spellbot.web.api.admin_auth.services.users.is_admin",
+            AsyncMock(return_value=True),
+        )
+        assert await still_admin(42) is True
+        is_admin.assert_awaited_once_with(42)
+        manager.assert_not_called()
+
+    async def test_opens_session_when_none(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.web.api.admin_auth.DatabaseSession.is_set", return_value=False)
+        manager = mocker.patch("spellbot.web.api.admin_auth.db_session_manager")
+        mocker.patch(
+            "spellbot.web.api.admin_auth.services.users.is_admin",
+            AsyncMock(return_value=False),
+        )
+        assert await still_admin(42) is False
+        manager.assert_called_once_with()
+
+
+class TestStartAdminSession:
+    def test_start_admin_session(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.web.api.admin_auth.time.time", return_value=NOW + 0.5)
+        session = Session(None, data=None, new=True)
+        start_admin_session(session, 42, "admin")
+        assert dict(session) == {"xid": 42, "name": "admin", "admin_checked_at": NOW}
 
 
 @pytest.mark.asyncio
@@ -127,6 +209,24 @@ class TestAdminLogin:
         mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", None)
         resp = await client.get("/admin/login")
         assert resp.status == 503
+        assert resp.content_type == "text/html"
+        text = await resp.text()
+        assert "Sign-in isn't set up here" in text
+        assert "<code>BOT_APPLICATION_ID</code>" in text
+        assert "<code>BOT_CLIENT_SECRET</code>" in text
+
+    async def test_unconfigured_lists_only_missing(
+        self,
+        client: WebClient,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
+        mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", None)
+        resp = await client.get("/admin/login")
+        assert resp.status == 503
+        text = await resp.text()
+        assert "<code>BOT_APPLICATION_ID</code>" not in text
+        assert "<code>BOT_CLIENT_SECRET</code>" in text
 
     async def test_redirects_to_discord(self, client: WebClient, mocker: MockerFixture) -> None:
         mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")

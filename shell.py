@@ -11,7 +11,7 @@ from IPython import embed
 from IPython.core.async_helpers import get_asyncio_loop
 from sqlalchemy import and_, asc, delete, desc, func, insert, not_, or_, select, text, update
 
-from spellbot.database import DatabaseSession, db_session_maker, initialize_connection
+from spellbot.database import DatabaseSession, initialize_connection, new_session
 from spellbot.models import Base
 
 SQLALCHEMY_EXPORTS = {
@@ -42,7 +42,7 @@ def main() -> None:
     loop = get_asyncio_loop()
     loop.run_until_complete(initialize_connection("spellbot-bot", run_migrations=True))
 
-    token = DatabaseSession.set(db_session_maker())
+    token = DatabaseSession.set(new_session())
     try:
         loop.run_until_complete(DatabaseSession.execute(text("SELECT 1")))
         embed(colors="neutral", using="asyncio", banner2="\n".join(banner))

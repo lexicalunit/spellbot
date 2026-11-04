@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added `make secret-token` to generate a `SECRET_TOKEN`.
 - Added translation checks for broken links, mismatched placeholders, and unbalanced bold.
+- Added an owner-only API Tokens panel to the admin dashboard to create and revoke tokens.
+- Added `TRUSTED_PROXY_HOPS` so rate limits use the real client IP behind a load balancer.
 
 ### Changed
 
@@ -24,12 +26,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - The dev shell (`shell.py`) no longer needs `nest-asyncio`.
 - Removed unused dev dependencies.
 - Test coverage no longer accumulates across local runs.
+- API tokens are now stored as SHA-256 hashes; existing tokens keep working.
+- Admin status is now re-checked every 5 minutes, so `!demote` takes effect quickly.
+- Sign-in pages now explain which settings are missing instead of a bare 503.
+- Removed the direct `wrapt` dependency.
 
 ### Fixed
 
 - Fixed broken links in the Danish, Greek, Italian, and Japanese translations.
 - Fixed the French Mythic Track message, which said the feature was on after turning it off.
 - Fixed wording in the French, German, Japanese, and Tagalog translations.
+- Fixed rate limiting behind the ALB, which put every client in one shared bucket.
+- Fixed Discord HTTP spans in Datadog closing before the request ran.
+- Stopped sending Discord request bodies to Datadog as span tags.
 
 ## [v24.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.2) - 2026-11-03
 

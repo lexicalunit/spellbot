@@ -2,25 +2,25 @@
 
 from __future__ import annotations
 
-import re
 import uuid
-from functools import wraps
+from functools import update_wrapper, wraps
 from typing import TYPE_CHECKING, Any
 
 from datadog import initialize
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 from ddtrace.trace import tracer
 from discord.app_commands import CommandOnCooldown
-from wrapt import wrap_function_wrapper
+from discord.http import HTTPClient
 
 from .environment import running_in_pytest
 from .errors import AdminOnlyError, GuildBannedError, GuildOnlyError, ModOnlyError, UserBannedError
 from .settings import settings
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable, Sequence
 
     from ddtrace.trace import Span
+    from discord import File
     from discord.http import Route
 
 IS_RUNNING_IN_PYTEST = running_in_pytest()
@@ -43,45 +43,45 @@ def skip_if_no_metrics(f: Any) -> Callable[..., None]:  # pragma: no cover
     return wrapper
 
 
-@skip_if_no_metrics
-def patch_discord() -> None:  # pragma: no cover
-    interaction_callback = re.compile(r"/interactions/([0-9]+)/([^/]+)/callback")
-    webhook_message = re.compile(r"/webhooks/([0-9]+)/([^/]+)/messages/@original")
+def trace_discord_requests(client: type[HTTPClient]) -> None:
+    """
+    Wrap `client.request` in a `discord.http` span that lasts until the response.
 
-    def request(  # pragma: no cover
-        wrapped: Callable[..., Any],
-        instance: Any,
-        args: Any,
-        kwargs: Any,
+    The resource is the route's path template, which has placeholders in place of ids
+    and interaction tokens. The request body isn't tagged: it holds message content
+    and other user data. The wrapper repeats `HTTPClient.request`'s exact signature so
+    it type-checks as a drop-in replacement.
+    """
+    request = client.request
+
+    async def traced(
+        self: HTTPClient,
+        route: Route,
+        *,
+        files: Sequence[File] | None = None,
+        form: Iterable[dict[str, Any]] | None = None,
+        **kwargs: Any,
     ) -> Any:
-        route: Route = args[0]
-        path: str = route.path
-        additional_tags = {}
-        if matches := interaction_callback.match(path):
-            resource = r"/interactions/{interaction_id}/{interaction_token}/callback"
-            additional_tags["interaction_id"] = matches[1]
-            additional_tags["interaction_token"] = matches[2]
-        elif matches := webhook_message.match(path):
-            resource = r"/webhooks/{application_id}/{interaction_token}/messages/@original"
-            additional_tags["application_id"] = matches[1]
-            additional_tags["interaction_token"] = matches[2]
-        else:
-            resource = path
-        with tracer.trace(service="discord", name="http", resource=resource) as span:
+        with tracer.trace(service="discord", name="http", resource=route.path) as span:
             span.set_tags(
                 {
                     "base": route.BASE,
                     "channel_xid": str(route.channel_id),
-                    "data": kwargs,
                     "guild_xid": str(route.guild_id),
-                    "instance": instance,
                     "method": route.method,
-                    **additional_tags,
                 },
             )
-            return wrapped(*args, **kwargs)
+            return await request(self, route, files=files, form=form, **kwargs)
 
-    wrap_function_wrapper("discord.http", "HTTPClient.request", request)
+    update_wrapper(traced, request)
+    # ty types a method attribute as that exact function, so it rejects any replacement,
+    # even this one with the identical signature.
+    client.request = traced  # ty: ignore[invalid-assignment]
+
+
+@skip_if_no_metrics
+def patch_discord() -> None:  # pragma: no cover
+    trace_discord_requests(HTTPClient)
 
 
 @skip_if_no_metrics

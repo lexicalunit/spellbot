@@ -48,11 +48,11 @@ class Token(Base):
         index=True,
         doc="UTC timestamp when this key was deleted",
     )
-    key: Mapped[str] = mapped_column(
+    key_hash: Mapped[str] = mapped_column(
         String,
         nullable=False,
         index=True,
-        doc="The API token key",
+        doc="Hex SHA-256 of the API token key; the key itself is never stored",
     )
     note: Mapped[str | None] = mapped_column(
         String,
@@ -75,7 +75,7 @@ class Token(Base):
             created_at=self.created_at,
             updated_at=self.updated_at,
             deleted_at=self.deleted_at,
-            key=self.key,
+            key_hash=self.key_hash,
             note=self.note,
             scopes=self.scopes,
         )

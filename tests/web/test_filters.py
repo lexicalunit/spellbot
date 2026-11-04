@@ -59,11 +59,11 @@ class TestAuthMiddlewareDirect:
         assert resp.status == 429
 
     async def test_valid_token_calls_handler(self, factories: Factories) -> None:
-        token = factories.token.create(key="VALID-KEY")
+        factories.token.create(key="VALID-KEY")
         handler = AsyncMock(return_value="handler-result")
         request = MagicMock()
         request.path = "/api/foo"
-        request.headers = {"Authorization": f"Bearer {token.key}"}
+        request.headers = {"Authorization": "Bearer VALID-KEY"}
         request.rel_url.path = "/api/foo"
         result = await auth_middleware(request, handler)
         assert result == "handler-result"

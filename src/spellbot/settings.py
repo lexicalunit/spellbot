@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     HOST: str = "localhost"
     DEBUG_GUILD: str | None = None
     API_BASE_URL: str = "http://localhost:3008"
+    # Number of proxies in front of the web server that append to `X-Forwarded-For`
+    # (1 for the AWS ALB in production). The client IP is that many entries from the
+    # right; anything further left was sent by the client and can't be trusted.
+    TRUSTED_PROXY_HOPS: int = 0
     OWNER_XID: int | None = None
     SECRET_TOKEN: str | None = None
     CHECK_SIGNATURE: bool = True

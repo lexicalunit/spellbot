@@ -1363,7 +1363,7 @@ async def dashboard_run_sql(query: str) -> dict[str, Any]:
     if not query:
         return {"error": "Empty query."}
     try:
-        async with engine.connect() as raw_conn:
+        async with engine.get().connect() as raw_conn:
             # Override the engine's AUTOCOMMIT default so we get a real
             # transaction that `SET TRANSACTION READ ONLY` can pin down.
             conn = await raw_conn.execution_options(isolation_level="READ COMMITTED")

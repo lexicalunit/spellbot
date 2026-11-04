@@ -306,3 +306,108 @@ class TestDashboardSqlConsole:
         )
         assert resp.status == 302
         assert resp.headers["Location"] == "/admin/login"
+
+
+@pytest.mark.asyncio
+class TestDashboardTokens:
+    async def test_owner_sees_panel(self, admin_client: WebClient) -> None:
+        body = await (await admin_client.get("/admin/dashboard")).text()
+        assert 'id="tokenAdmin"' in body
+
+    async def test_non_owner_admin_does_not_see_panel(
+        self,
+        non_owner_admin_client: WebClient,
+    ) -> None:
+        body = await (await non_owner_admin_client.get("/admin/dashboard")).text()
+        assert 'id="tokenAdmin"' not in body
+
+    @pytest.mark.parametrize(
+        ("method", "path"),
+        [
+            pytest.param("GET", "/admin/dashboard/tokens", id="list"),
+            pytest.param("POST", "/admin/dashboard/tokens", id="create"),
+            pytest.param("POST", "/admin/dashboard/tokens/revoke", id="revoke"),
+        ],
+    )
+    async def test_non_owner_admin_is_forbidden(
+        self,
+        non_owner_admin_client: WebClient,
+        method: str,
+        path: str,
+    ) -> None:
+        resp = await non_owner_admin_client.request(method, path, json={"scopes": "game", "id": 1})
+        assert resp.status == 403
+
+    async def test_create_list_revoke(self, admin_client: WebClient) -> None:
+        resp = await admin_client.post(
+            "/admin/dashboard/tokens",
+            json={"scopes": " game, ", "note": "  Mythic Track  "},
+        )
+        assert resp.status == 200
+        assert resp.headers["Cache-Control"] == "no-store"
+        created = await resp.json()
+        key = created["key"]
+        token = created["token"]
+        assert token["scopes"] == "game"
+        assert token["note"] == "Mythic Track"
+        assert set(token) == {"id", "created_on", "scopes", "note"}
+
+        # The new key works against the API.
+        api = await admin_client.post(
+            "/api/game/1/verify",
+            headers={"Authorization": f"Bearer {key}"},
+            json={},
+        )
+        assert api.status != 403
+
+        listed = await (await admin_client.get("/admin/dashboard/tokens")).json()
+        assert listed == {"tokens": [token]}
+        assert key not in json.dumps(listed)
+
+        resp = await admin_client.post("/admin/dashboard/tokens/revoke", json={"id": token["id"]})
+        assert resp.status == 200
+        assert await resp.json() == {"revoked": token["id"]}
+        assert await (await admin_client.get("/admin/dashboard/tokens")).json() == {"tokens": []}
+
+        resp = await admin_client.post("/admin/dashboard/tokens/revoke", json={"id": token["id"]})
+        assert resp.status == 404
+
+    async def test_create_without_note(self, admin_client: WebClient) -> None:
+        resp = await admin_client.post("/admin/dashboard/tokens", json={"scopes": "*", "note": " "})
+        assert (await resp.json())["token"]["note"] is None
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            pytest.param({"scopes": " , "}, id="blank"),
+            pytest.param({"scopes": 5}, id="not-a-string"),
+            pytest.param({}, id="missing"),
+        ],
+    )
+    async def test_create_needs_scopes(self, admin_client: WebClient, payload: object) -> None:
+        resp = await admin_client.post("/admin/dashboard/tokens", json=payload)
+        assert resp.status == 400
+        assert await resp.json() == {"error": "Enter at least one scope."}
+
+    @pytest.mark.parametrize("token_id", [None, "1", True])
+    async def test_revoke_needs_int_id(self, admin_client: WebClient, token_id: object) -> None:
+        resp = await admin_client.post("/admin/dashboard/tokens/revoke", json={"id": token_id})
+        assert resp.status == 400
+
+    async def test_form_posts_are_rejected(self, admin_client: WebClient) -> None:
+        resp = await admin_client.post("/admin/dashboard/tokens", data={"scopes": "*"})
+        assert resp.status == 415
+
+    async def test_invalid_json(self, admin_client: WebClient) -> None:
+        resp = await admin_client.post(
+            "/admin/dashboard/tokens",
+            data="{nope",
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status == 400
+        assert await resp.json() == {"error": "Invalid JSON body."}
+
+    async def test_non_object_json(self, admin_client: WebClient) -> None:
+        resp = await admin_client.post("/admin/dashboard/tokens", json=["scopes"])
+        assert resp.status == 400
+        assert await resp.json() == {"error": "Expected a JSON object."}

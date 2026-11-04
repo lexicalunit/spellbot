@@ -192,6 +192,27 @@
         .sql-result table.lang-table td, .sql-result table.lang-table th { white-space: nowrap; }
         .sql-result td.sql-null { color: #6b7280; font-style: italic; }
         .sql-error { color: #fca5a5; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 0.8rem; }
+        .token-form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1rem; }
+        .token-form label { font-size: 0.8rem; color: #9ca3af; display: flex; align-items: center; gap: 0.4rem; }
+        .token-form input {
+            background: #1a1a2e; color: #e0e0e0; border: 1px solid #333; border-radius: 6px;
+            padding: 0.4rem 0.6rem; font-size: 0.85rem;
+        }
+        .token-form input:focus { outline: none; border-color: #818cf8; }
+        .token-form .sql-toolbar { margin-top: 0; }
+        .token-key {
+            margin-top: 1rem; padding: 0.75rem; border: 1px solid #818cf8; border-radius: 8px;
+            background: #1a1a2e; font-size: 0.85rem;
+        }
+        .token-key code {
+            display: block; margin: 0.5rem 0; font-family: ui-monospace, monospace;
+            word-break: break-all; color: #c4b5fd;
+        }
+        .token-list button.token-revoke {
+            background: none; border: 1px solid #fca5a5; color: #fca5a5; cursor: pointer;
+            padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem;
+        }
+        .token-list button.token-revoke:disabled { opacity: 0.5; cursor: default; }
     </style>
 </head>
 <body>
@@ -241,6 +262,25 @@
                 <span id="sqlStatus" class="sql-status"></span>
             </div>
             <div id="sqlResult" class="sql-result"></div>
+        </details>
+
+        <details class="sql-console section" id="tokenAdmin">
+            <summary>API Tokens</summary>
+            <p class="sql-hint">Bearer tokens for partner integrations calling <code>/api</code>. Only a hash of each key is stored, so a new key is shown once, right after you create it. A scope is the path segment after <code>/api/</code> (today every endpoint is under <code>game</code>); <code>*</code> allows every endpoint.</p>
+            <div id="tokenList" class="sql-result token-list"></div>
+            <div class="token-form">
+                <label>Scopes <input id="tokenScopes" type="text" value="game" size="12" spellcheck="false"></label>
+                <label>Note <input id="tokenNote" type="text" size="24" placeholder="Who it's for"></label>
+                <div class="sql-toolbar">
+                    <button id="tokenCreateBtn" type="button">Create token</button>
+                    <span id="tokenStatus" class="sql-status"></span>
+                </div>
+            </div>
+            <div id="tokenCreated" class="token-key" hidden>
+                <span id="tokenCreatedLabel"></span>
+                <code id="tokenCreatedKey"></code>
+                <div class="sql-toolbar"><button id="tokenCopyBtn" type="button">Copy</button></div>
+            </div>
         </details>
         {% endif %}
 

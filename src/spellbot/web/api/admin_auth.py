@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import secrets
+import time
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
@@ -16,13 +17,15 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography.fernet import Fernet
 
 from spellbot import services
-from spellbot.database import db_session_manager
+from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.settings import settings
 from spellbot.web.api.oauth import (
     DISCORD_AUTHORIZE_URL,
     canonical_host_redirect,
     display_name,
     fetch_oauth_identify,
+    oauth_configured,
+    oauth_not_configured,
     parse_user_xid,
 )
 from spellbot.web.tools import redirect
@@ -42,6 +45,12 @@ SESSION_MAX_AGE_S = 60 * 60 * 24  # 24 hours
 # as a viewer on `/queues`; see `viewer_auth.get_viewer`.
 ADMIN_XID_KEY = "xid"
 ADMIN_NAME_KEY = "name"
+# When the session's admin status was last confirmed against the database (epoch seconds).
+ADMIN_CHECKED_AT_KEY = "admin_checked_at"
+
+# How often to re-confirm admin status, so a `!demote` takes effect within this long
+# rather than lasting until the 24h session expires.
+ADMIN_RECHECK_S = 5 * 60
 
 # Routes inside /admin/* that do not require an authenticated session.
 PUBLIC_ADMIN_PATHS: frozenset[str] = frozenset(("/admin/login", "/admin/oauth/callback"))
@@ -94,15 +103,47 @@ async def get_admin_user_xid(request: web.Request) -> int | None:
     """
     Return the Discord xid of the authenticated admin, or `None`.
 
-    Trust the session: any xid present in the cookie was admitted by
-    `admin_oauth_callback` at login. Revocations via `!demote` take effect
-    at the user's next login (bounded by `SESSION_MAX_AGE_S`).
+    The xid in the cookie was admitted at login, and admin status is confirmed against
+    the database again every `ADMIN_RECHECK_S`, so a `!demote` takes effect within
+    minutes. A demoted user loses the admin keys from their session (and so must sign in
+    again to use `/queues` as a viewer). The owner comes from settings and is never
+    re-checked.
     """
     session = await get_session(request)
     xid = session.get(ADMIN_XID_KEY)
     if not isinstance(xid, int):
         return None
+    if xid == settings.OWNER_XID:
+        return xid
+    checked_at = session.get(ADMIN_CHECKED_AT_KEY)
+    now = int(time.time())
+    if isinstance(checked_at, int) and now - checked_at < ADMIN_RECHECK_S:
+        return xid
+    if not await still_admin(xid):
+        for key in (ADMIN_XID_KEY, ADMIN_NAME_KEY, ADMIN_CHECKED_AT_KEY):
+            session.pop(key, None)
+        return None
+    session[ADMIN_CHECKED_AT_KEY] = now
     return xid
+
+
+async def still_admin(xid: int) -> bool:
+    """
+    Check the database for admin access, reusing the request's session if it has one.
+
+    Opening a nested session would expire the outer session's objects when it closes.
+    """
+    if DatabaseSession.is_set():
+        return await services.users.is_admin(xid)
+    async with db_session_manager():
+        return await services.users.is_admin(xid)
+
+
+def start_admin_session(session: Session, xid: int, name: str) -> None:
+    """Record an admin identity that was just verified, as the owner or a dashboard admin."""
+    session[ADMIN_XID_KEY] = xid
+    session[ADMIN_NAME_KEY] = name
+    session[ADMIN_CHECKED_AT_KEY] = int(time.time())
 
 
 def is_owner_session(session: Session) -> bool:
@@ -135,8 +176,8 @@ async def admin_auth_middleware(
 @routes.get("/admin/login")
 async def admin_login(request: web.Request) -> web.StreamResponse:
     """Redirect the user to Discord's OAuth2 authorize page."""
-    if not settings.BOT_APPLICATION_ID or not settings.BOT_CLIENT_SECRET:
-        return web.Response(status=503, text="Admin dashboard is not configured.")
+    if not oauth_configured():
+        return oauth_not_configured(request)
     if (canonical := canonical_host_redirect(request)) is not None:
         return canonical
     # Arriving here straight from logout must NOT auto-start OAuth: Discord still
@@ -160,8 +201,8 @@ async def admin_login(request: web.Request) -> web.StreamResponse:
 @routes.get("/admin/oauth/callback")
 async def admin_oauth_callback(request: web.Request) -> web.StreamResponse:
     """Exchange the OAuth2 code for an access token and start a session."""
-    if not settings.BOT_APPLICATION_ID or not settings.BOT_CLIENT_SECRET:
-        return web.Response(status=503, text="Admin dashboard is not configured.")
+    if not oauth_configured():
+        return oauth_not_configured(request)
     code = request.query.get("code")
     state = request.query.get("state")
     session = await get_session(request)
@@ -201,8 +242,7 @@ async def admin_oauth_callback(request: web.Request) -> web.StreamResponse:
 
     session.invalidate()
     session = await new_session(request)
-    session[ADMIN_XID_KEY] = xid
-    session[ADMIN_NAME_KEY] = display_name(user, xid)
+    start_admin_session(session, xid, display_name(user, xid))
     return redirect("/admin/dashboard")
 
 

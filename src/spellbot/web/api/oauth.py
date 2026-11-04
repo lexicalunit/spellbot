@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
+import aiohttp_jinja2
 import httpx
 from yarl import URL
 
@@ -20,6 +21,27 @@ logger = logging.getLogger(__name__)
 DISCORD_AUTHORIZE_URL = "https://discord.com/oauth2/authorize"
 DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"  # noqa: S105
 DISCORD_IDENTIFY_URL = "https://discord.com/api/users/@me"
+
+# Settings that Discord sign-in needs, for both the admin and the viewer flows.
+OAUTH_SETTINGS = ("BOT_APPLICATION_ID", "BOT_CLIENT_SECRET")
+
+
+def missing_oauth_settings() -> list[str]:
+    return [name for name in OAUTH_SETTINGS if not getattr(settings, name)]
+
+
+def oauth_configured() -> bool:
+    return not missing_oauth_settings()
+
+
+def oauth_not_configured(request: web.Request) -> web.Response:
+    """Explain which settings sign-in is missing, instead of a bare 503."""
+    return aiohttp_jinja2.render_template(
+        "login_not_configured.html.j2",
+        request,
+        {"missing": missing_oauth_settings()},
+        status=503,
+    )
 
 
 def safe_relative_path(raw: str | None) -> str | None:

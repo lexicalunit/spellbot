@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
+from ipaddress import ip_address
 from pathlib import Path
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -33,7 +34,7 @@ from spellbot.web.api import (
     status,
     viewer_auth,
 )
-from spellbot.web.api.oauth import safe_relative_path
+from spellbot.web.api.oauth import oauth_configured, safe_relative_path
 from spellbot.web.tools import rate_limited
 
 if TYPE_CHECKING:
@@ -117,7 +118,7 @@ async def nav_context(request: web.Request) -> dict[str, object]:
         "xid": viewer_xid,
         "name": viewer_name,
         "is_admin": is_admin,
-        "login_enabled": bool(settings.BOT_APPLICATION_ID and settings.BOT_CLIENT_SECRET),
+        "login_enabled": oauth_configured(),
         "here": here or "/queues",
     }
 
@@ -137,6 +138,44 @@ async def add_security_headers(request: web.Request, response: web.StreamRespons
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     if request.path in PUBLIC_CORS_PATHS:
         response.headers["Access-Control-Allow-Origin"] = "*"
+
+
+def forwarded_client_ip(request: web.Request, hops: int) -> str | None:
+    """
+    Return the client IP that the nearest `hops` trusted proxies recorded.
+
+    Each proxy appends the address it received the request from, so the entry `hops`
+    places from the right was written by a trusted proxy. Entries further left came
+    from the client and could say anything. Returns None when there's no usable entry.
+    """
+    entries = [
+        entry.strip()
+        for header in request.headers.getall("X-Forwarded-For", [])
+        for entry in header.split(",")
+    ]
+    entries = [entry for entry in entries if entry]
+    if not entries:
+        return None
+    candidate = entries[-min(hops, len(entries))]
+    try:
+        return str(ip_address(candidate))
+    except ValueError:
+        return None
+
+
+@web.middleware
+async def forwarded_ip_middleware(request: web.Request, handler: Handler) -> web.StreamResponse:
+    """
+    Replace `request.remote` with the real client IP when behind trusted proxies.
+
+    Behind the ALB, `request.remote` is the load balancer's own address, so every client
+    would share one rate-limit bucket. `TRUSTED_PROXY_HOPS` says how many proxies to trust.
+    """
+    if settings.TRUSTED_PROXY_HOPS > 0 and (
+        ip := forwarded_client_ip(request, settings.TRUSTED_PROXY_HOPS)
+    ):
+        request = request.clone(remote=ip)
+    return await handler(request)
 
 
 @web.middleware
@@ -198,7 +237,7 @@ async def serve_robots_txt(_: web.Request) -> web.Response:
 
 def build_web_app() -> web.Application:
     import_models()
-    app = web.Application(middlewares=[auth_middleware])
+    app = web.Application(middlewares=[forwarded_ip_middleware, auth_middleware])
     app.on_response_prepare.append(add_security_headers)
     # `setup_admin_sessions` appends the aiohttp_session middleware;
     # so it must come before `admin_auth_middleware`

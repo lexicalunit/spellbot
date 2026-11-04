@@ -17,7 +17,6 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from wrapt import CallableObjectProxy
 
 from .models import create_all, reverse_all
 from .settings import settings
@@ -27,16 +26,6 @@ if TYPE_CHECKING:
 
     from sqlalchemy.orm import QueryableAttribute
     from sqlalchemy.sql.elements import ColumnElement
-
-    # For type checking, use the generic version from the stubs
-    _CallableObjectProxyBase = CallableObjectProxy
-else:
-    # At runtime, CallableObjectProxy is not subscriptable, so create a wrapper
-    # that allows subscripting but just returns itself
-
-    class _CallableObjectProxyBase(CallableObjectProxy):
-        def __class_getitem__(cls, item: object) -> type:
-            return cls
 
 
 logger = logging.getLogger(__name__)
@@ -72,29 +61,31 @@ class ContextLocal[ProxiedObject]:
         raise NotImplementedError
 
 
-class TypedProxy[ProxiedObject](_CallableObjectProxyBase[ProxiedObject | None]):
-    __wrapped__: ProxiedObject | None
+class ProcessGlobal[T]:
+    """
+    One object for the whole process, such as the engine, set by `initialize_connection`.
 
-    def __init__(self) -> None:
-        super().__init__(None)
+    `get()` fails with a clear message when nothing has been set yet, instead of an
+    `AttributeError` on `None` somewhere far from the cause.
+    """
 
-    @classmethod
-    def of_type(cls, _: type[ProxiedObject]) -> TypedProxy[ProxiedObject]:
-        return cls()
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self.value: T | None = None
 
-    def set(self, obj: ProxiedObject) -> None:
-        super().__init__(obj)
+    def set(self, obj: T) -> None:
+        self.value = obj
 
-    def __copy__(self) -> NoReturn:
-        raise NotImplementedError
+    def get(self) -> T:
+        if self.value is None:
+            msg = f"database {self.name} isn't set up; call initialize_connection() first"
+            raise RuntimeError(msg)
+        return self.value
 
-    def __deepcopy__(self, _: Any) -> NoReturn:
-        raise NotImplementedError
 
-
-engine = TypedProxy[AsyncEngine].of_type(AsyncEngine)
-connection = TypedProxy[AsyncConnection].of_type(AsyncConnection)
-db_session_maker = TypedProxy[async_sessionmaker[AsyncSession]].of_type(async_sessionmaker)
+engine = ProcessGlobal[AsyncEngine]("engine")
+connection = ProcessGlobal[AsyncConnection]("connection")
+db_session_maker = ProcessGlobal[async_sessionmaker[AsyncSession]]("session maker")
 DatabaseSession = ContextLocal[AsyncSession].of_type(AsyncSession)
 
 
@@ -185,9 +176,12 @@ async def initialize_connection(
     db_session_maker.set(db_session_maker_obj)
 
 
+def new_session() -> AsyncSession:
+    return db_session_maker.get()()
+
+
 async def begin_session() -> Token[AsyncSession]:
-    session = db_session_maker()
-    return DatabaseSession.set(session)
+    return DatabaseSession.set(new_session())
 
 
 async def rollback_session() -> None:  # pragma: no cover
@@ -219,11 +213,11 @@ async def db_session_manager() -> AsyncGenerator[None]:
 
 
 async def rollback_transaction() -> None:  # pragma: no cover
-    if connection.__wrapped__ is not None and not connection.__wrapped__.closed:
-        await connection.__wrapped__.rollback()
-        await connection.__wrapped__.close()
-    if engine.__wrapped__ is not None:
-        await engine.__wrapped__.dispose()
+    if connection.value is not None and not connection.value.closed:
+        await connection.value.rollback()
+        await connection.value.close()
+    if engine.value is not None:
+        await engine.value.dispose()
 
 
 def delete_test_database(worker_id: str) -> None:  # pragma: no cover

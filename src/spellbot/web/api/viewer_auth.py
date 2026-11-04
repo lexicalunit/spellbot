@@ -14,12 +14,14 @@ from aiohttp_session import get_session
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.settings import settings
-from spellbot.web.api.admin_auth import ADMIN_NAME_KEY, ADMIN_XID_KEY
+from spellbot.web.api.admin_auth import ADMIN_NAME_KEY, ADMIN_XID_KEY, start_admin_session
 from spellbot.web.api.oauth import (
     DISCORD_AUTHORIZE_URL,
     canonical_host_redirect,
     display_name,
     fetch_oauth_identify,
+    oauth_configured,
+    oauth_not_configured,
     parse_user_xid,
     safe_relative_path,
 )
@@ -62,8 +64,7 @@ async def grant_admin_if_authorized(session: Session, user: dict[str, Any], xid:
         async with db_session_manager():
             is_admin_identity = await services.users.is_admin(xid)
     if is_admin_identity:
-        session[ADMIN_XID_KEY] = xid
-        session[ADMIN_NAME_KEY] = display_name(user, xid)
+        start_admin_session(session, xid, display_name(user, xid))
 
 
 async def get_viewer(request: web.Request) -> tuple[int | None, str | None]:
@@ -113,8 +114,8 @@ async def has_viewer_session(request: web.Request) -> bool:
 @routes.get("/queues/login")
 async def viewer_login(request: web.Request) -> web.StreamResponse:
     """Redirect the user to Discord's OAuth2 authorize page (public viewer flow)."""
-    if not settings.BOT_APPLICATION_ID or not settings.BOT_CLIENT_SECRET:
-        return web.Response(status=503, text="Viewer login is not configured.")
+    if not oauth_configured():
+        return oauth_not_configured(request)
     if (canonical := canonical_host_redirect(request)) is not None:
         return canonical
     state = secrets.token_urlsafe(32)
@@ -139,8 +140,8 @@ async def viewer_login(request: web.Request) -> web.StreamResponse:
 @routes.get("/queues/oauth/callback")
 async def viewer_oauth_callback(request: web.Request) -> web.StreamResponse:
     """Exchange the OAuth2 code for a viewer session that filters `/queues` only."""
-    if not settings.BOT_APPLICATION_ID or not settings.BOT_CLIENT_SECRET:
-        return web.Response(status=503, text="Viewer login is not configured.")
+    if not oauth_configured():
+        return oauth_not_configured(request)
     code = request.query.get("code")
     state = request.query.get("state")
     session = await get_session(request)

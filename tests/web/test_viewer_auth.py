@@ -251,6 +251,7 @@ class TestViewerLogin:
         mocker.patch.object(viewer_auth.settings, "BOT_CLIENT_SECRET", None)
         resp = await client.get("/queues/login")
         assert resp.status == 503
+        assert "Sign-in isn't set up here" in await resp.text()
 
     async def test_redirects_to_discord(self, client: WebClient, mocker: MockerFixture) -> None:
         configure_viewer(mocker)

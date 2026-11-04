@@ -18,6 +18,8 @@ from spellbot.web.api.admin_auth import is_owner_session
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from spellbot.data import TokenData
+
 routes = web.RouteTableDef()
 
 
@@ -51,6 +53,88 @@ async def dashboard_sql_endpoint(request: web.Request) -> web.Response:
     # surrounding `db_session_manager()` is needed here.
     data = await services.dashboard.dashboard_run_sql(query)
     return web.json_response(data, status=400 if "error" in data else 200)
+
+
+# A new key is shown exactly once, so make sure no cache keeps a copy of the response.
+NO_STORE = {"Cache-Control": "no-store"}
+
+
+def token_json(token: TokenData) -> dict[str, Any]:
+    """Describe a token for the dashboard. The key hash is never sent to the browser."""
+    return {
+        "id": token.id,
+        "created_on": token.created_at.date().isoformat(),
+        "scopes": token.scopes,
+        "note": token.note,
+    }
+
+
+async def owner_json_body(request: web.Request) -> dict[str, Any] | web.Response:
+    """
+    Return the JSON object body of an owner's request, or the error response to send.
+
+    Requiring a JSON content type means a plain HTML form on another site can't post
+    here, on top of the `SameSite=Lax` session cookie.
+    """
+    if not is_owner_session(await get_session(request)):
+        return web.json_response({"error": "Forbidden"}, status=403)
+    if request.content_type != "application/json":
+        return web.json_response({"error": "Expected a JSON body."}, status=415)
+    try:
+        payload = await request.json()
+    except ValueError:  # includes json.JSONDecodeError
+        return web.json_response({"error": "Invalid JSON body."}, status=400)
+    if not isinstance(payload, dict):
+        return web.json_response({"error": "Expected a JSON object."}, status=400)
+    return payload
+
+
+@routes.get("/admin/dashboard/tokens")
+@tracer.wrap(name="web", resource="dashboard_tokens")
+async def dashboard_tokens_endpoint(request: web.Request) -> web.Response:
+    """List the active API tokens (owner only)."""
+    add_span_request_id(generate_request_id())
+    if not is_owner_session(await get_session(request)):
+        return web.json_response({"error": "Forbidden"}, status=403)
+    async with db_session_manager():
+        tokens = await services.apps.list_tokens()
+    return web.json_response({"tokens": [token_json(token) for token in tokens]})
+
+
+@routes.post("/admin/dashboard/tokens")
+@tracer.wrap(name="web", resource="dashboard_token_create")
+async def dashboard_token_create_endpoint(request: web.Request) -> web.Response:
+    """Create an API token (owner only) and return its key, which is shown only this once."""
+    add_span_request_id(generate_request_id())
+    payload = await owner_json_body(request)
+    if isinstance(payload, web.Response):
+        return payload
+    raw_scopes, note = payload.get("scopes"), payload.get("note")
+    scopes = services.apps.parse_scopes(raw_scopes) if isinstance(raw_scopes, str) else None
+    if scopes is None:
+        return web.json_response({"error": "Enter at least one scope."}, status=400)
+    note = (note.strip() or None) if isinstance(note, str) else None
+    async with db_session_manager():
+        token, key = await services.apps.create_token(scopes=scopes, note=note)
+    return web.json_response({"token": token_json(token), "key": key}, headers=NO_STORE)
+
+
+@routes.post("/admin/dashboard/tokens/revoke")
+@tracer.wrap(name="web", resource="dashboard_token_revoke")
+async def dashboard_token_revoke_endpoint(request: web.Request) -> web.Response:
+    """Revoke an API token (owner only)."""
+    add_span_request_id(generate_request_id())
+    payload = await owner_json_body(request)
+    if isinstance(payload, web.Response):
+        return payload
+    token_id = payload.get("id")
+    if not isinstance(token_id, int) or isinstance(token_id, bool):
+        return web.json_response({"error": "Missing token 'id'."}, status=400)
+    async with db_session_manager():
+        revoked = await services.apps.revoke_token(token_id)
+    if not revoked:
+        return web.json_response({"error": f"No active token with id {token_id}."}, status=404)
+    return web.json_response({"revoked": token_id})
 
 
 def dashboard_query(request: web.Request) -> tuple[PeriodSpec, GuildFilter]:
