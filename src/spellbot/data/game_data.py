@@ -24,18 +24,6 @@ if TYPE_CHECKING:
 HR = "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
 
 
-# Helper to select singular or plural translation key
-def _plural(
-    count: int,
-    singular_key: str,
-    plural_key: str,
-    locale: str,
-    **kwargs: str | int,
-) -> str:
-    key = singular_key if count == 1 else plural_key
-    return t(key, locale=locale, count=count, **kwargs)
-
-
 @dataclass
 class GameData:
     id: int
@@ -115,12 +103,7 @@ class GameData:
         if self.status == GameStatus.STARTED.value:
             return t("game.title.ready", locale=locale)
         remaining = self.seats - len(self.players)
-        return _plural(
-            remaining,
-            "game.title.waiting_one",
-            "game.title.waiting_many",
-            locale,
-        )
+        return t("game.title.waiting", locale=locale, count=remaining)
 
     @property
     def jump_links(self) -> dict[int, str]:
@@ -258,12 +241,7 @@ class GameData:
             joined = len(self.players)
             embed.add_field(
                 name=t("game.field.players", locale=locale),
-                value=_plural(
-                    joined,
-                    "game.field.players_hidden_one",
-                    "game.field.players_hidden_many",
-                    locale,
-                ),
+                value=t("game.field.players_hidden", locale=locale, count=joined),
                 inline=False,
             )
         elif self.players:

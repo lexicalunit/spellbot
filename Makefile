@@ -1,4 +1,5 @@
 .PHONY: all install test lint format format-check typecheck check dev clean session-key secret-token
+.PHONY: translations
 .PHONY: infra-stage infra-prod infra-o11y
 
 all: check
@@ -43,6 +44,9 @@ session-key: install
 
 secret-token: install
 	@uv run --frozen python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+translations: install
+	@uv run --frozen python scripts/sync_translations.py
 
 clean:
 	@echo "cleaning runtime artifacts..."

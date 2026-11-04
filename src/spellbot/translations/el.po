@@ -1,0 +1,1588 @@
+# Greek translations for SpellBot.
+# Copyright (C) 2026 spellbot@lexicalunit.com
+# This file is distributed under the same license as the SpellBot project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  SpellBot\n"
+"Report-Msgid-Bugs-To: spellbot@lexicalunit.com\n"
+"POT-Creation-Date: 2026-11-03 17:50-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: el\n"
+"Language-Team: el <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgctxt "game.title.ready"
+msgid "**Your game is ready!**"
+msgstr "**Το παιχνίδι σας είναι έτοιμο!**"
+
+msgctxt "game.title.rematch"
+msgid "**Rematch Game!**"
+msgstr "**Παιχνίδι ρεβάνς!**"
+
+#, python-format
+msgctxt "game.title.waiting"
+msgid "**Waiting for %(count)s more player to join...**"
+msgid_plural "**Waiting for %(count)s more players to join...**"
+msgstr[0] "**Αναμονή για να συμμετάσχει %(count)s ακόμη παίκτης...**"
+msgstr[1] "**Αναμονή για να συμμετάσχουν %(count)s ακόμη παίκτες...**"
+
+msgctxt "game.description.check_dm"
+msgid "Please check your Direct Messages for your game details."
+msgstr "Ελέγξτε τα άμεσα μηνύματά σας για να δείτε τα στοιχεία του παιχνιδιού σας."
+
+msgctxt "game.description.rematch_info"
+msgid "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
+msgstr "Αυτή είναι ρεβάνς ενός προηγούμενου παιχνιδιού. Συνεχίστε να χρησιμοποιείτε το ίδιο λόμπι παιχνιδιού και το ίδιο φωνητικό κανάλι."
+
+#, python-format
+msgctxt "game.description.join_link"
+msgid "# [Join your %(service)s game now!](%(link)s)"
+msgstr "# [Συμμετέχετε στο παιχνίδι σας %(service)s τώρα!](%(link)s)"
+
+#, python-format
+msgctxt "game.description.link_error"
+msgid "Sorry but SpellBot was unable to create a link for this game. Please go to [%(service)s](%(url)s) to create one."
+msgstr "Λυπούμαστε αλλά το SpellBot δεν κατάφερε να δημιουργήσει σύνδεσμο για αυτό το παιχνίδι. Μεταβείτε στο [%(service)s](%(url)s) για να δημιουργήσετε έναν."
+
+#, python-format
+msgctxt "game.description.use_service"
+msgid "Please use %(service)s to play this game."
+msgstr "Χρησιμοποιήστε %(service)s για να παίξετε αυτό το παιχνίδι."
+
+msgctxt "game.description.contact_players"
+msgid "Contact the other players in your game to organize this match."
+msgstr "Επικοινωνήστε με τους άλλους παίκτες στο παιχνίδι σας για να οργανώσετε αυτόν τον αγώνα."
+
+#, python-format
+msgctxt "game.description.password"
+msgid "Password: `%(password)s`"
+msgstr "Κωδικός πρόσβασης: `%(password)s`"
+
+#, python-format
+msgctxt "game.description.voice_chat"
+msgid "## Join your voice chat now: <#%(channel_id)s>"
+msgstr "## Συμμετέχετε στη φωνητική συνομιλία τώρα: <#%(channel_id)s>"
+
+#, python-format
+msgctxt "game.description.voice_invite"
+msgid "Or use this voice channel invite: %(invite)s"
+msgstr "Ή χρησιμοποιήστε αυτήν την πρόσκληση φωνητικού καναλιού: %(invite)s"
+
+#, python-format
+msgctxt "game.description.voice_already_picked"
+msgid "## Your pod is already using a voice channel, join them now: <#%(channel_id)s>!"
+msgstr "## Η ομάδα σας χρησιμοποιεί ήδη φωνητικό κανάλι. Συμμετέχετε τώρα: <#%(channel_id)s>!"
+
+#, python-format
+msgctxt "game.description.voice_available"
+msgid "## Please consider using this available voice channel: <#%(channel_id)s>."
+msgstr "## Σκεφτείτε να χρησιμοποιήσετε αυτό το διαθέσιμο φωνητικό κανάλι: <#%(channel_id)s>."
+
+#, python-format
+msgctxt "game.description.jump_to_post"
+msgid "You can also [jump to the original game post](%(link)s) in <#%(channel_id)s>."
+msgstr "Μπορείτε επίσης να [μεταβείτε στην αρχική ανάρτηση του παιχνιδιού](%(link)s) στο <#%(channel_id)s>."
+
+msgctxt "game.war_convoke_only"
+msgid "This Guild War table no longer takes players through SpellBot, but you can still join it on Convoke."
+msgstr "Αυτό το τραπέζι του Πολέμου συντεχνιών δεν δέχεται πλέον παίκτες μέσω του SpellBot, αλλά μπορείτε ακόμα να συμμετάσχετε στο Convoke."
+
+msgctxt "game.field.rules"
+msgid "⚠️ Additional Rules:"
+msgstr "⚠️ Πρόσθετοι κανόνες:"
+
+msgctxt "game.field.guild_war"
+msgid "⚔️ Guild War"
+msgstr "⚔️ Πόλεμος συντεχνιών"
+
+msgctxt "game.field.players"
+msgid "Players"
+msgstr "Παίκτες"
+
+#, python-format
+msgctxt "game.field.players_hidden"
+msgid "**%(count)s player name is hidden**"
+msgid_plural "**%(count)s player names are hidden**"
+msgstr[0] "**%(count)s όνομα παίκτη είναι κρυμμένο**"
+msgstr[1] "**%(count)s ονόματα παίκτη είναι κρυμμένα**"
+
+msgctxt "game.field.format"
+msgid "Format"
+msgstr "Φόρματ"
+
+msgctxt "game.field.bracket"
+msgid "Bracket"
+msgstr "Επίπεδο"
+
+msgctxt "game.field.started_at"
+msgid "Started at"
+msgstr "Ξεκίνησε στις"
+
+msgctxt "game.field.updated_at"
+msgid "Updated at"
+msgstr "Ενημερώθηκε στις"
+
+msgctxt "game.field.voice_channel"
+msgid "🔊 Suggested Voice Channel"
+msgstr "🔊 Προτεινόμενο φωνητικό κανάλι"
+
+msgctxt "game.field.support"
+msgid "Support SpellBot"
+msgstr "Υποστήριξη SpellBot"
+
+#, python-format
+msgctxt "game.field.support_text"
+msgid "Become [a patron](%(subscribe)s) or give a [one-off tip](%(donate)s)."
+msgstr "Γίνετε [προστάτης](%(subscribe)s) ή δώστε μια [εφάπαξ συμβουλή](%(donate)s)."
+
+#, python-format
+msgctxt "game.field.convoke_guild"
+msgid "Play more with **%(name)s** on Convoke. [Join the guild!](%(url)s)"
+msgstr "Παίξε περισσότερο με το **%(name)s** στο Convoke. [Γίνε μέλος του guild!](%(url)s)"
+
+msgctxt "game.field.settings"
+msgid "Settings"
+msgstr "Ρυθμίσεις"
+
+#, python-format
+msgctxt "game.field.settings_text"
+msgid "See [live games](%(queues)s) and configure [your notifications](%(notify)s)."
+msgstr "Δες [ζωντανά παιχνίδια](%(queues)s) και ρύθμισε [τις ειδοποιήσεις σου](%(notify)s)."
+
+#, python-format
+msgctxt "game.footer"
+msgid "SpellBot Game ID: #SB%(game_id)s — Service: %(service)s"
+msgstr "ID παιχνιδιού SpellBot: #SB%(game_id)s — Υπηρεσία: %(service)s"
+
+msgctxt "service.not_any"
+msgid "_Please contact the players in your game to organize this game._"
+msgstr "_Επικοινωνήστε με τους παίκτες στο παιχνίδι σας για να οργανώσετε αυτό το παιχνίδι._"
+
+#, python-format
+msgctxt "service.spelltable"
+msgid "_Please go create a game on %(emoji)s[SpellTable](https://spelltable.wizards.com/) for this game._"
+msgstr "_Δημιουργήστε ένα παιχνίδι στο %(emoji)s[SpellTable](https://spelltable.wizards.com/) για αυτό το παιχνίδι._"
+
+msgctxt "service.cockatrice"
+msgid "_Please use Cockatrice for this game._"
+msgstr "_Χρησιμοποιήστε το Cockatrice για αυτό το παιχνίδι._"
+
+msgctxt "service.xmage"
+msgid "_Please use XMage for this game._"
+msgstr "_Χρησιμοποιήστε το XMage για αυτό το παιχνίδι._"
+
+msgctxt "service.mtg_arena"
+msgid "_Please use MTG Arena for this game._"
+msgstr "_Χρησιμοποιήστε το MTG Arena για αυτό το παιχνίδι._"
+
+msgctxt "service.mtg_online"
+msgid "_Please use MTG Online for this game._"
+msgstr "_Χρησιμοποιήστε το MTG Online για αυτό το παιχνίδι._"
+
+msgctxt "service.tts"
+msgid "_Please use TabletopSim for this game._"
+msgstr "_Χρησιμοποιήστε το TabletopSim για αυτό το παιχνίδι._"
+
+#, python-format
+msgctxt "service.convoke"
+msgid "_A %(emoji)s[Convoke](https://www.convoke.games/) link will be created when all players have joined._"
+msgstr "_Ένας σύνδεσμος %(emoji)s[Convoke](https://www.convoke.games/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες._"
+
+#, python-format
+msgctxt "service.girudo"
+msgid "_A %(emoji)s[Girudo](https://www.girudo.com/) link will be created when all players have joined._"
+msgstr "_Ένας σύνδεσμος %(emoji)s[Girudo](https://www.girudo.com/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες._"
+
+#, python-format
+msgctxt "service.edhlab"
+msgid "_A %(emoji)s[EDHLAB](https://edhlab.gg/) link will be created when all players have joined._"
+msgstr "_Ένας σύνδεσμος %(emoji)s[EDHLAB](https://edhlab.gg/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες._"
+
+#, python-format
+msgctxt "service.playgroup_live"
+msgid "*A %(emoji)s[Playgroup Live](https://playgroup.gg/) link will be created when all players have joined.*"
+msgstr "*Ένας σύνδεσμος %(emoji)s[Playgroup Live](https://playgroup.gg/) θα δημιουργηθεί όταν έχουν μπει όλοι οι παίκτες.*"
+
+msgctxt "lfg.playgroup_link_required"
+msgid "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
+msgstr "Για να χρησιμοποιήσετε το Playgroup Live, τουλάχιστον ένας παίκτης πρέπει να συνδέσει τον λογαριασμό του. Εκτελέστε την εντολή `/playgroup link` και προσπαθήστε ξανά."
+
+msgctxt "lfg.run_in_channel"
+msgid "Please run this command in the same channel as your last played game."
+msgstr "Εκτελέστε αυτή την εντολή στο ίδιο κανάλι με το τελευταίο παιχνίδι που παίξατε."
+
+msgctxt "lfg.already_pending"
+msgid "You're already in a pending game, leave that one first."
+msgstr "Είστε ήδη σε ένα παιχνίδι σε εκκρεμότητα, αποχωρήστε πρώτα από αυτό."
+
+msgctxt "lfg.no_previous_game"
+msgid "You have not played a game in this guild yet."
+msgstr "Δεν έχετε παίξει ακόμα παιχνίδι σε αυτή την ομάδα."
+
+msgctxt "lfg.run_in_game_channel"
+msgid "Please run this command in the same channel as your game."
+msgstr "Εκτελέστε αυτή την εντολή στο ίδιο κανάλι με το παιχνίδι σας."
+
+msgctxt "lfg.not_pending_here"
+msgid "You're not in a pending game in this channel."
+msgstr "Δεν βρίσκεστε σε παιχνίδι που είναι σε εκκρεμότητα σε αυτό το κανάλι."
+
+msgctxt "lfg.start_needs_players"
+msgid "You need at least one other player before you can start a game."
+msgstr "Χρειάζεστε τουλάχιστον έναν ακόμη παίκτη πριν μπορέσετε να ξεκινήσετε ένα παιχνίδι."
+
+msgctxt "lfg.unsupported_context"
+msgid "Sorry, that command is not supported in this context."
+msgstr "Λυπούμαστε, αυτή η εντολή δεν υποστηρίζεται σε αυτό το πλαίσιο."
+
+msgctxt "lfg.already_in_channel"
+msgid "You're already in a game in this channel."
+msgstr "Είστε ήδη σε ένα παιχνίδι σε αυτό το κανάλι."
+
+msgctxt "lfg.too_many_pending"
+msgid "You're in too many pending games to join another one at this time."
+msgstr "Είστε σε πάρα πολλά παιχνίδια που είναι σε εκκρεμότητα για να συμμετάσχετε σε ένα άλλο αυτή τη στιγμή."
+
+msgctxt "lfg.too_many_friends"
+msgid "You mentioned too many players."
+msgstr "Αναφέρατε πάρα πολλούς παίκτες."
+
+msgctxt "lfg.guild_war_invalid"
+msgid "That Guild War is not available. Use autocomplete to pick a live war."
+msgstr "Αυτός ο πόλεμος συντεχνιών δεν είναι διαθέσιμος. Χρησιμοποιήστε την αυτόματη συμπλήρωση για να επιλέξετε έναν ενεργό πόλεμο."
+
+#, python-format
+msgctxt "lfg.guild_war_seats"
+msgid "Guild War matches need between %(min)s and %(max)s seats."
+msgstr "Οι αγώνες πολέμου συντεχνιών χρειάζονται από %(min)s έως %(max)s θέσεις."
+
+msgctxt "lfg.cannot_join"
+msgid "You can not join this game."
+msgstr "Δεν μπορείτε να συμμετάσχετε σε αυτό το παιχνίδι."
+
+msgctxt "lfg.game_started"
+msgid "Sorry, that game has already started."
+msgstr "Λυπούμαστε, το παιχνίδι έχει ήδη ξεκινήσει."
+
+msgctxt "lfg.game_full"
+msgid "Sorry, that game is already full."
+msgstr "Λυπούμαστε, το παιχνίδι είναι ήδη πλήρες."
+
+#, python-format
+msgctxt "lfg.invalid_player_count"
+msgid "You can't create a %(format)s game with %(count)s players."
+msgstr "Δεν μπορείτε να δημιουργήσετε παιχνίδι %(format)s με %(count)s παίκτες."
+
+#, python-format
+msgctxt "lfg.excluded_players"
+msgid "Some of the players you mentioned can not be added to a game: %(players)s"
+msgstr "Μερικοί από τους παίκτες που αναφέρατε δεν μπορούν να προστεθούν σε ένα παιχνίδι: %(players)s"
+
+#, python-format
+msgctxt "lfg.found_game"
+msgid "I found a %(format)s game for you!"
+msgstr "Βρήκα ένα παιχνίδι %(format)s για εσάς!"
+
+#, python-format
+msgctxt "lfg.jump_to_game"
+msgid "You can [jump to the game post](%(link)s) to see it!"
+msgstr "Μπορείτε [να μεταβείτε στην ανάρτηση του παιχνιδιού](%(link)s) για να το δείτε!"
+
+#, python-format
+msgctxt "lfg.joined_game"
+msgid "You have joined the game SB%(game_id)s!"
+msgstr "Έχετε μπει στο παιχνίδι SB%(game_id)s!"
+
+#, python-format
+msgctxt "lfg.started_game"
+msgid "I started your %(format)s game for you!"
+msgstr "Ξεκίνησα το παιχνίδι %(format)s για εσάς!"
+
+#, python-format
+msgctxt "lfg.game_started_id"
+msgid "The game SB%(game_id)s has been started!"
+msgstr "Το παιχνίδι SB%(game_id)s έχει ξεκινήσει!"
+
+#, python-format
+msgctxt "lfg.dm_failures"
+msgid "Unable to send Direct Messages to some players: %(players)s"
+msgstr "Δεν είναι δυνατή η αποστολή άμεσων μηνυμάτων σε ορισμένους παίκτες: %(players)s"
+
+#, python-format
+msgctxt "lfg.award_failure_give"
+msgid "Unable to give role %(role)s to user <@%(user_id)s>"
+msgstr "Δεν είναι δυνατή η εκχώρηση του ρόλου %(role)s στον χρήστη <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.award_failure_take"
+msgid "Unable to take role %(role)s from user <@%(user_id)s>"
+msgstr "Δεν είναι δυνατή η ανάληψη του ρόλου %(role)s από τον χρήστη <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.mythic_track"
+msgid "Track your game on %(emoji)s[Mythic Track](%(link)s) with PIN code: `%(pin)s`"
+msgstr "Παρακολουθήστε το παιχνίδι σας στο %(emoji)s[Mythic Track](%(link)s) με τον κωδικό PIN: `%(pin)s`"
+
+msgctxt "button.join"
+msgid "Join this game!"
+msgstr "Συμμετοχή σε αυτό το παιχνίδι!"
+
+msgctxt "button.leave"
+msgid "Leave"
+msgstr "Αποχώρηση"
+
+msgctxt "admin.no_game_found"
+msgid "There is no game with that ID."
+msgstr "Δεν υπάρχει παιχνίδι με αυτό το ID."
+
+msgctxt "admin.done"
+msgid "Done."
+msgstr "Τελείωσε."
+
+#, python-format
+msgctxt "admin.channels_title"
+msgid "Configuration for channels in %(guild)s"
+msgstr "Διαμόρφωση καναλιών στο %(guild)s"
+
+#, python-format
+msgctxt "admin.setup_title"
+msgid "SpellBot Setup for %(guild)s"
+msgstr "Ρύθμιση SpellBot για το %(guild)s"
+
+#, python-format
+msgctxt "admin.setup_description"
+msgid ""
+"SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n"
+"\n"
+"[Configure SpellBot →](%(link)s)"
+msgstr ""
+"Το SpellBot βοηθά την κοινότητά σας να βρει και να παίξει παιχνίδια Magic: The Gathering μαζί. Για να διαμορφώσετε τον διακομιστή, τα κανάλια και τα βραβεία παικτών σας, επισκεφθείτε τον πίνακα ελέγχου του SpellBot.\n"
+"\n"
+"[Διαμόρφωση SpellBot →](%(link)s)"
+
+#, python-format
+msgctxt "admin.user_move_error"
+msgid "Error: %(error)s"
+msgstr "Σφάλμα: %(error)s"
+
+#, python-format
+msgctxt "admin.user_moved"
+msgid "User %(from_user)s has been moved to %(to_user)s"
+msgstr "Ο χρήστης %(from_user)s μεταφέρθηκε στο %(to_user)s"
+
+#, python-format
+msgctxt "admin.expire_dequeued"
+msgid "├── Dequeued %(count)s players"
+msgstr "├── %(count)s παίκτες αφαιρέθηκαν από την ουρά"
+
+#, python-format
+msgctxt "admin.expire_no_channel"
+msgid "├── Could not find channel %(channel_id)s"
+msgstr "├── Δεν βρέθηκε το κανάλι %(channel_id)s"
+
+#, python-format
+msgctxt "admin.expire_no_message"
+msgid "├── Could not find message %(message_id)s"
+msgstr "├── Δεν βρέθηκε το μήνυμα %(message_id)s"
+
+#, python-format
+msgctxt "admin.expire_deleting"
+msgid "├── Deleting message %(message_id)s ..."
+msgstr "├── Διαγραφή μηνύματος %(message_id)s ..."
+
+#, python-format
+msgctxt "admin.expire_updating"
+msgid "├── Updating message %(message_id)s ..."
+msgstr "├── Ενημέρωση μηνύματος %(message_id)s ..."
+
+msgctxt "admin.expire_no_permission"
+msgid "├── Bot does not have permission"
+msgstr "├── Το bot δεν έχει άδεια"
+
+msgctxt "admin.expire_done"
+msgid "└── Done"
+msgstr "└── Τελείωσε"
+
+msgctxt "admin.expire_none"
+msgid "No games to expire."
+msgstr "Δεν υπάρχουν παιχνίδια προς λήξη."
+
+#, python-format
+msgctxt "admin.expire_game"
+msgid "Expiring game #SB%(game_id)s ..."
+msgstr "Παιχνίδι που λήγει #SB%(game_id)s ..."
+
+msgctxt "admin.game_expired"
+msgid "Sorry, this game was expired due to inactivity."
+msgstr "Λυπούμαστε, αυτό το παιχνίδι έληξε λόγω αδράνειας."
+
+#, python-format
+msgctxt "admin.user_info_title"
+msgid "User info for %(name)s"
+msgstr "Πληροφορίες χρήστη %(name)s"
+
+#, python-format
+msgctxt "admin.user_info_games_count"
+msgid "%(count)s game on %(guild)s"
+msgid_plural "%(count)s games on %(guild)s"
+msgstr[0] "%(count)s παιχνίδι στο %(guild)s"
+msgstr[1] "%(count)s παιχνίδια στο %(guild)s"
+
+msgctxt "admin.user_info_games"
+msgid "Games Played"
+msgstr "Παιχνίδια που έχετε παίξει"
+
+#, python-format
+msgctxt "admin.user_info_blocked"
+msgid "Blocked by %(count)s user"
+msgid_plural "Blocked by %(count)s users"
+msgstr[0] "Αποκλείστηκε από %(count)s χρήστη"
+msgstr[1] "Αποκλείστηκε από %(count)s χρήστες"
+
+msgctxt "admin.user_info_block_status"
+msgid "Block Status"
+msgstr "Κατάσταση αποκλεισμού"
+
+msgctxt "admin.user_info_no_games"
+msgid "No games played"
+msgstr "Δεν έχει παίξει παιχνίδια"
+
+msgctxt "admin.user_info_play_range"
+msgid "Play Range"
+msgstr "Διάρκεια παιχνιδιού"
+
+msgctxt "admin.user_info_game_history"
+msgid "Game History"
+msgstr "Ιστορικό παιχνιδιού"
+
+#, python-format
+msgctxt "admin.view_link"
+msgid "[View on spellbot.io](%(link)s)"
+msgstr "[Προβολή στο spellbot.io](%(link)s)"
+
+#, python-format
+msgctxt "admin.game_info_title"
+msgid "Game info for #SB%(game_id)s"
+msgstr "Πληροφορίες παιχνιδιού για το #SB%(game_id)s"
+
+msgctxt "admin.game_info_pending"
+msgid "Not started yet"
+msgstr "Ο αγώνας δεν έχει ξεκινήσει"
+
+msgctxt "admin.game_info_details"
+msgid "Details"
+msgstr "Λεπτομέρειες"
+
+#, python-format
+msgctxt "admin.user_info_footer"
+msgid "User ID: %(user_id)s"
+msgstr "ID χρήστη: %(user_id)s"
+
+#, python-format
+msgctxt "admin.mythic_track_title"
+msgid "Mythic Track Setup for %(guild)s"
+msgstr "Ρύθμιση Mythic Track για το %(guild)s"
+
+#, python-format
+msgctxt "admin.mythic_track_on"
+msgid ""
+"✅ Mythic Track has been turned **on** for this server!\n"
+"\n"
+"To continue setup, please [connect your Discord account to Mythic Track](%(guide)s).\n"
+"\n"
+"While this feature is turned on, SpellBot will generate PIN codes for players to enter into Mythic Track so that their games can be tracked."
+msgstr ""
+"✅ Το Mythic Track έχει ενεργοποιηθεί **για** αυτόν τον διακομιστή!\n"
+"\n"
+"Για να συνεχίσετε την εγκατάσταση, [συνδέστε τον λογαριασμό σας Discord με το Mythic Track](%(guide)s).\n"
+"\n"
+"Ενώ η λειτουργία είναι ενεργοποιημένη, το SpellBot θα δημιουργεί κωδικούς PIN για τους παίκτες που θα εισαγάγουν στο Mythic Track, ώστε να μπορούν να παρακολουθούνται τα παιχνίδια τους."
+
+msgctxt "admin.mythic_track_off"
+msgid "❌ Mythic Track has been turned **off** for this server. Rerun this command to toggle it back on. Note that turning this feature off does _not_ remove any existing Mythic Track data."
+msgstr "❌ Το Mythic Track έχει **απενεργοποιηθεί** για αυτόν τον διακομιστή. Εκτελέστε ξανά αυτήν την εντολή για να το ενεργοποιήσετε. Σημειώστε ότι η απενεργοποίηση αυτής της λειτουργίας _δεν_ καταργεί τυχόν υπάρχοντα δεδομένα Mythic Track."
+
+msgctxt "block.self_block"
+msgid "You can not block yourself."
+msgstr "Δεν μπορείτε να αποκλείσετε τον εαυτό σας."
+
+#, python-format
+msgctxt "block.blocked"
+msgid "<@%(user_id)s> has been blocked."
+msgstr "Ο χρήστης <@%(user_id)s> έχει αποκλειστεί."
+
+#, python-format
+msgctxt "block.unblocked"
+msgid "<@%(user_id)s> has been unblocked."
+msgstr "Ο αποκλεισμός του χρήστη <@%(user_id)s> έχει καταργηθεί."
+
+#, python-format
+msgctxt "block.manage_message"
+msgid ""
+"You can view and manage your blocked users from your profile page.\n"
+"\n"
+"[Open your profile on spellbot.io](%(link)s)"
+msgstr ""
+"Μπορείτε να προβάλετε και να διαχειριστείτε τους αποκλεισμένους χρήστες σας από τη σελίδα του προφίλ σας.\n"
+"\n"
+"[Ανοίξτε το προφίλ σας στο spellbot.io](%(link)s)"
+
+msgctxt "leave.removed_channel"
+msgid "You were removed from any pending games in this channel."
+msgstr "Έχετε αφαιρεθεί από οποιαδήποτε παιχνίδια σε εκκρεμότητα σε αυτό το κανάλι."
+
+msgctxt "leave.removed_all"
+msgid "You were removed from all pending games."
+msgstr "Έχετε αφαιρεθεί από όλα τα παιχνίδια που είναι σε εκκρεμότητα."
+
+msgctxt "score.record_title"
+msgid "Record of games played"
+msgstr "Εγγραφή παιχνιδιών που παίχτηκαν"
+
+#, python-format
+msgctxt "score.games"
+msgid "%(count)s game"
+msgid_plural "%(count)s games"
+msgstr[0] "%(count)s παιχνίδι"
+msgstr[1] "%(count)s παιχνίδια"
+
+#, python-format
+msgctxt "score.record_description"
+msgid ""
+"%(mention)s has played %(games)s.\n"
+"View more [details on spellbot.io](%(link)s)."
+msgstr ""
+"Ο %(mention)s έπαιξε %(games)s.\n"
+"Δείτε περισσότερα [λεπτομέρειες σχετικά με το spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.history_title"
+msgid "Recent games played in %(channel)s"
+msgstr "Παιχνίδια που παίχτηκαν πρόσφατα στο %(channel)s"
+
+#, python-format
+msgctxt "score.history_description"
+msgid "View [game history on spellbot.io](%(link)s)."
+msgstr "Προβολή [ιστορικού παιχνιδιού στο spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.top_title"
+msgid "Top players in #%(channel)s (%(range)s)"
+msgstr "Κορυφαίοι παίκτες στο #%(channel)s (%(range)s)"
+
+#, python-format
+msgctxt "score.range_ago"
+msgid "%(months)s months ago"
+msgstr "%(months)s μήνες πριν"
+
+msgctxt "score.range_this_month"
+msgid "this month"
+msgstr "αυτό το μήνα"
+
+msgctxt "score.range_all_time"
+msgid "all time"
+msgstr "όλων των εποχών"
+
+msgctxt "score.top_header"
+msgid "Rank     Games     Player"
+msgstr "Κατάταξη     Παιχνίδια     Παίκτης"
+
+msgctxt "about.title"
+msgid "SpellBot"
+msgstr "SpellBot"
+
+msgctxt "about.version"
+msgid "Version"
+msgstr "Έκδοση"
+
+msgctxt "about.author"
+msgid "Author"
+msgstr "Συντάκτης"
+
+#, python-format
+msgctxt "about.description"
+msgid ""
+"_The Discord bot for Webcam Magic._\n"
+"\n"
+"Having issues with SpellBot? Please [report bugs](%(issues)s)!\n"
+"\n"
+"[🔗 Add SpellBot to your Discord!](%(invite)s)\n"
+"\n"
+"SpellBot's continued operation is made possible by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+"\n"
+"💜 Help keep SpellBot running by [becoming a patron!](%(patreon)s)"
+msgstr ""
+"_Το Discord bot για το Webcam Magic._\n"
+"\n"
+"Είχε προβλήματα με το SpellBot; [Αναφέρετε σφάλματα](%(issues)s)!\n"
+"\n"
+"[🔗 Προσθέστε το SpellBot στο Discord σας!](%(invite)s)\n"
+"\n"
+"Η συνεχής λειτουργία του SpellBot είναι δυνατή χάρη στο [PlayEDH](https://www.playedh.com/) και τους υποστηρικτές μου στο Patreon.\n"
+"\n"
+"💜 Βοηθήστε να διατηρήσουμε τη συνεχή λειτουργία του SpellBot. [Γίνετε χορηγός!](%(patreon)s)"
+
+msgctxt "errors.no_permission"
+msgid "You do not have permission to do that."
+msgstr "Δεν έχετε άδεια να το κάνετε αυτό."
+
+msgctxt "errors.guild_only"
+msgid "This command only works in a guild."
+msgstr "Αυτή η εντολή λειτουργεί μόνο σε ομάδα."
+
+msgctxt "errors.no_dms"
+msgid "This command is not supported in DMs."
+msgstr "Αυτή η εντολή δεν υποστηρίζεται στα άμεσα μηνύματα."
+
+msgctxt "errors.banned"
+msgid "You have been banned from using SpellBot."
+msgstr "Έχετε αποκλειστεί από τη χρήση του SpellBot."
+
+#, python-format
+msgctxt "errors.cooldown"
+msgid "Please try again in %(seconds)ss."
+msgstr "Παρακαλώ δοκιμάστε ξανά σε %(seconds)ss."
+
+msgctxt "playgroup.already_linked"
+msgid "Your Discord account is already linked to Playgroup Live!"
+msgstr "Ο λογαριασμός σας Discord είναι ήδη συνδεδεμένος με το Playgroup Live!"
+
+#, python-format
+msgctxt "playgroup.linked"
+msgid "Linked! Welcome, **%(username)s**. Your Playgroup Live games will now be attributed to your account."
+msgstr "Συνδέθηκε! Καλώς ήρθατε, **%(username)s**. Τα παιχνίδια σας στο Playgroup Live θα συμπεριληφθούν πλέον στον λογαριασμό σας."
+
+msgctxt "playgroup.not_found"
+msgid "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+msgstr "Δεν βρέθηκε λογαριασμός Playgroup για το Discord σας. Μεταβείτε στο <https://playgroup.gg/profiles> και κάντε κλικ στην επιλογή **Σύνδεση Discord** και, στη συνέχεια, εκτελέστε ξανά την εντολή `/playgroup link` για επιβεβαίωση."
+
+msgctxt "web.nav.active_queues"
+msgid "Active Queues"
+msgstr "Ενεργές ουρές"
+
+msgctxt "web.nav.my_records"
+msgid "My Records"
+msgstr "Τα αρχεία μου"
+
+msgctxt "web.nav.admin_dashboard"
+msgid "Admin Dashboard"
+msgstr "Πίνακας διαχείρισης"
+
+msgctxt "web.nav.server_details"
+msgid "Server Details"
+msgstr "Λεπτομέρειες διακομιστή"
+
+msgctxt "web.nav.notification_preferences"
+msgid "Notification preferences"
+msgstr "Προτιμήσεις ειδοποιήσεων"
+
+#, python-format
+msgctxt "web.nav.back_to"
+msgid "← Back to %(name)s"
+msgstr "← Επιστροφή σε %(name)s"
+
+msgctxt "web.nav.log_in"
+msgid "Log in"
+msgstr "Σύνδεση"
+
+msgctxt "web.nav.log_out"
+msgid "Log out"
+msgstr "Αποσύνδεση"
+
+#, python-format
+msgctxt "web.nav.logged_in_as"
+msgid "Logged in as %(name)s"
+msgstr "Συνδεδεμένος ως %(name)s"
+
+msgctxt "web.nav.site_nav_aria"
+msgid "Site navigation"
+msgstr "Πλοήγηση ιστότοπου"
+
+msgctxt "web.nav.server_nav_aria"
+msgid "Server navigation"
+msgstr "Πλοήγηση διακομιστή"
+
+#, python-format
+msgctxt "web.common.powered_by"
+msgid "Powered by %(link)s."
+msgstr "Με την υποστήριξη του %(link)s."
+
+#, python-format
+msgctxt "web.common.generated_by"
+msgid "Generated by %(link)s"
+msgstr "Δημιουργήθηκε από το %(link)s"
+
+msgctxt "web.common.spellbot_server"
+msgid "SpellBot Server"
+msgstr "Διακομιστής SpellBot"
+
+msgctxt "web.common.server"
+msgid "server"
+msgstr "διακομιστής"
+
+msgctxt "web.common.this_server"
+msgid "this server"
+msgstr "αυτόν τον διακομιστή"
+
+msgctxt "web.common.unknown_user"
+msgid "Unknown User"
+msgstr "Άγνωστος χρήστης"
+
+msgctxt "web.common.unknown_channel"
+msgid "Unknown Channel"
+msgstr "Άγνωστο κανάλι"
+
+msgctxt "web.common.unknown_guild"
+msgid "Unknown Guild"
+msgstr "Άγνωστος διακομιστής"
+
+msgctxt "web.common.login_with_discord"
+msgid "Log in with Discord"
+msgstr "Σύνδεση με Discord"
+
+msgctxt "web.common.export_csv"
+msgid "Export all (CSV)"
+msgstr "Εξαγωγή όλων (CSV)"
+
+msgctxt "web.common.prev_page"
+msgid "Previous page"
+msgstr "Προηγούμενη σελίδα"
+
+msgctxt "web.common.next_page"
+msgid "Next page"
+msgstr "Επόμενη σελίδα"
+
+msgctxt "web.common.copy_user_id"
+msgid "Copy User ID"
+msgstr "Αντιγραφή ID χρήστη"
+
+msgctxt "web.common.copy_channel_id"
+msgid "Copy Channel ID"
+msgstr "Αντιγραφή ID καναλιού"
+
+msgctxt "web.common.copy_server_id"
+msgid "Copy server ID"
+msgstr "Αντιγραφή ID διακομιστή"
+
+#, python-format
+msgctxt "web.common.open_in"
+msgid "Open in %(service)s"
+msgstr "Άνοιγμα σε %(service)s"
+
+msgctxt "web.common.jump_to_game"
+msgid "Jump to game"
+msgstr "Μετάβαση στο παιχνίδι"
+
+msgctxt "web.common.jump_to_channel"
+msgid "Jump to channel"
+msgstr "Μετάβαση στο κανάλι"
+
+msgctxt "web.common.jump_to_guild"
+msgid "Jump to guild"
+msgstr "Μετάβαση στον διακομιστή"
+
+msgctxt "web.common.jump_to_voice_invite"
+msgid "Jump to voice invite"
+msgstr "Μετάβαση στην πρόσκληση φωνής"
+
+msgctxt "web.common.view_change_history"
+msgid "View change history"
+msgstr "Προβολή ιστορικού αλλαγών"
+
+msgctxt "web.common.seats_suffix"
+msgid "seats"
+msgstr "θέσεις"
+
+msgctxt "web.common.yes_label"
+msgid "Yes"
+msgstr "Ναι"
+
+msgctxt "web.common.no_label"
+msgid "No"
+msgstr "Όχι"
+
+msgctxt "web.field.status"
+msgid "Status"
+msgstr "Κατάσταση"
+
+msgctxt "web.field.format"
+msgid "Format"
+msgstr "Φόρματ"
+
+msgctxt "web.field.bracket"
+msgid "Bracket"
+msgstr "Επίπεδο"
+
+msgctxt "web.field.service"
+msgid "Service"
+msgstr "Υπηρεσία"
+
+msgctxt "web.field.seats"
+msgid "Seats"
+msgstr "Θέσεις"
+
+msgctxt "web.field.locale"
+msgid "Locale"
+msgstr "Τοπικές ρυθμίσεις"
+
+msgctxt "web.field.players"
+msgid "Players"
+msgstr "Παίκτες"
+
+msgctxt "web.field.link"
+msgid "Link"
+msgstr "Σύνδεσμος"
+
+msgctxt "web.field.game"
+msgid "Game"
+msgstr "Παιχνίδι"
+
+msgctxt "web.field.time"
+msgid "Time"
+msgstr "Ώρα"
+
+msgctxt "web.field.guild"
+msgid "Guild"
+msgstr "Διακομιστής"
+
+msgctxt "web.field.channel"
+msgid "Channel"
+msgstr "Κανάλι"
+
+msgctxt "web.field.channel_id"
+msgid "Channel ID"
+msgstr "ID καναλιού"
+
+msgctxt "web.field.user_name"
+msgid "User Name"
+msgstr "Όνομα χρήστη"
+
+msgctxt "web.field.user_id"
+msgid "User ID"
+msgstr "ID χρήστη"
+
+msgctxt "web.field.wait"
+msgid "Wait"
+msgstr "Αναμονή"
+
+msgctxt "web.field.language"
+msgid "Language"
+msgstr "Γλώσσα"
+
+msgctxt "web.field.jump"
+msgid "Jump"
+msgstr "Μετάβαση"
+
+msgctxt "web.field.created"
+msgid "Created"
+msgstr "Δημιουργήθηκε"
+
+msgctxt "web.field.updated"
+msgid "Updated"
+msgstr "Ενημερώθηκε"
+
+msgctxt "web.field.started"
+msgid "Started"
+msgstr "Ξεκίνησε"
+
+msgctxt "web.field.deleted"
+msgid "Deleted"
+msgstr "Διαγράφηκε"
+
+msgctxt "web.queues.title"
+msgid "Active Queues — SpellBot"
+msgstr "Ενεργές ουρές — SpellBot"
+
+msgctxt "web.queues.meta_description"
+msgid "Join an active Magic: The Gathering queue powered by SpellBot."
+msgstr "Μπείτε σε μια ενεργή ουρά Magic: The Gathering με την υποστήριξη του SpellBot."
+
+msgctxt "web.queues.heading"
+msgid "Active Queues"
+msgstr "Ενεργές ουρές"
+
+msgctxt "web.queues.active_games"
+msgid "Active Games"
+msgstr "Ενεργά παιχνίδια"
+
+msgctxt "web.queues.active_games_tooltip"
+msgid "Pending queues plus games started in the last 2 hours"
+msgstr "Εκκρεμείς ουρές συν παιχνίδια που ξεκίνησαν τις τελευταίες 2 ώρες"
+
+msgctxt "web.queues.filter_aria"
+msgid "Filter queues"
+msgstr "Φιλτράρισμα ουρών"
+
+msgctxt "web.queues.all_formats"
+msgid "All formats"
+msgstr "Όλα τα φόρματ"
+
+msgctxt "web.queues.all_brackets"
+msgid "All brackets"
+msgstr "Όλα τα επίπεδα"
+
+msgctxt "web.queues.all_languages"
+msgid "All languages"
+msgstr "Όλες οι γλώσσες"
+
+msgctxt "web.queues.only_played"
+msgid "Only servers you've played in"
+msgstr "Μόνο διακομιστές όπου έχετε παίξει"
+
+msgctxt "web.queues.no_match"
+msgid "No queues match the selected filters."
+msgstr "Καμία ουρά δεν ταιριάζει με τα επιλεγμένα φίλτρα."
+
+msgctxt "web.queues.your_servers"
+msgid "Your Servers"
+msgstr "Οι διακομιστές σας"
+
+msgctxt "web.queues.setup_notifications"
+msgid "Setup notifications"
+msgstr "Ρύθμιση ειδοποιήσεων"
+
+msgctxt "web.queues.manage_notifications"
+msgid "Manage notifications"
+msgstr "Διαχείριση ειδοποιήσεων"
+
+#, python-format
+msgctxt "web.queues.setup_notifications_for"
+msgid "Setup notifications for %(name)s"
+msgstr "Ρύθμιση ειδοποιήσεων για %(name)s"
+
+#, python-format
+msgctxt "web.queues.manage_notifications_for"
+msgid "Manage notifications for %(name)s"
+msgstr "Διαχείριση ειδοποιήσεων για %(name)s"
+
+msgctxt "web.queues.notifications_on_short"
+msgid "On"
+msgstr "Ενεργές"
+
+msgctxt "web.queues.notifications_label"
+msgid "Notifications"
+msgstr "Ειδοποιήσεις"
+
+msgctxt "web.queues.empty_mine"
+msgid "No active queues right now in servers you've played in. Uncheck the filter to see all servers."
+msgstr "Δεν υπάρχουν ενεργές ουρές αυτή τη στιγμή σε διακομιστές όπου έχετε παίξει. Καταργήστε το φίλτρο για να δείτε όλους τους διακομιστές."
+
+#, python-format
+msgctxt "web.queues.empty_all"
+msgid "No active queues right now. Check back in a moment, or run %(command)s in your Discord server to start one."
+msgstr "Δεν υπάρχουν ενεργές ουρές αυτή τη στιγμή. Επιστρέψτε σε λίγο ή εκτελέστε %(command)s στον διακομιστή Discord σας για να ξεκινήσετε μία."
+
+msgctxt "web.queues.recently_started"
+msgid "Recently Started"
+msgstr "Ξεκίνησαν πρόσφατα"
+
+msgctxt "web.queues.jump_to_game_arrow"
+msgid "Jump to Game →"
+msgstr "Μετάβαση στο παιχνίδι →"
+
+msgctxt "web.queues.jump_to_channel_arrow"
+msgid "Jump to Channel →"
+msgstr "Μετάβαση στο κανάλι →"
+
+#, python-format
+msgctxt "web.queues.started_ago"
+msgid "%(duration)s ago"
+msgstr "πριν από %(duration)s"
+
+msgctxt "web.queues.auto_refresh"
+msgid "Auto-refreshing every 60 seconds."
+msgstr "Αυτόματη ανανέωση κάθε 60 δευτερόλεπτα."
+
+#, python-format
+msgctxt "web.records.channel_title"
+msgid "Channel Records — #%(name)s"
+msgstr "Αρχεία καναλιού — #%(name)s"
+
+#, python-format
+msgctxt "web.records.channel_heading"
+msgid "Channel Records: #%(name)s"
+msgstr "Αρχεία καναλιού: #%(name)s"
+
+#, python-format
+msgctxt "web.records.user_title"
+msgid "User Records — %(name)s"
+msgstr "Αρχεία χρήστη — %(name)s"
+
+#, python-format
+msgctxt "web.records.user_heading"
+msgid "User Records: %(name)s"
+msgstr "Αρχεία χρήστη: %(name)s"
+
+msgctxt "web.records.games"
+msgid "Games"
+msgstr "Παιχνίδια"
+
+#, python-format
+msgctxt "web.records.matching"
+msgid "%(count)s matching"
+msgstr "%(count)s αποτελέσματα"
+
+msgctxt "web.records.none_channel"
+msgid "No games found for this channel."
+msgstr "Δεν βρέθηκαν παιχνίδια για αυτό το κανάλι."
+
+msgctxt "web.records.none_user"
+msgid "No games found for this user."
+msgstr "Δεν βρέθηκαν παιχνίδια για αυτόν τον χρήστη."
+
+msgctxt "web.records.mod_manage_channel"
+msgid "Moderators can manage this channel's settings here."
+msgstr "Οι συντονιστές μπορούν να διαχειριστούν τις ρυθμίσεις αυτού του καναλιού εδώ."
+
+msgctxt "web.records.mod_manage_server"
+msgid "Moderators can manage this server's settings here."
+msgstr "Οι συντονιστές μπορούν να διαχειριστούν τις ρυθμίσεις αυτού του διακομιστή εδώ."
+
+msgctxt "web.records.login_block_list"
+msgid "Log in to view and manage your own block list."
+msgstr "Συνδεθείτε για να δείτε και να διαχειριστείτε τη δική σας λίστα αποκλεισμένων."
+
+msgctxt "web.blocks.title"
+msgid "Blocked Users"
+msgstr "Αποκλεισμένοι χρήστες"
+
+msgctxt "web.blocks.description"
+msgid "Players you block can't join your games, and you can't join theirs. This list is private to you."
+msgstr "Οι παίκτες που αποκλείετε δεν μπορούν να συμμετάσχουν στα παιχνίδια σας, και εσείς δεν μπορείτε να συμμετάσχετε στα δικά τους. Αυτή η λίστα είναι ιδιωτική."
+
+msgctxt "web.blocks.user"
+msgid "User"
+msgstr "Χρήστης"
+
+msgctxt "web.blocks.unblock"
+msgid "Unblock"
+msgstr "Κατάργηση αποκλεισμού"
+
+msgctxt "web.blocks.none"
+msgid "You haven't blocked anyone."
+msgstr "Δεν έχετε αποκλείσει κανέναν."
+
+msgctxt "web.blocks.add_label"
+msgid "Block a user"
+msgstr "Αποκλεισμός χρήστη"
+
+msgctxt "web.blocks.add_hint"
+msgid "Enter the Discord user ID (or name) of the player you want to block."
+msgstr "Εισαγάγετε το ID χρήστη Discord (ή το όνομα) του παίκτη που θέλετε να αποκλείσετε."
+
+msgctxt "web.blocks.add_placeholder"
+msgid "Discord user ID or name"
+msgstr "ID χρήστη Discord ή όνομα"
+
+msgctxt "web.blocks.add_button"
+msgid "Block user"
+msgstr "Αποκλεισμός χρήστη"
+
+msgctxt "web.filters.player_label"
+msgid "Player (name or ID)"
+msgstr "Παίκτης (όνομα ή ID)"
+
+msgctxt "web.filters.player_placeholder"
+msgid "e.g. amy or 12345"
+msgstr "π.χ. amy ή 12345"
+
+msgctxt "web.filters.guild_label"
+msgid "Guild (name or ID)"
+msgstr "Διακομιστής (όνομα ή ID)"
+
+msgctxt "web.filters.guild_placeholder"
+msgid "e.g. my-guild or 67890"
+msgstr "π.χ. o-diakomistis-mou ή 67890"
+
+msgctxt "web.filters.from"
+msgid "From"
+msgstr "Από"
+
+msgctxt "web.filters.to"
+msgid "To"
+msgstr "Έως"
+
+msgctxt "web.filters.formats"
+msgid "Format(s)"
+msgstr "Φόρματ"
+
+msgctxt "web.filters.brackets"
+msgid "Bracket(s)"
+msgstr "Επίπεδο(α)"
+
+msgctxt "web.filters.apply"
+msgid "Apply filters"
+msgstr "Εφαρμογή φίλτρων"
+
+msgctxt "web.filters.reset"
+msgid "Reset"
+msgstr "Επαναφορά"
+
+msgctxt "web.channel_settings.heading"
+msgid "Channel Settings"
+msgstr "Ρυθμίσεις καναλιού"
+
+msgctxt "web.channel_settings.default_seats"
+msgid "Default seats"
+msgstr "Προεπιλεγμένες θέσεις"
+
+msgctxt "web.channel_settings.default_format"
+msgid "Default format"
+msgstr "Προεπιλεγμένο φόρματ"
+
+msgctxt "web.channel_settings.default_bracket"
+msgid "Default bracket"
+msgstr "Προεπιλεγμένο επίπεδο"
+
+msgctxt "web.channel_settings.default_service"
+msgid "Default service"
+msgstr "Προεπιλεγμένη υπηρεσία"
+
+msgctxt "web.channel_settings.motd"
+msgid "Message of the day"
+msgstr "Μήνυμα της ημέρας"
+
+msgctxt "web.channel_settings.extra"
+msgid "Extra message"
+msgstr "Επιπλέον μήνυμα"
+
+msgctxt "web.channel_settings.voice_category"
+msgid "Voice category"
+msgstr "Κατηγορία φωνής"
+
+msgctxt "web.channel_settings.voice_invite"
+msgid "Create voice invites"
+msgstr "Δημιουργία προσκλήσεων φωνής"
+
+msgctxt "web.channel_settings.delete_expired"
+msgid "Delete expired games"
+msgstr "Διαγραφή ληγμένων παιχνιδιών"
+
+msgctxt "web.channel_settings.blind_games"
+msgid "Blind games"
+msgstr "Τυφλά παιχνίδια"
+
+msgctxt "web.channel_settings.to_mode"
+msgid "Tournament organizer mode"
+msgstr "Λειτουργία διοργανωτή τουρνουά"
+
+msgctxt "web.channel_settings.competitive_mode"
+msgid "Competitive mode"
+msgstr "Λειτουργία αγώνων"
+
+msgctxt "web.channel_settings.save"
+msgid "Save channel settings"
+msgstr "Αποθήκευση ρυθμίσεων καναλιού"
+
+msgctxt "web.channel_settings.forget_hint"
+msgid "Forgetting this channel resets it to default settings by removing its configuration. SpellBot will reconfigure it from defaults the next time it is used."
+msgstr "Η παράλειψη αυτού του καναλιού το επαναφέρει στις προεπιλεγμένες ρυθμίσεις αφαιρώντας τη διαμόρφωσή του. Το SpellBot θα το διαμορφώσει ξανά από τις προεπιλογές την επόμενη φορά που θα χρησιμοποιηθεί."
+
+msgctxt "web.channel_settings.forget_confirm"
+msgid "Forget this channel and reset it to default settings?"
+msgstr "Παράλειψη αυτού του καναλιού και επαναφορά στις προεπιλεγμένες ρυθμίσεις;"
+
+msgctxt "web.channel_settings.forget"
+msgid "Forget this channel"
+msgstr "Παράλειψη αυτού του καναλιού"
+
+#, python-format
+msgctxt "web.guild.channels_with_games"
+msgid "%(count)s channel with games"
+msgid_plural "%(count)s channels with games"
+msgstr[0] "%(count)s κανάλι με παιχνίδια"
+msgstr[1] "%(count)s κανάλια με παιχνίδια"
+
+msgctxt "web.guild.owner_controls"
+msgid "Owner Controls"
+msgstr "Στοιχεία ελέγχου ιδιοκτήτη"
+
+msgctxt "web.guild.view_analytics"
+msgid "Analytics"
+msgstr "Στατιστικά"
+
+msgctxt "web.guild.promotion_enabled"
+msgid "enabled"
+msgstr "ενεργοποιημένη"
+
+msgctxt "web.guild.promotion_disabled"
+msgid "disabled"
+msgstr "απενεργοποιημένη"
+
+#, python-format
+msgctxt "web.guild.promotion_status"
+msgid "Public promotion is currently %(state)s for this server."
+msgstr "Η δημόσια προβολή είναι αυτή τη στιγμή %(state)s για αυτόν τον διακομιστή."
+
+msgctxt "web.guild.disable_promotion"
+msgid "Disable promotion"
+msgstr "Απενεργοποίηση προβολής"
+
+msgctxt "web.guild.enable_promotion"
+msgid "Enable promotion"
+msgstr "Ενεργοποίηση προβολής"
+
+msgctxt "web.guild.settings_heading"
+msgid "Server Settings"
+msgstr "Ρυθμίσεις διακομιστή"
+
+msgctxt "web.guild.motd"
+msgid "Message of the day"
+msgstr "Μήνυμα της ημέρας"
+
+msgctxt "web.guild.suggest_voice_category"
+msgid "Suggested voice category"
+msgstr "Προτεινόμενη κατηγορία φωνής"
+
+msgctxt "web.guild.show_links"
+msgid "Show game links publicly"
+msgstr "Δημόσια εμφάνιση συνδέσμων παιχνιδιών"
+
+msgctxt "web.guild.voice_create"
+msgid "Auto-create voice channels"
+msgstr "Αυτόματη δημιουργία καναλιών φωνής"
+
+msgctxt "web.guild.use_max_bitrate"
+msgid "Use maximum bitrate"
+msgstr "Χρήση μέγιστου ρυθμού bit"
+
+msgctxt "web.guild.enable_mythic_track"
+msgid "Enable mythic track"
+msgstr "Ενεργοποίηση mythic track"
+
+msgctxt "web.guild.show_convoke_guild"
+msgid "Show linked Convoke guild"
+msgstr "Εμφάνιση συνδεδεμένου guild του Convoke"
+
+msgctxt "web.guild.save"
+msgid "Save server settings"
+msgstr "Αποθήκευση ρυθμίσεων διακομιστή"
+
+msgctxt "web.guild.player_awards"
+msgid "Player Awards"
+msgstr "Βραβεία παικτών"
+
+msgctxt "web.guild.manage_awards"
+msgid "Manage player awards"
+msgstr "Διαχείριση βραβείων παικτών"
+
+msgctxt "web.guild.no_awards"
+msgid "No player awards are configured yet."
+msgstr "Δεν έχουν διαμορφωθεί ακόμη βραβεία παικτών."
+
+#, python-format
+msgctxt "web.guild.award_summary"
+msgid "%(count)s game · @%(role)s"
+msgid_plural "%(count)s games · @%(role)s"
+msgstr[0] "%(count)s παιχνίδι · @%(role)s"
+msgstr[1] "%(count)s παιχνίδια · @%(role)s"
+
+msgctxt "web.guild.channels"
+msgid "Channels"
+msgstr "Κανάλια"
+
+msgctxt "web.guild.games"
+msgid "Games"
+msgstr "Παιχνίδια"
+
+msgctxt "web.guild.last_activity"
+msgid "Last Activity"
+msgstr "Τελευταία δραστηριότητα"
+
+msgctxt "web.guild.no_channels"
+msgid "No channels with games yet."
+msgstr "Δεν υπάρχουν ακόμη κανάλια με παιχνίδια."
+
+msgctxt "web.awards.title"
+msgid "Player Awards"
+msgstr "Βραβεία παικτών"
+
+#, python-format
+msgctxt "web.awards.configured"
+msgid "%(count)s award configured"
+msgid_plural "%(count)s awards configured"
+msgstr[0] "%(count)s βραβείο διαμορφώθηκε"
+msgstr[1] "%(count)s βραβεία διαμορφώθηκαν"
+
+msgctxt "web.awards.games_required"
+msgid "Games required"
+msgstr "Απαιτούμενα παιχνίδια"
+
+msgctxt "web.awards.role"
+msgid "Role"
+msgstr "Ρόλος"
+
+msgctxt "web.awards.message"
+msgid "Message"
+msgstr "Μήνυμα"
+
+msgctxt "web.awards.repeating"
+msgid "Repeating"
+msgstr "Επαναλαμβανόμενο"
+
+msgctxt "web.awards.remove"
+msgid "Remove role instead of giving"
+msgstr "Αφαίρεση ρόλου αντί για απονομή"
+
+msgctxt "web.awards.save"
+msgid "Save award"
+msgstr "Αποθήκευση βραβείου"
+
+msgctxt "web.awards.delete"
+msgid "Delete award"
+msgstr "Διαγραφή βραβείου"
+
+msgctxt "web.awards.delete_confirm"
+msgid "Delete this award?"
+msgstr "Διαγραφή αυτού του βραβείου;"
+
+msgctxt "web.awards.none"
+msgid "No awards configured yet. Add one below."
+msgstr "Δεν έχουν διαμορφωθεί ακόμη βραβεία. Προσθέστε ένα παρακάτω."
+
+msgctxt "web.awards.add_heading"
+msgid "Add an award"
+msgstr "Προσθήκη βραβείου"
+
+msgctxt "web.awards.add_button"
+msgid "Add award"
+msgstr "Προσθήκη βραβείου"
+
+msgctxt "web.game.details"
+msgid "Details"
+msgstr "Λεπτομέρειες"
+
+msgctxt "web.game.blind"
+msgid "Blind"
+msgstr "Τυφλό"
+
+msgctxt "web.game.rules"
+msgid "Rules"
+msgstr "Κανόνες"
+
+msgctxt "web.game.guild_war"
+msgid "Guild War"
+msgstr "Πόλεμος συντεχνιών"
+
+msgctxt "web.game.game_link"
+msgid "Game link"
+msgstr "Σύνδεσμος παιχνιδιού"
+
+msgctxt "web.game.voice_channel"
+msgid "Voice channel"
+msgstr "Κανάλι φωνής"
+
+msgctxt "web.game.discord_posts"
+msgid "Discord posts"
+msgstr "Δημοσιεύσεις Discord"
+
+msgctxt "web.game.message"
+msgid "Message"
+msgstr "Μήνυμα"
+
+msgctxt "web.game.players"
+msgid "Players"
+msgstr "Παίκτες"
+
+msgctxt "web.game.queued"
+msgid "Queued"
+msgstr "Σε ουρά"
+
+msgctxt "web.game.entered_guild"
+msgid "Entered Guild"
+msgstr "Διακομιστής εισόδου"
+
+msgctxt "web.game.records"
+msgid "Records"
+msgstr "Αρχεία"
+
+msgctxt "web.game.user_records"
+msgid "User records"
+msgstr "Αρχεία χρήστη"
+
+msgctxt "web.game.report.title"
+msgid "Post-Game Report"
+msgstr "Αναφορά μετά το παιχνίδι"
+
+msgctxt "web.game.report.source"
+msgid "Reported by"
+msgstr "Αναφέρθηκε από"
+
+msgctxt "web.game.report.duration"
+msgid "Match time"
+msgstr "Χρόνος αγώνα"
+
+msgctxt "web.game.report.minutes_suffix"
+msgid "min"
+msgstr "λεπτά"
+
+msgctxt "web.game.report.turns"
+msgid "Turns"
+msgstr "Γύροι"
+
+msgctxt "web.game.report.ended"
+msgid "Ended at"
+msgstr "Έληξε"
+
+msgctxt "web.game.report.winner"
+msgid "Winner"
+msgstr "Νικητής"
+
+msgctxt "web.game.report.reported"
+msgid "Reported at"
+msgstr "Αναφέρθηκε"
+
+msgctxt "web.game.report.commander"
+msgid "Commander"
+msgstr "Commander"
+
+msgctxt "web.game.report.turn_order"
+msgid "Turn order"
+msgstr "Σειρά γύρων"
+
+msgctxt "web.game.report.play_time"
+msgid "Play time"
+msgstr "Χρόνος παιχνιδιού"
+
+msgctxt "web.game.report.result"
+msgid "Result"
+msgstr "Αποτέλεσμα"
+
+#, python-format
+msgctxt "web.notify.title"
+msgid "Notification Preferences — %(name)s"
+msgstr "Προτιμήσεις ειδοποιήσεων — %(name)s"
+
+msgctxt "web.notify.meta_description"
+msgid "Choose which SpellBot game posts you want to be notified about."
+msgstr "Επιλέξτε για ποιες δημοσιεύσεις παιχνιδιών του SpellBot θέλετε να ειδοποιείστε."
+
+msgctxt "web.notify.heading"
+msgid "Notification Preferences"
+msgstr "Προτιμήσεις ειδοποιήσεων"
+
+msgctxt "web.notify.guild_sub"
+msgid "Choose what kinds of new games you want to be pinged about in this server."
+msgstr "Επιλέξτε για ποια είδη νέων παιχνιδιών θέλετε να λαμβάνετε ειδοποίηση σε αυτόν τον διακομιστή."
+
+msgctxt "web.notify.off_label"
+msgid "Do not notify me about games on this server"
+msgstr "Μη με ειδοποιείς για παιχνίδια σε αυτόν τον διακομιστή"
+
+msgctxt "web.notify.formats"
+msgid "Formats"
+msgstr "Φόρματ"
+
+msgctxt "web.notify.formats_hint"
+msgid "Select the formats you want to be notified about. Leave empty to receive all formats."
+msgstr "Επιλέξτε τα φόρματ για τα οποία θέλετε να ειδοποιείστε. Αφήστε κενό για να λαμβάνετε όλα τα φόρματ."
+
+msgctxt "web.notify.brackets"
+msgid "Brackets"
+msgstr "Επίπεδα"
+
+msgctxt "web.notify.brackets_hint"
+msgid "Select the brackets you want to be notified about. Leave empty to receive all brackets."
+msgstr "Επιλέξτε τα επίπεδα για τα οποία θέλετε να ειδοποιείστε. Αφήστε κενό για να λαμβάνετε όλα τα επίπεδα."
+
+msgctxt "web.notify.channels"
+msgid "Channels"
+msgstr "Κανάλια"
+
+msgctxt "web.notify.channels_hint"
+msgid "Select the channels you want to be notified about. Leave empty to receive all channels."
+msgstr "Επιλέξτε τα κανάλια για τα οποία θέλετε να ειδοποιείστε. Αφήστε κενό για να λαμβάνετε όλα τα κανάλια."
+
+msgctxt "web.notify.active_hours"
+msgid "Active Hours"
+msgstr "Ενεργές ώρες"
+
+#, python-format
+msgctxt "web.notify.active_hours_hint"
+msgid "Only notify me during a specific window of the day, in my local time. Maximum window is %(hours)s hours. Defaults to 5pm–10pm if you don't pick a range."
+msgstr "Να με ειδοποιείς μόνο κατά τη διάρκεια ενός συγκεκριμένου χρονικού διαστήματος της ημέρας, στην τοπική μου ώρα. Το μέγιστο διάστημα είναι %(hours)s ώρες. Προεπιλογή 17–22 αν δεν επιλέξετε εύρος."
+
+msgctxt "web.notify.limit_window"
+msgid "Limit notifications to a daily window"
+msgstr "Περιορισμός ειδοποιήσεων σε ένα ημερήσιο διάστημα"
+
+msgctxt "web.notify.save"
+msgid "Save preferences"
+msgstr "Αποθήκευση προτιμήσεων"
+
+msgctxt "web.notify.js_saved"
+msgid "Your notification preferences have been saved."
+msgstr "Οι προτιμήσεις ειδοποιήσεών σας αποθηκεύτηκαν."
+
+msgctxt "web.notify.js_off"
+msgid "Notifications turned off for this server."
+msgstr "Οι ειδοποιήσεις απενεργοποιήθηκαν για αυτόν τον διακομιστή."
+
+msgctxt "web.notify.js_error"
+msgid "Could not save your preferences. Please try again."
+msgstr "Δεν ήταν δυνατή η αποθήκευση των προτιμήσεών σας. Δοκιμάστε ξανά."
+
+msgctxt "web.notify.js_pick_different"
+msgid "Pick different start and end hours"
+msgstr "Επιλέξτε διαφορετικές ώρες έναρξης και λήξης"
+
+msgctxt "web.notify.js_must_differ"
+msgid "Start and end must differ."
+msgstr "Η έναρξη και η λήξη πρέπει να διαφέρουν."
+
+#, python-format
+msgctxt "web.notify.js_range_max"
+msgid "Range must be %(max)s hours or less."
+msgstr "Το εύρος πρέπει να είναι %(max)s ώρες ή λιγότερο."
+
+#, python-format
+msgctxt "web.notify.js_times_in"
+msgid "Times shown in %(tz)s"
+msgstr "Οι ώρες εμφανίζονται σε %(tz)s"
+
+msgctxt "web.notify.js_times_local"
+msgid "Times shown in your local timezone"
+msgstr "Οι ώρες εμφανίζονται στην τοπική σας ζώνη ώρας"
+
+msgctxt "web.notify.unit_hour"
+msgid "hour"
+msgstr "ώρα"
+
+msgctxt "web.notify.unit_hours"
+msgid "hours"
+msgstr "ώρες"
+
+msgctxt "web.motd.available"
+msgid "Available placeholders"
+msgstr "Διαθέσιμα σύμβολα κράτησης θέσης"
+
+msgctxt "web.motd.intro"
+msgid "These tokens are replaced with each game's details when the message of the day is shown in a game post:"
+msgstr "Αυτά τα διακριτικά αντικαθίστανται με τις λεπτομέρειες κάθε παιχνιδιού όταν το μήνυμα της ημέρας εμφανίζεται σε μια δημοσίευση παιχνιδιού:"
+
+msgctxt "web.motd.game_id"
+msgid "the game's SpellBot ID"
+msgstr "το ID του παιχνιδιού στο SpellBot"
+
+msgctxt "web.motd.game_format"
+msgid "the game's format (e.g. Commander)"
+msgstr "το φόρματ του παιχνιδιού (π.χ. Commander)"
+
+msgctxt "web.motd.game_bracket"
+msgid "the game's commander bracket"
+msgstr "το επίπεδο Commander του παιχνιδιού"
+
+msgctxt "web.motd.game_start"
+msgid "when the game starts (a Discord timestamp), or “pending”"
+msgstr "πότε ξεκινά το παιχνίδι (μια χρονοσφραγίδα Discord), ή «σε εκκρεμότητα»"
+
+msgctxt "web.motd.player_names"
+msgid "the players' names, in join order"
+msgstr "τα ονόματα των παικτών, με σειρά συμμετοχής"
+

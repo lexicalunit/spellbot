@@ -1,0 +1,1580 @@
+# Japanese translations for SpellBot.
+# Copyright (C) 2026 spellbot@lexicalunit.com
+# This file is distributed under the same license as the SpellBot project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  SpellBot\n"
+"Report-Msgid-Bugs-To: spellbot@lexicalunit.com\n"
+"POT-Creation-Date: 2026-11-03 17:50-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgctxt "game.title.ready"
+msgid "**Your game is ready!**"
+msgstr "**ゲームの準備ができました！**"
+
+msgctxt "game.title.rematch"
+msgid "**Rematch Game!**"
+msgstr "**再戦です！**"
+
+#, python-format
+msgctxt "game.title.waiting"
+msgid "**Waiting for %(count)s more player to join...**"
+msgid_plural "**Waiting for %(count)s more players to join...**"
+msgstr[0] "**あと%(count)s人のプレイヤーの参加を待っています…**"
+
+msgctxt "game.description.check_dm"
+msgid "Please check your Direct Messages for your game details."
+msgstr "ゲームの詳細はダイレクトメッセージをご確認ください。"
+
+msgctxt "game.description.rematch_info"
+msgid "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
+msgstr "これは前回のゲームの再戦です。同じゲームロビーとボイスチャンネルをそのまま使用してください。"
+
+#, python-format
+msgctxt "game.description.join_link"
+msgid "# [Join your %(service)s game now!](%(link)s)"
+msgstr "# [今すぐ %(service)s のゲームに参加！](%(link)s)"
+
+#, python-format
+msgctxt "game.description.link_error"
+msgid "Sorry but SpellBot was unable to create a link for this game. Please go to [%(service)s](%(url)s) to create one."
+msgstr "申し訳ありませんが、SpellBot はこのゲームのリンクを作成できませんでした。[%(service)s](%(url)s)にアクセスして作成してください。"
+
+#, python-format
+msgctxt "game.description.use_service"
+msgid "Please use %(service)s to play this game."
+msgstr "このゲームのプレイには %(service)s を使用してください。"
+
+msgctxt "game.description.contact_players"
+msgid "Contact the other players in your game to organize this match."
+msgstr "このゲームの他のプレイヤーに連絡して調整してください。"
+
+#, python-format
+msgctxt "game.description.password"
+msgid "Password: `%(password)s`"
+msgstr "パスワード：`%(password)s`"
+
+#, python-format
+msgctxt "game.description.voice_chat"
+msgid "## Join your voice chat now: <#%(channel_id)s>"
+msgstr "## 今すぐボイスチャンネルに参加：<#%(channel_id)s>"
+
+#, python-format
+msgctxt "game.description.voice_invite"
+msgid "Or use this voice channel invite: %(invite)s"
+msgstr "または、このボイスチャンネル招待リンクを使ってください: %(invite)s"
+
+#, python-format
+msgctxt "game.description.voice_already_picked"
+msgid "## Your pod is already using a voice channel, join them now: <#%(channel_id)s>!"
+msgstr "## このポッドはすでにボイスチャンネルを使用中です。今すぐ参加してください：<#%(channel_id)s>!"
+
+#, python-format
+msgctxt "game.description.voice_available"
+msgid "## Please consider using this available voice channel: <#%(channel_id)s>."
+msgstr "## こちらの利用可能なボイスチャンネルも使えます：<#%(channel_id)s>"
+
+#, python-format
+msgctxt "game.description.jump_to_post"
+msgid "You can also [jump to the original game post](%(link)s) in <#%(channel_id)s>."
+msgstr "また、[元のゲーム投稿に移動](%(link)s)して、<#%(channel_id)s>で確認することもできます。"
+
+msgctxt "game.war_convoke_only"
+msgid "This Guild War table no longer takes players through SpellBot, but you can still join it on Convoke."
+msgstr "このギルド戦争の卓はSpellBotでの参加受付を終了しましたが、Convokeからは引き続き参加できます。"
+
+msgctxt "game.field.rules"
+msgid "⚠️ Additional Rules:"
+msgstr "⚠️ 追加ルール："
+
+msgctxt "game.field.guild_war"
+msgid "⚔️ Guild War"
+msgstr "⚔️ ギルド戦争"
+
+msgctxt "game.field.players"
+msgid "Players"
+msgstr "プレイヤー"
+
+#, python-format
+msgctxt "game.field.players_hidden"
+msgid "**%(count)s player name is hidden**"
+msgid_plural "**%(count)s player names are hidden**"
+msgstr[0] "**%(count)s人のプレイヤー名が非表示です**"
+
+msgctxt "game.field.format"
+msgid "Format"
+msgstr "フォーマット"
+
+msgctxt "game.field.bracket"
+msgid "Bracket"
+msgstr "ブラケット"
+
+msgctxt "game.field.started_at"
+msgid "Started at"
+msgstr "開始日時"
+
+msgctxt "game.field.updated_at"
+msgid "Updated at"
+msgstr "更新日時"
+
+msgctxt "game.field.voice_channel"
+msgid "🔊 Suggested Voice Channel"
+msgstr "🔊 推奨ボイスチャンネル"
+
+msgctxt "game.field.support"
+msgid "Support SpellBot"
+msgstr "SpellBot を支援"
+
+#, python-format
+msgctxt "game.field.support_text"
+msgid "Become [a patron](%(subscribe)s) or give a [one-off tip](%(donate)s)."
+msgstr "[月額で支援する](%(subscribe)s)か、[単発で支援する](%(donate)s)ことができます。"
+
+#, python-format
+msgctxt "game.field.convoke_guild"
+msgid "Play more with **%(name)s** on Convoke. [Join the guild!](%(url)s)"
+msgstr "Convoke の **%(name)s** でもっと遊ぼう。[ギルドに参加する！](%(url)s)"
+
+msgctxt "game.field.settings"
+msgid "Settings"
+msgstr "設定"
+
+#, python-format
+msgctxt "game.field.settings_text"
+msgid "See [live games](%(queues)s) and configure [your notifications](%(notify)s)."
+msgstr "[ライブ中のゲーム](%(queues)s)を見たり、[通知](%(notify)s)を設定したりできます。"
+
+#, python-format
+msgctxt "game.footer"
+msgid "SpellBot Game ID: #SB%(game_id)s — Service: %(service)s"
+msgstr "SpellBot ゲームID：#SB%(game_id)s — サービス：%(service)s"
+
+msgctxt "service.not_any"
+msgid "_Please contact the players in your game to organize this game._"
+msgstr "_このゲームの調整については、同じゲームのプレイヤーに連絡してください。_"
+
+#, python-format
+msgctxt "service.spelltable"
+msgid "_Please go create a game on %(emoji)s[SpellTable](https://spelltable.wizards.com/) for this game._"
+msgstr "_このゲーム用に、%(emoji)s[SpellTable](https://spelltable.wizards.com/) でゲームを作成してください。_"
+
+msgctxt "service.cockatrice"
+msgid "_Please use Cockatrice for this game._"
+msgstr "_このゲームでは Cockatrice を使用してください。_"
+
+msgctxt "service.xmage"
+msgid "_Please use XMage for this game._"
+msgstr "_このゲームでは XMage を使用してください。_"
+
+msgctxt "service.mtg_arena"
+msgid "_Please use MTG Arena for this game._"
+msgstr "_このゲームでは MTG Arena を使用してください。_"
+
+msgctxt "service.mtg_online"
+msgid "_Please use MTG Online for this game._"
+msgstr "_このゲームでは MTG Online を使用してください。_"
+
+msgctxt "service.tts"
+msgid "_Please use TabletopSim for this game._"
+msgstr "_このゲームでは TabletopSim を使用してください。_"
+
+#, python-format
+msgctxt "service.convoke"
+msgid "_A %(emoji)s[Convoke](https://www.convoke.games/) link will be created when all players have joined._"
+msgstr "_すべてのプレイヤーが参加すると、%(emoji)s[Convoke](https://www.convoke.games/) のリンクが作成されます。_"
+
+#, python-format
+msgctxt "service.girudo"
+msgid "_A %(emoji)s[Girudo](https://www.girudo.com/) link will be created when all players have joined._"
+msgstr "_すべてのプレイヤーが参加すると、%(emoji)s[Girudo](https://www.girudo.com/) のリンクが作成されます。_"
+
+#, python-format
+msgctxt "service.edhlab"
+msgid "_A %(emoji)s[EDHLAB](https://edhlab.gg/) link will be created when all players have joined._"
+msgstr "_すべてのプレイヤーが参加すると、%(emoji)s[EDHLAB](https://edhlab.gg/) のリンクが作成されます。_"
+
+#, python-format
+msgctxt "service.playgroup_live"
+msgid "*A %(emoji)s[Playgroup Live](https://playgroup.gg/) link will be created when all players have joined.*"
+msgstr "*すべてのプレイヤーが参加すると、%(emoji)s[Playgroup Live](https://playgroup.gg/) のリンクが作成されます。*"
+
+msgctxt "lfg.playgroup_link_required"
+msgid "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
+msgstr "Playgroup Live を使うには、少なくとも1人のプレイヤーがアカウントを連携している必要があります。`/playgroup link` を実行して、もう一度お試しください。"
+
+msgctxt "lfg.run_in_channel"
+msgid "Please run this command in the same channel as your last played game."
+msgstr "このコマンドは、最後にプレイしたゲームと同じチャンネルで実行してください。"
+
+msgctxt "lfg.already_pending"
+msgid "You're already in a pending game, leave that one first."
+msgstr "すでに保留中のゲームに参加しています。先にそちらから退出してください。"
+
+msgctxt "lfg.no_previous_game"
+msgid "You have not played a game in this guild yet."
+msgstr "このサーバーではまだゲームをプレイしていません。"
+
+msgctxt "lfg.run_in_game_channel"
+msgid "Please run this command in the same channel as your game."
+msgstr "このコマンドは、参加中のゲームと同じチャンネルで実行してください。"
+
+msgctxt "lfg.not_pending_here"
+msgid "You're not in a pending game in this channel."
+msgstr "このチャンネルでは保留中のゲームに参加していません。"
+
+msgctxt "lfg.start_needs_players"
+msgid "You need at least one other player before you can start a game."
+msgstr "ゲームを開始するには、他に少なくとも1人のプレイヤーが必要です。"
+
+msgctxt "lfg.unsupported_context"
+msgid "Sorry, that command is not supported in this context."
+msgstr "申し訳ありませんが、そのコマンドはこの状況では使えません。"
+
+msgctxt "lfg.already_in_channel"
+msgid "You're already in a game in this channel."
+msgstr "すでにこのチャンネルのゲームに参加しています。"
+
+msgctxt "lfg.too_many_pending"
+msgid "You're in too many pending games to join another one at this time."
+msgstr "現在、保留中のゲームが多すぎるため、別のゲームには参加できません。"
+
+msgctxt "lfg.too_many_friends"
+msgid "You mentioned too many players."
+msgstr "メンションしたプレイヤーが多すぎます。"
+
+msgctxt "lfg.guild_war_invalid"
+msgid "That Guild War is not available. Use autocomplete to pick a live war."
+msgstr "そのギルド戦争は利用できません。オートコンプリートで開催中の戦争を選んでください。"
+
+#, python-format
+msgctxt "lfg.guild_war_seats"
+msgid "Guild War matches need between %(min)s and %(max)s seats."
+msgstr "ギルド戦争のマッチには%(min)s〜%(max)s席が必要です。"
+
+msgctxt "lfg.cannot_join"
+msgid "You can not join this game."
+msgstr "このゲームには参加できません。"
+
+msgctxt "lfg.game_started"
+msgid "Sorry, that game has already started."
+msgstr "申し訳ありませんが、そのゲームはすでに始まっています。"
+
+msgctxt "lfg.game_full"
+msgid "Sorry, that game is already full."
+msgstr "申し訳ありませんが、そのゲームはすでに満員です。"
+
+#, python-format
+msgctxt "lfg.invalid_player_count"
+msgid "You can't create a %(format)s game with %(count)s players."
+msgstr "%(format)s のゲームは、%(count)s人のプレイヤーでは作成できません。"
+
+#, python-format
+msgctxt "lfg.excluded_players"
+msgid "Some of the players you mentioned can not be added to a game: %(players)s"
+msgstr "メンションしたプレイヤーの一部はゲームに追加できません：%(players)s"
+
+#, python-format
+msgctxt "lfg.found_game"
+msgid "I found a %(format)s game for you!"
+msgstr "%(format)s のゲームが見つかりました！"
+
+#, python-format
+msgctxt "lfg.jump_to_game"
+msgid "You can [jump to the game post](%(link)s) to see it!"
+msgstr "[ゲーム投稿へ移動](%(link)s)して確認できます！"
+
+#, python-format
+msgctxt "lfg.joined_game"
+msgid "You have joined the game SB%(game_id)s!"
+msgstr "ゲーム SB%(game_id)s に参加しました！"
+
+#, python-format
+msgctxt "lfg.started_game"
+msgid "I started your %(format)s game for you!"
+msgstr "%(format)s のゲームを開始しました！"
+
+#, python-format
+msgctxt "lfg.game_started_id"
+msgid "The game SB%(game_id)s has been started!"
+msgstr "ゲーム SB%(game_id)s が開始されました！"
+
+#, python-format
+msgctxt "lfg.dm_failures"
+msgid "Unable to send Direct Messages to some players: %(players)s"
+msgstr "一部のプレイヤーにダイレクトメッセージを送信できませんでした：%(players)s"
+
+#, python-format
+msgctxt "lfg.award_failure_give"
+msgid "Unable to give role %(role)s to user <@%(user_id)s>"
+msgstr "ユーザー <@ %(role)s にロール%(user_id)s を与えることができません >"
+
+#, python-format
+msgctxt "lfg.award_failure_take"
+msgid "Unable to take role %(role)s from user <@%(user_id)s>"
+msgstr "ユーザー <@ %(role)s > からロール%(user_id)s を取ることができません"
+
+#, python-format
+msgctxt "lfg.mythic_track"
+msgid "Track your game on %(emoji)s[Mythic Track](%(link)s) with PIN code: `%(pin)s`"
+msgstr "%(emoji)s[Mythic Track](%(link)s) でゲームを追跡できます。PIN コード：`%(pin)s`"
+
+msgctxt "button.join"
+msgid "Join this game!"
+msgstr "このゲームに参加！"
+
+msgctxt "button.leave"
+msgid "Leave"
+msgstr "退出"
+
+msgctxt "admin.no_game_found"
+msgid "There is no game with that ID."
+msgstr "その ID のゲームはありません。"
+
+msgctxt "admin.done"
+msgid "Done."
+msgstr "完了しました。"
+
+#, python-format
+msgctxt "admin.channels_title"
+msgid "Configuration for channels in %(guild)s"
+msgstr "%(guild)s のチャンネル設定"
+
+#, python-format
+msgctxt "admin.setup_title"
+msgid "SpellBot Setup for %(guild)s"
+msgstr "%(guild)s の SpellBot セットアップ"
+
+#, python-format
+msgctxt "admin.setup_description"
+msgid ""
+"SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n"
+"\n"
+"[Configure SpellBot →](%(link)s)"
+msgstr ""
+"スペルボットは、あなたのコミュニティがマジック:ザ・ギャザリングのゲームを一緒に見つけてプレイするのを支援します。 サーバー、チャンネル、プレイヤーの賞を設定するには、SpellBotダッシュボードを参照してください。\n"
+"\n"
+"[SpellBot の設定 →](%(link)s)"
+
+#, python-format
+msgctxt "admin.user_move_error"
+msgid "Error: %(error)s"
+msgstr "エラー：%(error)s"
+
+#, python-format
+msgctxt "admin.user_moved"
+msgid "User %(from_user)s has been moved to %(to_user)s"
+msgstr "ユーザー %(from_user)s を %(to_user)s に移動しました。"
+
+#, python-format
+msgctxt "admin.expire_dequeued"
+msgid "├── Dequeued %(count)s players"
+msgstr "├── %(count)s人のプレイヤーをキューから外しました"
+
+#, python-format
+msgctxt "admin.expire_no_channel"
+msgid "├── Could not find channel %(channel_id)s"
+msgstr "├── チャンネル %(channel_id)s が見つかりませんでした"
+
+#, python-format
+msgctxt "admin.expire_no_message"
+msgid "├── Could not find message %(message_id)s"
+msgstr "├── メッセージ %(message_id)s が見つかりませんでした"
+
+#, python-format
+msgctxt "admin.expire_deleting"
+msgid "├── Deleting message %(message_id)s ..."
+msgstr "├── メッセージ %(message_id)s を削除中…"
+
+#, python-format
+msgctxt "admin.expire_updating"
+msgid "├── Updating message %(message_id)s ..."
+msgstr "├── メッセージ %(message_id)s を更新中…"
+
+msgctxt "admin.expire_no_permission"
+msgid "├── Bot does not have permission"
+msgstr "├── Bot に権限がありません"
+
+msgctxt "admin.expire_done"
+msgid "└── Done"
+msgstr "└── 完了"
+
+msgctxt "admin.expire_none"
+msgid "No games to expire."
+msgstr "期限切れにするゲームはありません。"
+
+#, python-format
+msgctxt "admin.expire_game"
+msgid "Expiring game #SB%(game_id)s ..."
+msgstr "#SB%(game_id)s の期限切れ処理中…"
+
+msgctxt "admin.game_expired"
+msgid "Sorry, this game was expired due to inactivity."
+msgstr "申し訳ありません。このゲームは一定時間操作がなかったため期限切れになりました。"
+
+#, python-format
+msgctxt "admin.user_info_title"
+msgid "User info for %(name)s"
+msgstr "%(name)s のユーザー情報"
+
+#, python-format
+msgctxt "admin.user_info_games_count"
+msgid "%(count)s game on %(guild)s"
+msgid_plural "%(count)s games on %(guild)s"
+msgstr[0] "%(count)sゲーム（%(guild)s）"
+
+msgctxt "admin.user_info_games"
+msgid "Games Played"
+msgstr "プレイしたゲーム数"
+
+#, python-format
+msgctxt "admin.user_info_blocked"
+msgid "Blocked by %(count)s user"
+msgid_plural "Blocked by %(count)s users"
+msgstr[0] "%(count)s人からブロックされています"
+
+msgctxt "admin.user_info_block_status"
+msgid "Block Status"
+msgstr "ブロック状況"
+
+msgctxt "admin.user_info_no_games"
+msgid "No games played"
+msgstr "ゲーム履歴なし"
+
+msgctxt "admin.user_info_play_range"
+msgid "Play Range"
+msgstr "プレイ期間"
+
+msgctxt "admin.user_info_game_history"
+msgid "Game History"
+msgstr "ゲーム履歴"
+
+#, python-format
+msgctxt "admin.view_link"
+msgid "[View on spellbot.io](%(link)s)"
+msgstr "[spellbot.io で見る](%(link)s)"
+
+#, python-format
+msgctxt "admin.game_info_title"
+msgid "Game info for #SB%(game_id)s"
+msgstr "#SB%(game_id)s のゲーム情報"
+
+msgctxt "admin.game_info_pending"
+msgid "Not started yet"
+msgstr "まだ開始していません"
+
+msgctxt "admin.game_info_details"
+msgid "Details"
+msgstr "詳細"
+
+#, python-format
+msgctxt "admin.user_info_footer"
+msgid "User ID: %(user_id)s"
+msgstr "ユーザー ID：%(user_id)s"
+
+#, python-format
+msgctxt "admin.mythic_track_title"
+msgid "Mythic Track Setup for %(guild)s"
+msgstr "%(guild)s の Mythic Track 設定"
+
+#, python-format
+msgctxt "admin.mythic_track_on"
+msgid ""
+"✅ Mythic Track has been turned **on** for this server!\n"
+"\n"
+"To continue setup, please [connect your Discord account to Mythic Track](%(guide)s).\n"
+"\n"
+"While this feature is turned on, SpellBot will generate PIN codes for players to enter into Mythic Track so that their games can be tracked."
+msgstr ""
+"✅ このサーバーで Mythic Track を **有効** にしました！\n"
+"\n"
+"設定を続けるには、[Discord アカウントを Mythic Track に接続](%(guide)s)してください。\n"
+"\n"
+"この機能が有効な間、SpellBot はプレイヤーが Mythic Track に入力する PIN コードを生成し、ゲームを追跡できるようにします。"
+
+msgctxt "admin.mythic_track_off"
+msgid "❌ Mythic Track has been turned **off** for this server. Rerun this command to toggle it back on. Note that turning this feature off does _not_ remove any existing Mythic Track data."
+msgstr "❌ このサーバーで Mythic Track を **無効** にしました。このコマンドをもう一度実行すると、再度有効にできます。なお、この機能を無効にしても、既存の Mythic Track データが _削除されることはありません_。"
+
+msgctxt "block.self_block"
+msgid "You can not block yourself."
+msgstr "自分をブロックすることはできません。"
+
+#, python-format
+msgctxt "block.blocked"
+msgid "<@%(user_id)s> has been blocked."
+msgstr "<@%(user_id)s> をブロックしました。"
+
+#, python-format
+msgctxt "block.unblocked"
+msgid "<@%(user_id)s> has been unblocked."
+msgstr "<@%(user_id)s> のブロックを解除しました。"
+
+#, python-format
+msgctxt "block.manage_message"
+msgid ""
+"You can view and manage your blocked users from your profile page.\n"
+"\n"
+"[Open your profile on spellbot.io](%(link)s)"
+msgstr ""
+"ブロックされたユーザーは、プロフィールページから閲覧・管理できます。\n"
+"\n"
+"[spellbot.ioでプロフィールを開く](%(link)s)"
+
+msgctxt "leave.removed_channel"
+msgid "You were removed from any pending games in this channel."
+msgstr "このチャンネル内の保留中のゲームからすべて退出しました。"
+
+msgctxt "leave.removed_all"
+msgid "You were removed from all pending games."
+msgstr "すべての保留中のゲームから退出しました。"
+
+msgctxt "score.record_title"
+msgid "Record of games played"
+msgstr "プレイしたゲームの記録"
+
+#, python-format
+msgctxt "score.games"
+msgid "%(count)s game"
+msgid_plural "%(count)s games"
+msgstr[0] "%(count)sゲーム"
+
+#, python-format
+msgctxt "score.record_description"
+msgid ""
+"%(mention)s has played %(games)s.\n"
+"View more [details on spellbot.io](%(link)s)."
+msgstr ""
+"%(mention)s は %(games)s をプレイしています。\n"
+"さらに詳しくは [spellbot.io で確認](%(link)s) できます。"
+
+#, python-format
+msgctxt "score.history_title"
+msgid "Recent games played in %(channel)s"
+msgstr "%(channel)s の最近のゲーム"
+
+#, python-format
+msgctxt "score.history_description"
+msgid "View [game history on spellbot.io](%(link)s)."
+msgstr "[spellbot.io でゲーム履歴を見る](%(link)s)。"
+
+#, python-format
+msgctxt "score.top_title"
+msgid "Top players in #%(channel)s (%(range)s)"
+msgstr "#%(channel)s の上位プレイヤー（%(range)s）"
+
+#, python-format
+msgctxt "score.range_ago"
+msgid "%(months)s months ago"
+msgstr "%(months)sヶ月前"
+
+msgctxt "score.range_this_month"
+msgid "this month"
+msgstr "今月"
+
+msgctxt "score.range_all_time"
+msgid "all time"
+msgstr "全期間"
+
+msgctxt "score.top_header"
+msgid "Rank     Games     Player"
+msgstr "順位     ゲーム数     プレイヤー"
+
+msgctxt "about.title"
+msgid "SpellBot"
+msgstr "SpellBot"
+
+msgctxt "about.version"
+msgid "Version"
+msgstr "バージョン"
+
+msgctxt "about.author"
+msgid "Author"
+msgstr "作成者"
+
+#, python-format
+msgctxt "about.description"
+msgid ""
+"_The Discord bot for Webcam Magic._\n"
+"\n"
+"Having issues with SpellBot? Please [report bugs](%(issues)s)!\n"
+"\n"
+"[🔗 Add SpellBot to your Discord!](%(invite)s)\n"
+"\n"
+"SpellBot's continued operation is made possible by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+"\n"
+"💜 Help keep SpellBot running by [becoming a patron!](%(patreon)s)"
+msgstr ""
+"_Webcam Magic 向けの Discord ボットです。_\n"
+"\n"
+"SpellBot で問題が発生していますか？[バグを報告](%(issues)s)してください！\n"
+"\n"
+"[🔗 SpellBot を Discord に追加！](%(invite)s)\n"
+"\n"
+"SpellBot の継続運用は、[PlayEDH](https://www.playedh.com/) と Patreon サポーターの支援によって支えられています。\n"
+"\n"
+"💜 [Patreon で支援して](%(patreon)s)、SpellBot の運営継続にご協力ください！"
+
+msgctxt "errors.no_permission"
+msgid "You do not have permission to do that."
+msgstr "それを行う権限がありません。"
+
+msgctxt "errors.guild_only"
+msgid "This command only works in a guild."
+msgstr "このコマンドはギルド内でのみ動作します。"
+
+msgctxt "errors.no_dms"
+msgid "This command is not supported in DMs."
+msgstr "このコマンドはDMではサポートされていません。"
+
+msgctxt "errors.banned"
+msgid "You have been banned from using SpellBot."
+msgstr "SpellBotの使用は禁止されています。"
+
+#, python-format
+msgctxt "errors.cooldown"
+msgid "Please try again in %(seconds)ss."
+msgstr "%(seconds)s秒後にもう一度お試しください。"
+
+msgctxt "playgroup.already_linked"
+msgid "Your Discord account is already linked to Playgroup Live!"
+msgstr "あなたのDiscordアカウントはすでにPlaygroup Liveにリンクされています！"
+
+#, python-format
+msgctxt "playgroup.linked"
+msgid "Linked! Welcome, **%(username)s**. Your Playgroup Live games will now be attributed to your account."
+msgstr "リンクしました！ようこそ**%(username)s**。あなたのPlaygroupライブゲームはあなたのアカウントに帰属します。"
+
+msgctxt "playgroup.not_found"
+msgid "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+msgstr "あなたのDiscordのプレイグループアカウントが見つかりませんでした。 <https://playgroup.gg/profiles> に移動して**Discordをリンク**をクリックし、再度`/playgroup link`を実行して確認してください。"
+
+msgctxt "web.nav.active_queues"
+msgid "Active Queues"
+msgstr "アクティブなキュー"
+
+msgctxt "web.nav.my_records"
+msgid "My Records"
+msgstr "自分の記録"
+
+msgctxt "web.nav.admin_dashboard"
+msgid "Admin Dashboard"
+msgstr "管理ダッシュボード"
+
+msgctxt "web.nav.server_details"
+msgid "Server Details"
+msgstr "サーバーの詳細"
+
+msgctxt "web.nav.notification_preferences"
+msgid "Notification preferences"
+msgstr "通知設定"
+
+#, python-format
+msgctxt "web.nav.back_to"
+msgid "← Back to %(name)s"
+msgstr "← %(name)s に戻る"
+
+msgctxt "web.nav.log_in"
+msgid "Log in"
+msgstr "ログイン"
+
+msgctxt "web.nav.log_out"
+msgid "Log out"
+msgstr "ログアウト"
+
+#, python-format
+msgctxt "web.nav.logged_in_as"
+msgid "Logged in as %(name)s"
+msgstr "%(name)s としてログイン中"
+
+msgctxt "web.nav.site_nav_aria"
+msgid "Site navigation"
+msgstr "サイトナビゲーション"
+
+msgctxt "web.nav.server_nav_aria"
+msgid "Server navigation"
+msgstr "サーバーナビゲーション"
+
+#, python-format
+msgctxt "web.common.powered_by"
+msgid "Powered by %(link)s."
+msgstr "提供: %(link)s。"
+
+#, python-format
+msgctxt "web.common.generated_by"
+msgid "Generated by %(link)s"
+msgstr "生成元: %(link)s"
+
+msgctxt "web.common.spellbot_server"
+msgid "SpellBot Server"
+msgstr "SpellBot サーバー"
+
+msgctxt "web.common.server"
+msgid "server"
+msgstr "サーバー"
+
+msgctxt "web.common.this_server"
+msgid "this server"
+msgstr "このサーバー"
+
+msgctxt "web.common.unknown_user"
+msgid "Unknown User"
+msgstr "不明なユーザー"
+
+msgctxt "web.common.unknown_channel"
+msgid "Unknown Channel"
+msgstr "不明なチャンネル"
+
+msgctxt "web.common.unknown_guild"
+msgid "Unknown Guild"
+msgstr "不明なサーバー"
+
+msgctxt "web.common.login_with_discord"
+msgid "Log in with Discord"
+msgstr "Discord でログイン"
+
+msgctxt "web.common.export_csv"
+msgid "Export all (CSV)"
+msgstr "すべてエクスポート (CSV)"
+
+msgctxt "web.common.prev_page"
+msgid "Previous page"
+msgstr "前のページ"
+
+msgctxt "web.common.next_page"
+msgid "Next page"
+msgstr "次のページ"
+
+msgctxt "web.common.copy_user_id"
+msgid "Copy User ID"
+msgstr "ユーザーIDをコピー"
+
+msgctxt "web.common.copy_channel_id"
+msgid "Copy Channel ID"
+msgstr "チャンネルIDをコピー"
+
+msgctxt "web.common.copy_server_id"
+msgid "Copy server ID"
+msgstr "サーバーIDをコピー"
+
+#, python-format
+msgctxt "web.common.open_in"
+msgid "Open in %(service)s"
+msgstr "%(service)s で開く"
+
+msgctxt "web.common.jump_to_game"
+msgid "Jump to game"
+msgstr "ゲームへ移動"
+
+msgctxt "web.common.jump_to_channel"
+msgid "Jump to channel"
+msgstr "チャンネルへ移動"
+
+msgctxt "web.common.jump_to_guild"
+msgid "Jump to guild"
+msgstr "サーバーへ移動"
+
+msgctxt "web.common.jump_to_voice_invite"
+msgid "Jump to voice invite"
+msgstr "ボイス招待へ移動"
+
+msgctxt "web.common.view_change_history"
+msgid "View change history"
+msgstr "変更履歴を表示"
+
+msgctxt "web.common.seats_suffix"
+msgid "seats"
+msgstr "席"
+
+msgctxt "web.common.yes_label"
+msgid "Yes"
+msgstr "はい"
+
+msgctxt "web.common.no_label"
+msgid "No"
+msgstr "いいえ"
+
+msgctxt "web.field.status"
+msgid "Status"
+msgstr "ステータス"
+
+msgctxt "web.field.format"
+msgid "Format"
+msgstr "フォーマット"
+
+msgctxt "web.field.bracket"
+msgid "Bracket"
+msgstr "ブラケット"
+
+msgctxt "web.field.service"
+msgid "Service"
+msgstr "サービス"
+
+msgctxt "web.field.seats"
+msgid "Seats"
+msgstr "席数"
+
+msgctxt "web.field.locale"
+msgid "Locale"
+msgstr "ロケール"
+
+msgctxt "web.field.players"
+msgid "Players"
+msgstr "プレイヤー"
+
+msgctxt "web.field.link"
+msgid "Link"
+msgstr "リンク"
+
+msgctxt "web.field.game"
+msgid "Game"
+msgstr "ゲーム"
+
+msgctxt "web.field.time"
+msgid "Time"
+msgstr "時刻"
+
+msgctxt "web.field.guild"
+msgid "Guild"
+msgstr "サーバー"
+
+msgctxt "web.field.channel"
+msgid "Channel"
+msgstr "チャンネル"
+
+msgctxt "web.field.channel_id"
+msgid "Channel ID"
+msgstr "チャンネルID"
+
+msgctxt "web.field.user_name"
+msgid "User Name"
+msgstr "ユーザー名"
+
+msgctxt "web.field.user_id"
+msgid "User ID"
+msgstr "ユーザーID"
+
+msgctxt "web.field.wait"
+msgid "Wait"
+msgstr "待ち時間"
+
+msgctxt "web.field.language"
+msgid "Language"
+msgstr "言語"
+
+msgctxt "web.field.jump"
+msgid "Jump"
+msgstr "移動"
+
+msgctxt "web.field.created"
+msgid "Created"
+msgstr "作成日時"
+
+msgctxt "web.field.updated"
+msgid "Updated"
+msgstr "更新日時"
+
+msgctxt "web.field.started"
+msgid "Started"
+msgstr "開始日時"
+
+msgctxt "web.field.deleted"
+msgid "Deleted"
+msgstr "削除日時"
+
+msgctxt "web.queues.title"
+msgid "Active Queues — SpellBot"
+msgstr "アクティブなキュー — SpellBot"
+
+msgctxt "web.queues.meta_description"
+msgid "Join an active Magic: The Gathering queue powered by SpellBot."
+msgstr "SpellBot が提供するアクティブな Magic: The Gathering のキューに参加しましょう。"
+
+msgctxt "web.queues.heading"
+msgid "Active Queues"
+msgstr "アクティブなキュー"
+
+msgctxt "web.queues.active_games"
+msgid "Active Games"
+msgstr "アクティブなゲーム"
+
+msgctxt "web.queues.active_games_tooltip"
+msgid "Pending queues plus games started in the last 2 hours"
+msgstr "保留中のキューと過去2時間以内に開始したゲーム"
+
+msgctxt "web.queues.filter_aria"
+msgid "Filter queues"
+msgstr "キューをフィルター"
+
+msgctxt "web.queues.all_formats"
+msgid "All formats"
+msgstr "すべてのフォーマット"
+
+msgctxt "web.queues.all_brackets"
+msgid "All brackets"
+msgstr "すべてのブラケット"
+
+msgctxt "web.queues.all_languages"
+msgid "All languages"
+msgstr "すべての言語"
+
+msgctxt "web.queues.only_played"
+msgid "Only servers you've played in"
+msgstr "プレイしたことのあるサーバーのみ"
+
+msgctxt "web.queues.no_match"
+msgid "No queues match the selected filters."
+msgstr "選択したフィルターに一致するキューはありません。"
+
+msgctxt "web.queues.your_servers"
+msgid "Your Servers"
+msgstr "あなたのサーバー"
+
+msgctxt "web.queues.setup_notifications"
+msgid "Setup notifications"
+msgstr "通知を設定"
+
+msgctxt "web.queues.manage_notifications"
+msgid "Manage notifications"
+msgstr "通知を管理"
+
+#, python-format
+msgctxt "web.queues.setup_notifications_for"
+msgid "Setup notifications for %(name)s"
+msgstr "%(name)s の通知を設定"
+
+#, python-format
+msgctxt "web.queues.manage_notifications_for"
+msgid "Manage notifications for %(name)s"
+msgstr "%(name)s の通知を管理"
+
+msgctxt "web.queues.notifications_on_short"
+msgid "On"
+msgstr "オン"
+
+msgctxt "web.queues.notifications_label"
+msgid "Notifications"
+msgstr "通知"
+
+msgctxt "web.queues.empty_mine"
+msgid "No active queues right now in servers you've played in. Uncheck the filter to see all servers."
+msgstr "現在、プレイしたことのあるサーバーにアクティブなキューはありません。フィルターを外すとすべてのサーバーが表示されます。"
+
+#, python-format
+msgctxt "web.queues.empty_all"
+msgid "No active queues right now. Check back in a moment, or run %(command)s in your Discord server to start one."
+msgstr "現在アクティブなキューはありません。しばらくしてから戻るか、Discord サーバーで %(command)s を実行して開始してください。"
+
+msgctxt "web.queues.recently_started"
+msgid "Recently Started"
+msgstr "最近開始"
+
+msgctxt "web.queues.jump_to_game_arrow"
+msgid "Jump to Game →"
+msgstr "ゲームへ移動 →"
+
+msgctxt "web.queues.jump_to_channel_arrow"
+msgid "Jump to Channel →"
+msgstr "チャンネルへ移動 →"
+
+#, python-format
+msgctxt "web.queues.started_ago"
+msgid "%(duration)s ago"
+msgstr "%(duration)s前"
+
+msgctxt "web.queues.auto_refresh"
+msgid "Auto-refreshing every 60 seconds."
+msgstr "60秒ごとに自動更新します。"
+
+#, python-format
+msgctxt "web.records.channel_title"
+msgid "Channel Records — #%(name)s"
+msgstr "チャンネルの記録 — #%(name)s"
+
+#, python-format
+msgctxt "web.records.channel_heading"
+msgid "Channel Records: #%(name)s"
+msgstr "チャンネルの記録: #%(name)s"
+
+#, python-format
+msgctxt "web.records.user_title"
+msgid "User Records — %(name)s"
+msgstr "ユーザーの記録 — %(name)s"
+
+#, python-format
+msgctxt "web.records.user_heading"
+msgid "User Records: %(name)s"
+msgstr "ユーザーの記録: %(name)s"
+
+msgctxt "web.records.games"
+msgid "Games"
+msgstr "ゲーム"
+
+#, python-format
+msgctxt "web.records.matching"
+msgid "%(count)s matching"
+msgstr "%(count)s 件一致"
+
+msgctxt "web.records.none_channel"
+msgid "No games found for this channel."
+msgstr "このチャンネルのゲームは見つかりませんでした。"
+
+msgctxt "web.records.none_user"
+msgid "No games found for this user."
+msgstr "このユーザーのゲームは見つかりませんでした。"
+
+msgctxt "web.records.mod_manage_channel"
+msgid "Moderators can manage this channel's settings here."
+msgstr "モデレーターはここでこのチャンネルの設定を管理できます。"
+
+msgctxt "web.records.mod_manage_server"
+msgid "Moderators can manage this server's settings here."
+msgstr "モデレーターはここでこのサーバーの設定を管理できます。"
+
+msgctxt "web.records.login_block_list"
+msgid "Log in to view and manage your own block list."
+msgstr "ログインすると、自分のブロックリストを表示・管理できます。"
+
+msgctxt "web.blocks.title"
+msgid "Blocked Users"
+msgstr "ブロックしたユーザー"
+
+msgctxt "web.blocks.description"
+msgid "Players you block can't join your games, and you can't join theirs. This list is private to you."
+msgstr "ブロックしたプレイヤーはあなたのゲームに参加できず、あなたも彼らのゲームに参加できません。このリストはあなただけに表示されます。"
+
+msgctxt "web.blocks.user"
+msgid "User"
+msgstr "ユーザー"
+
+msgctxt "web.blocks.unblock"
+msgid "Unblock"
+msgstr "ブロック解除"
+
+msgctxt "web.blocks.none"
+msgid "You haven't blocked anyone."
+msgstr "誰もブロックしていません。"
+
+msgctxt "web.blocks.add_label"
+msgid "Block a user"
+msgstr "ユーザーをブロック"
+
+msgctxt "web.blocks.add_hint"
+msgid "Enter the Discord user ID (or name) of the player you want to block."
+msgstr "ブロックしたいプレイヤーの Discord ユーザーID（または名前）を入力してください。"
+
+msgctxt "web.blocks.add_placeholder"
+msgid "Discord user ID or name"
+msgstr "Discord ユーザーIDまたは名前"
+
+msgctxt "web.blocks.add_button"
+msgid "Block user"
+msgstr "ユーザーをブロック"
+
+msgctxt "web.filters.player_label"
+msgid "Player (name or ID)"
+msgstr "プレイヤー（名前またはID）"
+
+msgctxt "web.filters.player_placeholder"
+msgid "e.g. amy or 12345"
+msgstr "例: amy または 12345"
+
+msgctxt "web.filters.guild_label"
+msgid "Guild (name or ID)"
+msgstr "サーバー（名前またはID）"
+
+msgctxt "web.filters.guild_placeholder"
+msgid "e.g. my-guild or 67890"
+msgstr "例: my-guild または 67890"
+
+msgctxt "web.filters.from"
+msgid "From"
+msgstr "開始日"
+
+msgctxt "web.filters.to"
+msgid "To"
+msgstr "終了日"
+
+msgctxt "web.filters.formats"
+msgid "Format(s)"
+msgstr "フォーマット"
+
+msgctxt "web.filters.brackets"
+msgid "Bracket(s)"
+msgstr "ブラケット"
+
+msgctxt "web.filters.apply"
+msgid "Apply filters"
+msgstr "フィルターを適用"
+
+msgctxt "web.filters.reset"
+msgid "Reset"
+msgstr "リセット"
+
+msgctxt "web.channel_settings.heading"
+msgid "Channel Settings"
+msgstr "チャンネル設定"
+
+msgctxt "web.channel_settings.default_seats"
+msgid "Default seats"
+msgstr "デフォルトの席数"
+
+msgctxt "web.channel_settings.default_format"
+msgid "Default format"
+msgstr "デフォルトのフォーマット"
+
+msgctxt "web.channel_settings.default_bracket"
+msgid "Default bracket"
+msgstr "デフォルトのブラケット"
+
+msgctxt "web.channel_settings.default_service"
+msgid "Default service"
+msgstr "デフォルトのサービス"
+
+msgctxt "web.channel_settings.motd"
+msgid "Message of the day"
+msgstr "今日のメッセージ"
+
+msgctxt "web.channel_settings.extra"
+msgid "Extra message"
+msgstr "追加メッセージ"
+
+msgctxt "web.channel_settings.voice_category"
+msgid "Voice category"
+msgstr "ボイスカテゴリ"
+
+msgctxt "web.channel_settings.voice_invite"
+msgid "Create voice invites"
+msgstr "ボイス招待を作成"
+
+msgctxt "web.channel_settings.delete_expired"
+msgid "Delete expired games"
+msgstr "期限切れのゲームを削除"
+
+msgctxt "web.channel_settings.blind_games"
+msgid "Blind games"
+msgstr "ブラインドゲーム"
+
+msgctxt "web.channel_settings.to_mode"
+msgid "Tournament organizer mode"
+msgstr "トーナメント主催者モード"
+
+msgctxt "web.channel_settings.competitive_mode"
+msgid "Competitive mode"
+msgstr "競技モード"
+
+msgctxt "web.channel_settings.save"
+msgid "Save channel settings"
+msgstr "チャンネル設定を保存"
+
+msgctxt "web.channel_settings.forget_hint"
+msgid "Forgetting this channel resets it to default settings by removing its configuration. SpellBot will reconfigure it from defaults the next time it is used."
+msgstr "このチャンネルを忘れると、その構成が削除され、デフォルト設定にリセットされます。次に使用されるときに、SpellBot がデフォルトから再設定します。"
+
+msgctxt "web.channel_settings.forget_confirm"
+msgid "Forget this channel and reset it to default settings?"
+msgstr "このチャンネルを忘れてデフォルト設定にリセットしますか？"
+
+msgctxt "web.channel_settings.forget"
+msgid "Forget this channel"
+msgstr "このチャンネルを忘れる"
+
+#, python-format
+msgctxt "web.guild.channels_with_games"
+msgid "%(count)s channel with games"
+msgid_plural "%(count)s channels with games"
+msgstr[0] "ゲームのあるチャンネル %(count)s 個"
+
+msgctxt "web.guild.owner_controls"
+msgid "Owner Controls"
+msgstr "オーナー設定"
+
+msgctxt "web.guild.view_analytics"
+msgid "Analytics"
+msgstr "分析"
+
+msgctxt "web.guild.promotion_enabled"
+msgid "enabled"
+msgstr "有効"
+
+msgctxt "web.guild.promotion_disabled"
+msgid "disabled"
+msgstr "無効"
+
+#, python-format
+msgctxt "web.guild.promotion_status"
+msgid "Public promotion is currently %(state)s for this server."
+msgstr "このサーバーの公開プロモーションは現在 %(state)s です。"
+
+msgctxt "web.guild.disable_promotion"
+msgid "Disable promotion"
+msgstr "プロモーションを無効化"
+
+msgctxt "web.guild.enable_promotion"
+msgid "Enable promotion"
+msgstr "プロモーションを有効化"
+
+msgctxt "web.guild.settings_heading"
+msgid "Server Settings"
+msgstr "サーバー設定"
+
+msgctxt "web.guild.motd"
+msgid "Message of the day"
+msgstr "今日のメッセージ"
+
+msgctxt "web.guild.suggest_voice_category"
+msgid "Suggested voice category"
+msgstr "推奨ボイスカテゴリ"
+
+msgctxt "web.guild.show_links"
+msgid "Show game links publicly"
+msgstr "ゲームリンクを公開表示"
+
+msgctxt "web.guild.voice_create"
+msgid "Auto-create voice channels"
+msgstr "ボイスチャンネルを自動作成"
+
+msgctxt "web.guild.use_max_bitrate"
+msgid "Use maximum bitrate"
+msgstr "最大ビットレートを使用"
+
+msgctxt "web.guild.enable_mythic_track"
+msgid "Enable mythic track"
+msgstr "Mythic Track を有効化"
+
+msgctxt "web.guild.show_convoke_guild"
+msgid "Show linked Convoke guild"
+msgstr "リンクされた Convoke ギルドを表示"
+
+msgctxt "web.guild.save"
+msgid "Save server settings"
+msgstr "サーバー設定を保存"
+
+msgctxt "web.guild.player_awards"
+msgid "Player Awards"
+msgstr "プレイヤー報酬"
+
+msgctxt "web.guild.manage_awards"
+msgid "Manage player awards"
+msgstr "プレイヤー報酬を管理"
+
+msgctxt "web.guild.no_awards"
+msgid "No player awards are configured yet."
+msgstr "プレイヤー報酬はまだ設定されていません。"
+
+#, python-format
+msgctxt "web.guild.award_summary"
+msgid "%(count)s game · @%(role)s"
+msgid_plural "%(count)s games · @%(role)s"
+msgstr[0] "%(count)s ゲーム · @%(role)s"
+
+msgctxt "web.guild.channels"
+msgid "Channels"
+msgstr "チャンネル"
+
+msgctxt "web.guild.games"
+msgid "Games"
+msgstr "ゲーム"
+
+msgctxt "web.guild.last_activity"
+msgid "Last Activity"
+msgstr "最終アクティビティ"
+
+msgctxt "web.guild.no_channels"
+msgid "No channels with games yet."
+msgstr "ゲームのあるチャンネルはまだありません。"
+
+msgctxt "web.awards.title"
+msgid "Player Awards"
+msgstr "プレイヤー報酬"
+
+#, python-format
+msgctxt "web.awards.configured"
+msgid "%(count)s award configured"
+msgid_plural "%(count)s awards configured"
+msgstr[0] "%(count)s 件の報酬を設定済み"
+
+msgctxt "web.awards.games_required"
+msgid "Games required"
+msgstr "必要なゲーム数"
+
+msgctxt "web.awards.role"
+msgid "Role"
+msgstr "ロール"
+
+msgctxt "web.awards.message"
+msgid "Message"
+msgstr "メッセージ"
+
+msgctxt "web.awards.repeating"
+msgid "Repeating"
+msgstr "繰り返し"
+
+msgctxt "web.awards.remove"
+msgid "Remove role instead of giving"
+msgstr "付与する代わりにロールを削除"
+
+msgctxt "web.awards.save"
+msgid "Save award"
+msgstr "報酬を保存"
+
+msgctxt "web.awards.delete"
+msgid "Delete award"
+msgstr "報酬を削除"
+
+msgctxt "web.awards.delete_confirm"
+msgid "Delete this award?"
+msgstr "この報酬を削除しますか？"
+
+msgctxt "web.awards.none"
+msgid "No awards configured yet. Add one below."
+msgstr "報酬はまだ設定されていません。下から追加してください。"
+
+msgctxt "web.awards.add_heading"
+msgid "Add an award"
+msgstr "報酬を追加"
+
+msgctxt "web.awards.add_button"
+msgid "Add award"
+msgstr "報酬を追加"
+
+msgctxt "web.game.details"
+msgid "Details"
+msgstr "詳細"
+
+msgctxt "web.game.blind"
+msgid "Blind"
+msgstr "ブラインド"
+
+msgctxt "web.game.rules"
+msgid "Rules"
+msgstr "ルール"
+
+msgctxt "web.game.guild_war"
+msgid "Guild War"
+msgstr "ギルド戦争"
+
+msgctxt "web.game.game_link"
+msgid "Game link"
+msgstr "ゲームリンク"
+
+msgctxt "web.game.voice_channel"
+msgid "Voice channel"
+msgstr "ボイスチャンネル"
+
+msgctxt "web.game.discord_posts"
+msgid "Discord posts"
+msgstr "Discord の投稿"
+
+msgctxt "web.game.message"
+msgid "Message"
+msgstr "メッセージ"
+
+msgctxt "web.game.players"
+msgid "Players"
+msgstr "プレイヤー"
+
+msgctxt "web.game.queued"
+msgid "Queued"
+msgstr "キュー内"
+
+msgctxt "web.game.entered_guild"
+msgid "Entered Guild"
+msgstr "参加元サーバー"
+
+msgctxt "web.game.records"
+msgid "Records"
+msgstr "記録"
+
+msgctxt "web.game.user_records"
+msgid "User records"
+msgstr "ユーザーの記録"
+
+msgctxt "web.game.report.title"
+msgid "Post-Game Report"
+msgstr "試合後レポート"
+
+msgctxt "web.game.report.source"
+msgid "Reported by"
+msgstr "報告者"
+
+msgctxt "web.game.report.duration"
+msgid "Match time"
+msgstr "対戦時間"
+
+msgctxt "web.game.report.minutes_suffix"
+msgid "min"
+msgstr "分"
+
+msgctxt "web.game.report.turns"
+msgid "Turns"
+msgstr "ターン数"
+
+msgctxt "web.game.report.ended"
+msgid "Ended at"
+msgstr "終了日時"
+
+msgctxt "web.game.report.winner"
+msgid "Winner"
+msgstr "勝者"
+
+msgctxt "web.game.report.reported"
+msgid "Reported at"
+msgstr "報告日時"
+
+msgctxt "web.game.report.commander"
+msgid "Commander"
+msgstr "Commander"
+
+msgctxt "web.game.report.turn_order"
+msgid "Turn order"
+msgstr "ターン順"
+
+msgctxt "web.game.report.play_time"
+msgid "Play time"
+msgstr "プレイ時間"
+
+msgctxt "web.game.report.result"
+msgid "Result"
+msgstr "結果"
+
+#, python-format
+msgctxt "web.notify.title"
+msgid "Notification Preferences — %(name)s"
+msgstr "通知設定 — %(name)s"
+
+msgctxt "web.notify.meta_description"
+msgid "Choose which SpellBot game posts you want to be notified about."
+msgstr "通知を受け取りたい SpellBot のゲーム投稿を選択してください。"
+
+msgctxt "web.notify.heading"
+msgid "Notification Preferences"
+msgstr "通知設定"
+
+msgctxt "web.notify.guild_sub"
+msgid "Choose what kinds of new games you want to be pinged about in this server."
+msgstr "このサーバーで通知を受け取りたい新しいゲームの種類を選択してください。"
+
+msgctxt "web.notify.off_label"
+msgid "Do not notify me about games on this server"
+msgstr "このサーバーのゲームについて通知しない"
+
+msgctxt "web.notify.formats"
+msgid "Formats"
+msgstr "フォーマット"
+
+msgctxt "web.notify.formats_hint"
+msgid "Select the formats you want to be notified about. Leave empty to receive all formats."
+msgstr "通知を受け取りたいフォーマットを選択してください。空のままにするとすべてのフォーマットを受け取ります。"
+
+msgctxt "web.notify.brackets"
+msgid "Brackets"
+msgstr "ブラケット"
+
+msgctxt "web.notify.brackets_hint"
+msgid "Select the brackets you want to be notified about. Leave empty to receive all brackets."
+msgstr "通知を受け取りたいブラケットを選択してください。空のままにするとすべてのブラケットを受け取ります。"
+
+msgctxt "web.notify.channels"
+msgid "Channels"
+msgstr "チャンネル"
+
+msgctxt "web.notify.channels_hint"
+msgid "Select the channels you want to be notified about. Leave empty to receive all channels."
+msgstr "通知を受け取りたいチャンネルを選択してください。空のままにするとすべてのチャンネルを受け取ります。"
+
+msgctxt "web.notify.active_hours"
+msgid "Active Hours"
+msgstr "アクティブな時間帯"
+
+#, python-format
+msgctxt "web.notify.active_hours_hint"
+msgid "Only notify me during a specific window of the day, in my local time. Maximum window is %(hours)s hours. Defaults to 5pm–10pm if you don't pick a range."
+msgstr "現地時間で1日の特定の時間帯のみ通知します。最大の時間帯は %(hours)s 時間です。範囲を選択しない場合は既定で17時〜22時です。"
+
+msgctxt "web.notify.limit_window"
+msgid "Limit notifications to a daily window"
+msgstr "通知を1日の時間帯に制限する"
+
+msgctxt "web.notify.save"
+msgid "Save preferences"
+msgstr "設定を保存"
+
+msgctxt "web.notify.js_saved"
+msgid "Your notification preferences have been saved."
+msgstr "通知設定が保存されました。"
+
+msgctxt "web.notify.js_off"
+msgid "Notifications turned off for this server."
+msgstr "このサーバーの通知をオフにしました。"
+
+msgctxt "web.notify.js_error"
+msgid "Could not save your preferences. Please try again."
+msgstr "設定を保存できませんでした。もう一度お試しください。"
+
+msgctxt "web.notify.js_pick_different"
+msgid "Pick different start and end hours"
+msgstr "開始時刻と終了時刻を別々に選択してください"
+
+msgctxt "web.notify.js_must_differ"
+msgid "Start and end must differ."
+msgstr "開始と終了は異なる必要があります。"
+
+#, python-format
+msgctxt "web.notify.js_range_max"
+msgid "Range must be %(max)s hours or less."
+msgstr "範囲は %(max)s 時間以下にしてください。"
+
+#, python-format
+msgctxt "web.notify.js_times_in"
+msgid "Times shown in %(tz)s"
+msgstr "%(tz)s の時刻で表示"
+
+msgctxt "web.notify.js_times_local"
+msgid "Times shown in your local timezone"
+msgstr "現地のタイムゾーンの時刻で表示"
+
+msgctxt "web.notify.unit_hour"
+msgid "hour"
+msgstr "時間"
+
+msgctxt "web.notify.unit_hours"
+msgid "hours"
+msgstr "時間"
+
+msgctxt "web.motd.available"
+msgid "Available placeholders"
+msgstr "利用可能なプレースホルダー"
+
+msgctxt "web.motd.intro"
+msgid "These tokens are replaced with each game's details when the message of the day is shown in a game post:"
+msgstr "これらのトークンは、今日のメッセージがゲーム投稿に表示されるときに各ゲームの詳細に置き換えられます:"
+
+msgctxt "web.motd.game_id"
+msgid "the game's SpellBot ID"
+msgstr "ゲームの SpellBot ID"
+
+msgctxt "web.motd.game_format"
+msgid "the game's format (e.g. Commander)"
+msgstr "ゲームのフォーマット（例: Commander）"
+
+msgctxt "web.motd.game_bracket"
+msgid "the game's commander bracket"
+msgstr "ゲームの Commander ブラケット"
+
+msgctxt "web.motd.game_start"
+msgid "when the game starts (a Discord timestamp), or “pending”"
+msgstr "ゲームの開始時刻（Discord のタイムスタンプ）、または「保留中」"
+
+msgctxt "web.motd.player_names"
+msgid "the players' names, in join order"
+msgstr "参加順のプレイヤー名"
+

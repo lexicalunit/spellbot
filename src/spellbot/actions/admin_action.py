@@ -169,22 +169,19 @@ class AdminAction(BaseAction):
         embed.set_author(name=t("admin.user_info_title", locale=locale, name=target.display_name))
 
         link = f"{settings.API_BASE_URL}/g/{self.interaction.guild_id}/u/{target_xid}"
-        games_key = (
-            "admin.user_info_games_one" if games_count == 1 else "admin.user_info_games_many"
+        games_text = t(
+            "admin.user_info_games_count",
+            locale=locale,
+            count=games_count,
+            guild=guild_name,
         )
-        games_text = t(games_key, locale=locale, count=games_count, guild=guild_name)
         embed.add_field(
             name=t("admin.user_info_games", locale=locale),
             value=games_text,
             inline=True,
         )
 
-        blocked_key = (
-            "admin.user_info_blocked_one"
-            if blocked_by_count == 1
-            else "admin.user_info_blocked_many"
-        )
-        block_text = t(blocked_key, locale=locale, count=blocked_by_count)
+        block_text = t("admin.user_info_blocked", locale=locale, count=blocked_by_count)
         embed.add_field(
             name=t("admin.user_info_block_status", locale=locale),
             value=block_text,

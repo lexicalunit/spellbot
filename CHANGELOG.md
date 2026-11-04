@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added translation checks for broken links, mismatched placeholders, and unbalanced bold.
 - Added an owner-only API Tokens panel to the admin dashboard to create and revoke tokens.
 - Added `TRUSTED_PROXY_HOPS` so rate limits use the real client IP behind a load balancer.
+- Added `make translations` to sync every language's `.po` file with `messages.pot`.
 
 ### Changed
 
@@ -30,6 +31,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Admin status is now re-checked every 5 minutes, so `!demote` takes effect quickly.
 - Sign-in pages now explain which settings are missing instead of a bare 503.
 - Removed the direct `wrapt` dependency.
+- Moved translations from YAML to gettext `.po` files and replaced `python-i18n` with Babel.
+- Plurals now follow each language's own rules, including Polish's three forms.
 
 ### Fixed
 
@@ -40,6 +43,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed Discord HTTP spans in Datadog closing before the request ran.
 - Stopped sending Discord request bodies to Datadog as span tags.
 - Fixed the first new API tokens colliding with the ids of tokens that were added by hand.
+- Fixed French plurals for zero, which now read "0 partie" instead of "0 parties".
+- Fixed "autres joueur" in the French message for waiting on one more player.
 
 ## [v24.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.2) - 2026-11-03
 

@@ -70,13 +70,13 @@ Sometimes it's useful to have readonly access to the production database, for ex
 
 The commands below use these placeholders. Replace them with the values for your deployment:
 
-| Placeholder | Meaning |
-| --- | --- |
-| `YOUR_HOST` / `your_host` | Hostname of your production database |
-| `YOUR_DATABASE_NAME` / `your_database_name` | Name of your production database |
-| `YOUR_ADMIN_USERNAME` / `your_admin_username` | Admin user that can create roles and grant privileges |
-| `your_app_username` | Role SpellBot connects as. It runs the migrations, so it owns the tables. |
-| `YOUR_READONLY_USERNAME` / `your_readonly_username` | The readonly user you are creating |
+| Placeholder                                         | Meaning                                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------------------- |
+| `YOUR_HOST` / `your_host`                           | Hostname of your production database                                      |
+| `YOUR_DATABASE_NAME` / `your_database_name`         | Name of your production database                                          |
+| `YOUR_ADMIN_USERNAME` / `your_admin_username`       | Admin user that can create roles and grant privileges                     |
+| `your_app_username`                                 | Role SpellBot connects as. It runs the migrations, so it owns the tables. |
+| `YOUR_READONLY_USERNAME` / `your_readonly_username` | The readonly user you are creating                                        |
 
 Hosted databases usually require SSL. If yours does, run `export PGSSLMODE=require` first, so every `psql`, `pg_dump`, and `pg_restore` command below uses it.
 
@@ -212,7 +212,7 @@ Start the app as usual, for example with `make dev`. On startup it runs any migr
 rm -rf "$SNAPSHOT_DIR"
 ```
 
-Because `tokens` is empty in the snapshot, the REST API won't accept any of production's keys locally. Use `scripts/create-token.sh` if you need one. Any data that only exists going forward, such as newly added columns, will be empty or have default values for existing rows.
+Because `tokens` is empty in the snapshot, the REST API won't accept any of production's keys locally. If you need one, sign in as the owner and create it in the **API Tokens** panel on `/admin/dashboard` (see [ADMINISTRATION.md](ADMINISTRATION.md#api-tokens)). Any data that only exists going forward, such as newly added columns, will be empty or have default values for existing rows.
 
 [alembic]: https://alembic.sqlalchemy.org/
 [pg_dump]: https://www.postgresql.org/docs/current/app-pgdump.html

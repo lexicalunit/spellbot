@@ -88,5 +88,5 @@ class TestCLI:
         runner.invoke(main, ["--dev"])
         cli.hupper.start_reloader.assert_called_once_with("spellbot.main")
         cli.hupper.start_reloader.return_value.watch_files.assert_called_once_with(
-            [str(TRANSLATIONS_DIR / "*.yaml")],
+            [str(TRANSLATIONS_DIR / "*.po*")],
         )

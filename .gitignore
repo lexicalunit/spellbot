@@ -148,6 +148,7 @@ cover/
 # Translations
 *.mo
 *.pot
+!src/spellbot/translations/messages.pot
 
 # Django stuff:
 *.log

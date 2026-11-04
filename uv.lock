@@ -1683,20 +1683,6 @@ wheels = [
 ]
 
 [[package]]
-name = "python-i18n"
-version = "0.3.9"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/32/d9ba976458c9503ec22db4eb677a5d919edaecd73d893effeaa92a67b84b/python-i18n-0.3.9.tar.gz", hash = "sha256:df97f3d2364bf3a7ebfbd6cbefe8e45483468e52a9e30b909c6078f5f471e4e8", size = 11778, upload-time = "2020-08-26T14:31:27.512Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/73/9a0b2974dd9a3d50788d235f10c4d73c2efcd22926036309645fc2f0db0c/python_i18n-0.3.9-py3-none-any.whl", hash = "sha256:bda5b8d889ebd51973e22e53746417bd32783c9bd6780fd27cadbb733915651d", size = 13750, upload-time = "2020-08-26T14:31:26.266Z" },
-]
-
-[package.optional-dependencies]
-yaml = [
-    { name = "pyyaml" },
-]
-
-[[package]]
 name = "python-json-logger"
 version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1845,7 +1831,6 @@ dependencies = [
     { name = "packaging" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
-    { name = "python-i18n", extra = ["yaml"] },
     { name = "python-json-logger" },
     { name = "redis" },
     { name = "sqlalchemy" },
@@ -1870,6 +1855,7 @@ dev = [
     { name = "pytest-mock" },
     { name = "pytest-socket" },
     { name = "pytest-xdist" },
+    { name = "pyyaml" },
     { name = "ruff" },
     { name = "syrupy" },
     { name = "ty" },
@@ -1899,7 +1885,6 @@ requires-dist = [
     { name = "packaging", specifier = ">=24.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.9" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
-    { name = "python-i18n", extras = ["yaml"], specifier = ">=0.3.9" },
     { name = "python-json-logger", specifier = ">=3.3.0" },
     { name = "redis", specifier = ">=6.1.0" },
     { name = "sqlalchemy", specifier = ">=2.0.41" },
@@ -1924,6 +1909,7 @@ dev = [
     { name = "pytest-mock", specifier = ">=3" },
     { name = "pytest-socket", specifier = ">=0" },
     { name = "pytest-xdist", specifier = ">=3" },
+    { name = "pyyaml", specifier = ">=6" },
     { name = "ruff", specifier = ">=0" },
     { name = "syrupy", specifier = ">=5.1.0" },
     { name = "ty", specifier = ">=0" },

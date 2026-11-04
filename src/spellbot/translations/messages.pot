@@ -1,0 +1,1564 @@
+# Translations template for SpellBot.
+# Copyright (C) 2026 spellbot@lexicalunit.com
+# This file is distributed under the same license as the SpellBot project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SpellBot\n"
+"Report-Msgid-Bugs-To: spellbot@lexicalunit.com\n"
+"POT-Creation-Date: 2026-11-03 17:50-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgctxt "game.title.ready"
+msgid "**Your game is ready!**"
+msgstr ""
+
+msgctxt "game.title.rematch"
+msgid "**Rematch Game!**"
+msgstr ""
+
+#, python-format
+msgctxt "game.title.waiting"
+msgid "**Waiting for %(count)s more player to join...**"
+msgid_plural "**Waiting for %(count)s more players to join...**"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "game.description.check_dm"
+msgid "Please check your Direct Messages for your game details."
+msgstr ""
+
+msgctxt "game.description.rematch_info"
+msgid "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
+msgstr ""
+
+#, python-format
+msgctxt "game.description.join_link"
+msgid "# [Join your %(service)s game now!](%(link)s)"
+msgstr ""
+
+#, python-format
+msgctxt "game.description.link_error"
+msgid "Sorry but SpellBot was unable to create a link for this game. Please go to [%(service)s](%(url)s) to create one."
+msgstr ""
+
+#, python-format
+msgctxt "game.description.use_service"
+msgid "Please use %(service)s to play this game."
+msgstr ""
+
+msgctxt "game.description.contact_players"
+msgid "Contact the other players in your game to organize this match."
+msgstr ""
+
+#, python-format
+msgctxt "game.description.password"
+msgid "Password: `%(password)s`"
+msgstr ""
+
+#, python-format
+msgctxt "game.description.voice_chat"
+msgid "## Join your voice chat now: <#%(channel_id)s>"
+msgstr ""
+
+#, python-format
+msgctxt "game.description.voice_invite"
+msgid "Or use this voice channel invite: %(invite)s"
+msgstr ""
+
+#, python-format
+msgctxt "game.description.voice_already_picked"
+msgid "## Your pod is already using a voice channel, join them now: <#%(channel_id)s>!"
+msgstr ""
+
+#, python-format
+msgctxt "game.description.voice_available"
+msgid "## Please consider using this available voice channel: <#%(channel_id)s>."
+msgstr ""
+
+#, python-format
+msgctxt "game.description.jump_to_post"
+msgid "You can also [jump to the original game post](%(link)s) in <#%(channel_id)s>."
+msgstr ""
+
+msgctxt "game.war_convoke_only"
+msgid "This Guild War table no longer takes players through SpellBot, but you can still join it on Convoke."
+msgstr ""
+
+msgctxt "game.field.rules"
+msgid "⚠️ Additional Rules:"
+msgstr ""
+
+msgctxt "game.field.guild_war"
+msgid "⚔️ Guild War"
+msgstr ""
+
+msgctxt "game.field.players"
+msgid "Players"
+msgstr ""
+
+#, python-format
+msgctxt "game.field.players_hidden"
+msgid "**%(count)s player name is hidden**"
+msgid_plural "**%(count)s player names are hidden**"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "game.field.format"
+msgid "Format"
+msgstr ""
+
+msgctxt "game.field.bracket"
+msgid "Bracket"
+msgstr ""
+
+msgctxt "game.field.started_at"
+msgid "Started at"
+msgstr ""
+
+msgctxt "game.field.updated_at"
+msgid "Updated at"
+msgstr ""
+
+msgctxt "game.field.voice_channel"
+msgid "🔊 Suggested Voice Channel"
+msgstr ""
+
+msgctxt "game.field.support"
+msgid "Support SpellBot"
+msgstr ""
+
+#, python-format
+msgctxt "game.field.support_text"
+msgid "Become [a patron](%(subscribe)s) or give a [one-off tip](%(donate)s)."
+msgstr ""
+
+#, python-format
+msgctxt "game.field.convoke_guild"
+msgid "Play more with **%(name)s** on Convoke. [Join the guild!](%(url)s)"
+msgstr ""
+
+msgctxt "game.field.settings"
+msgid "Settings"
+msgstr ""
+
+#, python-format
+msgctxt "game.field.settings_text"
+msgid "See [live games](%(queues)s) and configure [your notifications](%(notify)s)."
+msgstr ""
+
+#, python-format
+msgctxt "game.footer"
+msgid "SpellBot Game ID: #SB%(game_id)s — Service: %(service)s"
+msgstr ""
+
+msgctxt "service.not_any"
+msgid "_Please contact the players in your game to organize this game._"
+msgstr ""
+
+#, python-format
+msgctxt "service.spelltable"
+msgid "_Please go create a game on %(emoji)s[SpellTable](https://spelltable.wizards.com/) for this game._"
+msgstr ""
+
+msgctxt "service.cockatrice"
+msgid "_Please use Cockatrice for this game._"
+msgstr ""
+
+msgctxt "service.xmage"
+msgid "_Please use XMage for this game._"
+msgstr ""
+
+msgctxt "service.mtg_arena"
+msgid "_Please use MTG Arena for this game._"
+msgstr ""
+
+msgctxt "service.mtg_online"
+msgid "_Please use MTG Online for this game._"
+msgstr ""
+
+msgctxt "service.tts"
+msgid "_Please use TabletopSim for this game._"
+msgstr ""
+
+#, python-format
+msgctxt "service.convoke"
+msgid "_A %(emoji)s[Convoke](https://www.convoke.games/) link will be created when all players have joined._"
+msgstr ""
+
+#, python-format
+msgctxt "service.girudo"
+msgid "_A %(emoji)s[Girudo](https://www.girudo.com/) link will be created when all players have joined._"
+msgstr ""
+
+#, python-format
+msgctxt "service.edhlab"
+msgid "_A %(emoji)s[EDHLAB](https://edhlab.gg/) link will be created when all players have joined._"
+msgstr ""
+
+#, python-format
+msgctxt "service.playgroup_live"
+msgid "*A %(emoji)s[Playgroup Live](https://playgroup.gg/) link will be created when all players have joined.*"
+msgstr ""
+
+msgctxt "lfg.playgroup_link_required"
+msgid "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
+msgstr ""
+
+msgctxt "lfg.run_in_channel"
+msgid "Please run this command in the same channel as your last played game."
+msgstr ""
+
+msgctxt "lfg.already_pending"
+msgid "You're already in a pending game, leave that one first."
+msgstr ""
+
+msgctxt "lfg.no_previous_game"
+msgid "You have not played a game in this guild yet."
+msgstr ""
+
+msgctxt "lfg.run_in_game_channel"
+msgid "Please run this command in the same channel as your game."
+msgstr ""
+
+msgctxt "lfg.not_pending_here"
+msgid "You're not in a pending game in this channel."
+msgstr ""
+
+msgctxt "lfg.start_needs_players"
+msgid "You need at least one other player before you can start a game."
+msgstr ""
+
+msgctxt "lfg.unsupported_context"
+msgid "Sorry, that command is not supported in this context."
+msgstr ""
+
+msgctxt "lfg.already_in_channel"
+msgid "You're already in a game in this channel."
+msgstr ""
+
+msgctxt "lfg.too_many_pending"
+msgid "You're in too many pending games to join another one at this time."
+msgstr ""
+
+msgctxt "lfg.too_many_friends"
+msgid "You mentioned too many players."
+msgstr ""
+
+msgctxt "lfg.guild_war_invalid"
+msgid "That Guild War is not available. Use autocomplete to pick a live war."
+msgstr ""
+
+#, python-format
+msgctxt "lfg.guild_war_seats"
+msgid "Guild War matches need between %(min)s and %(max)s seats."
+msgstr ""
+
+msgctxt "lfg.cannot_join"
+msgid "You can not join this game."
+msgstr ""
+
+msgctxt "lfg.game_started"
+msgid "Sorry, that game has already started."
+msgstr ""
+
+msgctxt "lfg.game_full"
+msgid "Sorry, that game is already full."
+msgstr ""
+
+#, python-format
+msgctxt "lfg.invalid_player_count"
+msgid "You can't create a %(format)s game with %(count)s players."
+msgstr ""
+
+#, python-format
+msgctxt "lfg.excluded_players"
+msgid "Some of the players you mentioned can not be added to a game: %(players)s"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.found_game"
+msgid "I found a %(format)s game for you!"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.jump_to_game"
+msgid "You can [jump to the game post](%(link)s) to see it!"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.joined_game"
+msgid "You have joined the game SB%(game_id)s!"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.started_game"
+msgid "I started your %(format)s game for you!"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.game_started_id"
+msgid "The game SB%(game_id)s has been started!"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.dm_failures"
+msgid "Unable to send Direct Messages to some players: %(players)s"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.award_failure_give"
+msgid "Unable to give role %(role)s to user <@%(user_id)s>"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.award_failure_take"
+msgid "Unable to take role %(role)s from user <@%(user_id)s>"
+msgstr ""
+
+#, python-format
+msgctxt "lfg.mythic_track"
+msgid "Track your game on %(emoji)s[Mythic Track](%(link)s) with PIN code: `%(pin)s`"
+msgstr ""
+
+msgctxt "button.join"
+msgid "Join this game!"
+msgstr ""
+
+msgctxt "button.leave"
+msgid "Leave"
+msgstr ""
+
+msgctxt "admin.no_game_found"
+msgid "There is no game with that ID."
+msgstr ""
+
+msgctxt "admin.done"
+msgid "Done."
+msgstr ""
+
+#, python-format
+msgctxt "admin.channels_title"
+msgid "Configuration for channels in %(guild)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.setup_title"
+msgid "SpellBot Setup for %(guild)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.setup_description"
+msgid ""
+"SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n"
+"\n"
+"[Configure SpellBot →](%(link)s)"
+msgstr ""
+
+#, python-format
+msgctxt "admin.user_move_error"
+msgid "Error: %(error)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.user_moved"
+msgid "User %(from_user)s has been moved to %(to_user)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.expire_dequeued"
+msgid "├── Dequeued %(count)s players"
+msgstr ""
+
+#, python-format
+msgctxt "admin.expire_no_channel"
+msgid "├── Could not find channel %(channel_id)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.expire_no_message"
+msgid "├── Could not find message %(message_id)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.expire_deleting"
+msgid "├── Deleting message %(message_id)s ..."
+msgstr ""
+
+#, python-format
+msgctxt "admin.expire_updating"
+msgid "├── Updating message %(message_id)s ..."
+msgstr ""
+
+msgctxt "admin.expire_no_permission"
+msgid "├── Bot does not have permission"
+msgstr ""
+
+msgctxt "admin.expire_done"
+msgid "└── Done"
+msgstr ""
+
+msgctxt "admin.expire_none"
+msgid "No games to expire."
+msgstr ""
+
+#, python-format
+msgctxt "admin.expire_game"
+msgid "Expiring game #SB%(game_id)s ..."
+msgstr ""
+
+msgctxt "admin.game_expired"
+msgid "Sorry, this game was expired due to inactivity."
+msgstr ""
+
+#, python-format
+msgctxt "admin.user_info_title"
+msgid "User info for %(name)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.user_info_games_count"
+msgid "%(count)s game on %(guild)s"
+msgid_plural "%(count)s games on %(guild)s"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "admin.user_info_games"
+msgid "Games Played"
+msgstr ""
+
+#, python-format
+msgctxt "admin.user_info_blocked"
+msgid "Blocked by %(count)s user"
+msgid_plural "Blocked by %(count)s users"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "admin.user_info_block_status"
+msgid "Block Status"
+msgstr ""
+
+msgctxt "admin.user_info_no_games"
+msgid "No games played"
+msgstr ""
+
+msgctxt "admin.user_info_play_range"
+msgid "Play Range"
+msgstr ""
+
+msgctxt "admin.user_info_game_history"
+msgid "Game History"
+msgstr ""
+
+#, python-format
+msgctxt "admin.view_link"
+msgid "[View on spellbot.io](%(link)s)"
+msgstr ""
+
+#, python-format
+msgctxt "admin.game_info_title"
+msgid "Game info for #SB%(game_id)s"
+msgstr ""
+
+msgctxt "admin.game_info_pending"
+msgid "Not started yet"
+msgstr ""
+
+msgctxt "admin.game_info_details"
+msgid "Details"
+msgstr ""
+
+#, python-format
+msgctxt "admin.user_info_footer"
+msgid "User ID: %(user_id)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.mythic_track_title"
+msgid "Mythic Track Setup for %(guild)s"
+msgstr ""
+
+#, python-format
+msgctxt "admin.mythic_track_on"
+msgid ""
+"✅ Mythic Track has been turned **on** for this server!\n"
+"\n"
+"To continue setup, please [connect your Discord account to Mythic Track](%(guide)s).\n"
+"\n"
+"While this feature is turned on, SpellBot will generate PIN codes for players to enter into Mythic Track so that their games can be tracked."
+msgstr ""
+
+msgctxt "admin.mythic_track_off"
+msgid "❌ Mythic Track has been turned **off** for this server. Rerun this command to toggle it back on. Note that turning this feature off does _not_ remove any existing Mythic Track data."
+msgstr ""
+
+msgctxt "block.self_block"
+msgid "You can not block yourself."
+msgstr ""
+
+#, python-format
+msgctxt "block.blocked"
+msgid "<@%(user_id)s> has been blocked."
+msgstr ""
+
+#, python-format
+msgctxt "block.unblocked"
+msgid "<@%(user_id)s> has been unblocked."
+msgstr ""
+
+#, python-format
+msgctxt "block.manage_message"
+msgid ""
+"You can view and manage your blocked users from your profile page.\n"
+"\n"
+"[Open your profile on spellbot.io](%(link)s)"
+msgstr ""
+
+msgctxt "leave.removed_channel"
+msgid "You were removed from any pending games in this channel."
+msgstr ""
+
+msgctxt "leave.removed_all"
+msgid "You were removed from all pending games."
+msgstr ""
+
+msgctxt "score.record_title"
+msgid "Record of games played"
+msgstr ""
+
+#, python-format
+msgctxt "score.games"
+msgid "%(count)s game"
+msgid_plural "%(count)s games"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgctxt "score.record_description"
+msgid ""
+"%(mention)s has played %(games)s.\n"
+"View more [details on spellbot.io](%(link)s)."
+msgstr ""
+
+#, python-format
+msgctxt "score.history_title"
+msgid "Recent games played in %(channel)s"
+msgstr ""
+
+#, python-format
+msgctxt "score.history_description"
+msgid "View [game history on spellbot.io](%(link)s)."
+msgstr ""
+
+#, python-format
+msgctxt "score.top_title"
+msgid "Top players in #%(channel)s (%(range)s)"
+msgstr ""
+
+#, python-format
+msgctxt "score.range_ago"
+msgid "%(months)s months ago"
+msgstr ""
+
+msgctxt "score.range_this_month"
+msgid "this month"
+msgstr ""
+
+msgctxt "score.range_all_time"
+msgid "all time"
+msgstr ""
+
+msgctxt "score.top_header"
+msgid "Rank     Games     Player"
+msgstr ""
+
+msgctxt "about.title"
+msgid "SpellBot"
+msgstr ""
+
+msgctxt "about.version"
+msgid "Version"
+msgstr ""
+
+msgctxt "about.author"
+msgid "Author"
+msgstr ""
+
+#, python-format
+msgctxt "about.description"
+msgid ""
+"_The Discord bot for Webcam Magic._\n"
+"\n"
+"Having issues with SpellBot? Please [report bugs](%(issues)s)!\n"
+"\n"
+"[🔗 Add SpellBot to your Discord!](%(invite)s)\n"
+"\n"
+"SpellBot's continued operation is made possible by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+"\n"
+"💜 Help keep SpellBot running by [becoming a patron!](%(patreon)s)"
+msgstr ""
+
+msgctxt "errors.no_permission"
+msgid "You do not have permission to do that."
+msgstr ""
+
+msgctxt "errors.guild_only"
+msgid "This command only works in a guild."
+msgstr ""
+
+msgctxt "errors.no_dms"
+msgid "This command is not supported in DMs."
+msgstr ""
+
+msgctxt "errors.banned"
+msgid "You have been banned from using SpellBot."
+msgstr ""
+
+#, python-format
+msgctxt "errors.cooldown"
+msgid "Please try again in %(seconds)ss."
+msgstr ""
+
+msgctxt "playgroup.already_linked"
+msgid "Your Discord account is already linked to Playgroup Live!"
+msgstr ""
+
+#, python-format
+msgctxt "playgroup.linked"
+msgid "Linked! Welcome, **%(username)s**. Your Playgroup Live games will now be attributed to your account."
+msgstr ""
+
+msgctxt "playgroup.not_found"
+msgid "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+msgstr ""
+
+msgctxt "web.nav.active_queues"
+msgid "Active Queues"
+msgstr ""
+
+msgctxt "web.nav.my_records"
+msgid "My Records"
+msgstr ""
+
+msgctxt "web.nav.admin_dashboard"
+msgid "Admin Dashboard"
+msgstr ""
+
+msgctxt "web.nav.server_details"
+msgid "Server Details"
+msgstr ""
+
+msgctxt "web.nav.notification_preferences"
+msgid "Notification preferences"
+msgstr ""
+
+#, python-format
+msgctxt "web.nav.back_to"
+msgid "← Back to %(name)s"
+msgstr ""
+
+msgctxt "web.nav.log_in"
+msgid "Log in"
+msgstr ""
+
+msgctxt "web.nav.log_out"
+msgid "Log out"
+msgstr ""
+
+#, python-format
+msgctxt "web.nav.logged_in_as"
+msgid "Logged in as %(name)s"
+msgstr ""
+
+msgctxt "web.nav.site_nav_aria"
+msgid "Site navigation"
+msgstr ""
+
+msgctxt "web.nav.server_nav_aria"
+msgid "Server navigation"
+msgstr ""
+
+#, python-format
+msgctxt "web.common.powered_by"
+msgid "Powered by %(link)s."
+msgstr ""
+
+#, python-format
+msgctxt "web.common.generated_by"
+msgid "Generated by %(link)s"
+msgstr ""
+
+msgctxt "web.common.spellbot_server"
+msgid "SpellBot Server"
+msgstr ""
+
+msgctxt "web.common.server"
+msgid "server"
+msgstr ""
+
+msgctxt "web.common.this_server"
+msgid "this server"
+msgstr ""
+
+msgctxt "web.common.unknown_user"
+msgid "Unknown User"
+msgstr ""
+
+msgctxt "web.common.unknown_channel"
+msgid "Unknown Channel"
+msgstr ""
+
+msgctxt "web.common.unknown_guild"
+msgid "Unknown Guild"
+msgstr ""
+
+msgctxt "web.common.login_with_discord"
+msgid "Log in with Discord"
+msgstr ""
+
+msgctxt "web.common.export_csv"
+msgid "Export all (CSV)"
+msgstr ""
+
+msgctxt "web.common.prev_page"
+msgid "Previous page"
+msgstr ""
+
+msgctxt "web.common.next_page"
+msgid "Next page"
+msgstr ""
+
+msgctxt "web.common.copy_user_id"
+msgid "Copy User ID"
+msgstr ""
+
+msgctxt "web.common.copy_channel_id"
+msgid "Copy Channel ID"
+msgstr ""
+
+msgctxt "web.common.copy_server_id"
+msgid "Copy server ID"
+msgstr ""
+
+#, python-format
+msgctxt "web.common.open_in"
+msgid "Open in %(service)s"
+msgstr ""
+
+msgctxt "web.common.jump_to_game"
+msgid "Jump to game"
+msgstr ""
+
+msgctxt "web.common.jump_to_channel"
+msgid "Jump to channel"
+msgstr ""
+
+msgctxt "web.common.jump_to_guild"
+msgid "Jump to guild"
+msgstr ""
+
+msgctxt "web.common.jump_to_voice_invite"
+msgid "Jump to voice invite"
+msgstr ""
+
+msgctxt "web.common.view_change_history"
+msgid "View change history"
+msgstr ""
+
+msgctxt "web.common.seats_suffix"
+msgid "seats"
+msgstr ""
+
+msgctxt "web.common.yes_label"
+msgid "Yes"
+msgstr ""
+
+msgctxt "web.common.no_label"
+msgid "No"
+msgstr ""
+
+msgctxt "web.field.status"
+msgid "Status"
+msgstr ""
+
+msgctxt "web.field.format"
+msgid "Format"
+msgstr ""
+
+msgctxt "web.field.bracket"
+msgid "Bracket"
+msgstr ""
+
+msgctxt "web.field.service"
+msgid "Service"
+msgstr ""
+
+msgctxt "web.field.seats"
+msgid "Seats"
+msgstr ""
+
+msgctxt "web.field.locale"
+msgid "Locale"
+msgstr ""
+
+msgctxt "web.field.players"
+msgid "Players"
+msgstr ""
+
+msgctxt "web.field.link"
+msgid "Link"
+msgstr ""
+
+msgctxt "web.field.game"
+msgid "Game"
+msgstr ""
+
+msgctxt "web.field.time"
+msgid "Time"
+msgstr ""
+
+msgctxt "web.field.guild"
+msgid "Guild"
+msgstr ""
+
+msgctxt "web.field.channel"
+msgid "Channel"
+msgstr ""
+
+msgctxt "web.field.channel_id"
+msgid "Channel ID"
+msgstr ""
+
+msgctxt "web.field.user_name"
+msgid "User Name"
+msgstr ""
+
+msgctxt "web.field.user_id"
+msgid "User ID"
+msgstr ""
+
+msgctxt "web.field.wait"
+msgid "Wait"
+msgstr ""
+
+msgctxt "web.field.language"
+msgid "Language"
+msgstr ""
+
+msgctxt "web.field.jump"
+msgid "Jump"
+msgstr ""
+
+msgctxt "web.field.created"
+msgid "Created"
+msgstr ""
+
+msgctxt "web.field.updated"
+msgid "Updated"
+msgstr ""
+
+msgctxt "web.field.started"
+msgid "Started"
+msgstr ""
+
+msgctxt "web.field.deleted"
+msgid "Deleted"
+msgstr ""
+
+msgctxt "web.queues.title"
+msgid "Active Queues — SpellBot"
+msgstr ""
+
+msgctxt "web.queues.meta_description"
+msgid "Join an active Magic: The Gathering queue powered by SpellBot."
+msgstr ""
+
+msgctxt "web.queues.heading"
+msgid "Active Queues"
+msgstr ""
+
+msgctxt "web.queues.active_games"
+msgid "Active Games"
+msgstr ""
+
+msgctxt "web.queues.active_games_tooltip"
+msgid "Pending queues plus games started in the last 2 hours"
+msgstr ""
+
+msgctxt "web.queues.filter_aria"
+msgid "Filter queues"
+msgstr ""
+
+msgctxt "web.queues.all_formats"
+msgid "All formats"
+msgstr ""
+
+msgctxt "web.queues.all_brackets"
+msgid "All brackets"
+msgstr ""
+
+msgctxt "web.queues.all_languages"
+msgid "All languages"
+msgstr ""
+
+msgctxt "web.queues.only_played"
+msgid "Only servers you've played in"
+msgstr ""
+
+msgctxt "web.queues.no_match"
+msgid "No queues match the selected filters."
+msgstr ""
+
+msgctxt "web.queues.your_servers"
+msgid "Your Servers"
+msgstr ""
+
+msgctxt "web.queues.setup_notifications"
+msgid "Setup notifications"
+msgstr ""
+
+msgctxt "web.queues.manage_notifications"
+msgid "Manage notifications"
+msgstr ""
+
+#, python-format
+msgctxt "web.queues.setup_notifications_for"
+msgid "Setup notifications for %(name)s"
+msgstr ""
+
+#, python-format
+msgctxt "web.queues.manage_notifications_for"
+msgid "Manage notifications for %(name)s"
+msgstr ""
+
+msgctxt "web.queues.notifications_on_short"
+msgid "On"
+msgstr ""
+
+msgctxt "web.queues.notifications_label"
+msgid "Notifications"
+msgstr ""
+
+msgctxt "web.queues.empty_mine"
+msgid "No active queues right now in servers you've played in. Uncheck the filter to see all servers."
+msgstr ""
+
+#, python-format
+msgctxt "web.queues.empty_all"
+msgid "No active queues right now. Check back in a moment, or run %(command)s in your Discord server to start one."
+msgstr ""
+
+msgctxt "web.queues.recently_started"
+msgid "Recently Started"
+msgstr ""
+
+msgctxt "web.queues.jump_to_game_arrow"
+msgid "Jump to Game →"
+msgstr ""
+
+msgctxt "web.queues.jump_to_channel_arrow"
+msgid "Jump to Channel →"
+msgstr ""
+
+#, python-format
+msgctxt "web.queues.started_ago"
+msgid "%(duration)s ago"
+msgstr ""
+
+msgctxt "web.queues.auto_refresh"
+msgid "Auto-refreshing every 60 seconds."
+msgstr ""
+
+#, python-format
+msgctxt "web.records.channel_title"
+msgid "Channel Records — #%(name)s"
+msgstr ""
+
+#, python-format
+msgctxt "web.records.channel_heading"
+msgid "Channel Records: #%(name)s"
+msgstr ""
+
+#, python-format
+msgctxt "web.records.user_title"
+msgid "User Records — %(name)s"
+msgstr ""
+
+#, python-format
+msgctxt "web.records.user_heading"
+msgid "User Records: %(name)s"
+msgstr ""
+
+msgctxt "web.records.games"
+msgid "Games"
+msgstr ""
+
+#, python-format
+msgctxt "web.records.matching"
+msgid "%(count)s matching"
+msgstr ""
+
+msgctxt "web.records.none_channel"
+msgid "No games found for this channel."
+msgstr ""
+
+msgctxt "web.records.none_user"
+msgid "No games found for this user."
+msgstr ""
+
+msgctxt "web.records.mod_manage_channel"
+msgid "Moderators can manage this channel's settings here."
+msgstr ""
+
+msgctxt "web.records.mod_manage_server"
+msgid "Moderators can manage this server's settings here."
+msgstr ""
+
+msgctxt "web.records.login_block_list"
+msgid "Log in to view and manage your own block list."
+msgstr ""
+
+msgctxt "web.blocks.title"
+msgid "Blocked Users"
+msgstr ""
+
+msgctxt "web.blocks.description"
+msgid "Players you block can't join your games, and you can't join theirs. This list is private to you."
+msgstr ""
+
+msgctxt "web.blocks.user"
+msgid "User"
+msgstr ""
+
+msgctxt "web.blocks.unblock"
+msgid "Unblock"
+msgstr ""
+
+msgctxt "web.blocks.none"
+msgid "You haven't blocked anyone."
+msgstr ""
+
+msgctxt "web.blocks.add_label"
+msgid "Block a user"
+msgstr ""
+
+msgctxt "web.blocks.add_hint"
+msgid "Enter the Discord user ID (or name) of the player you want to block."
+msgstr ""
+
+msgctxt "web.blocks.add_placeholder"
+msgid "Discord user ID or name"
+msgstr ""
+
+msgctxt "web.blocks.add_button"
+msgid "Block user"
+msgstr ""
+
+msgctxt "web.filters.player_label"
+msgid "Player (name or ID)"
+msgstr ""
+
+msgctxt "web.filters.player_placeholder"
+msgid "e.g. amy or 12345"
+msgstr ""
+
+msgctxt "web.filters.guild_label"
+msgid "Guild (name or ID)"
+msgstr ""
+
+msgctxt "web.filters.guild_placeholder"
+msgid "e.g. my-guild or 67890"
+msgstr ""
+
+msgctxt "web.filters.from"
+msgid "From"
+msgstr ""
+
+msgctxt "web.filters.to"
+msgid "To"
+msgstr ""
+
+msgctxt "web.filters.formats"
+msgid "Format(s)"
+msgstr ""
+
+msgctxt "web.filters.brackets"
+msgid "Bracket(s)"
+msgstr ""
+
+msgctxt "web.filters.apply"
+msgid "Apply filters"
+msgstr ""
+
+msgctxt "web.filters.reset"
+msgid "Reset"
+msgstr ""
+
+msgctxt "web.channel_settings.heading"
+msgid "Channel Settings"
+msgstr ""
+
+msgctxt "web.channel_settings.default_seats"
+msgid "Default seats"
+msgstr ""
+
+msgctxt "web.channel_settings.default_format"
+msgid "Default format"
+msgstr ""
+
+msgctxt "web.channel_settings.default_bracket"
+msgid "Default bracket"
+msgstr ""
+
+msgctxt "web.channel_settings.default_service"
+msgid "Default service"
+msgstr ""
+
+msgctxt "web.channel_settings.motd"
+msgid "Message of the day"
+msgstr ""
+
+msgctxt "web.channel_settings.extra"
+msgid "Extra message"
+msgstr ""
+
+msgctxt "web.channel_settings.voice_category"
+msgid "Voice category"
+msgstr ""
+
+msgctxt "web.channel_settings.voice_invite"
+msgid "Create voice invites"
+msgstr ""
+
+msgctxt "web.channel_settings.delete_expired"
+msgid "Delete expired games"
+msgstr ""
+
+msgctxt "web.channel_settings.blind_games"
+msgid "Blind games"
+msgstr ""
+
+msgctxt "web.channel_settings.to_mode"
+msgid "Tournament organizer mode"
+msgstr ""
+
+msgctxt "web.channel_settings.competitive_mode"
+msgid "Competitive mode"
+msgstr ""
+
+msgctxt "web.channel_settings.save"
+msgid "Save channel settings"
+msgstr ""
+
+msgctxt "web.channel_settings.forget_hint"
+msgid "Forgetting this channel resets it to default settings by removing its configuration. SpellBot will reconfigure it from defaults the next time it is used."
+msgstr ""
+
+msgctxt "web.channel_settings.forget_confirm"
+msgid "Forget this channel and reset it to default settings?"
+msgstr ""
+
+msgctxt "web.channel_settings.forget"
+msgid "Forget this channel"
+msgstr ""
+
+#, python-format
+msgctxt "web.guild.channels_with_games"
+msgid "%(count)s channel with games"
+msgid_plural "%(count)s channels with games"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "web.guild.owner_controls"
+msgid "Owner Controls"
+msgstr ""
+
+msgctxt "web.guild.view_analytics"
+msgid "Analytics"
+msgstr ""
+
+msgctxt "web.guild.promotion_enabled"
+msgid "enabled"
+msgstr ""
+
+msgctxt "web.guild.promotion_disabled"
+msgid "disabled"
+msgstr ""
+
+#, python-format
+msgctxt "web.guild.promotion_status"
+msgid "Public promotion is currently %(state)s for this server."
+msgstr ""
+
+msgctxt "web.guild.disable_promotion"
+msgid "Disable promotion"
+msgstr ""
+
+msgctxt "web.guild.enable_promotion"
+msgid "Enable promotion"
+msgstr ""
+
+msgctxt "web.guild.settings_heading"
+msgid "Server Settings"
+msgstr ""
+
+msgctxt "web.guild.motd"
+msgid "Message of the day"
+msgstr ""
+
+msgctxt "web.guild.suggest_voice_category"
+msgid "Suggested voice category"
+msgstr ""
+
+msgctxt "web.guild.show_links"
+msgid "Show game links publicly"
+msgstr ""
+
+msgctxt "web.guild.voice_create"
+msgid "Auto-create voice channels"
+msgstr ""
+
+msgctxt "web.guild.use_max_bitrate"
+msgid "Use maximum bitrate"
+msgstr ""
+
+msgctxt "web.guild.enable_mythic_track"
+msgid "Enable mythic track"
+msgstr ""
+
+msgctxt "web.guild.show_convoke_guild"
+msgid "Show linked Convoke guild"
+msgstr ""
+
+msgctxt "web.guild.save"
+msgid "Save server settings"
+msgstr ""
+
+msgctxt "web.guild.player_awards"
+msgid "Player Awards"
+msgstr ""
+
+msgctxt "web.guild.manage_awards"
+msgid "Manage player awards"
+msgstr ""
+
+msgctxt "web.guild.no_awards"
+msgid "No player awards are configured yet."
+msgstr ""
+
+#, python-format
+msgctxt "web.guild.award_summary"
+msgid "%(count)s game · @%(role)s"
+msgid_plural "%(count)s games · @%(role)s"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "web.guild.channels"
+msgid "Channels"
+msgstr ""
+
+msgctxt "web.guild.games"
+msgid "Games"
+msgstr ""
+
+msgctxt "web.guild.last_activity"
+msgid "Last Activity"
+msgstr ""
+
+msgctxt "web.guild.no_channels"
+msgid "No channels with games yet."
+msgstr ""
+
+msgctxt "web.awards.title"
+msgid "Player Awards"
+msgstr ""
+
+#, python-format
+msgctxt "web.awards.configured"
+msgid "%(count)s award configured"
+msgid_plural "%(count)s awards configured"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "web.awards.games_required"
+msgid "Games required"
+msgstr ""
+
+msgctxt "web.awards.role"
+msgid "Role"
+msgstr ""
+
+msgctxt "web.awards.message"
+msgid "Message"
+msgstr ""
+
+msgctxt "web.awards.repeating"
+msgid "Repeating"
+msgstr ""
+
+msgctxt "web.awards.remove"
+msgid "Remove role instead of giving"
+msgstr ""
+
+msgctxt "web.awards.save"
+msgid "Save award"
+msgstr ""
+
+msgctxt "web.awards.delete"
+msgid "Delete award"
+msgstr ""
+
+msgctxt "web.awards.delete_confirm"
+msgid "Delete this award?"
+msgstr ""
+
+msgctxt "web.awards.none"
+msgid "No awards configured yet. Add one below."
+msgstr ""
+
+msgctxt "web.awards.add_heading"
+msgid "Add an award"
+msgstr ""
+
+msgctxt "web.awards.add_button"
+msgid "Add award"
+msgstr ""
+
+msgctxt "web.game.details"
+msgid "Details"
+msgstr ""
+
+msgctxt "web.game.blind"
+msgid "Blind"
+msgstr ""
+
+msgctxt "web.game.rules"
+msgid "Rules"
+msgstr ""
+
+msgctxt "web.game.guild_war"
+msgid "Guild War"
+msgstr ""
+
+msgctxt "web.game.game_link"
+msgid "Game link"
+msgstr ""
+
+msgctxt "web.game.voice_channel"
+msgid "Voice channel"
+msgstr ""
+
+msgctxt "web.game.discord_posts"
+msgid "Discord posts"
+msgstr ""
+
+msgctxt "web.game.message"
+msgid "Message"
+msgstr ""
+
+msgctxt "web.game.players"
+msgid "Players"
+msgstr ""
+
+msgctxt "web.game.queued"
+msgid "Queued"
+msgstr ""
+
+msgctxt "web.game.entered_guild"
+msgid "Entered Guild"
+msgstr ""
+
+msgctxt "web.game.records"
+msgid "Records"
+msgstr ""
+
+msgctxt "web.game.user_records"
+msgid "User records"
+msgstr ""
+
+msgctxt "web.game.report.title"
+msgid "Post-Game Report"
+msgstr ""
+
+msgctxt "web.game.report.source"
+msgid "Reported by"
+msgstr ""
+
+msgctxt "web.game.report.duration"
+msgid "Match time"
+msgstr ""
+
+msgctxt "web.game.report.minutes_suffix"
+msgid "min"
+msgstr ""
+
+msgctxt "web.game.report.turns"
+msgid "Turns"
+msgstr ""
+
+msgctxt "web.game.report.ended"
+msgid "Ended at"
+msgstr ""
+
+msgctxt "web.game.report.winner"
+msgid "Winner"
+msgstr ""
+
+msgctxt "web.game.report.reported"
+msgid "Reported at"
+msgstr ""
+
+msgctxt "web.game.report.commander"
+msgid "Commander"
+msgstr ""
+
+msgctxt "web.game.report.turn_order"
+msgid "Turn order"
+msgstr ""
+
+msgctxt "web.game.report.play_time"
+msgid "Play time"
+msgstr ""
+
+msgctxt "web.game.report.result"
+msgid "Result"
+msgstr ""
+
+#, python-format
+msgctxt "web.notify.title"
+msgid "Notification Preferences — %(name)s"
+msgstr ""
+
+msgctxt "web.notify.meta_description"
+msgid "Choose which SpellBot game posts you want to be notified about."
+msgstr ""
+
+msgctxt "web.notify.heading"
+msgid "Notification Preferences"
+msgstr ""
+
+msgctxt "web.notify.guild_sub"
+msgid "Choose what kinds of new games you want to be pinged about in this server."
+msgstr ""
+
+msgctxt "web.notify.off_label"
+msgid "Do not notify me about games on this server"
+msgstr ""
+
+msgctxt "web.notify.formats"
+msgid "Formats"
+msgstr ""
+
+msgctxt "web.notify.formats_hint"
+msgid "Select the formats you want to be notified about. Leave empty to receive all formats."
+msgstr ""
+
+msgctxt "web.notify.brackets"
+msgid "Brackets"
+msgstr ""
+
+msgctxt "web.notify.brackets_hint"
+msgid "Select the brackets you want to be notified about. Leave empty to receive all brackets."
+msgstr ""
+
+msgctxt "web.notify.channels"
+msgid "Channels"
+msgstr ""
+
+msgctxt "web.notify.channels_hint"
+msgid "Select the channels you want to be notified about. Leave empty to receive all channels."
+msgstr ""
+
+msgctxt "web.notify.active_hours"
+msgid "Active Hours"
+msgstr ""
+
+#, python-format
+msgctxt "web.notify.active_hours_hint"
+msgid "Only notify me during a specific window of the day, in my local time. Maximum window is %(hours)s hours. Defaults to 5pm–10pm if you don't pick a range."
+msgstr ""
+
+msgctxt "web.notify.limit_window"
+msgid "Limit notifications to a daily window"
+msgstr ""
+
+msgctxt "web.notify.save"
+msgid "Save preferences"
+msgstr ""
+
+msgctxt "web.notify.js_saved"
+msgid "Your notification preferences have been saved."
+msgstr ""
+
+msgctxt "web.notify.js_off"
+msgid "Notifications turned off for this server."
+msgstr ""
+
+msgctxt "web.notify.js_error"
+msgid "Could not save your preferences. Please try again."
+msgstr ""
+
+msgctxt "web.notify.js_pick_different"
+msgid "Pick different start and end hours"
+msgstr ""
+
+msgctxt "web.notify.js_must_differ"
+msgid "Start and end must differ."
+msgstr ""
+
+#, python-format
+msgctxt "web.notify.js_range_max"
+msgid "Range must be %(max)s hours or less."
+msgstr ""
+
+#, python-format
+msgctxt "web.notify.js_times_in"
+msgid "Times shown in %(tz)s"
+msgstr ""
+
+msgctxt "web.notify.js_times_local"
+msgid "Times shown in your local timezone"
+msgstr ""
+
+msgctxt "web.notify.unit_hour"
+msgid "hour"
+msgstr ""
+
+msgctxt "web.notify.unit_hours"
+msgid "hours"
+msgstr ""
+
+msgctxt "web.motd.available"
+msgid "Available placeholders"
+msgstr ""
+
+msgctxt "web.motd.intro"
+msgid "These tokens are replaced with each game's details when the message of the day is shown in a game post:"
+msgstr ""
+
+msgctxt "web.motd.game_id"
+msgid "the game's SpellBot ID"
+msgstr ""
+
+msgctxt "web.motd.game_format"
+msgid "the game's format (e.g. Commander)"
+msgstr ""
+
+msgctxt "web.motd.game_bracket"
+msgid "the game's commander bracket"
+msgstr ""
+
+msgctxt "web.motd.game_start"
+msgid "when the game starts (a Discord timestamp), or “pending”"
+msgstr ""
+
+msgctxt "web.motd.player_names"
+msgid "the players' names, in join order"
+msgstr ""
+

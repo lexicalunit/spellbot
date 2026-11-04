@@ -1,0 +1,1586 @@
+# Filipino (Philippines) translations for SpellBot.
+# Copyright (C) 2026 spellbot@lexicalunit.com
+# This file is distributed under the same license as the SpellBot project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  SpellBot\n"
+"Report-Msgid-Bugs-To: spellbot@lexicalunit.com\n"
+"POT-Creation-Date: 2026-11-03 17:50-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: tl\n"
+"Language-Team: tl <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgctxt "game.title.ready"
+msgid "**Your game is ready!**"
+msgstr "**Handa na ang game mo!**"
+
+msgctxt "game.title.rematch"
+msgid "**Rematch Game!**"
+msgstr "**Rematch Game!**"
+
+#, python-format
+msgctxt "game.title.waiting"
+msgid "**Waiting for %(count)s more player to join...**"
+msgid_plural "**Waiting for %(count)s more players to join...**"
+msgstr[0] "**Naghihintay ng %(count)s pang player na sasali...**"
+msgstr[1] "**Naghihintay ng %(count)s pang player na sasali...**"
+
+msgctxt "game.description.check_dm"
+msgid "Please check your Direct Messages for your game details."
+msgstr "Pakitingnan ang Direct Messages mo para sa mga detalye ng iyong game."
+
+msgctxt "game.description.rematch_info"
+msgid "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
+msgstr "Rematch ito ng nakaraang game. Gamitin ang parehong game lobby at voice channel."
+
+#, python-format
+msgctxt "game.description.join_link"
+msgid "# [Join your %(service)s game now!](%(link)s)"
+msgstr "# [Sumali na sa %(service)s game mo!](%(link)s)"
+
+#, python-format
+msgctxt "game.description.link_error"
+msgid "Sorry but SpellBot was unable to create a link for this game. Please go to [%(service)s](%(url)s) to create one."
+msgstr "Pasensya na pero hindi makagawa ang SpellBot ng link para sa game na ito. Pumunta sa [%(service)s](%(url)s) para gumawa nito."
+
+#, python-format
+msgctxt "game.description.use_service"
+msgid "Please use %(service)s to play this game."
+msgstr "Pakigamit ang %(service)s para laruin ang game na ito."
+
+msgctxt "game.description.contact_players"
+msgid "Contact the other players in your game to organize this match."
+msgstr "Makipag-ugnayan sa iba pang player sa game mo para i-organize ang match na ito."
+
+#, python-format
+msgctxt "game.description.password"
+msgid "Password: `%(password)s`"
+msgstr "Password: `%(password)s`"
+
+#, python-format
+msgctxt "game.description.voice_chat"
+msgid "## Join your voice chat now: <#%(channel_id)s>"
+msgstr "## Sumali na sa voice chat mo: <#%(channel_id)s>"
+
+#, python-format
+msgctxt "game.description.voice_invite"
+msgid "Or use this voice channel invite: %(invite)s"
+msgstr "O gamitin ang imbitasyon sa voice channel na ito: %(invite)s"
+
+#, python-format
+msgctxt "game.description.voice_already_picked"
+msgid "## Your pod is already using a voice channel, join them now: <#%(channel_id)s>!"
+msgstr "# # Gumagamit na ng voice channel ang pod mo, sumali sa kanila ngayon: <#%(channel_id)s>!"
+
+#, python-format
+msgctxt "game.description.voice_available"
+msgid "## Please consider using this available voice channel: <#%(channel_id)s>."
+msgstr "## Pag-isipang gamitin ang available na voice channel na ito: <#%(channel_id)s>."
+
+#, python-format
+msgctxt "game.description.jump_to_post"
+msgid "You can also [jump to the original game post](%(link)s) in <#%(channel_id)s>."
+msgstr "Puwede ka ring [pumunta sa orihinal na game post](%(link)s) sa <#%(channel_id)s>."
+
+msgctxt "game.war_convoke_only"
+msgid "This Guild War table no longer takes players through SpellBot, but you can still join it on Convoke."
+msgstr "Hindi na tumatanggap ng mga manlalaro sa SpellBot ang table ng Digmaan ng Guild na ito, pero puwede ka pa ring sumali sa Convoke."
+
+msgctxt "game.field.rules"
+msgid "⚠️ Additional Rules:"
+msgstr "⚠️ Mga Karagdagang Panuntunan:"
+
+msgctxt "game.field.guild_war"
+msgid "⚔️ Guild War"
+msgstr "⚔️ Digmaan ng Guild"
+
+msgctxt "game.field.players"
+msgid "Players"
+msgstr "Mga Manlalaro"
+
+#, python-format
+msgctxt "game.field.players_hidden"
+msgid "**%(count)s player name is hidden**"
+msgid_plural "**%(count)s player names are hidden**"
+msgstr[0] "**%(count)s pangalan ng player ang nakatago**"
+msgstr[1] "**%(count)s (na) pangalan ng player ang nakatago**"
+
+msgctxt "game.field.format"
+msgid "Format"
+msgstr "Ayos"
+
+msgctxt "game.field.bracket"
+msgid "Bracket"
+msgstr "Bracket"
+
+msgctxt "game.field.started_at"
+msgid "Started at"
+msgstr "Nagsimula noong"
+
+msgctxt "game.field.updated_at"
+msgid "Updated at"
+msgstr "Na-update noong"
+
+msgctxt "game.field.voice_channel"
+msgid "🔊 Suggested Voice Channel"
+msgstr "🔊 Iminumungkahing Voice Channel"
+
+msgctxt "game.field.support"
+msgid "Support SpellBot"
+msgstr "Suportahan ang SpellBot"
+
+#, python-format
+msgctxt "game.field.support_text"
+msgid "Become [a patron](%(subscribe)s) or give a [one-off tip](%(donate)s)."
+msgstr "Maging [patron](%(subscribe)s) o magbigay ng [minsanang tip](%(donate)s)."
+
+#, python-format
+msgctxt "game.field.convoke_guild"
+msgid "Play more with **%(name)s** on Convoke. [Join the guild!](%(url)s)"
+msgstr "Maglaro nang higit pa kasama ang **%(name)s** sa Convoke. [Sumali sa guild!](%(url)s)"
+
+msgctxt "game.field.settings"
+msgid "Settings"
+msgstr "Mga Setting"
+
+#, python-format
+msgctxt "game.field.settings_text"
+msgid "See [live games](%(queues)s) and configure [your notifications](%(notify)s)."
+msgstr "Tingnan ang [mga live na laro](%(queues)s) at i-configure ang [iyong mga abiso](%(notify)s)."
+
+#, python-format
+msgctxt "game.footer"
+msgid "SpellBot Game ID: #SB%(game_id)s — Service: %(service)s"
+msgstr "SpellBot Game ID: #SB%(game_id)s — Serbisyo: %(service)s"
+
+msgctxt "service.not_any"
+msgid "_Please contact the players in your game to organize this game._"
+msgstr "_Kontakin ang mga player sa game mo para i-organize ang game na ito._"
+
+#, python-format
+msgctxt "service.spelltable"
+msgid "_Please go create a game on %(emoji)s[SpellTable](https://spelltable.wizards.com/) for this game._"
+msgstr "_Pumunta at gumawa ng game sa %(emoji)s[SpellTable](https://spelltable.wizards.com/) para sa game na ito._"
+
+msgctxt "service.cockatrice"
+msgid "_Please use Cockatrice for this game._"
+msgstr "_Pakigamit ang Cockatrice para sa game na ito._"
+
+msgctxt "service.xmage"
+msgid "_Please use XMage for this game._"
+msgstr "_Pakigamit ang XMage para sa game na ito._"
+
+msgctxt "service.mtg_arena"
+msgid "_Please use MTG Arena for this game._"
+msgstr "_Pakigamit ang MTG Arena para sa game na ito._"
+
+msgctxt "service.mtg_online"
+msgid "_Please use MTG Online for this game._"
+msgstr "_Pakigamit ang MTG Online para sa game na ito._"
+
+msgctxt "service.tts"
+msgid "_Please use TabletopSim for this game._"
+msgstr "_Pakigamit ang TabletopSim para sa game na ito._"
+
+#, python-format
+msgctxt "service.convoke"
+msgid "_A %(emoji)s[Convoke](https://www.convoke.games/) link will be created when all players have joined._"
+msgstr "_Gagawa ng %(emoji)s[Convoke](https://www.convoke.games/) na link kapag nakasali na ang lahat ng player._"
+
+#, python-format
+msgctxt "service.girudo"
+msgid "_A %(emoji)s[Girudo](https://www.girudo.com/) link will be created when all players have joined._"
+msgstr "_Gagawa ng %(emoji)s[Girudo](https://www.girudo.com/) na link kapag nakasali na ang lahat ng player._"
+
+#, python-format
+msgctxt "service.edhlab"
+msgid "_A %(emoji)s[EDHLAB](https://edhlab.gg/) link will be created when all players have joined._"
+msgstr "_Gagawa ng %(emoji)s[EDHLAB](https://edhlab.gg/) na link kapag nakasali na ang lahat ng player._"
+
+#, python-format
+msgctxt "service.playgroup_live"
+msgid "*A %(emoji)s[Playgroup Live](https://playgroup.gg/) link will be created when all players have joined.*"
+msgstr "_Gagawa ng %(emoji)s[Playgroup Live](https://playgroup.gg/) na link kapag nakasali na ang lahat ng player._"
+
+msgctxt "lfg.playgroup_link_required"
+msgid "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
+msgstr "Para magamit ang Playgroup Live, kailangang may kahit isang player lang na mag-link ng kanyang account. I-run ang `/playgroup link` at subukan ulit."
+
+msgctxt "lfg.run_in_channel"
+msgid "Please run this command in the same channel as your last played game."
+msgstr "Paki-run ang command na ito sa channel na ginamit sa huli mong nilarong game."
+
+msgctxt "lfg.already_pending"
+msgid "You're already in a pending game, leave that one first."
+msgstr "Nasa isang pending game ka na, umalis muna roon."
+
+msgctxt "lfg.no_previous_game"
+msgid "You have not played a game in this guild yet."
+msgstr "Hindi ka pa nakapaglaro ng game sa guild na ito."
+
+msgctxt "lfg.run_in_game_channel"
+msgid "Please run this command in the same channel as your game."
+msgstr "Paki-run ang command na ito sa channel na ginagamit mo sa iyong game."
+
+msgctxt "lfg.not_pending_here"
+msgid "You're not in a pending game in this channel."
+msgstr "Wala ka sa isang pending game sa channel na ito."
+
+msgctxt "lfg.start_needs_players"
+msgid "You need at least one other player before you can start a game."
+msgstr "Kailangan mo ng hindi bababa sa isa pang manlalaro bago ka makapagsimula ng laro."
+
+msgctxt "lfg.unsupported_context"
+msgid "Sorry, that command is not supported in this context."
+msgstr "Pasensya na, hindi sinusuportahan ang command sa kontekstong ito."
+
+msgctxt "lfg.already_in_channel"
+msgid "You're already in a game in this channel."
+msgstr "Nasa isang game ka na sa channel na ito."
+
+msgctxt "lfg.too_many_pending"
+msgid "You're in too many pending games to join another one at this time."
+msgstr "Masyado ka nang maraming sinalihang pending game para sumali ng isa pa sa ngayon."
+
+msgctxt "lfg.too_many_friends"
+msgid "You mentioned too many players."
+msgstr "Masyado kang maraming na-mention na player."
+
+msgctxt "lfg.guild_war_invalid"
+msgid "That Guild War is not available. Use autocomplete to pick a live war."
+msgstr "Hindi available ang digmaang iyon ng guild. Gamitin ang autocomplete para pumili ng aktibong digmaan."
+
+#, python-format
+msgctxt "lfg.guild_war_seats"
+msgid "Guild War matches need between %(min)s and %(max)s seats."
+msgstr "Kailangan ng %(min)s hanggang %(max)s upuan ang mga digmaan ng guild."
+
+msgctxt "lfg.cannot_join"
+msgid "You can not join this game."
+msgstr "Hindi ka puwedeng sumali sa game na ito."
+
+msgctxt "lfg.game_started"
+msgid "Sorry, that game has already started."
+msgstr "Pasensya na, nagsimula na ang game na iyon."
+
+msgctxt "lfg.game_full"
+msgid "Sorry, that game is already full."
+msgstr "Pasensya na, nagsimula na ang game na iyon."
+
+#, python-format
+msgctxt "lfg.invalid_player_count"
+msgid "You can't create a %(format)s game with %(count)s players."
+msgstr "Hindi ka puwedeng gumawa ng %(format)s game nang may %(count)s (na) player."
+
+#, python-format
+msgctxt "lfg.excluded_players"
+msgid "Some of the players you mentioned can not be added to a game: %(players)s"
+msgstr "Hindi puwedeng idagdag sa isang game ang ilan sa mga player na na-mention mo: %(players)s"
+
+#, python-format
+msgctxt "lfg.found_game"
+msgid "I found a %(format)s game for you!"
+msgstr "Nakahanap ako ng %(format)s game para sa iyo!"
+
+#, python-format
+msgctxt "lfg.jump_to_game"
+msgid "You can [jump to the game post](%(link)s) to see it!"
+msgstr "Puwede kang [pumunta sa game post](%(link)s) para makita ito!"
+
+#, python-format
+msgctxt "lfg.joined_game"
+msgid "You have joined the game SB%(game_id)s!"
+msgstr "Sumali ka sa game SB%(game_id)s!"
+
+#, python-format
+msgctxt "lfg.started_game"
+msgid "I started your %(format)s game for you!"
+msgstr "Sinimulan ko ang %(format)s game mo para sa iyo!"
+
+#, python-format
+msgctxt "lfg.game_started_id"
+msgid "The game SB%(game_id)s has been started!"
+msgstr "Nagsimula na ang game SB%(game_id)s!"
+
+#, python-format
+msgctxt "lfg.dm_failures"
+msgid "Unable to send Direct Messages to some players: %(players)s"
+msgstr "Hindi makapagpadala ng Direct Messages sa ilang player: %(players)s"
+
+#, python-format
+msgctxt "lfg.award_failure_give"
+msgid "Unable to give role %(role)s to user <@%(user_id)s>"
+msgstr "Hindi maitalaga ang role na %(role)s sa user na <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.award_failure_take"
+msgid "Unable to take role %(role)s from user <@%(user_id)s>"
+msgstr "Hindi maalis ang role na %(role)s sa user na <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.mythic_track"
+msgid "Track your game on %(emoji)s[Mythic Track](%(link)s) with PIN code: `%(pin)s`"
+msgstr "I-track ang game mo sa %(emoji)s[Mythic Track](%(link)s) ang PIN code na: `%(pin)s`"
+
+msgctxt "button.join"
+msgid "Join this game!"
+msgstr "Sumali sa game na ito!"
+
+msgctxt "button.leave"
+msgid "Leave"
+msgstr "Umalis"
+
+msgctxt "admin.no_game_found"
+msgid "There is no game with that ID."
+msgstr "Walang game na may ganoong ID."
+
+msgctxt "admin.done"
+msgid "Done."
+msgstr "Tapos na."
+
+#, python-format
+msgctxt "admin.channels_title"
+msgid "Configuration for channels in %(guild)s"
+msgstr "Configuration para sa mga channel sa %(guild)s"
+
+#, python-format
+msgctxt "admin.setup_title"
+msgid "SpellBot Setup for %(guild)s"
+msgstr "Setup ng SpellBot para sa %(guild)s"
+
+#, python-format
+msgctxt "admin.setup_description"
+msgid ""
+"SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n"
+"\n"
+"[Configure SpellBot →](%(link)s)"
+msgstr ""
+"Tinutulungan ng SpellBot ang iyong komunidad na makahanap at makapaglaro ng mga laro ng Magic: The Gathering nang magkakasama. Upang i-configure ang iyong server, mga channel, at mga gantimpala para sa mga manlalaro, bisitahin ang dashboard ng SpellBot.\n"
+"\n"
+"[I-configure ang SpellBot →](%(link)s)"
+
+#, python-format
+msgctxt "admin.user_move_error"
+msgid "Error: %(error)s"
+msgstr "Error: %(error)s"
+
+#, python-format
+msgctxt "admin.user_moved"
+msgid "User %(from_user)s has been moved to %(to_user)s"
+msgstr "Inilipat sa %(to_user)s ang user na %(from_user)s"
+
+#, python-format
+msgctxt "admin.expire_dequeued"
+msgid "├── Dequeued %(count)s players"
+msgstr "├── Inalis sa pagkakapili ang %(count)s (na) player"
+
+#, python-format
+msgctxt "admin.expire_no_channel"
+msgid "├── Could not find channel %(channel_id)s"
+msgstr "├── Hindi mahanap ang channel na %(channel_id)s"
+
+#, python-format
+msgctxt "admin.expire_no_message"
+msgid "├── Could not find message %(message_id)s"
+msgstr "├── Hindi mahanap ang mensahe na %(message_id)s"
+
+#, python-format
+msgctxt "admin.expire_deleting"
+msgid "├── Deleting message %(message_id)s ..."
+msgstr "├── Dine-delete ang mensahe na %(message_id)s ..."
+
+#, python-format
+msgctxt "admin.expire_updating"
+msgid "├── Updating message %(message_id)s ..."
+msgstr "├── Ina-update ang mensahe na %(message_id)s ..."
+
+msgctxt "admin.expire_no_permission"
+msgid "├── Bot does not have permission"
+msgstr "├── Walang pahintulot ang bot"
+
+msgctxt "admin.expire_done"
+msgid "└── Done"
+msgstr "└── Tapos na"
+
+msgctxt "admin.expire_none"
+msgid "No games to expire."
+msgstr "Walang game na mag-e-expire."
+
+#, python-format
+msgctxt "admin.expire_game"
+msgid "Expiring game #SB%(game_id)s ..."
+msgstr "Papa-expire na game #SB%(game_id)s ..."
+
+msgctxt "admin.game_expired"
+msgid "Sorry, this game was expired due to inactivity."
+msgstr "Pasensya na, nag-expire ang game na ito dahil sa kawalan ng aktibidad."
+
+#, python-format
+msgctxt "admin.user_info_title"
+msgid "User info for %(name)s"
+msgstr "Impormasyon ng user para kay %(name)s"
+
+#, python-format
+msgctxt "admin.user_info_games_count"
+msgid "%(count)s game on %(guild)s"
+msgid_plural "%(count)s games on %(guild)s"
+msgstr[0] "%(count)s game sa %(guild)s"
+msgstr[1] "%(count)s (na) game sa %(guild)s"
+
+msgctxt "admin.user_info_games"
+msgid "Games Played"
+msgstr "Mga Nilarong Game"
+
+#, python-format
+msgctxt "admin.user_info_blocked"
+msgid "Blocked by %(count)s user"
+msgid_plural "Blocked by %(count)s users"
+msgstr[0] "Na-block ng %(count)s user"
+msgstr[1] "Na-block ng %(count)s (na) user"
+
+msgctxt "admin.user_info_block_status"
+msgid "Block Status"
+msgstr "Status ng Pag-block"
+
+msgctxt "admin.user_info_no_games"
+msgid "No games played"
+msgstr "Walang nilarong game"
+
+msgctxt "admin.user_info_play_range"
+msgid "Play Range"
+msgstr "Range ng Paglalaro"
+
+msgctxt "admin.user_info_game_history"
+msgid "Game History"
+msgstr "History ng Game"
+
+#, python-format
+msgctxt "admin.view_link"
+msgid "[View on spellbot.io](%(link)s)"
+msgstr "[Tingnan sa spellbot.io](%(link)s)"
+
+#, python-format
+msgctxt "admin.game_info_title"
+msgid "Game info for #SB%(game_id)s"
+msgstr "Impormasyon ng laro para sa #SB%(game_id)s"
+
+msgctxt "admin.game_info_pending"
+msgid "Not started yet"
+msgstr "Hindi pa nagsisimula"
+
+msgctxt "admin.game_info_details"
+msgid "Details"
+msgstr "Mga Detalye"
+
+#, python-format
+msgctxt "admin.user_info_footer"
+msgid "User ID: %(user_id)s"
+msgstr "User ID: %(user_id)s"
+
+#, python-format
+msgctxt "admin.mythic_track_title"
+msgid "Mythic Track Setup for %(guild)s"
+msgstr "Setup ng Mythic Track para sa %(guild)s"
+
+#, python-format
+msgctxt "admin.mythic_track_on"
+msgid ""
+"✅ Mythic Track has been turned **on** for this server!\n"
+"\n"
+"To continue setup, please [connect your Discord account to Mythic Track](%(guide)s).\n"
+"\n"
+"While this feature is turned on, SpellBot will generate PIN codes for players to enter into Mythic Track so that their games can be tracked."
+msgstr ""
+"✅ **Na-on** ang Mythic Track para sa server na ito!\n"
+"\n"
+"Para ipagpatuloy ang setup, [ikonekta ang Discord account mo sa Mythic Track](%(guide)s).\n"
+"\n"
+"Habang naka-on ang feature na ito, bubuo ang SpellBot ng mga PIN code para makapasok ang mga player sa Mythic Track para ma-track ang kanilang mga game."
+
+msgctxt "admin.mythic_track_off"
+msgid "❌ Mythic Track has been turned **off** for this server. Rerun this command to toggle it back on. Note that turning this feature off does _not_ remove any existing Mythic Track data."
+msgstr "❌ **Na-off** ang Mythic Track para sa server na ito. I-run ulit ang command na ito para mai-on ulit. Tandaan na kahit i-off ang feature na ito, hindi maaalis ang anumang kasalukuyang data ng Mythic Track."
+
+msgctxt "block.self_block"
+msgid "You can not block yourself."
+msgstr "Hindi mo puwedeng i-block ang sarili mo."
+
+#, python-format
+msgctxt "block.blocked"
+msgid "<@%(user_id)s> has been blocked."
+msgstr "Na-block si <@%(user_id)s>."
+
+#, python-format
+msgctxt "block.unblocked"
+msgid "<@%(user_id)s> has been unblocked."
+msgstr "Na-unlock si <@%(user_id)s>."
+
+#, python-format
+msgctxt "block.manage_message"
+msgid ""
+"You can view and manage your blocked users from your profile page.\n"
+"\n"
+"[Open your profile on spellbot.io](%(link)s)"
+msgstr ""
+"Maaari mong tingnan at pamahalaan ang iyong mga naka-block na user mula sa iyong profile page.\n"
+"\n"
+"[Buksan ang iyong profile sa spellbot.io](%(link)s)"
+
+msgctxt "leave.removed_channel"
+msgid "You were removed from any pending games in this channel."
+msgstr "Inalis ka sa anumang pending game sa channel na ito."
+
+msgctxt "leave.removed_all"
+msgid "You were removed from all pending games."
+msgstr "Inalis ka sa lahat ng pending game."
+
+msgctxt "score.record_title"
+msgid "Record of games played"
+msgstr "Record ng mga game na nilaro sa"
+
+#, python-format
+msgctxt "score.games"
+msgid "%(count)s game"
+msgid_plural "%(count)s games"
+msgstr[0] "%(count)s game"
+msgstr[1] "%(count)s (na) game"
+
+#, python-format
+msgctxt "score.record_description"
+msgid ""
+"%(mention)s has played %(games)s.\n"
+"View more [details on spellbot.io](%(link)s)."
+msgstr "Naglaro si %(mention)s ng %(games)s. Tingnan ang higit pang [detalye sa spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.history_title"
+msgid "Recent games played in %(channel)s"
+msgstr "Mga kamakailang game na nilaro sa %(channel)s"
+
+#, python-format
+msgctxt "score.history_description"
+msgid "View [game history on spellbot.io](%(link)s)."
+msgstr "Tingnan ang [history ng game sa spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.top_title"
+msgid "Top players in #%(channel)s (%(range)s)"
+msgstr "Mga top player sa #%(channel)s (%(range)s)"
+
+#, python-format
+msgctxt "score.range_ago"
+msgid "%(months)s months ago"
+msgstr "%(months)s (na) buwan ang nakalipas"
+
+msgctxt "score.range_this_month"
+msgid "this month"
+msgstr "ngayong buwan"
+
+msgctxt "score.range_all_time"
+msgid "all time"
+msgstr "sa lahat ng panahon"
+
+msgctxt "score.top_header"
+msgid "Rank     Games     Player"
+msgstr "Rank     Mga Game     Player"
+
+msgctxt "about.title"
+msgid "SpellBot"
+msgstr "SpellBot"
+
+msgctxt "about.version"
+msgid "Version"
+msgstr "Bersyon"
+
+msgctxt "about.author"
+msgid "Author"
+msgstr "Author"
+
+#, python-format
+msgctxt "about.description"
+msgid ""
+"_The Discord bot for Webcam Magic._\n"
+"\n"
+"Having issues with SpellBot? Please [report bugs](%(issues)s)!\n"
+"\n"
+"[🔗 Add SpellBot to your Discord!](%(invite)s)\n"
+"\n"
+"SpellBot's continued operation is made possible by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+"\n"
+"💜 Help keep SpellBot running by [becoming a patron!](%(patreon)s)"
+msgstr ""
+"_Ang Discord bot para sa Webcam Magic._\n"
+"\n"
+"Nagkakaproblema ka ba sa SpellBot? [I-report ang mga bug](%(issues)s)!\n"
+"\n"
+"[🔗 Idagdag ang SpellBot sa Discord mo!](%(invite)s)\n"
+"\n"
+"Naging posible ang patuloy na pagpapatakbo ng SpellBot dahil sa [PlayEDH](https://www.playedh.com/) at sa mga Patreon supporter ko.\n"
+"\n"
+"💜 Tumulong na panatilihing gumagana ang SpellBot sa pamamagitan ng [pagiging patron!](%(patreon)s)"
+
+msgctxt "errors.no_permission"
+msgid "You do not have permission to do that."
+msgstr "Wala kang pahintulot na gawin iyon."
+
+msgctxt "errors.guild_only"
+msgid "This command only works in a guild."
+msgstr "Gumagana lamang ang command na ito sa isang guild."
+
+msgctxt "errors.no_dms"
+msgid "This command is not supported in DMs."
+msgstr "“Hindi suportado ang command na ito sa DMs."
+
+msgctxt "errors.banned"
+msgid "You have been banned from using SpellBot."
+msgstr "Ipinagbawal ka sa paggamit ng SpellBot."
+
+#, python-format
+msgctxt "errors.cooldown"
+msgid "Please try again in %(seconds)ss."
+msgstr "Pakisubukang muli sa %(seconds)ss."
+
+msgctxt "playgroup.already_linked"
+msgid "Your Discord account is already linked to Playgroup Live!"
+msgstr "Naka-link na sa Playgroup Live ang iyong Discord account!"
+
+#, python-format
+msgctxt "playgroup.linked"
+msgid "Linked! Welcome, **%(username)s**. Your Playgroup Live games will now be attributed to your account."
+msgstr "Naka-link na! Maligayang pagdating, **%(username)s**. Ang iyong mga laro sa Playgroup Live ay iaa-attribute na sa iyong account."
+
+msgctxt "playgroup.not_found"
+msgid "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+msgstr "Walang natagpuang Playgroup account para sa iyong Discord. Pumunta sa <https://playgroup.gg/profiles> at i-click ang **Link Discord,** pagkatapos ay patakbuhin muli ang `/playgroup link` para makumpirma."
+
+msgctxt "web.nav.active_queues"
+msgid "Active Queues"
+msgstr "Mga Aktibong Queue"
+
+msgctxt "web.nav.my_records"
+msgid "My Records"
+msgstr "Aking mga Rekord"
+
+msgctxt "web.nav.admin_dashboard"
+msgid "Admin Dashboard"
+msgstr "Dashboard ng Admin"
+
+msgctxt "web.nav.server_details"
+msgid "Server Details"
+msgstr "Mga Detalye ng Server"
+
+msgctxt "web.nav.notification_preferences"
+msgid "Notification preferences"
+msgstr "Mga Kagustuhan sa Notification"
+
+#, python-format
+msgctxt "web.nav.back_to"
+msgid "← Back to %(name)s"
+msgstr "← Bumalik sa %(name)s"
+
+msgctxt "web.nav.log_in"
+msgid "Log in"
+msgstr "Mag-log in"
+
+msgctxt "web.nav.log_out"
+msgid "Log out"
+msgstr "Mag-log out"
+
+#, python-format
+msgctxt "web.nav.logged_in_as"
+msgid "Logged in as %(name)s"
+msgstr "Naka-log in bilang %(name)s"
+
+msgctxt "web.nav.site_nav_aria"
+msgid "Site navigation"
+msgstr "Nabigasyon ng site"
+
+msgctxt "web.nav.server_nav_aria"
+msgid "Server navigation"
+msgstr "Nabigasyon ng server"
+
+#, python-format
+msgctxt "web.common.powered_by"
+msgid "Powered by %(link)s."
+msgstr "Pinapagana ng %(link)s."
+
+#, python-format
+msgctxt "web.common.generated_by"
+msgid "Generated by %(link)s"
+msgstr "Binuo ng %(link)s"
+
+msgctxt "web.common.spellbot_server"
+msgid "SpellBot Server"
+msgstr "Server ng SpellBot"
+
+msgctxt "web.common.server"
+msgid "server"
+msgstr "server"
+
+msgctxt "web.common.this_server"
+msgid "this server"
+msgstr "ang server na ito"
+
+msgctxt "web.common.unknown_user"
+msgid "Unknown User"
+msgstr "Hindi Kilalang User"
+
+msgctxt "web.common.unknown_channel"
+msgid "Unknown Channel"
+msgstr "Hindi Kilalang Channel"
+
+msgctxt "web.common.unknown_guild"
+msgid "Unknown Guild"
+msgstr "Hindi Kilalang Guild"
+
+msgctxt "web.common.login_with_discord"
+msgid "Log in with Discord"
+msgstr "Mag-log in gamit ang Discord"
+
+msgctxt "web.common.export_csv"
+msgid "Export all (CSV)"
+msgstr "I-export lahat (CSV)"
+
+msgctxt "web.common.prev_page"
+msgid "Previous page"
+msgstr "Nakaraang pahina"
+
+msgctxt "web.common.next_page"
+msgid "Next page"
+msgstr "Susunod na pahina"
+
+msgctxt "web.common.copy_user_id"
+msgid "Copy User ID"
+msgstr "Kopyahin ang User ID"
+
+msgctxt "web.common.copy_channel_id"
+msgid "Copy Channel ID"
+msgstr "Kopyahin ang Channel ID"
+
+msgctxt "web.common.copy_server_id"
+msgid "Copy server ID"
+msgstr "Kopyahin ang server ID"
+
+#, python-format
+msgctxt "web.common.open_in"
+msgid "Open in %(service)s"
+msgstr "Buksan sa %(service)s"
+
+msgctxt "web.common.jump_to_game"
+msgid "Jump to game"
+msgstr "Pumunta sa laro"
+
+msgctxt "web.common.jump_to_channel"
+msgid "Jump to channel"
+msgstr "Pumunta sa channel"
+
+msgctxt "web.common.jump_to_guild"
+msgid "Jump to guild"
+msgstr "Pumunta sa guild"
+
+msgctxt "web.common.jump_to_voice_invite"
+msgid "Jump to voice invite"
+msgstr "Pumunta sa voice invite"
+
+msgctxt "web.common.view_change_history"
+msgid "View change history"
+msgstr "Tingnan ang history ng pagbabago"
+
+msgctxt "web.common.seats_suffix"
+msgid "seats"
+msgstr "mga upuan"
+
+msgctxt "web.common.yes_label"
+msgid "Yes"
+msgstr "Oo"
+
+msgctxt "web.common.no_label"
+msgid "No"
+msgstr "Hindi"
+
+msgctxt "web.field.status"
+msgid "Status"
+msgstr "Katayuan"
+
+msgctxt "web.field.format"
+msgid "Format"
+msgstr "Ayos"
+
+msgctxt "web.field.bracket"
+msgid "Bracket"
+msgstr "Bracket"
+
+msgctxt "web.field.service"
+msgid "Service"
+msgstr "Serbisyo"
+
+msgctxt "web.field.seats"
+msgid "Seats"
+msgstr "Mga Upuan"
+
+msgctxt "web.field.locale"
+msgid "Locale"
+msgstr "Lokal"
+
+msgctxt "web.field.players"
+msgid "Players"
+msgstr "Mga Manlalaro"
+
+msgctxt "web.field.link"
+msgid "Link"
+msgstr "Link"
+
+msgctxt "web.field.game"
+msgid "Game"
+msgstr "Laro"
+
+msgctxt "web.field.time"
+msgid "Time"
+msgstr "Oras"
+
+msgctxt "web.field.guild"
+msgid "Guild"
+msgstr "Guild"
+
+msgctxt "web.field.channel"
+msgid "Channel"
+msgstr "Channel"
+
+msgctxt "web.field.channel_id"
+msgid "Channel ID"
+msgstr "Channel ID"
+
+msgctxt "web.field.user_name"
+msgid "User Name"
+msgstr "Pangalan ng User"
+
+msgctxt "web.field.user_id"
+msgid "User ID"
+msgstr "User ID"
+
+msgctxt "web.field.wait"
+msgid "Wait"
+msgstr "Hintay"
+
+msgctxt "web.field.language"
+msgid "Language"
+msgstr "Wika"
+
+msgctxt "web.field.jump"
+msgid "Jump"
+msgstr "Pumunta"
+
+msgctxt "web.field.created"
+msgid "Created"
+msgstr "Nilikha"
+
+msgctxt "web.field.updated"
+msgid "Updated"
+msgstr "Na-update"
+
+msgctxt "web.field.started"
+msgid "Started"
+msgstr "Nagsimula"
+
+msgctxt "web.field.deleted"
+msgid "Deleted"
+msgstr "Tinanggal"
+
+msgctxt "web.queues.title"
+msgid "Active Queues — SpellBot"
+msgstr "Mga Aktibong Queue — SpellBot"
+
+msgctxt "web.queues.meta_description"
+msgid "Join an active Magic: The Gathering queue powered by SpellBot."
+msgstr "Sumali sa isang aktibong Magic: The Gathering queue na pinapagana ng SpellBot."
+
+msgctxt "web.queues.heading"
+msgid "Active Queues"
+msgstr "Mga Aktibong Queue"
+
+msgctxt "web.queues.active_games"
+msgid "Active Games"
+msgstr "Mga Aktibong Laro"
+
+msgctxt "web.queues.active_games_tooltip"
+msgid "Pending queues plus games started in the last 2 hours"
+msgstr "Mga nakabinbing queue kasama ang mga larong nagsimula sa nakaraang 2 oras"
+
+msgctxt "web.queues.filter_aria"
+msgid "Filter queues"
+msgstr "I-filter ang mga queue"
+
+msgctxt "web.queues.all_formats"
+msgid "All formats"
+msgstr "Lahat ng format"
+
+msgctxt "web.queues.all_brackets"
+msgid "All brackets"
+msgstr "Lahat ng bracket"
+
+msgctxt "web.queues.all_languages"
+msgid "All languages"
+msgstr "Lahat ng wika"
+
+msgctxt "web.queues.only_played"
+msgid "Only servers you've played in"
+msgstr "Mga server lang na nilaruan mo"
+
+msgctxt "web.queues.no_match"
+msgid "No queues match the selected filters."
+msgstr "Walang queue na tumutugma sa mga napiling filter."
+
+msgctxt "web.queues.your_servers"
+msgid "Your Servers"
+msgstr "Iyong mga Server"
+
+msgctxt "web.queues.setup_notifications"
+msgid "Setup notifications"
+msgstr "I-setup ang mga notification"
+
+msgctxt "web.queues.manage_notifications"
+msgid "Manage notifications"
+msgstr "Pamahalaan ang mga notification"
+
+#, python-format
+msgctxt "web.queues.setup_notifications_for"
+msgid "Setup notifications for %(name)s"
+msgstr "I-setup ang mga notification para sa %(name)s"
+
+#, python-format
+msgctxt "web.queues.manage_notifications_for"
+msgid "Manage notifications for %(name)s"
+msgstr "Pamahalaan ang mga notification para sa %(name)s"
+
+msgctxt "web.queues.notifications_on_short"
+msgid "On"
+msgstr "Bukas"
+
+msgctxt "web.queues.notifications_label"
+msgid "Notifications"
+msgstr "Mga Notification"
+
+msgctxt "web.queues.empty_mine"
+msgid "No active queues right now in servers you've played in. Uncheck the filter to see all servers."
+msgstr "Walang aktibong queue ngayon sa mga server na nilaruan mo. Alisin sa check ang filter para makita ang lahat ng server."
+
+#, python-format
+msgctxt "web.queues.empty_all"
+msgid "No active queues right now. Check back in a moment, or run %(command)s in your Discord server to start one."
+msgstr "Walang aktibong queue ngayon. Bumalik makalipas ang ilang sandali, o patakbuhin ang %(command)s sa iyong Discord server para magsimula ng isa."
+
+msgctxt "web.queues.recently_started"
+msgid "Recently Started"
+msgstr "Kamakailang Nagsimula"
+
+msgctxt "web.queues.jump_to_game_arrow"
+msgid "Jump to Game →"
+msgstr "Pumunta sa Laro →"
+
+msgctxt "web.queues.jump_to_channel_arrow"
+msgid "Jump to Channel →"
+msgstr "Pumunta sa Channel →"
+
+#, python-format
+msgctxt "web.queues.started_ago"
+msgid "%(duration)s ago"
+msgstr "%(duration)s na ang nakalipas"
+
+msgctxt "web.queues.auto_refresh"
+msgid "Auto-refreshing every 60 seconds."
+msgstr "Awtomatikong nagre-refresh kada 60 segundo."
+
+#, python-format
+msgctxt "web.records.channel_title"
+msgid "Channel Records — #%(name)s"
+msgstr "Mga Rekord ng Channel — #%(name)s"
+
+#, python-format
+msgctxt "web.records.channel_heading"
+msgid "Channel Records: #%(name)s"
+msgstr "Mga Rekord ng Channel: #%(name)s"
+
+#, python-format
+msgctxt "web.records.user_title"
+msgid "User Records — %(name)s"
+msgstr "Mga Rekord ng User — %(name)s"
+
+#, python-format
+msgctxt "web.records.user_heading"
+msgid "User Records: %(name)s"
+msgstr "Mga Rekord ng User: %(name)s"
+
+msgctxt "web.records.games"
+msgid "Games"
+msgstr "Mga Laro"
+
+#, python-format
+msgctxt "web.records.matching"
+msgid "%(count)s matching"
+msgstr "%(count)s na tumutugma"
+
+msgctxt "web.records.none_channel"
+msgid "No games found for this channel."
+msgstr "Walang larong nahanap para sa channel na ito."
+
+msgctxt "web.records.none_user"
+msgid "No games found for this user."
+msgstr "Walang larong nahanap para sa user na ito."
+
+msgctxt "web.records.mod_manage_channel"
+msgid "Moderators can manage this channel's settings here."
+msgstr "Mapapamahalaan ng mga moderator ang mga setting ng channel na ito dito."
+
+msgctxt "web.records.mod_manage_server"
+msgid "Moderators can manage this server's settings here."
+msgstr "Mapapamahalaan ng mga moderator ang mga setting ng server na ito dito."
+
+msgctxt "web.records.login_block_list"
+msgid "Log in to view and manage your own block list."
+msgstr "Mag-log in para tingnan at pamahalaan ang iyong sariling block list."
+
+msgctxt "web.blocks.title"
+msgid "Blocked Users"
+msgstr "Mga Na-block na User"
+
+msgctxt "web.blocks.description"
+msgid "Players you block can't join your games, and you can't join theirs. This list is private to you."
+msgstr "Ang mga players na bino-block mo ay hindi makakasali sa iyong mga laro, at hindi ka makakasali sa kanila. Pribado sa iyo ang listahang ito."
+
+msgctxt "web.blocks.user"
+msgid "User"
+msgstr "User"
+
+msgctxt "web.blocks.unblock"
+msgid "Unblock"
+msgstr "I-unblock"
+
+msgctxt "web.blocks.none"
+msgid "You haven't blocked anyone."
+msgstr "Wala kang na-block na sinuman."
+
+msgctxt "web.blocks.add_label"
+msgid "Block a user"
+msgstr "Mag-block ng user"
+
+msgctxt "web.blocks.add_hint"
+msgid "Enter the Discord user ID (or name) of the player you want to block."
+msgstr "Ilagay ang Discord user ID (o pangalan) ng player na gusto mong i-block."
+
+msgctxt "web.blocks.add_placeholder"
+msgid "Discord user ID or name"
+msgstr "Discord user ID o pangalan"
+
+msgctxt "web.blocks.add_button"
+msgid "Block user"
+msgstr "I-block ang user"
+
+msgctxt "web.filters.player_label"
+msgid "Player (name or ID)"
+msgstr "Player (pangalan o ID)"
+
+msgctxt "web.filters.player_placeholder"
+msgid "e.g. amy or 12345"
+msgstr "hal. amy o 12345"
+
+msgctxt "web.filters.guild_label"
+msgid "Guild (name or ID)"
+msgstr "Guild (pangalan o ID)"
+
+msgctxt "web.filters.guild_placeholder"
+msgid "e.g. my-guild or 67890"
+msgstr "hal. my-guild o 67890"
+
+msgctxt "web.filters.from"
+msgid "From"
+msgstr "Mula"
+
+msgctxt "web.filters.to"
+msgid "To"
+msgstr "Hanggang"
+
+msgctxt "web.filters.formats"
+msgid "Format(s)"
+msgstr "Mga Format"
+
+msgctxt "web.filters.brackets"
+msgid "Bracket(s)"
+msgstr "Mga Bracket"
+
+msgctxt "web.filters.apply"
+msgid "Apply filters"
+msgstr "I-apply ang mga filter"
+
+msgctxt "web.filters.reset"
+msgid "Reset"
+msgstr "I-reset"
+
+msgctxt "web.channel_settings.heading"
+msgid "Channel Settings"
+msgstr "Mga Setting ng Channel"
+
+msgctxt "web.channel_settings.default_seats"
+msgid "Default seats"
+msgstr "Default na upuan"
+
+msgctxt "web.channel_settings.default_format"
+msgid "Default format"
+msgstr "Default na format"
+
+msgctxt "web.channel_settings.default_bracket"
+msgid "Default bracket"
+msgstr "Default na bracket"
+
+msgctxt "web.channel_settings.default_service"
+msgid "Default service"
+msgstr "Default na serbisyo"
+
+msgctxt "web.channel_settings.motd"
+msgid "Message of the day"
+msgstr "Mensahe ng araw"
+
+msgctxt "web.channel_settings.extra"
+msgid "Extra message"
+msgstr "Karagdagang mensahe"
+
+msgctxt "web.channel_settings.voice_category"
+msgid "Voice category"
+msgstr "Kategorya ng boses"
+
+msgctxt "web.channel_settings.voice_invite"
+msgid "Create voice invites"
+msgstr "Gumawa ng mga voice invite"
+
+msgctxt "web.channel_settings.delete_expired"
+msgid "Delete expired games"
+msgstr "Burahin ang mga expired na laro"
+
+msgctxt "web.channel_settings.blind_games"
+msgid "Blind games"
+msgstr "Mga blind na laro"
+
+msgctxt "web.channel_settings.to_mode"
+msgid "Tournament organizer mode"
+msgstr "Mode ng tagapag-ayos ng torneo"
+
+msgctxt "web.channel_settings.competitive_mode"
+msgid "Competitive mode"
+msgstr "Mode ng kompetisyon"
+
+msgctxt "web.channel_settings.save"
+msgid "Save channel settings"
+msgstr "I-save ang mga setting ng channel"
+
+msgctxt "web.channel_settings.forget_hint"
+msgid "Forgetting this channel resets it to default settings by removing its configuration. SpellBot will reconfigure it from defaults the next time it is used."
+msgstr "Ang pagkalimot sa channel na ito ay magre-reset nito sa default na mga setting sa pamamagitan ng pag-alis ng configuration nito. Muling ico-configure ito ng SpellBot mula sa mga default sa susunod na paggamit."
+
+msgctxt "web.channel_settings.forget_confirm"
+msgid "Forget this channel and reset it to default settings?"
+msgstr "Kalimutan ang channel na ito at i-reset ito sa default na mga setting?"
+
+msgctxt "web.channel_settings.forget"
+msgid "Forget this channel"
+msgstr "Kalimutan ang channel na ito"
+
+#, python-format
+msgctxt "web.guild.channels_with_games"
+msgid "%(count)s channel with games"
+msgid_plural "%(count)s channels with games"
+msgstr[0] "%(count)s channel na may laro"
+msgstr[1] "%(count)s na channel na may laro"
+
+msgctxt "web.guild.owner_controls"
+msgid "Owner Controls"
+msgstr "Mga Kontrol ng May-ari"
+
+msgctxt "web.guild.view_analytics"
+msgid "Analytics"
+msgstr "Analitika"
+
+msgctxt "web.guild.promotion_enabled"
+msgid "enabled"
+msgstr "naka-enable"
+
+msgctxt "web.guild.promotion_disabled"
+msgid "disabled"
+msgstr "naka-disable"
+
+#, python-format
+msgctxt "web.guild.promotion_status"
+msgid "Public promotion is currently %(state)s for this server."
+msgstr "Ang pampublikong promosyon ay kasalukuyang %(state)s para sa server na ito."
+
+msgctxt "web.guild.disable_promotion"
+msgid "Disable promotion"
+msgstr "I-disable ang promosyon"
+
+msgctxt "web.guild.enable_promotion"
+msgid "Enable promotion"
+msgstr "I-enable ang promosyon"
+
+msgctxt "web.guild.settings_heading"
+msgid "Server Settings"
+msgstr "Mga Setting ng Server"
+
+msgctxt "web.guild.motd"
+msgid "Message of the day"
+msgstr "Mensahe ng araw"
+
+msgctxt "web.guild.suggest_voice_category"
+msgid "Suggested voice category"
+msgstr "Iminumungkahing voice category"
+
+msgctxt "web.guild.show_links"
+msgid "Show game links publicly"
+msgstr "Ipakita ang mga link ng laro sa publiko"
+
+msgctxt "web.guild.voice_create"
+msgid "Auto-create voice channels"
+msgstr "Awtomatikong gumawa ng mga voice channel"
+
+msgctxt "web.guild.use_max_bitrate"
+msgid "Use maximum bitrate"
+msgstr "Gamitin ang pinakamataas na bitrate"
+
+msgctxt "web.guild.enable_mythic_track"
+msgid "Enable mythic track"
+msgstr "I-enable ang mythic track"
+
+msgctxt "web.guild.show_convoke_guild"
+msgid "Show linked Convoke guild"
+msgstr "Ipakita ang naka-link na Convoke guild"
+
+msgctxt "web.guild.save"
+msgid "Save server settings"
+msgstr "I-save ang mga setting ng server"
+
+msgctxt "web.guild.player_awards"
+msgid "Player Awards"
+msgstr "Mga Award ng Player"
+
+msgctxt "web.guild.manage_awards"
+msgid "Manage player awards"
+msgstr "Pamahalaan ang mga award ng player"
+
+msgctxt "web.guild.no_awards"
+msgid "No player awards are configured yet."
+msgstr "Wala pang naka-configure na award ng player."
+
+#, python-format
+msgctxt "web.guild.award_summary"
+msgid "%(count)s game · @%(role)s"
+msgid_plural "%(count)s games · @%(role)s"
+msgstr[0] "%(count)s laro · @%(role)s"
+msgstr[1] "%(count)s na laro · @%(role)s"
+
+msgctxt "web.guild.channels"
+msgid "Channels"
+msgstr "Mga Channel"
+
+msgctxt "web.guild.games"
+msgid "Games"
+msgstr "Mga Laro"
+
+msgctxt "web.guild.last_activity"
+msgid "Last Activity"
+msgstr "Huling Aktibidad"
+
+msgctxt "web.guild.no_channels"
+msgid "No channels with games yet."
+msgstr "Wala pang channel na may laro."
+
+msgctxt "web.awards.title"
+msgid "Player Awards"
+msgstr "Mga Award ng Player"
+
+#, python-format
+msgctxt "web.awards.configured"
+msgid "%(count)s award configured"
+msgid_plural "%(count)s awards configured"
+msgstr[0] "%(count)s award na naka-configure"
+msgstr[1] "%(count)s na award na naka-configure"
+
+msgctxt "web.awards.games_required"
+msgid "Games required"
+msgstr "Mga larong kailangan"
+
+msgctxt "web.awards.role"
+msgid "Role"
+msgstr "Role"
+
+msgctxt "web.awards.message"
+msgid "Message"
+msgstr "Mensahe"
+
+msgctxt "web.awards.repeating"
+msgid "Repeating"
+msgstr "Umuulit"
+
+msgctxt "web.awards.remove"
+msgid "Remove role instead of giving"
+msgstr "Alisin ang role sa halip na ibigay"
+
+msgctxt "web.awards.save"
+msgid "Save award"
+msgstr "I-save ang award"
+
+msgctxt "web.awards.delete"
+msgid "Delete award"
+msgstr "Burahin ang award"
+
+msgctxt "web.awards.delete_confirm"
+msgid "Delete this award?"
+msgstr "Burahin ang award na ito?"
+
+msgctxt "web.awards.none"
+msgid "No awards configured yet. Add one below."
+msgstr "Wala pang naka-configure na award. Magdagdag ng isa sa ibaba."
+
+msgctxt "web.awards.add_heading"
+msgid "Add an award"
+msgstr "Magdagdag ng award"
+
+msgctxt "web.awards.add_button"
+msgid "Add award"
+msgstr "Magdagdag ng award"
+
+msgctxt "web.game.details"
+msgid "Details"
+msgstr "Mga Detalye"
+
+msgctxt "web.game.blind"
+msgid "Blind"
+msgstr "Bulag"
+
+msgctxt "web.game.rules"
+msgid "Rules"
+msgstr "Mga Patakaran"
+
+msgctxt "web.game.guild_war"
+msgid "Guild War"
+msgstr "Digmaan ng Guild"
+
+msgctxt "web.game.game_link"
+msgid "Game link"
+msgstr "Link ng laro"
+
+msgctxt "web.game.voice_channel"
+msgid "Voice channel"
+msgstr "Voice channel"
+
+msgctxt "web.game.discord_posts"
+msgid "Discord posts"
+msgstr "Mga Discord post"
+
+msgctxt "web.game.message"
+msgid "Message"
+msgstr "Mensahe"
+
+msgctxt "web.game.players"
+msgid "Players"
+msgstr "Mga Manlalaro"
+
+msgctxt "web.game.queued"
+msgid "Queued"
+msgstr "Naka-queue"
+
+msgctxt "web.game.entered_guild"
+msgid "Entered Guild"
+msgstr "Pinasok na Guild"
+
+msgctxt "web.game.records"
+msgid "Records"
+msgstr "Mga Rekord"
+
+msgctxt "web.game.user_records"
+msgid "User records"
+msgstr "Mga rekord ng user"
+
+msgctxt "web.game.report.title"
+msgid "Post-Game Report"
+msgstr "Ulat pagkatapos ng laro"
+
+msgctxt "web.game.report.source"
+msgid "Reported by"
+msgstr "Iniulat ni"
+
+msgctxt "web.game.report.duration"
+msgid "Match time"
+msgstr "Oras ng laban"
+
+msgctxt "web.game.report.minutes_suffix"
+msgid "min"
+msgstr "min"
+
+msgctxt "web.game.report.turns"
+msgid "Turns"
+msgstr "Mga turn"
+
+msgctxt "web.game.report.ended"
+msgid "Ended at"
+msgstr "Natapos"
+
+msgctxt "web.game.report.winner"
+msgid "Winner"
+msgstr "Nanalo"
+
+msgctxt "web.game.report.reported"
+msgid "Reported at"
+msgstr "Iniulat"
+
+msgctxt "web.game.report.commander"
+msgid "Commander"
+msgstr "Commander"
+
+msgctxt "web.game.report.turn_order"
+msgid "Turn order"
+msgstr "Pagkakasunod ng turn"
+
+msgctxt "web.game.report.play_time"
+msgid "Play time"
+msgstr "Oras ng laro"
+
+msgctxt "web.game.report.result"
+msgid "Result"
+msgstr "Resulta"
+
+#, python-format
+msgctxt "web.notify.title"
+msgid "Notification Preferences — %(name)s"
+msgstr "Mga Kagustuhan sa Notification — %(name)s"
+
+msgctxt "web.notify.meta_description"
+msgid "Choose which SpellBot game posts you want to be notified about."
+msgstr "Piliin kung aling mga post ng laro ng SpellBot ang gusto mong ma-notify."
+
+msgctxt "web.notify.heading"
+msgid "Notification Preferences"
+msgstr "Mga Kagustuhan sa Notification"
+
+msgctxt "web.notify.guild_sub"
+msgid "Choose what kinds of new games you want to be pinged about in this server."
+msgstr "Piliin kung anong uri ng mga bagong laro ang gusto mong ma-ping tungkol dito sa server na ito."
+
+msgctxt "web.notify.off_label"
+msgid "Do not notify me about games on this server"
+msgstr "Huwag akong i-notify tungkol sa mga laro sa server na ito"
+
+msgctxt "web.notify.formats"
+msgid "Formats"
+msgstr "Mga Format"
+
+msgctxt "web.notify.formats_hint"
+msgid "Select the formats you want to be notified about. Leave empty to receive all formats."
+msgstr "Piliin ang mga format na gusto mong ma-notify. Iwanang walang laman para matanggap ang lahat ng format."
+
+msgctxt "web.notify.brackets"
+msgid "Brackets"
+msgstr "Mga Bracket"
+
+msgctxt "web.notify.brackets_hint"
+msgid "Select the brackets you want to be notified about. Leave empty to receive all brackets."
+msgstr "Piliin ang mga bracket na gusto mong ma-notify. Iwanang walang laman para matanggap ang lahat ng bracket."
+
+msgctxt "web.notify.channels"
+msgid "Channels"
+msgstr "Mga Channel"
+
+msgctxt "web.notify.channels_hint"
+msgid "Select the channels you want to be notified about. Leave empty to receive all channels."
+msgstr "Piliin ang mga channel na gusto mong ma-notify. Iwanang walang laman para matanggap ang lahat ng channel."
+
+msgctxt "web.notify.active_hours"
+msgid "Active Hours"
+msgstr "Mga Aktibong Oras"
+
+#, python-format
+msgctxt "web.notify.active_hours_hint"
+msgid "Only notify me during a specific window of the day, in my local time. Maximum window is %(hours)s hours. Defaults to 5pm–10pm if you don't pick a range."
+msgstr "I-notify lang ako sa isang partikular na bahagi ng araw, sa aking lokal na oras. Ang pinakamahabang window ay %(hours)s oras. Default sa 5pm–10pm kung hindi ka pipili ng range."
+
+msgctxt "web.notify.limit_window"
+msgid "Limit notifications to a daily window"
+msgstr "Limitahan ang mga notification sa isang araw-araw na window"
+
+msgctxt "web.notify.save"
+msgid "Save preferences"
+msgstr "I-save ang mga kagustuhan"
+
+msgctxt "web.notify.js_saved"
+msgid "Your notification preferences have been saved."
+msgstr "Na-save na ang iyong mga kagustuhan sa notification."
+
+msgctxt "web.notify.js_off"
+msgid "Notifications turned off for this server."
+msgstr "Naka-off ang mga notification para sa server na ito."
+
+msgctxt "web.notify.js_error"
+msgid "Could not save your preferences. Please try again."
+msgstr "Hindi ma-save ang iyong mga kagustuhan. Pakisubukan muli."
+
+msgctxt "web.notify.js_pick_different"
+msgid "Pick different start and end hours"
+msgstr "Pumili ng magkaibang oras ng simula at pagtatapos"
+
+msgctxt "web.notify.js_must_differ"
+msgid "Start and end must differ."
+msgstr "Dapat magkaiba ang simula at pagtatapos."
+
+#, python-format
+msgctxt "web.notify.js_range_max"
+msgid "Range must be %(max)s hours or less."
+msgstr "Ang range ay dapat %(max)s oras o mas mababa."
+
+#, python-format
+msgctxt "web.notify.js_times_in"
+msgid "Times shown in %(tz)s"
+msgstr "Mga oras na ipinapakita sa %(tz)s"
+
+msgctxt "web.notify.js_times_local"
+msgid "Times shown in your local timezone"
+msgstr "Mga oras na ipinapakita sa iyong lokal na timezone"
+
+msgctxt "web.notify.unit_hour"
+msgid "hour"
+msgstr "oras"
+
+msgctxt "web.notify.unit_hours"
+msgid "hours"
+msgstr "oras"
+
+msgctxt "web.motd.available"
+msgid "Available placeholders"
+msgstr "Mga available na placeholder"
+
+msgctxt "web.motd.intro"
+msgid "These tokens are replaced with each game's details when the message of the day is shown in a game post:"
+msgstr "Ang mga token na ito ay pinapalitan ng mga detalye ng bawat laro kapag ipinapakita ang mensahe ng araw sa isang post ng laro:"
+
+msgctxt "web.motd.game_id"
+msgid "the game's SpellBot ID"
+msgstr "ang SpellBot ID ng laro"
+
+msgctxt "web.motd.game_format"
+msgid "the game's format (e.g. Commander)"
+msgstr "ang format ng laro (hal. Commander)"
+
+msgctxt "web.motd.game_bracket"
+msgid "the game's commander bracket"
+msgstr "ang commander bracket ng laro"
+
+msgctxt "web.motd.game_start"
+msgid "when the game starts (a Discord timestamp), or “pending”"
+msgstr "kung kailan magsisimula ang laro (isang Discord timestamp), o “pending”"
+
+msgctxt "web.motd.player_names"
+msgid "the players' names, in join order"
+msgstr "ang mga pangalan ng players, ayon sa pagkakasunod ng pagsali"
+

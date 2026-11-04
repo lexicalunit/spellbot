@@ -23,15 +23,16 @@ Then update the `GAME_SERVICE_ORDER` list to include the new service. This list 
 
 ## Add translations for the pending message
 
-In `src/spellbot/translations/<locale>.yaml` add an entry under the `service:` key matching the `translation_key` you used above. For example in `en.yaml`:
+Add an entry to `src/spellbot/translations/messages.pot` whose `msgctxt` is `service.` plus the `translation_key` you used above:
 
-```yaml
-en:
-  service:
-    new_service: "_A %{emoji}[Your New Service](https://your-new-service.com/) link will be created when all players have joined._"
+```po
+#, python-format
+msgctxt "service.new_service"
+msgid "_A %(emoji)s[Your New Service](https://your-new-service.com/) link will be created when all players have joined._"
+msgstr ""
 ```
 
-This message is shown in the game embed while the game is waiting for players. Add an entry for each supported locale (`da`, `de`, `el`, `en`, `es`, …).
+Then run `make translations` to add the entry to every language's `.po` file. Until it's translated (through Crowdin, or by filling in `msgstr` in a `<lang>.po`), each language shows the English text. This message is shown in the game embed while the game is waiting for players. See [CONTRIBUTING.md](CONTRIBUTING.md#translations) for more on the translation files.
 
 ## Add configuration settings
 

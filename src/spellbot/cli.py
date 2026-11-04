@@ -82,7 +82,7 @@ def main(
 ) -> None:
     if dev:
         reloader = hupper.start_reloader("spellbot.main")
-        reloader.watch_files([str(TRANSLATIONS_DIR / "*.yaml")])
+        reloader.watch_files([str(TRANSLATIONS_DIR / "*.po*")])
 
     # Ensure that configure_logging() is called as early as possible
     level = log_level if log_level is not None else settings.LOG_LEVEL

@@ -96,6 +96,17 @@ Codebase consistency is maintained by [ruff][ruff].
 uv run pytest -k codebase
 ```
 
+## Translations
+
+User-facing text lives in [gettext][gettext] catalogs in `src/spellbot/translations/`. Code looks strings up by key, for example `t("game.field.settings", locale=locale)`.
+
+- `messages.pot` holds the English source text. Each entry's `msgctxt` is its key and its `msgid` is the English text. Placeholders are written `%(name)s`, and a literal percent sign is `%%`.
+- `<lang>.po` holds one language's translations of the same entries, in `msgstr`. An empty or `fuzzy` entry shows the English text instead.
+
+To add or change English text, edit `messages.pot` and run `make translations`. That adds new keys to every `.po` file, removes deleted ones, and marks the old translation of any changed text `fuzzy` until it's translated again. Translators work in Crowdin, which reads `messages.pot` and commits the `.po` files back.
+
+Text that depends on a number is a plural entry: give the English singular in `msgid` and the plural in `msgid_plural`, then pass `count`, as in `t("score.games", locale=locale, count=n)`. Each language picks the right form with its own plural rule.
+
 ## Interactive Shell
 
 An interactive shell using [IPython](https://ipython.readthedocs.io/en/stable/) can be started by running:
@@ -166,3 +177,4 @@ After publishing you can view the package at its [pypi.org project page](https:/
 
 [ruff]: https://docs.astral.sh/ruff/
 [discord-dev]: https://discord.com/developers/applications
+[gettext]: https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html

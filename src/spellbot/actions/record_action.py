@@ -26,12 +26,11 @@ class RecordAction(BaseAction):
         embed = info_embed()
         embed.set_author(name=t("score.record_title", locale=locale))
         link = f"{settings.API_BASE_URL}/u/{target_xid}"
-        games_key = "score.games_one" if count == 1 else "score.games_many"
         embed.description = t(
             "score.record_description",
             locale=locale,
             mention=target.mention,
-            games=t(games_key, locale=locale, count=count),
+            games=t("score.games", locale=locale, count=count),
             link=link,
         )
         await safe_send_channel(self.interaction, embed=embed, ephemeral=True)

@@ -1,0 +1,1588 @@
+# Finnish translations for SpellBot.
+# Copyright (C) 2026 spellbot@lexicalunit.com
+# This file is distributed under the same license as the SpellBot project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  SpellBot\n"
+"Report-Msgid-Bugs-To: spellbot@lexicalunit.com\n"
+"POT-Creation-Date: 2026-11-03 17:50-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: fi\n"
+"Language-Team: fi <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgctxt "game.title.ready"
+msgid "**Your game is ready!**"
+msgstr "**Pelisi on valmis!**"
+
+msgctxt "game.title.rematch"
+msgid "**Rematch Game!**"
+msgstr "**Uusintapeli!**"
+
+#, python-format
+msgctxt "game.title.waiting"
+msgid "**Waiting for %(count)s more player to join...**"
+msgid_plural "**Waiting for %(count)s more players to join...**"
+msgstr[0] "**Odotetaan %(count)s pelaajaa enemmän…**"
+msgstr[1] "**Odotetaan %(count)s pelaajaa enemmän…**"
+
+msgctxt "game.description.check_dm"
+msgid "Please check your Direct Messages for your game details."
+msgstr "Tarkista pelin tiedot suorista viesteistä."
+
+msgctxt "game.description.rematch_info"
+msgid "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
+msgstr "Tämä on aiemman pelin uusintapeli. Käytä samaa peliaulaa ja äänikanavaa."
+
+#, python-format
+msgctxt "game.description.join_link"
+msgid "# [Join your %(service)s game now!](%(link)s)"
+msgstr "# [Liity %(service)s -peliisi nyt!](%(link)s)"
+
+#, python-format
+msgctxt "game.description.link_error"
+msgid "Sorry but SpellBot was unable to create a link for this game. Please go to [%(service)s](%(url)s) to create one."
+msgstr "SpellBot ei valitettavasti pystynyt luomaan linkkiä tälle pelille. Luo linkki palvelussa [%(service)s](%(url)s)."
+
+#, python-format
+msgctxt "game.description.use_service"
+msgid "Please use %(service)s to play this game."
+msgstr "Pelaa peliä palvelussa %(service)s."
+
+msgctxt "game.description.contact_players"
+msgid "Contact the other players in your game to organize this match."
+msgstr "Ota yhteyttä muihin pelin pelaajiin pelin järjestämiseksi."
+
+#, python-format
+msgctxt "game.description.password"
+msgid "Password: `%(password)s`"
+msgstr "Salasana: `%(password)s`"
+
+#, python-format
+msgctxt "game.description.voice_chat"
+msgid "## Join your voice chat now: <#%(channel_id)s>"
+msgstr "## Liity äänikeskusteluun nyt: <#%(channel_id)s>"
+
+#, python-format
+msgctxt "game.description.voice_invite"
+msgid "Or use this voice channel invite: %(invite)s"
+msgstr "Tai käytä tätä äänikanavakutsua: %(invite)s"
+
+#, python-format
+msgctxt "game.description.voice_already_picked"
+msgid "## Your pod is already using a voice channel, join them now: <#%(channel_id)s>!"
+msgstr "## Ryhmäsi käyttää jo äänikanavaa, liity mukaan nyt: <#%(channel_id)s>!"
+
+#, python-format
+msgctxt "game.description.voice_available"
+msgid "## Please consider using this available voice channel: <#%(channel_id)s>."
+msgstr "## Harkitse seuraavan saatavilla olevan äänikanavan käyttöä: <#%(channel_id)s>."
+
+#, python-format
+msgctxt "game.description.jump_to_post"
+msgid "You can also [jump to the original game post](%(link)s) in <#%(channel_id)s>."
+msgstr "Voit myös [siirtyä alkuperäiseen pelijulkaisuun](%(link)s) kohteessa <#%(channel_id)s>."
+
+msgctxt "game.war_convoke_only"
+msgid "This Guild War table no longer takes players through SpellBot, but you can still join it on Convoke."
+msgstr "Tämä kiltasodan pöytä ei enää ota pelaajia SpellBotin kautta, mutta voit yhä liittyä siihen Convokessa."
+
+msgctxt "game.field.rules"
+msgid "⚠️ Additional Rules:"
+msgstr "⚠️ Muita sääntöjä:"
+
+msgctxt "game.field.guild_war"
+msgid "⚔️ Guild War"
+msgstr "⚔️ Kiltasota"
+
+msgctxt "game.field.players"
+msgid "Players"
+msgstr "Pelaajat"
+
+#, python-format
+msgctxt "game.field.players_hidden"
+msgid "**%(count)s player name is hidden**"
+msgid_plural "**%(count)s player names are hidden**"
+msgstr[0] "**%(count)s pelaajan nimi on piilotettu**"
+msgstr[1] "**%(count)s pelaajan nimet on piilotettu**"
+
+msgctxt "game.field.format"
+msgid "Format"
+msgstr "Formaatti"
+
+msgctxt "game.field.bracket"
+msgid "Bracket"
+msgstr "Taso"
+
+msgctxt "game.field.started_at"
+msgid "Started at"
+msgstr "Alkoi klo"
+
+msgctxt "game.field.updated_at"
+msgid "Updated at"
+msgstr "Päivitetty klo"
+
+msgctxt "game.field.voice_channel"
+msgid "🔊 Suggested Voice Channel"
+msgstr "🔊 Ehdotettu äänikanava"
+
+msgctxt "game.field.support"
+msgid "Support SpellBot"
+msgstr "Tue SpellBotia"
+
+#, python-format
+msgctxt "game.field.support_text"
+msgid "Become [a patron](%(subscribe)s) or give a [one-off tip](%(donate)s)."
+msgstr "Ryhdy [kuukausitukijaksi](%(subscribe)s) tai anna [kertalahjoitus](%(donate)s)."
+
+#, python-format
+msgctxt "game.field.convoke_guild"
+msgid "Play more with **%(name)s** on Convoke. [Join the guild!](%(url)s)"
+msgstr "Pelaa enemmän killan **%(name)s** kanssa Convokessa. [Liity kiltaan!](%(url)s)"
+
+msgctxt "game.field.settings"
+msgid "Settings"
+msgstr "Asetukset"
+
+#, python-format
+msgctxt "game.field.settings_text"
+msgid "See [live games](%(queues)s) and configure [your notifications](%(notify)s)."
+msgstr "Katso [live-pelejä](%(queues)s) ja määritä [ilmoituksesi](%(notify)s)."
+
+#, python-format
+msgctxt "game.footer"
+msgid "SpellBot Game ID: #SB%(game_id)s — Service: %(service)s"
+msgstr "SpellBot-pelitunnus: #SB%(game_id)s, palvelu: %(service)s"
+
+msgctxt "service.not_any"
+msgid "_Please contact the players in your game to organize this game._"
+msgstr "_Ota yhteyttä pelin pelaajiin pelin järjestämiseksi._"
+
+#, python-format
+msgctxt "service.spelltable"
+msgid "_Please go create a game on %(emoji)s[SpellTable](https://spelltable.wizards.com/) for this game._"
+msgstr "_Luo tätä peliä varten peli kohteessa %(emoji)s[SpellTable](https://spelltable.wizards.com/)._"
+
+msgctxt "service.cockatrice"
+msgid "_Please use Cockatrice for this game._"
+msgstr "_Käytä tätä peliä varten Cockatricea._"
+
+msgctxt "service.xmage"
+msgid "_Please use XMage for this game._"
+msgstr "_Käytä tätä peliä varten XMagea._"
+
+msgctxt "service.mtg_arena"
+msgid "_Please use MTG Arena for this game._"
+msgstr "_Käytä tätä peliä varten MTG Arenaa._"
+
+msgctxt "service.mtg_online"
+msgid "_Please use MTG Online for this game._"
+msgstr "_Käytä tätä peliä varten MTG Onlinea._"
+
+msgctxt "service.tts"
+msgid "_Please use TabletopSim for this game._"
+msgstr "_Käytä tätä peliä varten TabletopSimiä._"
+
+#, python-format
+msgctxt "service.convoke"
+msgid "_A %(emoji)s[Convoke](https://www.convoke.games/) link will be created when all players have joined._"
+msgstr "_ %(emoji)s[Convoke](https://www.convoke.games/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet._"
+
+#, python-format
+msgctxt "service.girudo"
+msgid "_A %(emoji)s[Girudo](https://www.girudo.com/) link will be created when all players have joined._"
+msgstr "_ %(emoji)s[Girudo](https://www.girudo.com/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet._"
+
+#, python-format
+msgctxt "service.edhlab"
+msgid "_A %(emoji)s[EDHLAB](https://edhlab.gg/) link will be created when all players have joined._"
+msgstr "_ %(emoji)s[EDHLAB](https://edhlab.gg/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet._"
+
+#, python-format
+msgctxt "service.playgroup_live"
+msgid "*A %(emoji)s[Playgroup Live](https://playgroup.gg/) link will be created when all players have joined.*"
+msgstr "*%(emoji)s[Playgroup Live](https://playgroup.gg/) -linkki luodaan, kun kaikki pelaajat ovat liittyneet.*"
+
+msgctxt "lfg.playgroup_link_required"
+msgid "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
+msgstr "Playgroup Liven käyttö edellyttää, että vähintään yksi pelaaja yhdistää tilinsä. Suorita `/playgroup link` ja yritä uudelleen."
+
+msgctxt "lfg.run_in_channel"
+msgid "Please run this command in the same channel as your last played game."
+msgstr "Suorita tämä komento samalla kanavalla kuin viimeisin pelisi."
+
+msgctxt "lfg.already_pending"
+msgid "You're already in a pending game, leave that one first."
+msgstr "Olet jo avoimessa pelissä: poistu ensin kyseisestä pelistä."
+
+msgctxt "lfg.no_previous_game"
+msgid "You have not played a game in this guild yet."
+msgstr "Et ole vielä pelannut yhtään peliä tässä killassa."
+
+msgctxt "lfg.run_in_game_channel"
+msgid "Please run this command in the same channel as your game."
+msgstr "Suorita tämä komento samalla kanavalla kuin pelisi."
+
+msgctxt "lfg.not_pending_here"
+msgid "You're not in a pending game in this channel."
+msgstr "Et ole avoimessa pelissä tällä kanavalla."
+
+msgctxt "lfg.start_needs_players"
+msgid "You need at least one other player before you can start a game."
+msgstr "Tarvitset vähintään yhden muun pelaajan, ennen kuin voit aloittaa pelin."
+
+msgctxt "lfg.unsupported_context"
+msgid "Sorry, that command is not supported in this context."
+msgstr "Tätä komentoa ei valitettavasti tueta tässä yhteydessä."
+
+msgctxt "lfg.already_in_channel"
+msgid "You're already in a game in this channel."
+msgstr "Olet jo pelissä tällä kanavalla."
+
+msgctxt "lfg.too_many_pending"
+msgid "You're in too many pending games to join another one at this time."
+msgstr "Sinulla on liian monta avointa peliä, etkä voi liittyä uuteen peliin juuri nyt."
+
+msgctxt "lfg.too_many_friends"
+msgid "You mentioned too many players."
+msgstr "Mainitsit liian monta pelaajaa."
+
+msgctxt "lfg.guild_war_invalid"
+msgid "That Guild War is not available. Use autocomplete to pick a live war."
+msgstr "Tuo kiltasota ei ole saatavilla. Käytä automaattista täydennystä valitaksesi aktiivisen sodan."
+
+#, python-format
+msgctxt "lfg.guild_war_seats"
+msgid "Guild War matches need between %(min)s and %(max)s seats."
+msgstr "Kiltasotaottelut tarvitsevat %(min)s–%(max)s paikkaa."
+
+msgctxt "lfg.cannot_join"
+msgid "You can not join this game."
+msgstr "Et voi liittyä tähän peliin."
+
+msgctxt "lfg.game_started"
+msgid "Sorry, that game has already started."
+msgstr "Pahoittelut, tämä peli on jo alkanut."
+
+msgctxt "lfg.game_full"
+msgid "Sorry, that game is already full."
+msgstr "Pahoittelut, tämä peli on jo täynnä."
+
+#, python-format
+msgctxt "lfg.invalid_player_count"
+msgid "You can't create a %(format)s game with %(count)s players."
+msgstr "Et voi luoda %(format)s -peliä %(count)s pelaajalla."
+
+#, python-format
+msgctxt "lfg.excluded_players"
+msgid "Some of the players you mentioned can not be added to a game: %(players)s"
+msgstr "Joitakin mainitsemiasi pelaajia ei voida lisätä peliin: %(players)s"
+
+#, python-format
+msgctxt "lfg.found_game"
+msgid "I found a %(format)s game for you!"
+msgstr "Löysin sinulle %(format)s -pelin!"
+
+#, python-format
+msgctxt "lfg.jump_to_game"
+msgid "You can [jump to the game post](%(link)s) to see it!"
+msgstr "Näet sen [siirtymällä pelijulkaisuun](%(link)s)!"
+
+#, python-format
+msgctxt "lfg.joined_game"
+msgid "You have joined the game SB%(game_id)s!"
+msgstr "Olet liittynyt peliin SB%(game_id)s!"
+
+#, python-format
+msgctxt "lfg.started_game"
+msgid "I started your %(format)s game for you!"
+msgstr "Aloitin %(format)s -pelin puolestasi!"
+
+#, python-format
+msgctxt "lfg.game_started_id"
+msgid "The game SB%(game_id)s has been started!"
+msgstr "Peli SB%(game_id)s on aloitettu!"
+
+#, python-format
+msgctxt "lfg.dm_failures"
+msgid "Unable to send Direct Messages to some players: %(players)s"
+msgstr "Suorien viestien lähetys joillekin pelaajille ei onnistu: %(players)s"
+
+#, python-format
+msgctxt "lfg.award_failure_give"
+msgid "Unable to give role %(role)s to user <@%(user_id)s>"
+msgstr "Roolia %(role)s ei voitu antaa käyttäjälle <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.award_failure_take"
+msgid "Unable to take role %(role)s from user <@%(user_id)s>"
+msgstr "Roolia %(role)s ei voitu ottaa käyttäjältä <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.mythic_track"
+msgid "Track your game on %(emoji)s[Mythic Track](%(link)s) with PIN code: `%(pin)s`"
+msgstr "Seuraa peliäsi kohteessa %(emoji)s[Mythic Track](%(link)s) PIN-koodilla: `%(pin)s`"
+
+msgctxt "button.join"
+msgid "Join this game!"
+msgstr "Liity tähän peliin!"
+
+msgctxt "button.leave"
+msgid "Leave"
+msgstr "Poistu"
+
+msgctxt "admin.no_game_found"
+msgid "There is no game with that ID."
+msgstr "Ei pelejä tällä tunnuksella."
+
+msgctxt "admin.done"
+msgid "Done."
+msgstr "Valmis."
+
+#, python-format
+msgctxt "admin.channels_title"
+msgid "Configuration for channels in %(guild)s"
+msgstr "%(guild)s -kanavien määritys"
+
+#, python-format
+msgctxt "admin.setup_title"
+msgid "SpellBot Setup for %(guild)s"
+msgstr "SpellBot-asetukset – %(guild)s"
+
+#, python-format
+msgctxt "admin.setup_description"
+msgid ""
+"SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n"
+"\n"
+"[Configure SpellBot →](%(link)s)"
+msgstr ""
+"SpellBot auttaa yhteisöäsi löytämään ja pelaamaan Magic: The Gathering -pelejä yhdessä. Voit määrittää palvelimesi, kanavasi ja pelaajapalkinnot SpellBotin hallintapaneelissa.\n"
+"\n"
+"[Määritä SpellBotia →](%(link)s)"
+
+#, python-format
+msgctxt "admin.user_move_error"
+msgid "Error: %(error)s"
+msgstr "Virhe: %(error)s"
+
+#, python-format
+msgctxt "admin.user_moved"
+msgid "User %(from_user)s has been moved to %(to_user)s"
+msgstr "Käyttäjä %(from_user)s on siirretty kohteeseen %(to_user)s"
+
+#, python-format
+msgctxt "admin.expire_dequeued"
+msgid "├── Dequeued %(count)s players"
+msgstr "├── %(count)s pelaajaa poistettu jonosta"
+
+#, python-format
+msgctxt "admin.expire_no_channel"
+msgid "├── Could not find channel %(channel_id)s"
+msgstr "├── Kanavaa %(channel_id)s ei löydy"
+
+#, python-format
+msgctxt "admin.expire_no_message"
+msgid "├── Could not find message %(message_id)s"
+msgstr "├── Viestiä %(message_id)s ei löydy"
+
+#, python-format
+msgctxt "admin.expire_deleting"
+msgid "├── Deleting message %(message_id)s ..."
+msgstr "├── Poistetaan viestiä %(message_id)s…"
+
+#, python-format
+msgctxt "admin.expire_updating"
+msgid "├── Updating message %(message_id)s ..."
+msgstr "├── Päivitetään viestiä %(message_id)s…"
+
+msgctxt "admin.expire_no_permission"
+msgid "├── Bot does not have permission"
+msgstr "├── Botilla ei ole oikeuksia"
+
+msgctxt "admin.expire_done"
+msgid "└── Done"
+msgstr "└── Valmis"
+
+msgctxt "admin.expire_none"
+msgid "No games to expire."
+msgstr "Ei vanhentuvia pelejä."
+
+#, python-format
+msgctxt "admin.expire_game"
+msgid "Expiring game #SB%(game_id)s ..."
+msgstr "Vanhentuva peli #SB%(game_id)s…"
+
+msgctxt "admin.game_expired"
+msgid "Sorry, this game was expired due to inactivity."
+msgstr "Pahoittelut, tämä peli vanhentui käyttämättömyyden vuoksi."
+
+#, python-format
+msgctxt "admin.user_info_title"
+msgid "User info for %(name)s"
+msgstr "Henkilön %(name)s käyttäjätiedot"
+
+#, python-format
+msgctxt "admin.user_info_games_count"
+msgid "%(count)s game on %(guild)s"
+msgid_plural "%(count)s games on %(guild)s"
+msgstr[0] "%(count)s peli kohteessa %(guild)s"
+msgstr[1] "%(count)s peliä kohteessa %(guild)s"
+
+msgctxt "admin.user_info_games"
+msgid "Games Played"
+msgstr "Pelatut pelit"
+
+#, python-format
+msgctxt "admin.user_info_blocked"
+msgid "Blocked by %(count)s user"
+msgid_plural "Blocked by %(count)s users"
+msgstr[0] "%(count)s käyttäjän estämä"
+msgstr[1] "%(count)s käyttäjän estämä"
+
+msgctxt "admin.user_info_block_status"
+msgid "Block Status"
+msgstr "Eston tila"
+
+msgctxt "admin.user_info_no_games"
+msgid "No games played"
+msgstr "Ei pelattuja pelejä"
+
+msgctxt "admin.user_info_play_range"
+msgid "Play Range"
+msgstr "Pelin aikaväli"
+
+msgctxt "admin.user_info_game_history"
+msgid "Game History"
+msgstr "Pelihistoria"
+
+#, python-format
+msgctxt "admin.view_link"
+msgid "[View on spellbot.io](%(link)s)"
+msgstr "[Näytä kohteessa spellbot.io](%(link)s)"
+
+#, python-format
+msgctxt "admin.game_info_title"
+msgid "Game info for #SB%(game_id)s"
+msgstr "Pelin tiedot #SB%(game_id)s"
+
+msgctxt "admin.game_info_pending"
+msgid "Not started yet"
+msgstr "Ei vielä aloitettu"
+
+msgctxt "admin.game_info_details"
+msgid "Details"
+msgstr "Tiedot"
+
+#, python-format
+msgctxt "admin.user_info_footer"
+msgid "User ID: %(user_id)s"
+msgstr "Käyttäjätunnus: %(user_id)s"
+
+#, python-format
+msgctxt "admin.mythic_track_title"
+msgid "Mythic Track Setup for %(guild)s"
+msgstr "Mythic Track -määritys – %(guild)s"
+
+#, python-format
+msgctxt "admin.mythic_track_on"
+msgid ""
+"✅ Mythic Track has been turned **on** for this server!\n"
+"\n"
+"To continue setup, please [connect your Discord account to Mythic Track](%(guide)s).\n"
+"\n"
+"While this feature is turned on, SpellBot will generate PIN codes for players to enter into Mythic Track so that their games can be tracked."
+msgstr ""
+"✅ Mythic Track on asetettu **päälle** tässä palvelimessa!\n"
+"\n"
+"Voit jatkaa määrityksiä [yhdistämällä Discord-tilisi Mythic Trackiin](%(guide)s).\n"
+"\n"
+"Kun tämä ominaisuus on käytössä, SpellBot luo pelaajille PIN-koodit Mythic Trackia varten, jotta heidän pelejään voidaan seurata."
+
+msgctxt "admin.mythic_track_off"
+msgid "❌ Mythic Track has been turned **off** for this server. Rerun this command to toggle it back on. Note that turning this feature off does _not_ remove any existing Mythic Track data."
+msgstr "❌ Mythic Track on asetettu **pois päältä** tässä palvelimessa. Jos haluat asettaa sen taas päälle, suorita komento uudelleen. Huomaa, että ominaisuuden asettaminen pois päältä _ei_ poista jo olemassa olevia Mythic Track -tietoja."
+
+msgctxt "block.self_block"
+msgid "You can not block yourself."
+msgstr "Et voi estää itseäsi."
+
+#, python-format
+msgctxt "block.blocked"
+msgid "<@%(user_id)s> has been blocked."
+msgstr "<@%(user_id)s> on estetty."
+
+#, python-format
+msgctxt "block.unblocked"
+msgid "<@%(user_id)s> has been unblocked."
+msgstr "Käyttäjän <@%(user_id)s> esto on poistettu."
+
+#, python-format
+msgctxt "block.manage_message"
+msgid ""
+"You can view and manage your blocked users from your profile page.\n"
+"\n"
+"[Open your profile on spellbot.io](%(link)s)"
+msgstr ""
+"Voit tarkastella ja hallita estettyjä käyttäjiä profiilisivultasi.\n"
+"\n"
+"[Avaa profiilisi osoitteessa spellbot.io](%(link)s)"
+
+msgctxt "leave.removed_channel"
+msgid "You were removed from any pending games in this channel."
+msgstr "Sinut poistettiin kaikista avoimista peleistä tällä kanavalla."
+
+msgctxt "leave.removed_all"
+msgid "You were removed from all pending games."
+msgstr "Sinut poistettiin kaikista avoimista peleistä."
+
+msgctxt "score.record_title"
+msgid "Record of games played"
+msgstr "Record pelatuista peleistä"
+
+#, python-format
+msgctxt "score.games"
+msgid "%(count)s game"
+msgid_plural "%(count)s games"
+msgstr[0] "%(count)s peli"
+msgstr[1] "%(count)s peliä"
+
+#, python-format
+msgctxt "score.record_description"
+msgid ""
+"%(mention)s has played %(games)s.\n"
+"View more [details on spellbot.io](%(link)s)."
+msgstr ""
+"%(mention)s on pelannut %(games)s.\n"
+"Katso lisää [lisätietoja osoitteessa spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.history_title"
+msgid "Recent games played in %(channel)s"
+msgstr "Viimeaikaiset kanavalla %(channel)s pelatut pelit"
+
+#, python-format
+msgctxt "score.history_description"
+msgid "View [game history on spellbot.io](%(link)s)."
+msgstr "Näytä [pelihistoria kohteessa spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.top_title"
+msgid "Top players in #%(channel)s (%(range)s)"
+msgstr "Parhaat pelaajat kanavalla #%(channel)s (%(range)s)"
+
+#, python-format
+msgctxt "score.range_ago"
+msgid "%(months)s months ago"
+msgstr "%(months)s kuukautta sitten"
+
+msgctxt "score.range_this_month"
+msgid "this month"
+msgstr "tässä kuussa"
+
+msgctxt "score.range_all_time"
+msgid "all time"
+msgstr "kaikkina aikoina"
+
+msgctxt "score.top_header"
+msgid "Rank     Games     Player"
+msgstr "Sijoitus     Pelit     Pelaaja"
+
+msgctxt "about.title"
+msgid "SpellBot"
+msgstr "SpellBot"
+
+msgctxt "about.version"
+msgid "Version"
+msgstr "Versio"
+
+msgctxt "about.author"
+msgid "Author"
+msgstr "Tekijä"
+
+#, python-format
+msgctxt "about.description"
+msgid ""
+"_The Discord bot for Webcam Magic._\n"
+"\n"
+"Having issues with SpellBot? Please [report bugs](%(issues)s)!\n"
+"\n"
+"[🔗 Add SpellBot to your Discord!](%(invite)s)\n"
+"\n"
+"SpellBot's continued operation is made possible by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+"\n"
+"💜 Help keep SpellBot running by [becoming a patron!](%(patreon)s)"
+msgstr ""
+"_Discord-botti kohteessa Webcam Magic._\n"
+"\n"
+"Ongelmia SpellBotin kanssa? [Ilmoitathan virheistä](%(issues)s)!\n"
+"\n"
+"[🔗 Lisää SpellBot Discordiisi!](%(invite)s)\n"
+"\n"
+"SpellBotin jatkuvan toiminnan mahdollistavat [PlayEDH](https://www.playedh.com/) ja Patreon-tukijat.\n"
+"\n"
+"💜 Auta pitämään SpellBot toiminnassa [ryhtymällä tukijaksi!](%(patreon)s)"
+
+msgctxt "errors.no_permission"
+msgid "You do not have permission to do that."
+msgstr "Sinulla ei ole lupaa tehdä sitä."
+
+msgctxt "errors.guild_only"
+msgid "This command only works in a guild."
+msgstr "Tämä komento toimii vain kiltalla."
+
+msgctxt "errors.no_dms"
+msgid "This command is not supported in DMs."
+msgstr "Tätä komentoa ei tueta DM:ssä."
+
+msgctxt "errors.banned"
+msgid "You have been banned from using SpellBot."
+msgstr "Sinulle on annettu porttikielto käyttää SpellBotia."
+
+#, python-format
+msgctxt "errors.cooldown"
+msgid "Please try again in %(seconds)ss."
+msgstr "Yritä uudelleen %(seconds)ss kuluttua."
+
+msgctxt "playgroup.already_linked"
+msgid "Your Discord account is already linked to Playgroup Live!"
+msgstr "Discord-tilisi on jo yhdistetty Playgroup Liveen!"
+
+#, python-format
+msgctxt "playgroup.linked"
+msgid "Linked! Welcome, **%(username)s**. Your Playgroup Live games will now be attributed to your account."
+msgstr "Linkitetty! Tervetuloa, **%(username)s**. Playgroup Live -pelit kuuluvat nyt tilillesi."
+
+msgctxt "playgroup.not_found"
+msgid "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+msgstr "Discordillesi ei löytynyt Playgroup -tiliä. Mene <https://playgroup.gg/profiles> ja napsauta **Link Discordia**, suorita `/playgroup link` uudelleen vahvistaaksesi."
+
+msgctxt "web.nav.active_queues"
+msgid "Active Queues"
+msgstr "Aktiiviset jonot"
+
+msgctxt "web.nav.my_records"
+msgid "My Records"
+msgstr "Omat tietueet"
+
+msgctxt "web.nav.admin_dashboard"
+msgid "Admin Dashboard"
+msgstr "Hallintapaneeli"
+
+msgctxt "web.nav.server_details"
+msgid "Server Details"
+msgstr "Palvelimen tiedot"
+
+msgctxt "web.nav.notification_preferences"
+msgid "Notification preferences"
+msgstr "Ilmoitusasetukset"
+
+#, python-format
+msgctxt "web.nav.back_to"
+msgid "← Back to %(name)s"
+msgstr "← Takaisin kohteeseen %(name)s"
+
+msgctxt "web.nav.log_in"
+msgid "Log in"
+msgstr "Kirjaudu sisään"
+
+msgctxt "web.nav.log_out"
+msgid "Log out"
+msgstr "Kirjaudu ulos"
+
+#, python-format
+msgctxt "web.nav.logged_in_as"
+msgid "Logged in as %(name)s"
+msgstr "Kirjautunut sisään käyttäjänä %(name)s"
+
+msgctxt "web.nav.site_nav_aria"
+msgid "Site navigation"
+msgstr "Sivuston navigointi"
+
+msgctxt "web.nav.server_nav_aria"
+msgid "Server navigation"
+msgstr "Palvelimen navigointi"
+
+#, python-format
+msgctxt "web.common.powered_by"
+msgid "Powered by %(link)s."
+msgstr "Palvelun tarjoaa %(link)s."
+
+#, python-format
+msgctxt "web.common.generated_by"
+msgid "Generated by %(link)s"
+msgstr "Luonut %(link)s"
+
+msgctxt "web.common.spellbot_server"
+msgid "SpellBot Server"
+msgstr "SpellBot-palvelin"
+
+msgctxt "web.common.server"
+msgid "server"
+msgstr "palvelin"
+
+msgctxt "web.common.this_server"
+msgid "this server"
+msgstr "tällä palvelimella"
+
+msgctxt "web.common.unknown_user"
+msgid "Unknown User"
+msgstr "Tuntematon käyttäjä"
+
+msgctxt "web.common.unknown_channel"
+msgid "Unknown Channel"
+msgstr "Tuntematon kanava"
+
+msgctxt "web.common.unknown_guild"
+msgid "Unknown Guild"
+msgstr "Tuntematon palvelin"
+
+msgctxt "web.common.login_with_discord"
+msgid "Log in with Discord"
+msgstr "Kirjaudu Discordilla"
+
+msgctxt "web.common.export_csv"
+msgid "Export all (CSV)"
+msgstr "Vie kaikki (CSV)"
+
+msgctxt "web.common.prev_page"
+msgid "Previous page"
+msgstr "Edellinen sivu"
+
+msgctxt "web.common.next_page"
+msgid "Next page"
+msgstr "Seuraava sivu"
+
+msgctxt "web.common.copy_user_id"
+msgid "Copy User ID"
+msgstr "Kopioi käyttäjätunnus"
+
+msgctxt "web.common.copy_channel_id"
+msgid "Copy Channel ID"
+msgstr "Kopioi kanavan tunnus"
+
+msgctxt "web.common.copy_server_id"
+msgid "Copy server ID"
+msgstr "Kopioi palvelimen tunnus"
+
+#, python-format
+msgctxt "web.common.open_in"
+msgid "Open in %(service)s"
+msgstr "Avaa palvelussa %(service)s"
+
+msgctxt "web.common.jump_to_game"
+msgid "Jump to game"
+msgstr "Siirry peliin"
+
+msgctxt "web.common.jump_to_channel"
+msgid "Jump to channel"
+msgstr "Siirry kanavalle"
+
+msgctxt "web.common.jump_to_guild"
+msgid "Jump to guild"
+msgstr "Siirry palvelimelle"
+
+msgctxt "web.common.jump_to_voice_invite"
+msgid "Jump to voice invite"
+msgstr "Siirry äänikutsuun"
+
+msgctxt "web.common.view_change_history"
+msgid "View change history"
+msgstr "Näytä muutoshistoria"
+
+msgctxt "web.common.seats_suffix"
+msgid "seats"
+msgstr "paikkaa"
+
+msgctxt "web.common.yes_label"
+msgid "Yes"
+msgstr "Kyllä"
+
+msgctxt "web.common.no_label"
+msgid "No"
+msgstr "Ei"
+
+msgctxt "web.field.status"
+msgid "Status"
+msgstr "Tila"
+
+msgctxt "web.field.format"
+msgid "Format"
+msgstr "Formaatti"
+
+msgctxt "web.field.bracket"
+msgid "Bracket"
+msgstr "Taso"
+
+msgctxt "web.field.service"
+msgid "Service"
+msgstr "Palvelu"
+
+msgctxt "web.field.seats"
+msgid "Seats"
+msgstr "Paikat"
+
+msgctxt "web.field.locale"
+msgid "Locale"
+msgstr "Maa-asetus"
+
+msgctxt "web.field.players"
+msgid "Players"
+msgstr "Pelaajat"
+
+msgctxt "web.field.link"
+msgid "Link"
+msgstr "Linkki"
+
+msgctxt "web.field.game"
+msgid "Game"
+msgstr "Peli"
+
+msgctxt "web.field.time"
+msgid "Time"
+msgstr "Aika"
+
+msgctxt "web.field.guild"
+msgid "Guild"
+msgstr "Palvelin"
+
+msgctxt "web.field.channel"
+msgid "Channel"
+msgstr "Kanava"
+
+msgctxt "web.field.channel_id"
+msgid "Channel ID"
+msgstr "Kanavan tunnus"
+
+msgctxt "web.field.user_name"
+msgid "User Name"
+msgstr "Käyttäjänimi"
+
+msgctxt "web.field.user_id"
+msgid "User ID"
+msgstr "Käyttäjätunnus"
+
+msgctxt "web.field.wait"
+msgid "Wait"
+msgstr "Odotus"
+
+msgctxt "web.field.language"
+msgid "Language"
+msgstr "Kieli"
+
+msgctxt "web.field.jump"
+msgid "Jump"
+msgstr "Siirry"
+
+msgctxt "web.field.created"
+msgid "Created"
+msgstr "Luotu"
+
+msgctxt "web.field.updated"
+msgid "Updated"
+msgstr "Päivitetty"
+
+msgctxt "web.field.started"
+msgid "Started"
+msgstr "Aloitettu"
+
+msgctxt "web.field.deleted"
+msgid "Deleted"
+msgstr "Poistettu"
+
+msgctxt "web.queues.title"
+msgid "Active Queues — SpellBot"
+msgstr "Aktiiviset jonot — SpellBot"
+
+msgctxt "web.queues.meta_description"
+msgid "Join an active Magic: The Gathering queue powered by SpellBot."
+msgstr "Liity aktiiviseen Magic: The Gathering -jonoon, jonka tarjoaa SpellBot."
+
+msgctxt "web.queues.heading"
+msgid "Active Queues"
+msgstr "Aktiiviset jonot"
+
+msgctxt "web.queues.active_games"
+msgid "Active Games"
+msgstr "Aktiiviset pelit"
+
+msgctxt "web.queues.active_games_tooltip"
+msgid "Pending queues plus games started in the last 2 hours"
+msgstr "Odottavat jonot sekä viimeisen 2 tunnin aikana alkaneet pelit"
+
+msgctxt "web.queues.filter_aria"
+msgid "Filter queues"
+msgstr "Suodata jonoja"
+
+msgctxt "web.queues.all_formats"
+msgid "All formats"
+msgstr "Kaikki formaatit"
+
+msgctxt "web.queues.all_brackets"
+msgid "All brackets"
+msgstr "Kaikki tasot"
+
+msgctxt "web.queues.all_languages"
+msgid "All languages"
+msgstr "Kaikki kielet"
+
+msgctxt "web.queues.only_played"
+msgid "Only servers you've played in"
+msgstr "Vain palvelimet, joilla olet pelannut"
+
+msgctxt "web.queues.no_match"
+msgid "No queues match the selected filters."
+msgstr "Mikään jono ei vastaa valittuja suodattimia."
+
+msgctxt "web.queues.your_servers"
+msgid "Your Servers"
+msgstr "Sinun palvelimesi"
+
+msgctxt "web.queues.setup_notifications"
+msgid "Setup notifications"
+msgstr "Määritä ilmoitukset"
+
+msgctxt "web.queues.manage_notifications"
+msgid "Manage notifications"
+msgstr "Hallitse ilmoituksia"
+
+#, python-format
+msgctxt "web.queues.setup_notifications_for"
+msgid "Setup notifications for %(name)s"
+msgstr "Määritä ilmoitukset kohteelle %(name)s"
+
+#, python-format
+msgctxt "web.queues.manage_notifications_for"
+msgid "Manage notifications for %(name)s"
+msgstr "Hallitse ilmoituksia kohteelle %(name)s"
+
+msgctxt "web.queues.notifications_on_short"
+msgid "On"
+msgstr "Päällä"
+
+msgctxt "web.queues.notifications_label"
+msgid "Notifications"
+msgstr "Ilmoitukset"
+
+msgctxt "web.queues.empty_mine"
+msgid "No active queues right now in servers you've played in. Uncheck the filter to see all servers."
+msgstr "Juuri nyt ei ole aktiivisia jonoja palvelimilla, joilla olet pelannut. Poista suodatin nähdäksesi kaikki palvelimet."
+
+#, python-format
+msgctxt "web.queues.empty_all"
+msgid "No active queues right now. Check back in a moment, or run %(command)s in your Discord server to start one."
+msgstr "Juuri nyt ei ole aktiivisia jonoja. Palaa hetken kuluttua tai suorita %(command)s Discord-palvelimellasi aloittaaksesi sellaisen."
+
+msgctxt "web.queues.recently_started"
+msgid "Recently Started"
+msgstr "Äskettäin alkaneet"
+
+msgctxt "web.queues.jump_to_game_arrow"
+msgid "Jump to Game →"
+msgstr "Siirry peliin →"
+
+msgctxt "web.queues.jump_to_channel_arrow"
+msgid "Jump to Channel →"
+msgstr "Siirry kanavalle →"
+
+#, python-format
+msgctxt "web.queues.started_ago"
+msgid "%(duration)s ago"
+msgstr "%(duration)s sitten"
+
+msgctxt "web.queues.auto_refresh"
+msgid "Auto-refreshing every 60 seconds."
+msgstr "Päivittyy automaattisesti 60 sekunnin välein."
+
+#, python-format
+msgctxt "web.records.channel_title"
+msgid "Channel Records — #%(name)s"
+msgstr "Kanavan tietueet — #%(name)s"
+
+#, python-format
+msgctxt "web.records.channel_heading"
+msgid "Channel Records: #%(name)s"
+msgstr "Kanavan tietueet: #%(name)s"
+
+#, python-format
+msgctxt "web.records.user_title"
+msgid "User Records — %(name)s"
+msgstr "Käyttäjän tietueet — %(name)s"
+
+#, python-format
+msgctxt "web.records.user_heading"
+msgid "User Records: %(name)s"
+msgstr "Käyttäjän tietueet: %(name)s"
+
+msgctxt "web.records.games"
+msgid "Games"
+msgstr "Pelit"
+
+#, python-format
+msgctxt "web.records.matching"
+msgid "%(count)s matching"
+msgstr "%(count)s osumaa"
+
+msgctxt "web.records.none_channel"
+msgid "No games found for this channel."
+msgstr "Tälle kanavalle ei löytynyt pelejä."
+
+msgctxt "web.records.none_user"
+msgid "No games found for this user."
+msgstr "Tälle käyttäjälle ei löytynyt pelejä."
+
+msgctxt "web.records.mod_manage_channel"
+msgid "Moderators can manage this channel's settings here."
+msgstr "Moderaattorit voivat hallita tämän kanavan asetuksia täällä."
+
+msgctxt "web.records.mod_manage_server"
+msgid "Moderators can manage this server's settings here."
+msgstr "Moderaattorit voivat hallita tämän palvelimen asetuksia täällä."
+
+msgctxt "web.records.login_block_list"
+msgid "Log in to view and manage your own block list."
+msgstr "Kirjaudu sisään nähdäksesi ja hallitaksesi omaa estolistaasi."
+
+msgctxt "web.blocks.title"
+msgid "Blocked Users"
+msgstr "Estetyt käyttäjät"
+
+msgctxt "web.blocks.description"
+msgid "Players you block can't join your games, and you can't join theirs. This list is private to you."
+msgstr "Pelaajat, jotka estät, eivät voi liittyä peleihisi, etkä sinä voi liittyä heidän peleihinsä. Tämä lista on yksityinen."
+
+msgctxt "web.blocks.user"
+msgid "User"
+msgstr "Käyttäjä"
+
+msgctxt "web.blocks.unblock"
+msgid "Unblock"
+msgstr "Poista esto"
+
+msgctxt "web.blocks.none"
+msgid "You haven't blocked anyone."
+msgstr "Et ole estänyt ketään."
+
+msgctxt "web.blocks.add_label"
+msgid "Block a user"
+msgstr "Estä käyttäjä"
+
+msgctxt "web.blocks.add_hint"
+msgid "Enter the Discord user ID (or name) of the player you want to block."
+msgstr "Anna sen pelaajan Discord-käyttäjätunnus (tai nimi), jonka haluat estää."
+
+msgctxt "web.blocks.add_placeholder"
+msgid "Discord user ID or name"
+msgstr "Discord-käyttäjätunnus tai nimi"
+
+msgctxt "web.blocks.add_button"
+msgid "Block user"
+msgstr "Estä käyttäjä"
+
+msgctxt "web.filters.player_label"
+msgid "Player (name or ID)"
+msgstr "Pelaaja (nimi tai tunnus)"
+
+msgctxt "web.filters.player_placeholder"
+msgid "e.g. amy or 12345"
+msgstr "esim. amy tai 12345"
+
+msgctxt "web.filters.guild_label"
+msgid "Guild (name or ID)"
+msgstr "Palvelin (nimi tai tunnus)"
+
+msgctxt "web.filters.guild_placeholder"
+msgid "e.g. my-guild or 67890"
+msgstr "esim. oma-palvelin tai 67890"
+
+msgctxt "web.filters.from"
+msgid "From"
+msgstr "Alkaen"
+
+msgctxt "web.filters.to"
+msgid "To"
+msgstr "Asti"
+
+msgctxt "web.filters.formats"
+msgid "Format(s)"
+msgstr "Formaatti(t)"
+
+msgctxt "web.filters.brackets"
+msgid "Bracket(s)"
+msgstr "Taso(t)"
+
+msgctxt "web.filters.apply"
+msgid "Apply filters"
+msgstr "Käytä suodattimia"
+
+msgctxt "web.filters.reset"
+msgid "Reset"
+msgstr "Nollaa"
+
+msgctxt "web.channel_settings.heading"
+msgid "Channel Settings"
+msgstr "Kanavan asetukset"
+
+msgctxt "web.channel_settings.default_seats"
+msgid "Default seats"
+msgstr "Oletuspaikat"
+
+msgctxt "web.channel_settings.default_format"
+msgid "Default format"
+msgstr "Oletusformaatti"
+
+msgctxt "web.channel_settings.default_bracket"
+msgid "Default bracket"
+msgstr "Oletustaso"
+
+msgctxt "web.channel_settings.default_service"
+msgid "Default service"
+msgstr "Oletuspalvelu"
+
+msgctxt "web.channel_settings.motd"
+msgid "Message of the day"
+msgstr "Päivän viesti"
+
+msgctxt "web.channel_settings.extra"
+msgid "Extra message"
+msgstr "Lisäviesti"
+
+msgctxt "web.channel_settings.voice_category"
+msgid "Voice category"
+msgstr "Äänikategoria"
+
+msgctxt "web.channel_settings.voice_invite"
+msgid "Create voice invites"
+msgstr "Luo äänikutsuja"
+
+msgctxt "web.channel_settings.delete_expired"
+msgid "Delete expired games"
+msgstr "Poista vanhentuneet pelit"
+
+msgctxt "web.channel_settings.blind_games"
+msgid "Blind games"
+msgstr "Sokkopelit"
+
+msgctxt "web.channel_settings.to_mode"
+msgid "Tournament organizer mode"
+msgstr "Turnausjärjestäjätila"
+
+msgctxt "web.channel_settings.competitive_mode"
+msgid "Competitive mode"
+msgstr "Kilpailutila"
+
+msgctxt "web.channel_settings.save"
+msgid "Save channel settings"
+msgstr "Tallenna kanavan asetukset"
+
+msgctxt "web.channel_settings.forget_hint"
+msgid "Forgetting this channel resets it to default settings by removing its configuration. SpellBot will reconfigure it from defaults the next time it is used."
+msgstr "Tämän kanavan unohtaminen palauttaa sen oletusasetuksiin poistamalla sen määritykset. SpellBot määrittää sen uudelleen oletusarvoista, kun sitä seuraavan kerran käytetään."
+
+msgctxt "web.channel_settings.forget_confirm"
+msgid "Forget this channel and reset it to default settings?"
+msgstr "Unohdetaanko tämä kanava ja palautetaanko se oletusasetuksiin?"
+
+msgctxt "web.channel_settings.forget"
+msgid "Forget this channel"
+msgstr "Unohda tämä kanava"
+
+#, python-format
+msgctxt "web.guild.channels_with_games"
+msgid "%(count)s channel with games"
+msgid_plural "%(count)s channels with games"
+msgstr[0] "%(count)s kanava, jolla on pelejä"
+msgstr[1] "%(count)s kanavaa, joilla on pelejä"
+
+msgctxt "web.guild.owner_controls"
+msgid "Owner Controls"
+msgstr "Omistajan hallinta"
+
+msgctxt "web.guild.view_analytics"
+msgid "Analytics"
+msgstr "Analytiikka"
+
+msgctxt "web.guild.promotion_enabled"
+msgid "enabled"
+msgstr "käytössä"
+
+msgctxt "web.guild.promotion_disabled"
+msgid "disabled"
+msgstr "pois käytöstä"
+
+#, python-format
+msgctxt "web.guild.promotion_status"
+msgid "Public promotion is currently %(state)s for this server."
+msgstr "Julkinen mainostus on tällä hetkellä %(state)s tällä palvelimella."
+
+msgctxt "web.guild.disable_promotion"
+msgid "Disable promotion"
+msgstr "Poista mainostus käytöstä"
+
+msgctxt "web.guild.enable_promotion"
+msgid "Enable promotion"
+msgstr "Ota mainostus käyttöön"
+
+msgctxt "web.guild.settings_heading"
+msgid "Server Settings"
+msgstr "Palvelimen asetukset"
+
+msgctxt "web.guild.motd"
+msgid "Message of the day"
+msgstr "Päivän viesti"
+
+msgctxt "web.guild.suggest_voice_category"
+msgid "Suggested voice category"
+msgstr "Ehdotettu äänikategoria"
+
+msgctxt "web.guild.show_links"
+msgid "Show game links publicly"
+msgstr "Näytä pelilinkit julkisesti"
+
+msgctxt "web.guild.voice_create"
+msgid "Auto-create voice channels"
+msgstr "Luo äänikanavat automaattisesti"
+
+msgctxt "web.guild.use_max_bitrate"
+msgid "Use maximum bitrate"
+msgstr "Käytä suurinta bittinopeutta"
+
+msgctxt "web.guild.enable_mythic_track"
+msgid "Enable mythic track"
+msgstr "Ota mythic track käyttöön"
+
+msgctxt "web.guild.show_convoke_guild"
+msgid "Show linked Convoke guild"
+msgstr "Näytä linkitetty Convoke-kilta"
+
+msgctxt "web.guild.save"
+msgid "Save server settings"
+msgstr "Tallenna palvelimen asetukset"
+
+msgctxt "web.guild.player_awards"
+msgid "Player Awards"
+msgstr "Pelaajapalkinnot"
+
+msgctxt "web.guild.manage_awards"
+msgid "Manage player awards"
+msgstr "Hallitse pelaajapalkintoja"
+
+msgctxt "web.guild.no_awards"
+msgid "No player awards are configured yet."
+msgstr "Pelaajapalkintoja ei ole vielä määritetty."
+
+#, python-format
+msgctxt "web.guild.award_summary"
+msgid "%(count)s game · @%(role)s"
+msgid_plural "%(count)s games · @%(role)s"
+msgstr[0] "%(count)s peli · @%(role)s"
+msgstr[1] "%(count)s peliä · @%(role)s"
+
+msgctxt "web.guild.channels"
+msgid "Channels"
+msgstr "Kanavat"
+
+msgctxt "web.guild.games"
+msgid "Games"
+msgstr "Pelit"
+
+msgctxt "web.guild.last_activity"
+msgid "Last Activity"
+msgstr "Viimeisin toiminta"
+
+msgctxt "web.guild.no_channels"
+msgid "No channels with games yet."
+msgstr "Ei vielä kanavia, joilla on pelejä."
+
+msgctxt "web.awards.title"
+msgid "Player Awards"
+msgstr "Pelaajapalkinnot"
+
+#, python-format
+msgctxt "web.awards.configured"
+msgid "%(count)s award configured"
+msgid_plural "%(count)s awards configured"
+msgstr[0] "%(count)s palkinto määritetty"
+msgstr[1] "%(count)s palkintoa määritetty"
+
+msgctxt "web.awards.games_required"
+msgid "Games required"
+msgstr "Vaaditut pelit"
+
+msgctxt "web.awards.role"
+msgid "Role"
+msgstr "Rooli"
+
+msgctxt "web.awards.message"
+msgid "Message"
+msgstr "Viesti"
+
+msgctxt "web.awards.repeating"
+msgid "Repeating"
+msgstr "Toistuva"
+
+msgctxt "web.awards.remove"
+msgid "Remove role instead of giving"
+msgstr "Poista rooli antamisen sijaan"
+
+msgctxt "web.awards.save"
+msgid "Save award"
+msgstr "Tallenna palkinto"
+
+msgctxt "web.awards.delete"
+msgid "Delete award"
+msgstr "Poista palkinto"
+
+msgctxt "web.awards.delete_confirm"
+msgid "Delete this award?"
+msgstr "Poistetaanko tämä palkinto?"
+
+msgctxt "web.awards.none"
+msgid "No awards configured yet. Add one below."
+msgstr "Palkintoja ei ole vielä määritetty. Lisää yksi alta."
+
+msgctxt "web.awards.add_heading"
+msgid "Add an award"
+msgstr "Lisää palkinto"
+
+msgctxt "web.awards.add_button"
+msgid "Add award"
+msgstr "Lisää palkinto"
+
+msgctxt "web.game.details"
+msgid "Details"
+msgstr "Tiedot"
+
+msgctxt "web.game.blind"
+msgid "Blind"
+msgstr "Sokko"
+
+msgctxt "web.game.rules"
+msgid "Rules"
+msgstr "Säännöt"
+
+msgctxt "web.game.guild_war"
+msgid "Guild War"
+msgstr "Kiltasota"
+
+msgctxt "web.game.game_link"
+msgid "Game link"
+msgstr "Pelilinkki"
+
+msgctxt "web.game.voice_channel"
+msgid "Voice channel"
+msgstr "Äänikanava"
+
+msgctxt "web.game.discord_posts"
+msgid "Discord posts"
+msgstr "Discord-julkaisut"
+
+msgctxt "web.game.message"
+msgid "Message"
+msgstr "Viesti"
+
+msgctxt "web.game.players"
+msgid "Players"
+msgstr "Pelaajat"
+
+msgctxt "web.game.queued"
+msgid "Queued"
+msgstr "Jonossa"
+
+msgctxt "web.game.entered_guild"
+msgid "Entered Guild"
+msgstr "Liittymispalvelin"
+
+msgctxt "web.game.records"
+msgid "Records"
+msgstr "Tietueet"
+
+msgctxt "web.game.user_records"
+msgid "User records"
+msgstr "Käyttäjän tietueet"
+
+msgctxt "web.game.report.title"
+msgid "Post-Game Report"
+msgstr "Pelin jälkiraportti"
+
+msgctxt "web.game.report.source"
+msgid "Reported by"
+msgstr "Raportoinut"
+
+msgctxt "web.game.report.duration"
+msgid "Match time"
+msgstr "Ottelun kesto"
+
+msgctxt "web.game.report.minutes_suffix"
+msgid "min"
+msgstr "min"
+
+msgctxt "web.game.report.turns"
+msgid "Turns"
+msgstr "Vuorot"
+
+msgctxt "web.game.report.ended"
+msgid "Ended at"
+msgstr "Päättyi"
+
+msgctxt "web.game.report.winner"
+msgid "Winner"
+msgstr "Voittaja"
+
+msgctxt "web.game.report.reported"
+msgid "Reported at"
+msgstr "Raportoitu"
+
+msgctxt "web.game.report.commander"
+msgid "Commander"
+msgstr "Commander"
+
+msgctxt "web.game.report.turn_order"
+msgid "Turn order"
+msgstr "Vuorojärjestys"
+
+msgctxt "web.game.report.play_time"
+msgid "Play time"
+msgstr "Peliaika"
+
+msgctxt "web.game.report.result"
+msgid "Result"
+msgstr "Tulos"
+
+#, python-format
+msgctxt "web.notify.title"
+msgid "Notification Preferences — %(name)s"
+msgstr "Ilmoitusasetukset — %(name)s"
+
+msgctxt "web.notify.meta_description"
+msgid "Choose which SpellBot game posts you want to be notified about."
+msgstr "Valitse, mistä SpellBot-pelijulkaisuista haluat saada ilmoituksia."
+
+msgctxt "web.notify.heading"
+msgid "Notification Preferences"
+msgstr "Ilmoitusasetukset"
+
+msgctxt "web.notify.guild_sub"
+msgid "Choose what kinds of new games you want to be pinged about in this server."
+msgstr "Valitse, minkä tyyppisistä uusista peleistä haluat saada ilmoituksen tällä palvelimella."
+
+msgctxt "web.notify.off_label"
+msgid "Do not notify me about games on this server"
+msgstr "Älä ilmoita minulle peleistä tällä palvelimella"
+
+msgctxt "web.notify.formats"
+msgid "Formats"
+msgstr "Formaatit"
+
+msgctxt "web.notify.formats_hint"
+msgid "Select the formats you want to be notified about. Leave empty to receive all formats."
+msgstr "Valitse formaatit, joista haluat saada ilmoituksia. Jätä tyhjäksi saadaksesi kaikki formaatit."
+
+msgctxt "web.notify.brackets"
+msgid "Brackets"
+msgstr "Tasot"
+
+msgctxt "web.notify.brackets_hint"
+msgid "Select the brackets you want to be notified about. Leave empty to receive all brackets."
+msgstr "Valitse tasot, joista haluat saada ilmoituksia. Jätä tyhjäksi saadaksesi kaikki tasot."
+
+msgctxt "web.notify.channels"
+msgid "Channels"
+msgstr "Kanavat"
+
+msgctxt "web.notify.channels_hint"
+msgid "Select the channels you want to be notified about. Leave empty to receive all channels."
+msgstr "Valitse kanavat, joista haluat saada ilmoituksia. Jätä tyhjäksi saadaksesi kaikki kanavat."
+
+msgctxt "web.notify.active_hours"
+msgid "Active Hours"
+msgstr "Aktiiviset tunnit"
+
+#, python-format
+msgctxt "web.notify.active_hours_hint"
+msgid "Only notify me during a specific window of the day, in my local time. Maximum window is %(hours)s hours. Defaults to 5pm–10pm if you don't pick a range."
+msgstr "Ilmoita minulle vain tiettynä vuorokaudenaikana paikallista aikaani käyttäen. Suurin ikkuna on %(hours)s tuntia. Oletuksena klo 17–22, jos et valitse väliä."
+
+msgctxt "web.notify.limit_window"
+msgid "Limit notifications to a daily window"
+msgstr "Rajoita ilmoitukset päivittäiseen aikaikkunaan"
+
+msgctxt "web.notify.save"
+msgid "Save preferences"
+msgstr "Tallenna asetukset"
+
+msgctxt "web.notify.js_saved"
+msgid "Your notification preferences have been saved."
+msgstr "Ilmoitusasetuksesi on tallennettu."
+
+msgctxt "web.notify.js_off"
+msgid "Notifications turned off for this server."
+msgstr "Ilmoitukset poistettu käytöstä tällä palvelimella."
+
+msgctxt "web.notify.js_error"
+msgid "Could not save your preferences. Please try again."
+msgstr "Asetuksiasi ei voitu tallentaa. Yritä uudelleen."
+
+msgctxt "web.notify.js_pick_different"
+msgid "Pick different start and end hours"
+msgstr "Valitse eri alkamis- ja päättymistunnit"
+
+msgctxt "web.notify.js_must_differ"
+msgid "Start and end must differ."
+msgstr "Alun ja lopun on oltava erilaiset."
+
+#, python-format
+msgctxt "web.notify.js_range_max"
+msgid "Range must be %(max)s hours or less."
+msgstr "Välin on oltava enintään %(max)s tuntia."
+
+#, python-format
+msgctxt "web.notify.js_times_in"
+msgid "Times shown in %(tz)s"
+msgstr "Ajat näytetään: %(tz)s"
+
+msgctxt "web.notify.js_times_local"
+msgid "Times shown in your local timezone"
+msgstr "Ajat näytetään paikallisella aikavyöhykkeelläsi"
+
+msgctxt "web.notify.unit_hour"
+msgid "hour"
+msgstr "tunti"
+
+msgctxt "web.notify.unit_hours"
+msgid "hours"
+msgstr "tuntia"
+
+msgctxt "web.motd.available"
+msgid "Available placeholders"
+msgstr "Käytettävissä olevat paikkamerkit"
+
+msgctxt "web.motd.intro"
+msgid "These tokens are replaced with each game's details when the message of the day is shown in a game post:"
+msgstr "Nämä tunnisteet korvataan kunkin pelin tiedoilla, kun päivän viesti näytetään pelijulkaisussa:"
+
+msgctxt "web.motd.game_id"
+msgid "the game's SpellBot ID"
+msgstr "pelin SpellBot-tunnus"
+
+msgctxt "web.motd.game_format"
+msgid "the game's format (e.g. Commander)"
+msgstr "pelin formaatti (esim. Commander)"
+
+msgctxt "web.motd.game_bracket"
+msgid "the game's commander bracket"
+msgstr "pelin Commander-taso"
+
+msgctxt "web.motd.game_start"
+msgid "when the game starts (a Discord timestamp), or “pending”"
+msgstr "milloin peli alkaa (Discord-aikaleima) tai ”odottaa”"
+
+msgctxt "web.motd.player_names"
+msgid "the players' names, in join order"
+msgstr "pelaajien nimet liittymisjärjestyksessä"
+

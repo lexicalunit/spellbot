@@ -1,0 +1,1588 @@
+# Danish translations for SpellBot.
+# Copyright (C) 2026 spellbot@lexicalunit.com
+# This file is distributed under the same license as the SpellBot project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  SpellBot\n"
+"Report-Msgid-Bugs-To: spellbot@lexicalunit.com\n"
+"POT-Creation-Date: 2026-11-03 17:50-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: da\n"
+"Language-Team: da <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgctxt "game.title.ready"
+msgid "**Your game is ready!**"
+msgstr "**Din kamp er klar!**"
+
+msgctxt "game.title.rematch"
+msgid "**Rematch Game!**"
+msgstr "**Omkamp!**"
+
+#, python-format
+msgctxt "game.title.waiting"
+msgid "**Waiting for %(count)s more player to join...**"
+msgid_plural "**Waiting for %(count)s more players to join...**"
+msgstr[0] "**Venter på at %(count)s spiller mere deltager ...**"
+msgstr[1] "**Venter på at %(count)s spillere mere deltager ...**"
+
+msgctxt "game.description.check_dm"
+msgid "Please check your Direct Messages for your game details."
+msgstr "Tjek dine direkte beskeder for detaljer om din kamp."
+
+msgctxt "game.description.rematch_info"
+msgid "This is a rematch of a previous game. Please continue using the same game lobby and voice channel."
+msgstr "Dette er en omkamp af en tidligere kamp. Fortsæt med at bruge den samme spillobby og stemmekanal."
+
+#, python-format
+msgctxt "game.description.join_link"
+msgid "# [Join your %(service)s game now!](%(link)s)"
+msgstr "# [Deltag i din %(service)s-kamp nu!](%(link)s)"
+
+#, python-format
+msgctxt "game.description.link_error"
+msgid "Sorry but SpellBot was unable to create a link for this game. Please go to [%(service)s](%(url)s) to create one."
+msgstr "SpellBot kunne desværre ikke oprette et link til denne kamp. Gå til [%(service)s](%(url)s) for at oprette et."
+
+#, python-format
+msgctxt "game.description.use_service"
+msgid "Please use %(service)s to play this game."
+msgstr "Brug %(service)s til at spille denne kamp."
+
+msgctxt "game.description.contact_players"
+msgid "Contact the other players in your game to organize this match."
+msgstr "Kontakt de andre spillere i din kamp for at organisere denne kamp."
+
+#, python-format
+msgctxt "game.description.password"
+msgid "Password: `%(password)s`"
+msgstr "Adgangskode: `%(password)s`"
+
+#, python-format
+msgctxt "game.description.voice_chat"
+msgid "## Join your voice chat now: <#%(channel_id)s>"
+msgstr "## Deltag i din stemmechat nu: <#%(channel_id)s>"
+
+#, python-format
+msgctxt "game.description.voice_invite"
+msgid "Or use this voice channel invite: %(invite)s"
+msgstr "Eller brug denne invitation til stemmekanal: %(invite)s"
+
+#, python-format
+msgctxt "game.description.voice_already_picked"
+msgid "## Your pod is already using a voice channel, join them now: <#%(channel_id)s>!"
+msgstr "## Din pod bruger allerede en stemmekanal, slut dig til dem nu: <#%(channel_id)s>!"
+
+#, python-format
+msgctxt "game.description.voice_available"
+msgid "## Please consider using this available voice channel: <#%(channel_id)s>."
+msgstr "## Brug denne tilgængelige stemmekanal: <#%(channel_id)s>."
+
+#, python-format
+msgctxt "game.description.jump_to_post"
+msgid "You can also [jump to the original game post](%(link)s) in <#%(channel_id)s>."
+msgstr "Du kan også [hoppe til det oprindelige kampopslag](%(link)s) i <#%(channel_id)s>."
+
+msgctxt "game.war_convoke_only"
+msgid "This Guild War table no longer takes players through SpellBot, but you can still join it on Convoke."
+msgstr "Dette gildekrigsbord tager ikke længere imod spillere via SpellBot, men du kan stadig deltage på Convoke."
+
+msgctxt "game.field.rules"
+msgid "⚠️ Additional Rules:"
+msgstr "⚠️ Yderligere regler:"
+
+msgctxt "game.field.guild_war"
+msgid "⚔️ Guild War"
+msgstr "⚔️ Gildekrig"
+
+msgctxt "game.field.players"
+msgid "Players"
+msgstr "Spillere"
+
+#, python-format
+msgctxt "game.field.players_hidden"
+msgid "**%(count)s player name is hidden**"
+msgid_plural "**%(count)s player names are hidden**"
+msgstr[0] "**%(count)s spillernavn er skjult**"
+msgstr[1] "**%(count)s spillernavne er skjulte**"
+
+msgctxt "game.field.format"
+msgid "Format"
+msgstr "Format"
+
+msgctxt "game.field.bracket"
+msgid "Bracket"
+msgstr "Niveau"
+
+msgctxt "game.field.started_at"
+msgid "Started at"
+msgstr "Startede kl."
+
+msgctxt "game.field.updated_at"
+msgid "Updated at"
+msgstr "Opdateret kl."
+
+msgctxt "game.field.voice_channel"
+msgid "🔊 Suggested Voice Channel"
+msgstr "🔊 Foreslået stemmekanal"
+
+msgctxt "game.field.support"
+msgid "Support SpellBot"
+msgstr "Støt SpellBot"
+
+#, python-format
+msgctxt "game.field.support_text"
+msgid "Become [a patron](%(subscribe)s) or give a [one-off tip](%(donate)s)."
+msgstr "Bliv [patron](%(subscribe)s) eller giv et [engangstip](%(donate)s)."
+
+#, python-format
+msgctxt "game.field.convoke_guild"
+msgid "Play more with **%(name)s** on Convoke. [Join the guild!](%(url)s)"
+msgstr "Spil mere med **%(name)s** på Convoke. [Bliv medlem af guilden!](%(url)s)"
+
+msgctxt "game.field.settings"
+msgid "Settings"
+msgstr "Indstillinger"
+
+#, python-format
+msgctxt "game.field.settings_text"
+msgid "See [live games](%(queues)s) and configure [your notifications](%(notify)s)."
+msgstr "Se [live spil](%(queues)s) og konfigurer [dine notifikationer](%(notify)s)."
+
+#, python-format
+msgctxt "game.footer"
+msgid "SpellBot Game ID: #SB%(game_id)s — Service: %(service)s"
+msgstr "SpellBot-spil-ID: #SB%(game_id)s — Service: %(service)s"
+
+msgctxt "service.not_any"
+msgid "_Please contact the players in your game to organize this game._"
+msgstr "_Kontakt spillerne i din kamp spil for at organisere denne kamp._"
+
+#, python-format
+msgctxt "service.spelltable"
+msgid "_Please go create a game on %(emoji)s[SpellTable](https://spelltable.wizards.com/) for this game._"
+msgstr "_Opret et spil på %(emoji)s[SpellTable](https://spelltable.wizards.com/) til dette spil._"
+
+msgctxt "service.cockatrice"
+msgid "_Please use Cockatrice for this game._"
+msgstr "_Brug Cockatrice til denne kamp._"
+
+msgctxt "service.xmage"
+msgid "_Please use XMage for this game._"
+msgstr "_Brug XMage til denne kamp._"
+
+msgctxt "service.mtg_arena"
+msgid "_Please use MTG Arena for this game._"
+msgstr "_Brug MTG Arena til denne kamp._"
+
+msgctxt "service.mtg_online"
+msgid "_Please use MTG Online for this game._"
+msgstr "_Brug MTG Online til denne kamp._"
+
+msgctxt "service.tts"
+msgid "_Please use TabletopSim for this game._"
+msgstr "_Brug TabletopSim til denne kamp._"
+
+#, python-format
+msgctxt "service.convoke"
+msgid "_A %(emoji)s[Convoke](https://www.convoke.games/) link will be created when all players have joined._"
+msgstr "_Et %(emoji)s[Convoke](https://www.convoke.games/) link vil blive oprettet, når alle spillere er tilsluttet._"
+
+#, python-format
+msgctxt "service.girudo"
+msgid "_A %(emoji)s[Girudo](https://www.girudo.com/) link will be created when all players have joined._"
+msgstr "_Et %(emoji)s[Girudo](https://www.girudo.com/) link vil blive oprettet, når alle spillere er tilsluttet._"
+
+#, python-format
+msgctxt "service.edhlab"
+msgid "_A %(emoji)s[EDHLAB](https://edhlab.gg/) link will be created when all players have joined._"
+msgstr "_Et %(emoji)s[EDHLAB](https://edhlab.gg/) link vil blive oprettet, når alle spillere er tilsluttet._"
+
+#, python-format
+msgctxt "service.playgroup_live"
+msgid "*A %(emoji)s[Playgroup Live](https://playgroup.gg/) link will be created when all players have joined.*"
+msgstr "*Et %(emoji)s[Playgroup Live](https://playgroup.gg/) link vil blive oprettet, når alle spillere er tilsluttet.*"
+
+msgctxt "lfg.playgroup_link_required"
+msgid "To use Playgroup Live, at least one player must link their account. Run `/playgroup link` and try again."
+msgstr "For at bruge Playgroup Live skal mindst én spiller tilknytte sin konto. Kør `/playgroup link` og prøv igen."
+
+msgctxt "lfg.run_in_channel"
+msgid "Please run this command in the same channel as your last played game."
+msgstr "Kør denne kommando i samme kanal som din sidst spillede kamp."
+
+msgctxt "lfg.already_pending"
+msgid "You're already in a pending game, leave that one first."
+msgstr "Du er allerede i en igangværende kamp, så du skal forlade den først."
+
+msgctxt "lfg.no_previous_game"
+msgid "You have not played a game in this guild yet."
+msgstr "Du har ikke spillet en kamp i denne guild endnu."
+
+msgctxt "lfg.run_in_game_channel"
+msgid "Please run this command in the same channel as your game."
+msgstr "Kør denne kommando i samme kanal som din kamp."
+
+msgctxt "lfg.not_pending_here"
+msgid "You're not in a pending game in this channel."
+msgstr "Du er ikke i en afventende kamp i denne kanal."
+
+msgctxt "lfg.start_needs_players"
+msgid "You need at least one other player before you can start a game."
+msgstr "Du skal bruge mindst én anden spiller, før du kan starte en kamp."
+
+msgctxt "lfg.unsupported_context"
+msgid "Sorry, that command is not supported in this context."
+msgstr "Den kommando understøttes desværre ikke i denne sammenhæng."
+
+msgctxt "lfg.already_in_channel"
+msgid "You're already in a game in this channel."
+msgstr "Du er allerede i gang med en kamp i denne kanal."
+
+msgctxt "lfg.too_many_pending"
+msgid "You're in too many pending games to join another one at this time."
+msgstr "Du er med i for mange igangværende kampe, så du kan ikke deltage i en ny lige nu."
+
+msgctxt "lfg.too_many_friends"
+msgid "You mentioned too many players."
+msgstr "Du omtalte for mange spillere."
+
+msgctxt "lfg.guild_war_invalid"
+msgid "That Guild War is not available. Use autocomplete to pick a live war."
+msgstr "Den gildekrig er ikke tilgængelig. Brug autofuldførelse til at vælge en aktiv krig."
+
+#, python-format
+msgctxt "lfg.guild_war_seats"
+msgid "Guild War matches need between %(min)s and %(max)s seats."
+msgstr "Gildekrigskampe kræver mellem %(min)s og %(max)s pladser."
+
+msgctxt "lfg.cannot_join"
+msgid "You can not join this game."
+msgstr "Du kan ikke deltage i denne kamp."
+
+msgctxt "lfg.game_started"
+msgid "Sorry, that game has already started."
+msgstr "Kampen er desværre allerede begyndt."
+
+msgctxt "lfg.game_full"
+msgid "Sorry, that game is already full."
+msgstr "Kampen er desværre allerede fuld."
+
+#, python-format
+msgctxt "lfg.invalid_player_count"
+msgid "You can't create a %(format)s game with %(count)s players."
+msgstr "Du kan ikke oprette en %(format)s-kamp med %(count)s spillere."
+
+#, python-format
+msgctxt "lfg.excluded_players"
+msgid "Some of the players you mentioned can not be added to a game: %(players)s"
+msgstr "Nogle af de spillere, du omtalte, kan ikke føjes til en kamp: %(players)s"
+
+#, python-format
+msgctxt "lfg.found_game"
+msgid "I found a %(format)s game for you!"
+msgstr "Jeg har fundet en %(format)s-kamp til dig!"
+
+#, python-format
+msgctxt "lfg.jump_to_game"
+msgid "You can [jump to the game post](%(link)s) to see it!"
+msgstr "Du kan [hoppe til kampopslaget](%(link)s) for at se det!"
+
+#, python-format
+msgctxt "lfg.joined_game"
+msgid "You have joined the game SB%(game_id)s!"
+msgstr "Du har sluttet dig til kampen SB%(game_id)s!"
+
+#, python-format
+msgctxt "lfg.started_game"
+msgid "I started your %(format)s game for you!"
+msgstr "Jeg startede din %(format)s-kamp for dig!"
+
+#, python-format
+msgctxt "lfg.game_started_id"
+msgid "The game SB%(game_id)s has been started!"
+msgstr "Kampen SB%(game_id)s er startet!"
+
+#, python-format
+msgctxt "lfg.dm_failures"
+msgid "Unable to send Direct Messages to some players: %(players)s"
+msgstr "Kan ikke sende direkte beskeder til visse spillere: %(players)s"
+
+#, python-format
+msgctxt "lfg.award_failure_give"
+msgid "Unable to give role %(role)s to user <@%(user_id)s>"
+msgstr "Kunne ikke give rollen %(role)s til brugeren <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.award_failure_take"
+msgid "Unable to take role %(role)s from user <@%(user_id)s>"
+msgstr "Kan ikke påtage sig rollen %(role)s fra bruger <@%(user_id)s>"
+
+#, python-format
+msgctxt "lfg.mythic_track"
+msgid "Track your game on %(emoji)s[Mythic Track](%(link)s) with PIN code: `%(pin)s`"
+msgstr "Spor din kamp på %(emoji)s[Mythic Track](%(link)s) med pinkode: `%(pin)s`"
+
+msgctxt "button.join"
+msgid "Join this game!"
+msgstr "Slut dig til denne kamp!"
+
+msgctxt "button.leave"
+msgid "Leave"
+msgstr "Forlad"
+
+msgctxt "admin.no_game_found"
+msgid "There is no game with that ID."
+msgstr "Der er ikke nogen kamp med det ID."
+
+msgctxt "admin.done"
+msgid "Done."
+msgstr "Færdig."
+
+#, python-format
+msgctxt "admin.channels_title"
+msgid "Configuration for channels in %(guild)s"
+msgstr "Konfiguration for kanaler i %(guild)s"
+
+#, python-format
+msgctxt "admin.setup_title"
+msgid "SpellBot Setup for %(guild)s"
+msgstr "SpellBot-opsætning for %(guild)s"
+
+#, python-format
+msgctxt "admin.setup_description"
+msgid ""
+"SpellBot helps your community find and play Magic: The Gathering games together. To configure your server, channels, and player awards, visit the SpellBot dashboard.\n"
+"\n"
+"[Configure SpellBot →](%(link)s)"
+msgstr ""
+"SpellBot hjælper dit fællesskab med at finde og spille Magic: De samlende spil sammen. For at konfigurere din server, kanaler og spiller priser, besøg SpellBot dashboard.\n"
+"\n"
+"[Konfigurer SpellBot →](%(link)s)"
+
+#, python-format
+msgctxt "admin.user_move_error"
+msgid "Error: %(error)s"
+msgstr "Fejl: %(error)s"
+
+#, python-format
+msgctxt "admin.user_moved"
+msgid "User %(from_user)s has been moved to %(to_user)s"
+msgstr "Bruger %(from_user)s er blevet flyttet til %(to_user)s"
+
+#, python-format
+msgctxt "admin.expire_dequeued"
+msgid "├── Dequeued %(count)s players"
+msgstr "├── %(count)s spillere fjernet fra køen"
+
+#, python-format
+msgctxt "admin.expire_no_channel"
+msgid "├── Could not find channel %(channel_id)s"
+msgstr "├── Kunne ikke finde kanalen %(channel_id)s"
+
+#, python-format
+msgctxt "admin.expire_no_message"
+msgid "├── Could not find message %(message_id)s"
+msgstr "├── Kunne ikke finde beskeden %(message_id)s"
+
+#, python-format
+msgctxt "admin.expire_deleting"
+msgid "├── Deleting message %(message_id)s ..."
+msgstr "├── Sletter beskeden %(message_id)s ..."
+
+#, python-format
+msgctxt "admin.expire_updating"
+msgid "├── Updating message %(message_id)s ..."
+msgstr "├── Opdaterer beskeden %(message_id)s ..."
+
+msgctxt "admin.expire_no_permission"
+msgid "├── Bot does not have permission"
+msgstr "├── Bot har ikke tilladelse"
+
+msgctxt "admin.expire_done"
+msgid "└── Done"
+msgstr "└── Færdig"
+
+msgctxt "admin.expire_none"
+msgid "No games to expire."
+msgstr "Ingen kampe, der kan sættes som udløbet."
+
+#, python-format
+msgctxt "admin.expire_game"
+msgid "Expiring game #SB%(game_id)s ..."
+msgstr "Sætter kamp #SB%(game_id)s som udløbet ..."
+
+msgctxt "admin.game_expired"
+msgid "Sorry, this game was expired due to inactivity."
+msgstr "Denne kamp er desværre udløbet på grund af inaktivitet."
+
+#, python-format
+msgctxt "admin.user_info_title"
+msgid "User info for %(name)s"
+msgstr "Brugeroplysninger for %(name)s"
+
+#, python-format
+msgctxt "admin.user_info_games_count"
+msgid "%(count)s game on %(guild)s"
+msgid_plural "%(count)s games on %(guild)s"
+msgstr[0] "%(count)s kamp på %(guild)s"
+msgstr[1] "%(count)s kampe på %(guild)s"
+
+msgctxt "admin.user_info_games"
+msgid "Games Played"
+msgstr "Kamp spillet"
+
+#, python-format
+msgctxt "admin.user_info_blocked"
+msgid "Blocked by %(count)s user"
+msgid_plural "Blocked by %(count)s users"
+msgstr[0] "Blokeret af %(count)s bruger"
+msgstr[1] "Blokeret af %(count)s brugere"
+
+msgctxt "admin.user_info_block_status"
+msgid "Block Status"
+msgstr "Blokeringsstatus"
+
+msgctxt "admin.user_info_no_games"
+msgid "No games played"
+msgstr "Ingen spillede kampe"
+
+msgctxt "admin.user_info_play_range"
+msgid "Play Range"
+msgstr "Spilletid"
+
+msgctxt "admin.user_info_game_history"
+msgid "Game History"
+msgstr "Kamphistorik"
+
+#, python-format
+msgctxt "admin.view_link"
+msgid "[View on spellbot.io](%(link)s)"
+msgstr "[Vis på spellbot.io](%(link)s)"
+
+#, python-format
+msgctxt "admin.game_info_title"
+msgid "Game info for #SB%(game_id)s"
+msgstr "Spilinfo for #SB%(game_id)s"
+
+msgctxt "admin.game_info_pending"
+msgid "Not started yet"
+msgstr "Ikke startet endnu"
+
+msgctxt "admin.game_info_details"
+msgid "Details"
+msgstr "Detaljer"
+
+#, python-format
+msgctxt "admin.user_info_footer"
+msgid "User ID: %(user_id)s"
+msgstr "Bruger-ID: %(user_id)s"
+
+#, python-format
+msgctxt "admin.mythic_track_title"
+msgid "Mythic Track Setup for %(guild)s"
+msgstr "Opsætning af Mythic Track for %(guild)s"
+
+#, python-format
+msgctxt "admin.mythic_track_on"
+msgid ""
+"✅ Mythic Track has been turned **on** for this server!\n"
+"\n"
+"To continue setup, please [connect your Discord account to Mythic Track](%(guide)s).\n"
+"\n"
+"While this feature is turned on, SpellBot will generate PIN codes for players to enter into Mythic Track so that their games can be tracked."
+msgstr ""
+"✅ Mythic Track er blevet slået **til** for denne server!\n"
+"\n"
+"For at fortsætte opsætningen skal du [forbinde din Discord-konto til Mythic Track](%(guide)s).\n"
+"\n"
+"Mens denne funktion er slået til, genererer SpellBot pinkoder, som spillerne skal indtaste i Mythic Track, så deres kampe kan spores."
+
+msgctxt "admin.mythic_track_off"
+msgid "❌ Mythic Track has been turned **off** for this server. Rerun this command to toggle it back on. Note that turning this feature off does _not_ remove any existing Mythic Track data."
+msgstr "❌ Mythic Track er blevet slået **fra** for denne server. Kør denne kommando igen for at slå det til igen. Bemærk, at deaktivering af denne funktion _ikke_ fjerner eksisterende Mythic Track-data."
+
+msgctxt "block.self_block"
+msgid "You can not block yourself."
+msgstr "Du kan ikke blokere dig selv."
+
+#, python-format
+msgctxt "block.blocked"
+msgid "<@%(user_id)s> has been blocked."
+msgstr "<@%(user_id)s> er blevet blokeret."
+
+#, python-format
+msgctxt "block.unblocked"
+msgid "<@%(user_id)s> has been unblocked."
+msgstr "<@%(user_id)s> er ikke længere blokeret."
+
+#, python-format
+msgctxt "block.manage_message"
+msgid ""
+"You can view and manage your blocked users from your profile page.\n"
+"\n"
+"[Open your profile on spellbot.io](%(link)s)"
+msgstr ""
+"Du kan se og administrere dine blokerede brugere fra din profilside.\n"
+"\n"
+"[Åbn din profil på spellbot.io](%(link)s)"
+
+msgctxt "leave.removed_channel"
+msgid "You were removed from any pending games in this channel."
+msgstr "Du blev fjernet fra alle afventende kampe i denne kanal."
+
+msgctxt "leave.removed_all"
+msgid "You were removed from all pending games."
+msgstr "Du blev fjernet fra alle afventende kampe."
+
+msgctxt "score.record_title"
+msgid "Record of games played"
+msgstr "Registrering af kampe spillet på"
+
+#, python-format
+msgctxt "score.games"
+msgid "%(count)s game"
+msgid_plural "%(count)s games"
+msgstr[0] "%(count)s kamp"
+msgstr[1] "%(count)s kampe"
+
+#, python-format
+msgctxt "score.record_description"
+msgid ""
+"%(mention)s has played %(games)s.\n"
+"View more [details on spellbot.io](%(link)s)."
+msgstr ""
+"%(mention)s har spillet %(games)s.\n"
+"Se flere [detaljer om spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.history_title"
+msgid "Recent games played in %(channel)s"
+msgstr "Seneste kampe spillet i %(channel)s"
+
+#, python-format
+msgctxt "score.history_description"
+msgid "View [game history on spellbot.io](%(link)s)."
+msgstr "Se [kamphistorik på spellbot.io](%(link)s)."
+
+#, python-format
+msgctxt "score.top_title"
+msgid "Top players in #%(channel)s (%(range)s)"
+msgstr "Topspillere i #%(channel)s (%(range)s)"
+
+#, python-format
+msgctxt "score.range_ago"
+msgid "%(months)s months ago"
+msgstr "%(months)s måned siden"
+
+msgctxt "score.range_this_month"
+msgid "this month"
+msgstr "denne måned"
+
+msgctxt "score.range_all_time"
+msgid "all time"
+msgstr "al tid"
+
+msgctxt "score.top_header"
+msgid "Rank     Games     Player"
+msgstr "Rank     Kampe     Spiller"
+
+msgctxt "about.title"
+msgid "SpellBot"
+msgstr "SpellBot"
+
+msgctxt "about.version"
+msgid "Version"
+msgstr "Version"
+
+msgctxt "about.author"
+msgid "Author"
+msgstr "Forfatter"
+
+#, python-format
+msgctxt "about.description"
+msgid ""
+"_The Discord bot for Webcam Magic._\n"
+"\n"
+"Having issues with SpellBot? Please [report bugs](%(issues)s)!\n"
+"\n"
+"[🔗 Add SpellBot to your Discord!](%(invite)s)\n"
+"\n"
+"SpellBot's continued operation is made possible by [PlayEDH](https://www.playedh.com/) and my Patreon supporters.\n"
+"\n"
+"💜 Help keep SpellBot running by [becoming a patron!](%(patreon)s)"
+msgstr ""
+"_Discord-botten til Webcam Magic._\n"
+"\n"
+"Har du problemer med SpellBot? [anmeld bugs](%(issues)s)!\n"
+"\n"
+"[🔗 Tilføj SpellBot til din Discord!](%(invite)s)\n"
+"\n"
+"SpellBots fortsatte drift er gjort mulig af [PlayEDH](https://www.playedh.com/) og mine Patreon-supportere.\n"
+"\n"
+"💜 Hjælp med at holde SpellBot i gang ved at [blive patron!](%(patreon)s)"
+
+msgctxt "errors.no_permission"
+msgid "You do not have permission to do that."
+msgstr "Du har ikke tilladelse til at gøre det."
+
+msgctxt "errors.guild_only"
+msgid "This command only works in a guild."
+msgstr "Denne kommando virker kun i en guild."
+
+msgctxt "errors.no_dms"
+msgid "This command is not supported in DMs."
+msgstr "Denne kommando er ikke understøttet i DMs."
+
+msgctxt "errors.banned"
+msgid "You have been banned from using SpellBot."
+msgstr "Du er blevet udelukket fra at bruge SpellBot."
+
+#, python-format
+msgctxt "errors.cooldown"
+msgid "Please try again in %(seconds)ss."
+msgstr "Prøv venligst igen om %(seconds)ss."
+
+msgctxt "playgroup.already_linked"
+msgid "Your Discord account is already linked to Playgroup Live!"
+msgstr "Din Discord konto er allerede tilknyttet Playgroup Live!"
+
+#, python-format
+msgctxt "playgroup.linked"
+msgid "Linked! Welcome, **%(username)s**. Your Playgroup Live games will now be attributed to your account."
+msgstr "Forbundet! Velkommen, **%(username)s**. Dine Playgroup Live-spil vil nu blive tilskrevet din konto."
+
+msgctxt "playgroup.not_found"
+msgid "No Playgroup account found for your Discord. Go to <https://playgroup.gg/profiles> and click **Link Discord**, then run `/playgroup link` again to confirm."
+msgstr "Ingen Playgroup konto fundet for din Discord. Gå til <https://playgroup.gg/profiles> og klik på **Link Discord**, og kør derefter `/playgroup link` igen for at bekræfte."
+
+msgctxt "web.nav.active_queues"
+msgid "Active Queues"
+msgstr "Aktive køer"
+
+msgctxt "web.nav.my_records"
+msgid "My Records"
+msgstr "Mine optegnelser"
+
+msgctxt "web.nav.admin_dashboard"
+msgid "Admin Dashboard"
+msgstr "Admin-dashboard"
+
+msgctxt "web.nav.server_details"
+msgid "Server Details"
+msgstr "Serverdetaljer"
+
+msgctxt "web.nav.notification_preferences"
+msgid "Notification preferences"
+msgstr "Notifikationsindstillinger"
+
+#, python-format
+msgctxt "web.nav.back_to"
+msgid "← Back to %(name)s"
+msgstr "← Tilbage til %(name)s"
+
+msgctxt "web.nav.log_in"
+msgid "Log in"
+msgstr "Log ind"
+
+msgctxt "web.nav.log_out"
+msgid "Log out"
+msgstr "Log ud"
+
+#, python-format
+msgctxt "web.nav.logged_in_as"
+msgid "Logged in as %(name)s"
+msgstr "Logget ind som %(name)s"
+
+msgctxt "web.nav.site_nav_aria"
+msgid "Site navigation"
+msgstr "Webstedsnavigation"
+
+msgctxt "web.nav.server_nav_aria"
+msgid "Server navigation"
+msgstr "Servernavigation"
+
+#, python-format
+msgctxt "web.common.powered_by"
+msgid "Powered by %(link)s."
+msgstr "Drevet af %(link)s."
+
+#, python-format
+msgctxt "web.common.generated_by"
+msgid "Generated by %(link)s"
+msgstr "Genereret af %(link)s"
+
+msgctxt "web.common.spellbot_server"
+msgid "SpellBot Server"
+msgstr "SpellBot-server"
+
+msgctxt "web.common.server"
+msgid "server"
+msgstr "server"
+
+msgctxt "web.common.this_server"
+msgid "this server"
+msgstr "denne server"
+
+msgctxt "web.common.unknown_user"
+msgid "Unknown User"
+msgstr "Ukendt bruger"
+
+msgctxt "web.common.unknown_channel"
+msgid "Unknown Channel"
+msgstr "Ukendt kanal"
+
+msgctxt "web.common.unknown_guild"
+msgid "Unknown Guild"
+msgstr "Ukendt server"
+
+msgctxt "web.common.login_with_discord"
+msgid "Log in with Discord"
+msgstr "Log ind med Discord"
+
+msgctxt "web.common.export_csv"
+msgid "Export all (CSV)"
+msgstr "Eksportér alt (CSV)"
+
+msgctxt "web.common.prev_page"
+msgid "Previous page"
+msgstr "Forrige side"
+
+msgctxt "web.common.next_page"
+msgid "Next page"
+msgstr "Næste side"
+
+msgctxt "web.common.copy_user_id"
+msgid "Copy User ID"
+msgstr "Kopiér bruger-id"
+
+msgctxt "web.common.copy_channel_id"
+msgid "Copy Channel ID"
+msgstr "Kopiér kanal-id"
+
+msgctxt "web.common.copy_server_id"
+msgid "Copy server ID"
+msgstr "Kopiér server-id"
+
+#, python-format
+msgctxt "web.common.open_in"
+msgid "Open in %(service)s"
+msgstr "Åbn i %(service)s"
+
+msgctxt "web.common.jump_to_game"
+msgid "Jump to game"
+msgstr "Gå til spil"
+
+msgctxt "web.common.jump_to_channel"
+msgid "Jump to channel"
+msgstr "Gå til kanal"
+
+msgctxt "web.common.jump_to_guild"
+msgid "Jump to guild"
+msgstr "Gå til server"
+
+msgctxt "web.common.jump_to_voice_invite"
+msgid "Jump to voice invite"
+msgstr "Gå til stemmeinvitation"
+
+msgctxt "web.common.view_change_history"
+msgid "View change history"
+msgstr "Vis ændringshistorik"
+
+msgctxt "web.common.seats_suffix"
+msgid "seats"
+msgstr "pladser"
+
+msgctxt "web.common.yes_label"
+msgid "Yes"
+msgstr "Ja"
+
+msgctxt "web.common.no_label"
+msgid "No"
+msgstr "Nej"
+
+msgctxt "web.field.status"
+msgid "Status"
+msgstr "Status"
+
+msgctxt "web.field.format"
+msgid "Format"
+msgstr "Format"
+
+msgctxt "web.field.bracket"
+msgid "Bracket"
+msgstr "Niveau"
+
+msgctxt "web.field.service"
+msgid "Service"
+msgstr "Tjeneste"
+
+msgctxt "web.field.seats"
+msgid "Seats"
+msgstr "Pladser"
+
+msgctxt "web.field.locale"
+msgid "Locale"
+msgstr "Lokalitet"
+
+msgctxt "web.field.players"
+msgid "Players"
+msgstr "Spillere"
+
+msgctxt "web.field.link"
+msgid "Link"
+msgstr "Link"
+
+msgctxt "web.field.game"
+msgid "Game"
+msgstr "Spil"
+
+msgctxt "web.field.time"
+msgid "Time"
+msgstr "Tid"
+
+msgctxt "web.field.guild"
+msgid "Guild"
+msgstr "Server"
+
+msgctxt "web.field.channel"
+msgid "Channel"
+msgstr "Kanal"
+
+msgctxt "web.field.channel_id"
+msgid "Channel ID"
+msgstr "Kanal-id"
+
+msgctxt "web.field.user_name"
+msgid "User Name"
+msgstr "Brugernavn"
+
+msgctxt "web.field.user_id"
+msgid "User ID"
+msgstr "Bruger-id"
+
+msgctxt "web.field.wait"
+msgid "Wait"
+msgstr "Ventetid"
+
+msgctxt "web.field.language"
+msgid "Language"
+msgstr "Sprog"
+
+msgctxt "web.field.jump"
+msgid "Jump"
+msgstr "Gå til"
+
+msgctxt "web.field.created"
+msgid "Created"
+msgstr "Oprettet"
+
+msgctxt "web.field.updated"
+msgid "Updated"
+msgstr "Opdateret"
+
+msgctxt "web.field.started"
+msgid "Started"
+msgstr "Startet"
+
+msgctxt "web.field.deleted"
+msgid "Deleted"
+msgstr "Slettet"
+
+msgctxt "web.queues.title"
+msgid "Active Queues — SpellBot"
+msgstr "Aktive køer — SpellBot"
+
+msgctxt "web.queues.meta_description"
+msgid "Join an active Magic: The Gathering queue powered by SpellBot."
+msgstr "Deltag i en aktiv Magic: The Gathering-kø drevet af SpellBot."
+
+msgctxt "web.queues.heading"
+msgid "Active Queues"
+msgstr "Aktive køer"
+
+msgctxt "web.queues.active_games"
+msgid "Active Games"
+msgstr "Aktive spil"
+
+msgctxt "web.queues.active_games_tooltip"
+msgid "Pending queues plus games started in the last 2 hours"
+msgstr "Ventende køer plus spil startet inden for de seneste 2 timer"
+
+msgctxt "web.queues.filter_aria"
+msgid "Filter queues"
+msgstr "Filtrér køer"
+
+msgctxt "web.queues.all_formats"
+msgid "All formats"
+msgstr "Alle formater"
+
+msgctxt "web.queues.all_brackets"
+msgid "All brackets"
+msgstr "Alle niveauer"
+
+msgctxt "web.queues.all_languages"
+msgid "All languages"
+msgstr "Alle sprog"
+
+msgctxt "web.queues.only_played"
+msgid "Only servers you've played in"
+msgstr "Kun servere, du har spillet på"
+
+msgctxt "web.queues.no_match"
+msgid "No queues match the selected filters."
+msgstr "Ingen køer matcher de valgte filtre."
+
+msgctxt "web.queues.your_servers"
+msgid "Your Servers"
+msgstr "Dine servere"
+
+msgctxt "web.queues.setup_notifications"
+msgid "Setup notifications"
+msgstr "Konfigurer notifikationer"
+
+msgctxt "web.queues.manage_notifications"
+msgid "Manage notifications"
+msgstr "Administrer notifikationer"
+
+#, python-format
+msgctxt "web.queues.setup_notifications_for"
+msgid "Setup notifications for %(name)s"
+msgstr "Konfigurer notifikationer for %(name)s"
+
+#, python-format
+msgctxt "web.queues.manage_notifications_for"
+msgid "Manage notifications for %(name)s"
+msgstr "Administrer notifikationer for %(name)s"
+
+msgctxt "web.queues.notifications_on_short"
+msgid "On"
+msgstr "Til"
+
+msgctxt "web.queues.notifications_label"
+msgid "Notifications"
+msgstr "Notifikationer"
+
+msgctxt "web.queues.empty_mine"
+msgid "No active queues right now in servers you've played in. Uncheck the filter to see all servers."
+msgstr "Ingen aktive køer lige nu på servere, du har spillet på. Fjern filteret for at se alle servere."
+
+#, python-format
+msgctxt "web.queues.empty_all"
+msgid "No active queues right now. Check back in a moment, or run %(command)s in your Discord server to start one."
+msgstr "Ingen aktive køer lige nu. Kig forbi om et øjeblik, eller kør %(command)s på din Discord-server for at starte en."
+
+msgctxt "web.queues.recently_started"
+msgid "Recently Started"
+msgstr "Startet for nylig"
+
+msgctxt "web.queues.jump_to_game_arrow"
+msgid "Jump to Game →"
+msgstr "Gå til spil →"
+
+msgctxt "web.queues.jump_to_channel_arrow"
+msgid "Jump to Channel →"
+msgstr "Gå til kanal →"
+
+#, python-format
+msgctxt "web.queues.started_ago"
+msgid "%(duration)s ago"
+msgstr "for %(duration)s siden"
+
+msgctxt "web.queues.auto_refresh"
+msgid "Auto-refreshing every 60 seconds."
+msgstr "Opdateres automatisk hvert 60. sekund."
+
+#, python-format
+msgctxt "web.records.channel_title"
+msgid "Channel Records — #%(name)s"
+msgstr "Kanaloptegnelser — #%(name)s"
+
+#, python-format
+msgctxt "web.records.channel_heading"
+msgid "Channel Records: #%(name)s"
+msgstr "Kanaloptegnelser: #%(name)s"
+
+#, python-format
+msgctxt "web.records.user_title"
+msgid "User Records — %(name)s"
+msgstr "Brugeroptegnelser — %(name)s"
+
+#, python-format
+msgctxt "web.records.user_heading"
+msgid "User Records: %(name)s"
+msgstr "Brugeroptegnelser: %(name)s"
+
+msgctxt "web.records.games"
+msgid "Games"
+msgstr "Spil"
+
+#, python-format
+msgctxt "web.records.matching"
+msgid "%(count)s matching"
+msgstr "%(count)s match"
+
+msgctxt "web.records.none_channel"
+msgid "No games found for this channel."
+msgstr "Ingen spil fundet for denne kanal."
+
+msgctxt "web.records.none_user"
+msgid "No games found for this user."
+msgstr "Ingen spil fundet for denne bruger."
+
+msgctxt "web.records.mod_manage_channel"
+msgid "Moderators can manage this channel's settings here."
+msgstr "Moderatorer kan administrere denne kanals indstillinger her."
+
+msgctxt "web.records.mod_manage_server"
+msgid "Moderators can manage this server's settings here."
+msgstr "Moderatorer kan administrere denne servers indstillinger her."
+
+msgctxt "web.records.login_block_list"
+msgid "Log in to view and manage your own block list."
+msgstr "Log ind for at se og administrere din egen blokeringsliste."
+
+msgctxt "web.blocks.title"
+msgid "Blocked Users"
+msgstr "Blokerede brugere"
+
+msgctxt "web.blocks.description"
+msgid "Players you block can't join your games, and you can't join theirs. This list is private to you."
+msgstr "Spillere, du blokerer, kan ikke deltage i dine spil, og du kan ikke deltage i deres. Denne liste er privat."
+
+msgctxt "web.blocks.user"
+msgid "User"
+msgstr "Bruger"
+
+msgctxt "web.blocks.unblock"
+msgid "Unblock"
+msgstr "Fjern blokering"
+
+msgctxt "web.blocks.none"
+msgid "You haven't blocked anyone."
+msgstr "Du har ikke blokeret nogen."
+
+msgctxt "web.blocks.add_label"
+msgid "Block a user"
+msgstr "Blokér en bruger"
+
+msgctxt "web.blocks.add_hint"
+msgid "Enter the Discord user ID (or name) of the player you want to block."
+msgstr "Indtast Discord-bruger-id'et (eller navnet) på den spiller, du vil blokere."
+
+msgctxt "web.blocks.add_placeholder"
+msgid "Discord user ID or name"
+msgstr "Discord-bruger-id eller navn"
+
+msgctxt "web.blocks.add_button"
+msgid "Block user"
+msgstr "Blokér bruger"
+
+msgctxt "web.filters.player_label"
+msgid "Player (name or ID)"
+msgstr "Spiller (navn eller id)"
+
+msgctxt "web.filters.player_placeholder"
+msgid "e.g. amy or 12345"
+msgstr "f.eks. amy eller 12345"
+
+msgctxt "web.filters.guild_label"
+msgid "Guild (name or ID)"
+msgstr "Server (navn eller id)"
+
+msgctxt "web.filters.guild_placeholder"
+msgid "e.g. my-guild or 67890"
+msgstr "f.eks. min-server eller 67890"
+
+msgctxt "web.filters.from"
+msgid "From"
+msgstr "Fra"
+
+msgctxt "web.filters.to"
+msgid "To"
+msgstr "Til"
+
+msgctxt "web.filters.formats"
+msgid "Format(s)"
+msgstr "Format(er)"
+
+msgctxt "web.filters.brackets"
+msgid "Bracket(s)"
+msgstr "Niveau(er)"
+
+msgctxt "web.filters.apply"
+msgid "Apply filters"
+msgstr "Anvend filtre"
+
+msgctxt "web.filters.reset"
+msgid "Reset"
+msgstr "Nulstil"
+
+msgctxt "web.channel_settings.heading"
+msgid "Channel Settings"
+msgstr "Kanalindstillinger"
+
+msgctxt "web.channel_settings.default_seats"
+msgid "Default seats"
+msgstr "Standardpladser"
+
+msgctxt "web.channel_settings.default_format"
+msgid "Default format"
+msgstr "Standardformat"
+
+msgctxt "web.channel_settings.default_bracket"
+msgid "Default bracket"
+msgstr "Standardniveau"
+
+msgctxt "web.channel_settings.default_service"
+msgid "Default service"
+msgstr "Standardtjeneste"
+
+msgctxt "web.channel_settings.motd"
+msgid "Message of the day"
+msgstr "Dagens besked"
+
+msgctxt "web.channel_settings.extra"
+msgid "Extra message"
+msgstr "Ekstra besked"
+
+msgctxt "web.channel_settings.voice_category"
+msgid "Voice category"
+msgstr "Stemmekategori"
+
+msgctxt "web.channel_settings.voice_invite"
+msgid "Create voice invites"
+msgstr "Opret stemmeinvitationer"
+
+msgctxt "web.channel_settings.delete_expired"
+msgid "Delete expired games"
+msgstr "Slet udløbne spil"
+
+msgctxt "web.channel_settings.blind_games"
+msgid "Blind games"
+msgstr "Blinde spil"
+
+msgctxt "web.channel_settings.to_mode"
+msgid "Tournament organizer mode"
+msgstr "Turneringsarrangør-tilstand"
+
+msgctxt "web.channel_settings.competitive_mode"
+msgid "Competitive mode"
+msgstr "Konkurrencetilstand"
+
+msgctxt "web.channel_settings.save"
+msgid "Save channel settings"
+msgstr "Gem kanalindstillinger"
+
+msgctxt "web.channel_settings.forget_hint"
+msgid "Forgetting this channel resets it to default settings by removing its configuration. SpellBot will reconfigure it from defaults the next time it is used."
+msgstr "Hvis du glemmer denne kanal, nulstilles den til standardindstillingerne ved at fjerne dens konfiguration. SpellBot konfigurerer den igen ud fra standarderne, næste gang den bruges."
+
+msgctxt "web.channel_settings.forget_confirm"
+msgid "Forget this channel and reset it to default settings?"
+msgstr "Glem denne kanal og nulstil den til standardindstillingerne?"
+
+msgctxt "web.channel_settings.forget"
+msgid "Forget this channel"
+msgstr "Glem denne kanal"
+
+#, python-format
+msgctxt "web.guild.channels_with_games"
+msgid "%(count)s channel with games"
+msgid_plural "%(count)s channels with games"
+msgstr[0] "%(count)s kanal med spil"
+msgstr[1] "%(count)s kanaler med spil"
+
+msgctxt "web.guild.owner_controls"
+msgid "Owner Controls"
+msgstr "Ejerkontroller"
+
+msgctxt "web.guild.view_analytics"
+msgid "Analytics"
+msgstr "Analyser"
+
+msgctxt "web.guild.promotion_enabled"
+msgid "enabled"
+msgstr "aktiveret"
+
+msgctxt "web.guild.promotion_disabled"
+msgid "disabled"
+msgstr "deaktiveret"
+
+#, python-format
+msgctxt "web.guild.promotion_status"
+msgid "Public promotion is currently %(state)s for this server."
+msgstr "Offentlig promovering er i øjeblikket %(state)s for denne server."
+
+msgctxt "web.guild.disable_promotion"
+msgid "Disable promotion"
+msgstr "Deaktiver promovering"
+
+msgctxt "web.guild.enable_promotion"
+msgid "Enable promotion"
+msgstr "Aktivér promovering"
+
+msgctxt "web.guild.settings_heading"
+msgid "Server Settings"
+msgstr "Serverindstillinger"
+
+msgctxt "web.guild.motd"
+msgid "Message of the day"
+msgstr "Dagens besked"
+
+msgctxt "web.guild.suggest_voice_category"
+msgid "Suggested voice category"
+msgstr "Foreslået stemmekategori"
+
+msgctxt "web.guild.show_links"
+msgid "Show game links publicly"
+msgstr "Vis spil-links offentligt"
+
+msgctxt "web.guild.voice_create"
+msgid "Auto-create voice channels"
+msgstr "Opret stemmekanaler automatisk"
+
+msgctxt "web.guild.use_max_bitrate"
+msgid "Use maximum bitrate"
+msgstr "Brug maksimal bitrate"
+
+msgctxt "web.guild.enable_mythic_track"
+msgid "Enable mythic track"
+msgstr "Aktivér Mythic Track"
+
+msgctxt "web.guild.show_convoke_guild"
+msgid "Show linked Convoke guild"
+msgstr "Vis tilknyttet Convoke-guild"
+
+msgctxt "web.guild.save"
+msgid "Save server settings"
+msgstr "Gem serverindstillinger"
+
+msgctxt "web.guild.player_awards"
+msgid "Player Awards"
+msgstr "Spillerpriser"
+
+msgctxt "web.guild.manage_awards"
+msgid "Manage player awards"
+msgstr "Administrer spillerpriser"
+
+msgctxt "web.guild.no_awards"
+msgid "No player awards are configured yet."
+msgstr "Der er endnu ikke konfigureret nogen spillerpriser."
+
+#, python-format
+msgctxt "web.guild.award_summary"
+msgid "%(count)s game · @%(role)s"
+msgid_plural "%(count)s games · @%(role)s"
+msgstr[0] "%(count)s spil · @%(role)s"
+msgstr[1] "%(count)s spil · @%(role)s"
+
+msgctxt "web.guild.channels"
+msgid "Channels"
+msgstr "Kanaler"
+
+msgctxt "web.guild.games"
+msgid "Games"
+msgstr "Spil"
+
+msgctxt "web.guild.last_activity"
+msgid "Last Activity"
+msgstr "Seneste aktivitet"
+
+msgctxt "web.guild.no_channels"
+msgid "No channels with games yet."
+msgstr "Ingen kanaler med spil endnu."
+
+msgctxt "web.awards.title"
+msgid "Player Awards"
+msgstr "Spillerpriser"
+
+#, python-format
+msgctxt "web.awards.configured"
+msgid "%(count)s award configured"
+msgid_plural "%(count)s awards configured"
+msgstr[0] "%(count)s pris konfigureret"
+msgstr[1] "%(count)s priser konfigureret"
+
+msgctxt "web.awards.games_required"
+msgid "Games required"
+msgstr "Påkrævede spil"
+
+msgctxt "web.awards.role"
+msgid "Role"
+msgstr "Rolle"
+
+msgctxt "web.awards.message"
+msgid "Message"
+msgstr "Besked"
+
+msgctxt "web.awards.repeating"
+msgid "Repeating"
+msgstr "Gentagende"
+
+msgctxt "web.awards.remove"
+msgid "Remove role instead of giving"
+msgstr "Fjern rolle i stedet for at give"
+
+msgctxt "web.awards.save"
+msgid "Save award"
+msgstr "Gem pris"
+
+msgctxt "web.awards.delete"
+msgid "Delete award"
+msgstr "Slet pris"
+
+msgctxt "web.awards.delete_confirm"
+msgid "Delete this award?"
+msgstr "Slet denne pris?"
+
+msgctxt "web.awards.none"
+msgid "No awards configured yet. Add one below."
+msgstr "Ingen priser konfigureret endnu. Tilføj en nedenfor."
+
+msgctxt "web.awards.add_heading"
+msgid "Add an award"
+msgstr "Tilføj en pris"
+
+msgctxt "web.awards.add_button"
+msgid "Add award"
+msgstr "Tilføj pris"
+
+msgctxt "web.game.details"
+msgid "Details"
+msgstr "Detaljer"
+
+msgctxt "web.game.blind"
+msgid "Blind"
+msgstr "Blinde"
+
+msgctxt "web.game.rules"
+msgid "Rules"
+msgstr "Regler"
+
+msgctxt "web.game.guild_war"
+msgid "Guild War"
+msgstr "Gildekrig"
+
+msgctxt "web.game.game_link"
+msgid "Game link"
+msgstr "Spil-link"
+
+msgctxt "web.game.voice_channel"
+msgid "Voice channel"
+msgstr "Stemmekanal"
+
+msgctxt "web.game.discord_posts"
+msgid "Discord posts"
+msgstr "Discord-opslag"
+
+msgctxt "web.game.message"
+msgid "Message"
+msgstr "Besked"
+
+msgctxt "web.game.players"
+msgid "Players"
+msgstr "Spillere"
+
+msgctxt "web.game.queued"
+msgid "Queued"
+msgstr "I kø"
+
+msgctxt "web.game.entered_guild"
+msgid "Entered Guild"
+msgstr "Indgangsserver"
+
+msgctxt "web.game.records"
+msgid "Records"
+msgstr "Optegnelser"
+
+msgctxt "web.game.user_records"
+msgid "User records"
+msgstr "Brugeroptegnelser"
+
+msgctxt "web.game.report.title"
+msgid "Post-Game Report"
+msgstr "Rapport efter spillet"
+
+msgctxt "web.game.report.source"
+msgid "Reported by"
+msgstr "Rapporteret af"
+
+msgctxt "web.game.report.duration"
+msgid "Match time"
+msgstr "Kamptid"
+
+msgctxt "web.game.report.minutes_suffix"
+msgid "min"
+msgstr "min"
+
+msgctxt "web.game.report.turns"
+msgid "Turns"
+msgstr "Ture"
+
+msgctxt "web.game.report.ended"
+msgid "Ended at"
+msgstr "Sluttet"
+
+msgctxt "web.game.report.winner"
+msgid "Winner"
+msgstr "Vinder"
+
+msgctxt "web.game.report.reported"
+msgid "Reported at"
+msgstr "Rapporteret"
+
+msgctxt "web.game.report.commander"
+msgid "Commander"
+msgstr "Commander"
+
+msgctxt "web.game.report.turn_order"
+msgid "Turn order"
+msgstr "Turrækkefølge"
+
+msgctxt "web.game.report.play_time"
+msgid "Play time"
+msgstr "Spilletid"
+
+msgctxt "web.game.report.result"
+msgid "Result"
+msgstr "Resultat"
+
+#, python-format
+msgctxt "web.notify.title"
+msgid "Notification Preferences — %(name)s"
+msgstr "Notifikationsindstillinger — %(name)s"
+
+msgctxt "web.notify.meta_description"
+msgid "Choose which SpellBot game posts you want to be notified about."
+msgstr "Vælg, hvilke SpellBot-spilopslag du vil have besked om."
+
+msgctxt "web.notify.heading"
+msgid "Notification Preferences"
+msgstr "Notifikationsindstillinger"
+
+msgctxt "web.notify.guild_sub"
+msgid "Choose what kinds of new games you want to be pinged about in this server."
+msgstr "Vælg, hvilke slags nye spil du vil pinges om på denne server."
+
+msgctxt "web.notify.off_label"
+msgid "Do not notify me about games on this server"
+msgstr "Giv mig ikke besked om spil på denne server"
+
+msgctxt "web.notify.formats"
+msgid "Formats"
+msgstr "Formater"
+
+msgctxt "web.notify.formats_hint"
+msgid "Select the formats you want to be notified about. Leave empty to receive all formats."
+msgstr "Vælg de formater, du vil have besked om. Lad være tom for at modtage alle formater."
+
+msgctxt "web.notify.brackets"
+msgid "Brackets"
+msgstr "Niveauer"
+
+msgctxt "web.notify.brackets_hint"
+msgid "Select the brackets you want to be notified about. Leave empty to receive all brackets."
+msgstr "Vælg de niveauer, du vil have besked om. Lad være tom for at modtage alle niveauer."
+
+msgctxt "web.notify.channels"
+msgid "Channels"
+msgstr "Kanaler"
+
+msgctxt "web.notify.channels_hint"
+msgid "Select the channels you want to be notified about. Leave empty to receive all channels."
+msgstr "Vælg de kanaler, du vil have besked om. Lad være tom for at modtage alle kanaler."
+
+msgctxt "web.notify.active_hours"
+msgid "Active Hours"
+msgstr "Aktive timer"
+
+#, python-format
+msgctxt "web.notify.active_hours_hint"
+msgid "Only notify me during a specific window of the day, in my local time. Maximum window is %(hours)s hours. Defaults to 5pm–10pm if you don't pick a range."
+msgstr "Giv mig kun besked i et bestemt tidsrum af dagen i min lokale tid. Det maksimale tidsrum er %(hours)s timer. Som standard 17–22, hvis du ikke vælger et interval."
+
+msgctxt "web.notify.limit_window"
+msgid "Limit notifications to a daily window"
+msgstr "Begræns notifikationer til et dagligt tidsrum"
+
+msgctxt "web.notify.save"
+msgid "Save preferences"
+msgstr "Gem indstillinger"
+
+msgctxt "web.notify.js_saved"
+msgid "Your notification preferences have been saved."
+msgstr "Dine notifikationsindstillinger er blevet gemt."
+
+msgctxt "web.notify.js_off"
+msgid "Notifications turned off for this server."
+msgstr "Notifikationer slået fra for denne server."
+
+msgctxt "web.notify.js_error"
+msgid "Could not save your preferences. Please try again."
+msgstr "Dine indstillinger kunne ikke gemmes. Prøv igen."
+
+msgctxt "web.notify.js_pick_different"
+msgid "Pick different start and end hours"
+msgstr "Vælg forskellige start- og sluttimer"
+
+msgctxt "web.notify.js_must_differ"
+msgid "Start and end must differ."
+msgstr "Start og slut skal være forskellige."
+
+#, python-format
+msgctxt "web.notify.js_range_max"
+msgid "Range must be %(max)s hours or less."
+msgstr "Intervallet må højst være %(max)s timer."
+
+#, python-format
+msgctxt "web.notify.js_times_in"
+msgid "Times shown in %(tz)s"
+msgstr "Tider vist i %(tz)s"
+
+msgctxt "web.notify.js_times_local"
+msgid "Times shown in your local timezone"
+msgstr "Tider vist i din lokale tidszone"
+
+msgctxt "web.notify.unit_hour"
+msgid "hour"
+msgstr "time"
+
+msgctxt "web.notify.unit_hours"
+msgid "hours"
+msgstr "timer"
+
+msgctxt "web.motd.available"
+msgid "Available placeholders"
+msgstr "Tilgængelige pladsholdere"
+
+msgctxt "web.motd.intro"
+msgid "These tokens are replaced with each game's details when the message of the day is shown in a game post:"
+msgstr "Disse tokens erstattes med hvert spils detaljer, når dagens besked vises i et spilopslag:"
+
+msgctxt "web.motd.game_id"
+msgid "the game's SpellBot ID"
+msgstr "spillets SpellBot-id"
+
+msgctxt "web.motd.game_format"
+msgid "the game's format (e.g. Commander)"
+msgstr "spillets format (f.eks. Commander)"
+
+msgctxt "web.motd.game_bracket"
+msgid "the game's commander bracket"
+msgstr "spillets Commander-niveau"
+
+msgctxt "web.motd.game_start"
+msgid "when the game starts (a Discord timestamp), or “pending”"
+msgstr "hvornår spillet starter (et Discord-tidsstempel), eller „afventer“"
+
+msgctxt "web.motd.player_names"
+msgid "the players' names, in join order"
+msgstr "spillernes navne, i den rækkefølge de tilsluttede sig"
+
