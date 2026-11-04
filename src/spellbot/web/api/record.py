@@ -959,7 +959,9 @@ async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamRespo
         await response.write(csv_line(header))
         async for record in stream:
             await response.write(csv_line(format_row(record)))
-        await response.write_eof()
+        # No `write_eof()` here: aiohttp finishes the response after the handler returns, and
+        # quietly handles a client that's gone by then. Finishing it here too would flush the
+        # gzip stream twice when the client drops at the end (`zlib.error`).
     except ConnectionResetError, ConnectionError:
         # The client disconnected mid-export (closed the tab, timed out, etc.).
         # Nothing left to send, and it's not an error on our side.

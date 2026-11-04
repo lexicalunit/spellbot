@@ -54,3 +54,6 @@ verified_only  # unused variable (src/spellbot/models/channel.py:110)
 # `__exit__` overrides must accept the exception details even when they don't read them.
 exc_val  # unused variable (tests/test_metrics.py:87)
 exc_tb  # unused variable (tests/test_metrics.py:88)
+
+# A stand-in for `StreamWriter.write_eof` must accept its `chunk` even when it doesn't read it.
+chunk  # unused variable (tests/web/test_record.py:853)
