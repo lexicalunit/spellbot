@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -23,23 +23,23 @@ if TYPE_CHECKING:
 def reset_girudo_state() -> Generator[None]:
     """Reset module-level state between tests."""
     # Store original values
-    original_formats = girudo.GIRUDO_FORMATS_CACHE
-    original_tcg = girudo.TCG_NAMES_CACHE
-    original_rr = girudo.ROUND_ROBIN
+    original_formats = girudo.state.formats
+    original_tcg = girudo.state.tcg_names
+    original_rr = girudo.state.round_robin
     original_locks = dict(girudo.USER_LOCKS)
 
     # Reset to None
-    girudo.GIRUDO_FORMATS_CACHE = None
-    girudo.TCG_NAMES_CACHE = None
-    girudo.ROUND_ROBIN = None
+    girudo.state.formats = None
+    girudo.state.tcg_names = None
+    girudo.state.round_robin = None
     girudo.USER_LOCKS.clear()
 
     yield
 
     # Restore (cleanup)
-    girudo.GIRUDO_FORMATS_CACHE = original_formats
-    girudo.TCG_NAMES_CACHE = original_tcg
-    girudo.ROUND_ROBIN = original_rr
+    girudo.state.formats = original_formats
+    girudo.state.tcg_names = original_tcg
+    girudo.state.round_robin = original_rr
     girudo.USER_LOCKS = original_locks
 
 
@@ -236,7 +236,7 @@ class TestGirudoFormats:
     async def test_fetch_and_cache_formats_already_cached(self) -> None:
         """Test fetch_and_cache_formats returns cached value when already set."""
         cached = {"test": GirudoGameFormat(uuid="cached-uuid", name="Cached")}
-        girudo.GIRUDO_FORMATS_CACHE = cached
+        girudo.state.formats = cached
         client = MockHTTPClient(MockHTTPResponse(200, {}))
         result = await girudo.fetch_and_cache_formats(client, GirudoTestData.AUTH_TOKEN)
         assert result == cached
@@ -321,7 +321,7 @@ class TestGirudoFormats:
     async def test_fetch_and_cache_tcg_names_already_cached(self) -> None:
         """Test fetch_and_cache_tcg_names returns cached value when already set."""
         cached = {"cached-uuid": "Cached TCG"}
-        girudo.TCG_NAMES_CACHE = cached
+        girudo.state.tcg_names = cached
         client = MockHTTPClient(MockHTTPResponse(200, {}))
         result = await girudo.fetch_and_cache_tcg_names(client, GirudoTestData.AUTH_TOKEN)
         assert result == cached
@@ -413,21 +413,28 @@ class TestGirudoFormats:
 class TestGirudoFormatMapping:
     """Test game format mapping."""
 
+    def test_unmapped_format_uses_the_default(self) -> None:
+        """A format added to SpellBot before Girudo's mapping catches up gets the default."""
+        girudo.state.formats = GirudoTestData.formats_cache()
+        unmapped = MagicMock(spec=GameFormat)
+        unmapped.name = "SOMETHING_NEW"
+        assert girudo.girudo_game_format(unmapped) == girudo.get_default_girudo_format()
+
     def test_girudo_game_format_standard(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        girudo.GIRUDO_FORMATS_CACHE = GirudoTestData.formats_cache()
+        girudo.state.formats = GirudoTestData.formats_cache()
 
         result = girudo.girudo_game_format(GameFormat.STANDARD)
         assert result.uuid == GirudoTestData.FORMAT_STANDARD_UUID
 
     def test_girudo_game_format_commander(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        girudo.GIRUDO_FORMATS_CACHE = GirudoTestData.formats_cache()
+        girudo.state.formats = GirudoTestData.formats_cache()
 
         result = girudo.girudo_game_format(GameFormat.COMMANDER)
         assert result.uuid == GirudoTestData.FORMAT_COMMANDER_UUID
 
     def test_girudo_game_format_brawl(self) -> None:
         """Test Brawl format mapping."""
-        girudo.GIRUDO_FORMATS_CACHE = {"brawl": GirudoGameFormat(uuid="brawl-uuid", name="Brawl")}
+        girudo.state.formats = {"brawl": GirudoGameFormat(uuid="brawl-uuid", name="Brawl")}
         result = girudo.girudo_game_format(GameFormat.BRAWL_TWO_PLAYER)
         assert result.uuid == "brawl-uuid"
 
@@ -443,7 +450,7 @@ class TestGirudoFormatMapping:
             GirudoTestData.FORMAT_DEFAULT_NAME,
         )
 
-        girudo.GIRUDO_FORMATS_CACHE = {}
+        girudo.state.formats = {}
 
         result = girudo.girudo_game_format(GameFormat.MODERN)
         assert result.uuid == GirudoTestData.FORMAT_DEFAULT_UUID
@@ -466,7 +473,7 @@ class TestGirudoGameCreation:
             GirudoTestData.TCG_MAGIC_UUID,
         )
 
-        girudo.TCG_NAMES_CACHE = GirudoTestData.tcg_cache()
+        girudo.state.tcg_names = GirudoTestData.tcg_cache()
 
         response = MockHTTPResponse(201, GirudoTestData.create_game_response())
         client = MockHTTPClient(response)
@@ -794,11 +801,11 @@ class TestGirudoGenerateLink:
 
         # Pre-populate the caches
         monkeypatch.setattr(
-            girudo,
-            "GIRUDO_FORMATS_CACHE",
+            girudo.state,
+            "formats",
             {"commander_edh": girudo.GirudoGameFormat(uuid="test-uuid", name="Commander")},
         )
-        monkeypatch.setattr(girudo, "TCG_NAMES_CACHE", {"mtg": "Magic: The Gathering"})
+        monkeypatch.setattr(girudo.state, "tcg_names", {"mtg": "Magic: The Gathering"})
 
         async def mock_auth(client: Any, **kwargs: Any) -> str:
             return GirudoTestData.AUTH_TOKEN

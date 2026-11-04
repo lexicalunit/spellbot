@@ -17,7 +17,7 @@ from .errors import AdminOnlyError, GuildBannedError, GuildOnlyError, ModOnlyErr
 from .settings import settings
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from ddtrace.trace import Span
     from discord import File
@@ -93,6 +93,17 @@ def setup_metrics() -> None:  # pragma: no cover
 def generate_request_id() -> str:
     """Generate a unique request ID for spans."""
     return str(uuid.uuid4())
+
+
+def tag_span(tags: Mapping[str, object] | None = None, /, **more: object) -> None:
+    """
+    Tag the current span, if there is one, with each value converted to a string.
+
+    Pass tag names as keywords, or in `tags` for names that aren't identifiers (such as
+    `warning.type`).
+    """
+    if span := tracer.current_span():
+        span.set_tags({name: str(value) for name, value in {**(tags or {}), **more}.items()})
 
 
 @skip_if_no_metrics

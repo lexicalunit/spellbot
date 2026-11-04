@@ -62,7 +62,7 @@ class AdminCog(commands.Cog):
         interaction: discord.Interaction,
         from_user_id: str,
         to_user_id: str,
-    ) -> None:  # pragma: no cover
+    ) -> None:
         assert interaction.guild_id is not None
         # note: no user input validation is being done here
         from_user_xid = int(from_user_id)
@@ -80,7 +80,7 @@ class AdminCog(commands.Cog):
         description="Expire all inactive games on your server.",
     )
     @traced_interaction()
-    async def expire_games(self, interaction: discord.Interaction) -> None:  # pragma: no cover
+    async def expire_games(self, interaction: discord.Interaction) -> None:
         assert interaction.guild_id is not None
         async with AdminAction.create(self.bot, interaction) as action:
             await action.expire_games(guild_xid=interaction.guild_id)

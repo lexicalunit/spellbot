@@ -2,44 +2,33 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import re
-import urllib.parse
 from typing import TYPE_CHECKING
 
-import discord
 from ddtrace.trace import tracer
 
 from spellbot import services
-from spellbot.data import ChannelModes, GameCriteria, GameLinkDetails
+from spellbot.data import ChannelModes, GameCriteria
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.i18n import guild_locale, t, user_locale
-from spellbot.integrations import convoke, playgroup_live
-from spellbot.models import MAX_RULES_LENGTH, GameStatus, generate_pin
+from spellbot.integrations import playgroup_live
+from spellbot.models import MAX_RULES_LENGTH, GameStatus
 from spellbot.operations import (
-    VoiceChannelSuggestion,
-    safe_add_role,
-    safe_channel_reply,
-    safe_create_channel_invite,
-    safe_create_voice_channel,
-    safe_ensure_voice_category,
-    safe_fetch_text_channel,
     safe_fetch_user,
     safe_followup_channel,
-    safe_get_partial_message,
     safe_send_user,
-    safe_suggest_voice_channel,
-    safe_update_embed,
-    safe_update_embed_origin,
 )
 from spellbot.settings import settings
-from spellbot.views import BaseView, GameView
 
-from .base_action import BaseAction, info_embed
+from .base_action import BaseAction
+from .game_posts import GamePosts
+from .game_start import GameStart
+from .guild_war import GuildWar
 
 if TYPE_CHECKING:
+    import discord
+
     from spellbot import SpellBot
     from spellbot.data import GameData
 
@@ -53,6 +42,9 @@ MIN_START_PLAYERS = 2
 class LookingForGameAction(BaseAction):
     def __init__(self, bot: SpellBot, interaction: discord.Interaction) -> None:
         super().__init__(bot, interaction)
+        self.game_start = GameStart(self)
+        self.game_posts = GamePosts(self)
+        self.guild_war = GuildWar(self)
 
     async def block_if_no_player_linked(self, game_data: GameData) -> bool:
         if game_data.service != GameService.PLAYGROUP_LIVE.value:
@@ -247,108 +239,13 @@ class LookingForGameAction(BaseAction):
             game_data.seats if game_data.service == GameService.PLAYGROUP_LIVE.value else None
         )
         game_data = await services.games.shrink_game(game_data)
-        await self.start_game(
+        await self.game_start.start_game(
             game_data,
             new=False,
             origin=False,
             force_start=True,
             original_seats=original_seats,
         )
-
-    @tracer.wrap()
-    async def start_game(
-        self,
-        game_data: GameData,
-        *,
-        new: bool,
-        origin: bool,
-        rematch: bool = False,
-        force_start: bool = False,
-        original_seats: int | None = None,
-    ) -> None:
-        """Start a fully seated game: link it, post it, DM its players, and refresh their queues."""
-        assert self.guild
-        # Starting pulls the players out of every other queue, so those posts need a refresh.
-        other_game_ids = await services.games.other_game_ids(game_data)
-        game_data, suggested_vc = await self.make_game_ready(
-            game_data,
-            [player.xid for player in game_data.players],
-            original_seats=original_seats,
-        )
-        game_data = await self.handle_voice_creation(game_data, self.guild.id)
-        game_data = await self.handle_embed_creation(
-            game_data,
-            new=new,
-            origin=origin,
-            suggested_vc=suggested_vc,
-            rematch=rematch,
-            force_start=force_start,
-        )
-        await self.handle_direct_messages(game_data, suggested_vc=suggested_vc, rematch=rematch)
-        await self.update_other_game_posts(other_game_ids)
-
-    async def reply_guild_war_seats(self, locale: str) -> None:
-        """Tell the user a Guild War game can not be seated the way they asked."""
-        await safe_followup_channel(
-            self.interaction,
-            t(
-                "lfg.guild_war_seats",
-                locale=locale,
-                min=convoke.MIN_WAR_SEATS,
-                max=convoke.MAX_WAR_SEATS,
-            ),
-        )
-
-    async def resolve_guild_war(
-        self,
-        guild_war: str | None,
-        *,
-        service: int | None,
-        seats: int | None,
-        locale: str,
-    ) -> tuple[str | None, str | None, int | None, int | None] | None:
-        """
-        Resolve the optional `/war` guild war into Convoke war fields.
-
-        Returns (war_id, war_title, service, seats), or None when an error reply
-        was already sent to the user. Guild Wars only exist on Convoke, so a war game
-        always comes back as a Convoke game whatever service was asked for, seated
-        within the bounds Convoke allows. Since the seat count returned here is always
-        in range, nothing downstream needs to re-check it — `resolve_criteria` can only shrink
-        it further, and a war game never falls back to the channel's default seats.
-        """
-        if not guild_war:
-            return None, None, service, seats
-
-        live_war = await convoke.resolve_live_guild_war(guild_war.strip())
-        if live_war is None:
-            await safe_followup_channel(
-                self.interaction,
-                t("lfg.guild_war_invalid", locale=locale),
-            )
-            return None
-
-        if seats is not None and not convoke.MIN_WAR_SEATS <= seats <= convoke.MAX_WAR_SEATS:
-            await self.reply_guild_war_seats(locale)
-            return None
-
-        return (
-            live_war["id"],
-            live_war["title"],
-            GameService.CONVOKE.value,
-            seats or convoke.DEFAULT_WAR_SEATS,
-        )
-
-    async def ensure_guild_war_convoke_link(self, game_data: GameData) -> GameData:
-        """Open the Convoke table as soon as a Guild War /lfg queue exists."""
-        if not game_data.war_id or game_data.game_link:
-            return game_data
-        # No pins yet: players only get theirs once the queue fills, and `make_game_ready()`
-        # sends them to Convoke along with the final roster.
-        details = await self.bot.create_game_link(game_data)
-        if not details.link:
-            return game_data
-        return await services.games.attach_game_link(game_data, details)
 
     @tracer.wrap()
     async def execute(
@@ -396,10 +293,10 @@ class LookingForGameAction(BaseAction):
         if game_data.fully_seated:
             if await self.block_if_no_player_linked(game_data):
                 return
-            await self.start_game(game_data, new=new, origin=origin)
+            await self.game_start.start_game(game_data, new=new, origin=origin)
             return
-        game_data = await self.ensure_guild_war_convoke_link(game_data)
-        await self.handle_embed_creation(game_data, new=new, origin=origin)
+        game_data = await self.guild_war.ensure_guild_war_convoke_link(game_data)
+        await self.game_posts.handle_embed_creation(game_data, new=new, origin=origin)
 
     async def execute_command(
         self,
@@ -414,7 +311,7 @@ class LookingForGameAction(BaseAction):
         locale: str,
     ) -> tuple[bool, GameData | None]:
         """Queue the user and their friends for a game matching their `/lfg` options."""
-        resolved = await self.resolve_guild_war(
+        resolved = await self.guild_war.resolve_guild_war(
             guild_war,
             service=service,
             seats=seats,
@@ -457,16 +354,6 @@ class LookingForGameAction(BaseAction):
             await self.reply(t("lfg.too_many_pending", locale=locale), origin=origin)
             return True
         return False
-
-    @tracer.wrap()
-    async def update_other_game_posts(self, other_game_ids: list[int]) -> None:
-        """Update any other pending games to show that some players are no longer available."""
-        for game_data in await services.games.get_many(other_game_ids):
-            await self.refresh_game_posts(
-                game_data,
-                delete_if_empty=False,
-                view=GameView(bot=self.bot, locale=game_data.locale),
-            )
 
     @tracer.wrap()
     async def create_game(
@@ -520,372 +407,7 @@ class LookingForGameAction(BaseAction):
             ),
             create_new=True,
         )
-        await self.start_game(game_data, new=True, origin=False, rematch=rematch)
-
-    @tracer.wrap()
-    async def make_game_ready(
-        self,
-        game_data: GameData,
-        player_xids: list[int],
-        original_seats: int | None = None,
-    ) -> tuple[GameData, VoiceChannelSuggestion | None]:
-        # Convoke needs player pins, so we have to generate them before creating the game link.
-        # Initially the design was to let the DB do this later, in the `make_ready()` method.
-        # This could be revisited later to better factor this code. Note that we always generate
-        # pin for a player, even if Mythic Track is not enabled for the guild. The `player_pins()`
-        # method of the Game object will return None for players if MT is not enabled.
-        pins = {xid: generate_pin() for xid in player_xids}
-
-        if game_data.game_link:
-            # Guild War tables are opened before the queue fills, so the link already exists.
-            # Send the service the final roster along with the pins players are about to get.
-            await self.bot.update_game_players(game_data, pins)
-            details = GameLinkDetails(
-                game_data.game_link,
-                game_data.password,
-                game_data.convoke_guild_name,
-                game_data.convoke_guild_url,
-            )
-        else:
-            details = await self.bot.create_game_link(
-                game_data,
-                pins,
-                original_seats=original_seats,
-            )
-
-        suggested_vc = None
-        if (
-            not game_data.voice_xid
-            and not game_data.voice_invite_link
-            and self.guild_data
-            and (suggest_voice_category := self.guild_data.suggest_voice_category)
-            and self.guild is not None
-        ):
-            suggested_vc = safe_suggest_voice_channel(
-                guild=self.guild,
-                category=suggest_voice_category,
-                player_xids=player_xids,
-            )
-
-        if span := tracer.current_span():  # pragma: no cover
-            span.set_tags(
-                {
-                    "game_id": str(game_data),
-                    "voice_xid": str(game_data.voice_xid),
-                    "voice_invite_link": str(game_data.voice_invite_link),
-                    "guild_data__isnull": str(bool(self.guild_data is None)),
-                    "already_picked": str(suggested_vc.already_picked if suggested_vc else None),
-                    "random_empty": str(suggested_vc.random_empty if suggested_vc else None),
-                },
-            )
-
-        ready_game = await services.games.make_ready(
-            game_data,
-            details,
-            pins,
-        )
-        return ready_game, suggested_vc
-
-    @tracer.wrap()
-    async def handle_voice_creation(self, game_data: GameData, guild_xid: int) -> GameData:
-        assert self.guild_data is not None
-        if not self.guild_data.voice_create:
-            return game_data
-
-        category_prefix = self.channel_data.voice_category
-        if not category_prefix:
-            return game_data
-        category = await safe_ensure_voice_category(self.bot, guild_xid, category_prefix)
-        if not category:
-            return game_data
-
-        voice_channel = await safe_create_voice_channel(
-            self.bot,
-            guild_xid,
-            f"Game-SB{game_data.id}",
-            category=category,
-            use_max_bitrate=self.guild_data.use_max_bitrate,
-        )
-        if not voice_channel:
-            return game_data
-
-        should_create_invite = self.channel_data.voice_invite
-        invite: discord.Invite | None = None
-        if should_create_invite:
-            invite = await safe_create_channel_invite(
-                voice_channel,
-                max_age=2 * 60 * 60,  # 2 hours
-                max_uses=0,  # unlimited uses
-                temporary=True,
-                reason=f"Creating temporary voice channel invite for Game-SB{game_data.id}",
-            )
-
-        return await services.games.set_voice(
-            game_data,
-            voice_xid=voice_channel.id,
-            voice_invite_link=invite.url if invite else None,
-        )
-
-    @tracer.wrap()
-    async def create_initial_post(
-        self,
-        game_data: GameData,
-        embed: discord.Embed,
-        view: BaseView | None = None,
-        content: str | None = None,
-    ) -> GameData:
-        assert self.guild
-        assert self.channel
-        allowed_mentions = discord.AllowedMentions(everyone=True, users=False, roles=True)
-        if message := await safe_followup_channel(
-            self.interaction,
-            content=content,
-            embed=embed,
-            view=view,
-            allowed_mentions=allowed_mentions,
-        ) or (
-            message := await safe_channel_reply(
-                self.channel,
-                content=content,
-                embed=embed,
-                view=view,
-                allowed_mentions=allowed_mentions,
-            )
-        ):
-            return await services.games.add_post(
-                game_data,
-                self.guild.id,
-                self.channel.id,
-                message.id,
-            )
-        return game_data
-
-    @tracer.wrap()
-    async def handle_embed_creation(
-        self,
-        game_data: GameData,
-        *,
-        new: bool,
-        origin: bool,
-        suggested_vc: VoiceChannelSuggestion | None = None,
-        rematch: bool = False,
-        force_start: bool = False,
-    ) -> GameData:
-        assert self.guild
-        assert self.channel
-
-        # build the game post's embed and view:
-        embed = self.game_embed(game_data, suggested_vc=suggested_vc, rematch=rematch)
-        content = self.channel_data.extra
-
-        view = None if game_data.fully_seated else GameView(bot=self.bot, locale=game_data.locale)
-        if new:  # create the initial game post:
-            return await self.create_initial_post(game_data, embed, view, content)
-
-        # update the game post(s) for this game, which should already exist
-        return await self.handle_embed_update(
-            game_data,
-            embed=embed,
-            view=view,
-            origin=origin,
-            force_start=force_start,
-        )
-
-    @tracer.wrap()
-    async def handle_embed_update(
-        self,
-        game_data: GameData,
-        *,
-        embed: discord.Embed,
-        view: GameView | None,
-        origin: bool = False,
-        force_start: bool = False,
-    ) -> GameData:
-        assert self.guild
-        assert self.channel
-
-        for post in game_data.posts:
-            message: discord.Message | discord.PartialMessage | None = None
-            guild_xid = post.guild_xid
-            channel_xid = post.channel_xid
-            message_xid = post.message_xid
-
-            channel: discord.TextChannel | None = None
-            if self.guild.id == guild_xid and self.channel.id == channel_xid:
-                # this post is for the current channel and guild
-                channel = self.channel
-            else:
-                # the post is in a different channel/guild, so we need to fetch it
-                channel = await safe_fetch_text_channel(self.bot, guild_xid, channel_xid)
-
-            if channel is None:
-                # failed for find the channel for this post
-                continue
-
-            # The post we're going to update here is the origin post:
-            if self.interaction.message and self.interaction.message.id == message_xid:
-                content = self.channel_data.extra
-                if await safe_update_embed_origin(
-                    self.interaction,
-                    content=content,
-                    embed=embed,
-                    view=view,
-                ):
-                    # successfully updated the origin post
-                    continue
-
-            message = safe_get_partial_message(channel, guild_xid, message_xid)
-            if not message:
-                # failed to find the message for this post
-                continue
-
-            if not await safe_update_embed(message, embed=embed, view=view):
-                # failed to update the message for this post
-                continue
-
-        if force_start or not origin:
-            await self.reply_game_embed(game_data, started=force_start)
-
-        return game_data
-
-    @tracer.wrap()
-    async def reply_game_embed(self, game_data: GameData, *, started: bool) -> None:
-        """Point the user at the game they just joined (or force started)."""
-        assert self.guild is not None
-        locale = game_data.locale
-        format = str(GameFormat(game_data.format))
-        title_key = "lfg.started_game" if started else "lfg.found_game"
-        if link := game_data.jump_links.get(self.guild.id):
-            description = t("lfg.jump_to_game", locale=locale, link=link)
-        elif started:
-            description = t("lfg.game_started_id", locale=locale, game_id=game_data.id)
-        else:
-            description = t("lfg.joined_game", locale=locale, game_id=game_data.id)
-        embed = info_embed(
-            author=t(title_key, locale=locale, format=format),
-            description=description,
-        )
-        await safe_followup_channel(self.interaction, embed=embed)
-
-    @tracer.wrap()
-    async def handle_direct_messages(
-        self,
-        game_data: GameData,
-        suggested_vc: VoiceChannelSuggestion | None = None,
-        rematch: bool = False,
-    ) -> None:
-        guild_locale_fallback = game_data.locale
-        player_pins = game_data.player_pins
-        player_names = {player.xid: player.name for player in game_data.players}
-        player_xids = list(player_pins.keys())
-
-        # Fetch stored user locales from the database
-        player_data_list = await services.users.get_players_by_xid(player_xids)
-        player_locales = {pd.xid: pd.locale or guild_locale_fallback for pd in player_data_list}
-
-        # notify players
-        fetched_players: dict[int, discord.User] = {}
-        failed_xids: list[int] = []
-
-        def mythic_track_link(player_xid: int) -> str:
-            assert self.guild
-            players_data = urllib.parse.quote(
-                json.dumps(
-                    [
-                        {
-                            "user_xid": f"{pid}",
-                            "username": pn,
-                        }
-                        for pid, pn in player_names.items()
-                    ],
-                    separators=(",", ":"),
-                ),
-                safe="",
-                encoding=None,
-                errors=None,
-            )
-            return (
-                "https://www.mythictrack.com/gamelobby"
-                f"/{self.guild.id}"
-                f"/{game_data.id}"
-                f"/{game_data.format}"
-                f"/{game_data.service}"
-                f"/{player_xid}"
-                f"/{players_data}"
-                f"/{GameBracket(game_data.bracket).level}"
-            )
-
-        async def notify_player(player_xid: int) -> None:
-            player = await safe_fetch_user(self.bot, player_xid)
-            if not player:
-                failed_xids.append(player_xid)
-                return
-
-            fetched_players[player_xid] = player
-
-            # Use the stored locale from database, falling back to guild locale
-            player_locale = player_locales.get(player_xid, guild_locale_fallback)
-
-            # Generate a personalized embed for this player with their locale
-            embed = self.game_embed(
-                game_data,
-                dm=True,
-                suggested_vc=suggested_vc,
-                rematch=rematch,
-                locale_override=player_locale,
-            )
-
-            if pin := player_pins[player_xid]:
-                mt_emoji = ""
-                emojis = self.bot.emojis_cache
-                if emoji := next((e for e in emojis if e.name == "mythic_track"), None):
-                    mt_emoji = f"{emoji} "
-                embed.description = f"{embed.description}\n\n" + t(
-                    "lfg.mythic_track",
-                    locale=player_locale,
-                    emoji=mt_emoji,
-                    link=mythic_track_link(player_xid),
-                    pin=pin,
-                )
-
-            await safe_send_user(player, embed=embed)
-
-        notify_player_tasks = [notify_player(player_xid) for player_xid in player_xids]
-        await asyncio.gather(*notify_player_tasks)
-
-        # give out awards
-        assert self.interaction.guild_id is not None
-        new_roles = await services.awards.give_awards(
-            self.interaction.guild_id,
-            player_xids,
-        )
-        assert self.interaction.guild
-        for player_xid, new_awards in new_roles.items():
-            for new_award in new_awards:
-                if player_xid not in fetched_players:
-                    key = "lfg.award_failure_take" if new_award.remove else "lfg.award_failure_give"
-                    warning = t(
-                        key,
-                        locale=guild_locale_fallback,
-                        role=new_award.role,
-                        user_id=player_xid,
-                    )
-                    await safe_followup_channel(self.interaction, warning)
-                    continue
-                player = fetched_players[player_xid]
-                await safe_add_role(
-                    player,
-                    self.interaction.guild,
-                    new_award.role,
-                    new_award.remove,
-                )
-                await safe_send_user(player, new_award.message)
-
-        # notify issues with player permissions
-        if failed_xids:
-            failures = ", ".join(f"<@!{xid}>" for xid in failed_xids)
-            warning = t("lfg.dm_failures", locale=guild_locale_fallback, players=failures)
-            await safe_followup_channel(self.interaction, warning)
+        await self.game_start.start_game(game_data, new=True, origin=False, rematch=rematch)
 
     @tracer.wrap()
     async def ensure_users_exist(

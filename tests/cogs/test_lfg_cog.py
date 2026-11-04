@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import discord
@@ -878,3 +878,31 @@ class TestGuildWarAutocomplete:
             AsyncMock(return_value=[]),
         )
         assert await guild_war_autocomplete(interaction, "summer") == []
+
+
+@pytest.mark.asyncio
+class TestCogDeferFailure:
+    """When Discord rejects the deferral, the interaction is gone, so the command does nothing."""
+
+    @pytest.mark.parametrize(
+        ("command", "kwargs"),
+        [
+            pytest.param("lfg", {}, id="lfg"),
+            pytest.param("war", {"war": "Some War"}, id="war"),
+            pytest.param("rematch", {}, id="rematch"),
+            pytest.param("start", {}, id="start"),
+        ],
+    )
+    async def test_stops_when_defer_fails(
+        self,
+        bot: SpellBot,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+        command: str,
+        kwargs: dict[str, Any],
+    ) -> None:
+        mocker.patch("spellbot.cogs.lfg_cog.safe_defer_interaction", AsyncMock(return_value=False))
+        create = mocker.patch("spellbot.cogs.lfg_cog.LookingForGameAction.create")
+        cog = LookingForGameCog(bot)
+        await run_command(getattr(cog, command), interaction, **kwargs)
+        create.assert_not_called()

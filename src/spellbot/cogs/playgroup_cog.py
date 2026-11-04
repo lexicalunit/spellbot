@@ -34,7 +34,7 @@ class PlaygroupCog(commands.Cog):
     @app_commands.checks.cooldown(1, 60)
     @traced_interaction("playgroup_link")
     async def link(self, interaction: discord.Interaction) -> None:
-        if not await safe_defer_interaction(interaction, ephemeral=True):  # pragma: no cover
+        if not await safe_defer_interaction(interaction, ephemeral=True):
             return
         async with PlaygroupAction.create(self.bot, interaction) as action:
             await action.link()

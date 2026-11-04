@@ -73,7 +73,7 @@ class LookingForGameCog(commands.Cog):
         bracket: int | None = None,
     ) -> None:
         assert interaction.guild is not None
-        if not await safe_defer_interaction(interaction):  # pragma: no cover
+        if not await safe_defer_interaction(interaction):
             return
         async with (
             self.bot.guild_lock(interaction.guild.id),
@@ -117,7 +117,7 @@ class LookingForGameCog(commands.Cog):
         bracket: int | None = None,
     ) -> None:
         assert interaction.guild is not None
-        if not await safe_defer_interaction(interaction):  # pragma: no cover
+        if not await safe_defer_interaction(interaction):
             return
         async with (
             self.bot.guild_lock(interaction.guild.id),
@@ -137,7 +137,7 @@ class LookingForGameCog(commands.Cog):
     @traced_interaction()
     async def rematch(self, interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
-        if not await safe_defer_interaction(interaction):  # pragma: no cover
+        if not await safe_defer_interaction(interaction):
             return
         async with (
             self.bot.guild_lock(interaction.guild.id),
@@ -149,7 +149,7 @@ class LookingForGameCog(commands.Cog):
     @traced_interaction()
     async def start(self, interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
-        if not await safe_defer_interaction(interaction):  # pragma: no cover
+        if not await safe_defer_interaction(interaction):
             return
         async with (
             self.bot.guild_lock(interaction.guild.id),

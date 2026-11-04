@@ -92,9 +92,9 @@ DatabaseSession = ContextLocal[AsyncSession].of_type(AsyncSession)
 def to_async_url(db_url: str) -> str:
     if db_url.startswith("postgresql+psycopg://"):
         return db_url
-    if db_url.startswith("postgresql://"):  # pragma: no cover
+    if db_url.startswith("postgresql://"):
         return db_url.replace("postgresql://", "postgresql+psycopg://", 1)
-    return db_url  # pragma: no cover
+    return db_url
 
 
 async def initialize_connection(

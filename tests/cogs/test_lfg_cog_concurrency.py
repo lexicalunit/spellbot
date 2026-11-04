@@ -12,7 +12,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from spellbot.actions import lfg_action
+from spellbot.actions import game_posts, game_start, lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Game
@@ -88,19 +88,18 @@ class TestCogLookingForGameConcurrency:
             next_message_xid += 1
             return message
 
-        monkeypatch.setattr(lfg_action, "safe_fetch_user", AsyncMock())
-        monkeypatch.setattr(
-            lfg_action,
-            "safe_followup_channel",
-            AsyncMock(side_effect=get_next_message),
-        )
-        monkeypatch.setattr(
-            lfg_action,
-            "safe_get_partial_message",
-            MagicMock(side_effect=get_next_message),
-        )
-        monkeypatch.setattr(lfg_action, "safe_update_embed_origin", AsyncMock(return_value=True))
-        monkeypatch.setattr(lfg_action, "safe_update_embed", AsyncMock(return_value=True))
+        mocks = {
+            "safe_fetch_user": AsyncMock(),
+            "safe_followup_channel": AsyncMock(side_effect=get_next_message),
+            "safe_get_partial_message": MagicMock(side_effect=get_next_message),
+            "safe_update_embed_origin": AsyncMock(return_value=True),
+            "safe_update_embed": AsyncMock(return_value=True),
+        }
+        # The /lfg flow calls these from `lfg_action` and its helper modules.
+        for module in (lfg_action, game_posts, game_start):
+            for name, mock in mocks.items():
+                if hasattr(module, name):
+                    monkeypatch.setattr(module, name, mock)
 
         cog = LookingForGameCog(bot)
         guild = build_guild()

@@ -21,7 +21,7 @@ from .data import GameLinkDetails
 from .database import db_session_manager, initialize_connection
 from .enums import GameService
 from .integrations import convoke, edhlab, girudo, playgroup_live
-from .metrics import add_span_request_id, generate_request_id, setup_metrics
+from .metrics import add_span_request_id, generate_request_id, setup_metrics, tag_span
 from .settings import settings
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
@@ -199,8 +199,7 @@ class SpellBot(AutoShardedBot):
         if self.mock_games:
             return GameLinkDetails(f"http://example.com/game/{uuid4()}")
         service = game_data.service
-        if span := tracer.current_span():  # pragma: no cover
-            span.set_tag("link_service", GameService(service).name)
+        tag_span(link_service=GameService(service).name)
         match service:
             case GameService.CONVOKE.value:
                 return await convoke.generate_link(game_data, pins)

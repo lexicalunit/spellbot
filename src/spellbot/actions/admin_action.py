@@ -113,7 +113,7 @@ class AdminAction(BaseAction):
         guild_xid: int,
         from_user_xid: int,
         to_user_xid: int,
-    ) -> None:  # pragma: no cover
+    ) -> None:
         locale = user_locale(self.interaction)
         if error := await services.users.move_user(guild_xid, from_user_xid, to_user_xid):
             await safe_send_channel(

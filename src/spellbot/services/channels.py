@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 channel_cache: dict[int, str] = {}
 
 
-def is_cached(xid: int, name: str) -> bool:  # pragma: no cover
+def is_cached(xid: int, name: str) -> bool:
     """Return True if the channel xid is in the local name cache under the given name."""
     if running_in_pytest():
         return False

@@ -59,7 +59,7 @@ def describe_http_error(ex: BaseException) -> str:
         return ""
     try:
         body = ex.response.text
-    except Exception:  # pragma: no cover  # httpx raises if the body was never read
+    except Exception:  # httpx raises if the body was never read
         body = "<unavailable>"
     body = body.strip()
     if len(body) > MAX_BODY_CHARS:
@@ -100,4 +100,4 @@ async def request_with_retries[T](
                 )
                 if backoff_s:
                     await asyncio.sleep(backoff_s * (2**attempt))
-    return None  # pragma: no cover  # only reached when `attempts` is zero
+    return None  # only reached when `attempts` is zero

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import sys
 from contextlib import contextmanager
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast, overload
 from unittest.mock import AsyncMock, MagicMock, NonCallableMock
 
@@ -11,7 +12,6 @@ import discord
 import pytest
 
 from spellbot import operations
-from spellbot.actions import base_action
 from spellbot.models import Channel, Guild, User
 from tests.mocks.girudo import (
     GirudoTestData,
@@ -25,7 +25,6 @@ from tests.mocks.girudo import (
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-    from types import ModuleType
 
     from discord.types.role import Role as RolePayload
 
@@ -98,6 +97,16 @@ class OperationMocks(SimpleNamespace):
         def __getattr__(self, name: str) -> AsyncMock | MagicMock: ...
 
 
+def action_modules(module: ModuleType) -> list[ModuleType]:
+    """Every loaded `spellbot.actions` module, plus `module` itself."""
+    modules = [
+        loaded
+        for loaded_name, loaded in sorted(sys.modules.items())
+        if loaded_name.startswith("spellbot.actions.") and isinstance(loaded, ModuleType)
+    ]
+    return modules if module in modules else [*modules, module]
+
+
 @contextmanager
 def mock_operations(
     module: ModuleType,
@@ -106,9 +115,9 @@ def mock_operations(
     """
     Mock out all operations.py functions used by a given action module.
 
-    Shared action helpers live in `spellbot.actions.base_action`, so the same mocks are installed
-    there too: `ops.safe_x` controls a call whether the action makes it itself or through a
-    `BaseAction` helper.
+    The same mocks are installed in every `spellbot.actions` module, since an action's work is
+    shared with `base_action` and helper modules (such as `game_posts` for `lfg_action`):
+    `ops.safe_x` controls a call whichever of those modules makes it.
 
     Special care is given to the mock for `safe_fetch_user()` so that users passed
     into `mock_operations()` will be findable via calls to `safe_fetch_user()`.
@@ -125,7 +134,7 @@ def mock_operations(
 
     """
     _users: list[discord.User] = users or []
-    modules = [module] if module is base_action else [module, base_action]
+    modules = action_modules(module)
 
     mocks = OperationMocks()
     for name in operations.__dict__:

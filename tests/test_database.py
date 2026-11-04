@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from spellbot.database import DatabaseSession, ProcessGlobal, end_session
+from spellbot.database import DatabaseSession, ProcessGlobal, end_session, to_async_url
 
 
 @pytest.mark.asyncio
@@ -40,3 +40,16 @@ class TestProcessGlobal:
         holder.set(7)
         assert holder.get() == 7
         assert holder.value == 7
+
+
+class TestToAsyncUrl:
+    @pytest.mark.parametrize(
+        ("url", "expected"),
+        [
+            pytest.param("postgresql+psycopg://h/db", "postgresql+psycopg://h/db", id="psycopg"),
+            pytest.param("postgresql://h/db", "postgresql+psycopg://h/db", id="plain"),
+            pytest.param("sqlite:///db", "sqlite:///db", id="other"),
+        ],
+    )
+    def test_to_async_url(self, url: str, expected: str) -> None:
+        assert to_async_url(url) == expected

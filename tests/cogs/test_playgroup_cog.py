@@ -133,3 +133,17 @@ class TestCogPlaygroup:
             await run_command(cog.link, interaction)
 
         lookup_stub.assert_not_called()
+
+    async def test_link_stops_when_defer_fails(
+        self,
+        cog: PlaygroupCog,
+        interaction: discord.Interaction,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch(
+            "spellbot.cogs.playgroup_cog.safe_defer_interaction",
+            AsyncMock(return_value=False),
+        )
+        create = mocker.patch("spellbot.cogs.playgroup_cog.PlaygroupAction.create")
+        await run_command(cog.link, interaction)
+        create.assert_not_called()

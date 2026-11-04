@@ -314,7 +314,7 @@ class TestLookingForGameAction:
         """Test _update_other_game_posts returns early when no other game IDs."""
         # Should return immediately without calling message_xids
         stub = mocker.patch.object(services.games, "message_xids", AsyncMock())
-        await action.update_other_game_posts([])
+        await action.game_posts.update_other_game_posts([])
         stub.assert_not_called()
 
     async def test_join_game_filled_up(
@@ -376,7 +376,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action.update_other_game_posts([1])
+        await action.game_posts.update_other_game_posts([1])
 
         assert [c.args[1:] for c in fetch_stub.call_args_list] == [(67890, 12345), (67890, 54321)]
         assert [c.args[1:] for c in get_stub.call_args_list] == [(67890, 111), (67890, 222)]
@@ -394,7 +394,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=True),
         )
 
-        await action.update_other_game_posts([1])
+        await action.game_posts.update_other_game_posts([1])
 
         update_stub.assert_not_called()
 
@@ -412,13 +412,13 @@ class TestLookingForGameAction:
             AsyncMock(return_value=game_data),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_text_channel",
+            "spellbot.actions.game_posts.safe_fetch_text_channel",
             AsyncMock(return_value=None),
         )
 
-        update_stub = mocker.patch("spellbot.actions.lfg_action.safe_update_embed", AsyncMock())
+        update_stub = mocker.patch("spellbot.actions.game_posts.safe_update_embed", AsyncMock())
 
-        await action.update_other_game_posts([1])
+        await action.game_posts.update_other_game_posts([1])
 
         update_stub.assert_not_called()
 
@@ -460,15 +460,15 @@ class TestLookingForGameAction:
             use_max_bitrate=False,
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_ensure_voice_category",
+            "spellbot.actions.game_start.safe_ensure_voice_category",
             AsyncMock(return_value=None),
         )
         voice_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_create_voice_channel",
+            "spellbot.actions.game_start.safe_create_voice_channel",
             AsyncMock(),
         )
 
-        await action.handle_voice_creation(game_data, 12345)
+        await action.game_start.handle_voice_creation(game_data, 12345)
 
         voice_stub.assert_not_called()
 
@@ -485,11 +485,11 @@ class TestLookingForGameAction:
         )
         action.channel_data.voice_category = None
         ensure_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_ensure_voice_category",
+            "spellbot.actions.game_start.safe_ensure_voice_category",
             AsyncMock(),
         )
 
-        result = await action.handle_voice_creation(game_data, 12345)
+        result = await action.game_start.handle_voice_creation(game_data, 12345)
 
         assert result is game_data
         ensure_stub.assert_not_called()
@@ -507,17 +507,17 @@ class TestLookingForGameAction:
             use_max_bitrate=False,
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_ensure_voice_category",
+            "spellbot.actions.game_start.safe_ensure_voice_category",
             AsyncMock(return_value=mock_category),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_create_voice_channel",
+            "spellbot.actions.game_start.safe_create_voice_channel",
             AsyncMock(return_value=None),
         )
 
         set_voice_stub = mocker.patch.object(services.games, "set_voice", AsyncMock())
 
-        await action.handle_voice_creation(game_data, 12345)
+        await action.game_start.handle_voice_creation(game_data, 12345)
 
         set_voice_stub.assert_not_called()
 
@@ -539,15 +539,15 @@ class TestLookingForGameAction:
             use_max_bitrate=False,
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_ensure_voice_category",
+            "spellbot.actions.game_start.safe_ensure_voice_category",
             AsyncMock(return_value=mock_category),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_create_voice_channel",
+            "spellbot.actions.game_start.safe_create_voice_channel",
             AsyncMock(return_value=mock_voice_channel),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_create_channel_invite",
+            "spellbot.actions.game_start.safe_create_channel_invite",
             AsyncMock(return_value=mock_invite),
         )
 
@@ -560,7 +560,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=game_data),
         )
 
-        await action.handle_voice_creation(game_data, 12345)
+        await action.game_start.handle_voice_creation(game_data, 12345)
 
         set_voice_stub.assert_called_once()
 
@@ -580,15 +580,15 @@ class TestLookingForGameAction:
             use_max_bitrate=False,
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_ensure_voice_category",
+            "spellbot.actions.game_start.safe_ensure_voice_category",
             AsyncMock(return_value=mock_category),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_create_voice_channel",
+            "spellbot.actions.game_start.safe_create_voice_channel",
             AsyncMock(return_value=mock_voice_channel),
         )
         invite_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_create_channel_invite",
+            "spellbot.actions.game_start.safe_create_channel_invite",
             AsyncMock(),
         )
 
@@ -601,7 +601,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=game_data),
         )
 
-        await action.handle_voice_creation(game_data, 12345)
+        await action.game_start.handle_voice_creation(game_data, 12345)
 
         invite_stub.assert_not_called()
         set_voice_stub.assert_called_once()
@@ -621,7 +621,7 @@ class TestLookingForGameAction:
 
         mock_suggestion = VoiceChannelSuggestion(already_picked=None, random_empty=None)
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_suggest_voice_channel",
+            "spellbot.actions.game_start.safe_suggest_voice_channel",
             return_value=mock_suggestion,
         )
         mocker.patch.object(
@@ -635,7 +635,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=game_data),
         )
 
-        _, suggested_vc = await action.make_game_ready(game_data, [123, 456])
+        _, suggested_vc = await action.game_start.make_game_ready(game_data, [123, 456])
 
         assert suggested_vc == mock_suggestion
 
@@ -660,7 +660,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=game_data),
         )
 
-        await action.make_game_ready(game_data, [123, 456])
+        await action.game_start.make_game_ready(game_data, [123, 456])
 
         create_link.assert_not_called()
         make_ready.assert_awaited_once()
@@ -695,7 +695,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=game_data),
         )
 
-        await action.make_game_ready(game_data, [123, 456])
+        await action.game_start.make_game_ready(game_data, [123, 456])
 
         update_players.assert_not_called()
         assert make_ready.await_args is not None
@@ -729,7 +729,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=attached),
         )
 
-        result = await action.ensure_guild_war_convoke_link(game_data)
+        result = await action.guild_war.ensure_guild_war_convoke_link(game_data)
 
         create_link.assert_awaited_once_with(game_data)
         attach.assert_awaited_once_with(
@@ -750,7 +750,7 @@ class TestLookingForGameAction:
         )
         create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
 
-        result = await action.ensure_guild_war_convoke_link(game_data)
+        result = await action.guild_war.ensure_guild_war_convoke_link(game_data)
 
         create_link.assert_not_called()
         assert result.game_link == "https://convoke.games/en/play/existing"
@@ -763,7 +763,7 @@ class TestLookingForGameAction:
         game_data = create_mock_game(game_id=7)
         create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
 
-        result = await action.ensure_guild_war_convoke_link(game_data)
+        result = await action.guild_war.ensure_guild_war_convoke_link(game_data)
 
         create_link.assert_not_called()
         assert result is game_data
@@ -785,7 +785,7 @@ class TestLookingForGameAction:
         )
         attach = mocker.patch.object(services.games, "attach_game_link", AsyncMock())
 
-        result = await action.ensure_guild_war_convoke_link(game_data)
+        result = await action.guild_war.ensure_guild_war_convoke_link(game_data)
 
         attach.assert_not_called()
         assert result is game_data
@@ -809,7 +809,7 @@ class TestLookingForGameAction:
         )
         opened.players = game_data.players
         mocker.patch.object(
-            action,
+            action.guild_war,
             "resolve_guild_war",
             AsyncMock(
                 return_value=(
@@ -824,12 +824,12 @@ class TestLookingForGameAction:
         mocker.patch.object(services.users, "pending_games", AsyncMock(return_value=0))
         mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(True, game_data)))
         ensure_link = mocker.patch.object(
-            action,
+            action.guild_war,
             "ensure_guild_war_convoke_link",
             AsyncMock(return_value=opened),
         )
         embed_stub = mocker.patch.object(
-            action,
+            action.game_posts,
             "handle_embed_creation",
             AsyncMock(return_value=opened),
         )
@@ -854,7 +854,7 @@ class TestLookingForGameAction:
         )
         game_data.players = [create_mock_user(xid=100)]
         mocker.patch.object(
-            action,
+            action.guild_war,
             "resolve_guild_war",
             AsyncMock(
                 return_value=(
@@ -870,7 +870,7 @@ class TestLookingForGameAction:
         mocker.patch.object(action, "upsert_game", AsyncMock(return_value=(True, game_data)))
         create_link = mocker.patch.object(action.bot, "create_game_link", AsyncMock())
         mocker.patch.object(
-            action,
+            action.game_posts,
             "handle_embed_creation",
             AsyncMock(return_value=game_data),
         )
@@ -891,7 +891,7 @@ class TestLookingForGameAction:
         game_data = create_mock_game(game_id=1)
 
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_followup_channel",
+            "spellbot.actions.game_posts.safe_followup_channel",
             AsyncMock(return_value=mock_message),
         )
         add_post_stub = mocker.patch.object(
@@ -900,7 +900,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value=game_data),
         )
 
-        await action.create_initial_post(game_data, mock_embed)
+        await action.game_posts.create_initial_post(game_data, mock_embed)
 
         add_post_stub.assert_called_once()
 
@@ -919,7 +919,7 @@ class TestLookingForGameAction:
         )
         add_post_stub = mocker.patch.object(services.games, "add_post", AsyncMock())
 
-        await action.create_initial_post(game_data, mock_embed)
+        await action.game_posts.create_initial_post(game_data, mock_embed)
 
         add_post_stub.assert_not_called()
 
@@ -937,19 +937,19 @@ class TestLookingForGameAction:
         game_data.posts = [create_test_post()]
 
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_text_channel",
+            "spellbot.actions.game_posts.safe_fetch_text_channel",
             AsyncMock(return_value=mock_channel),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_get_partial_message",
+            "spellbot.actions.game_posts.safe_get_partial_message",
             return_value=mock_message,
         )
         update_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed",
+            "spellbot.actions.game_posts.safe_update_embed",
             AsyncMock(return_value=True),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True)
+        await action.game_posts.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_called_once()
 
@@ -974,15 +974,15 @@ class TestLookingForGameAction:
         mocker.patch.object(action, "channel", mock_channel)
         mocker.patch.object(action, "guild", mock_guild)
         origin_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed_origin",
+            "spellbot.actions.game_posts.safe_update_embed_origin",
             AsyncMock(return_value=True),
         )
         update_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed",
+            "spellbot.actions.game_posts.safe_update_embed",
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True)
+        await action.game_posts.handle_embed_creation(game_data, new=False, origin=True)
 
         origin_stub.assert_called_once()
         update_stub.assert_not_called()
@@ -1009,19 +1009,19 @@ class TestLookingForGameAction:
         mocker.patch.object(action, "channel", mock_channel)
         mocker.patch.object(action, "guild", mock_guild)
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed_origin",
+            "spellbot.actions.game_posts.safe_update_embed_origin",
             AsyncMock(return_value=False),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_get_partial_message",
+            "spellbot.actions.game_posts.safe_get_partial_message",
             return_value=mock_partial_message,
         )
         update_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed",
+            "spellbot.actions.game_posts.safe_update_embed",
             AsyncMock(return_value=True),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True)
+        await action.game_posts.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_called_once()
 
@@ -1035,15 +1035,15 @@ class TestLookingForGameAction:
         game_data.posts = [create_test_post()]
 
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_text_channel",
+            "spellbot.actions.game_posts.safe_fetch_text_channel",
             AsyncMock(return_value=None),
         )
         update_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed",
+            "spellbot.actions.game_posts.safe_update_embed",
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True)
+        await action.game_posts.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_not_called()
 
@@ -1059,16 +1059,16 @@ class TestLookingForGameAction:
         game_data.posts = [create_test_post()]
 
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_text_channel",
+            "spellbot.actions.game_posts.safe_fetch_text_channel",
             AsyncMock(return_value=mock_channel),
         )
-        mocker.patch("spellbot.actions.lfg_action.safe_get_partial_message", return_value=None)
+        mocker.patch("spellbot.actions.game_posts.safe_get_partial_message", return_value=None)
         update_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed",
+            "spellbot.actions.game_posts.safe_update_embed",
             AsyncMock(),
         )
 
-        await action.handle_embed_creation(game_data, new=False, origin=True)
+        await action.game_posts.handle_embed_creation(game_data, new=False, origin=True)
 
         update_stub.assert_not_called()
 
@@ -1084,21 +1084,21 @@ class TestLookingForGameAction:
         game_data = create_mock_game(game_id=1)
         game_data.posts = [create_test_post()]
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_text_channel",
+            "spellbot.actions.game_posts.safe_fetch_text_channel",
             AsyncMock(return_value=mock_channel),
         )
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_get_partial_message",
+            "spellbot.actions.game_posts.safe_get_partial_message",
             return_value=mock_message,
         )
         # Update returns False, meaning it failed
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_update_embed",
+            "spellbot.actions.game_posts.safe_update_embed",
             AsyncMock(return_value=False),
         )
 
         # Should not raise an exception, just continue
-        await action.handle_embed_creation(game_data, new=False, origin=True)
+        await action.game_posts.handle_embed_creation(game_data, new=False, origin=True)
 
     async def test_reply_found_embed_no_jump_link(
         self,
@@ -1110,11 +1110,11 @@ class TestLookingForGameAction:
         game_data.posts = []  # No posts = no jump links
 
         followup_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_followup_channel",
+            "spellbot.actions.game_posts.safe_followup_channel",
             AsyncMock(),
         )
 
-        await action.reply_game_embed(game_data, started=False)
+        await action.game_posts.reply_game_embed(game_data, started=False)
 
         followup_stub.assert_called_once()
         # Check the embed description contains the game ID
@@ -1132,11 +1132,11 @@ class TestLookingForGameAction:
         game_data.posts = []  # No posts = no jump links
 
         followup_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_followup_channel",
+            "spellbot.actions.game_posts.safe_followup_channel",
             AsyncMock(),
         )
 
-        await action.reply_game_embed(game_data, started=True)
+        await action.game_posts.reply_game_embed(game_data, started=True)
 
         followup_stub.assert_called_once()
         # Check the embed description contains the game ID and the right message
@@ -1163,13 +1163,13 @@ class TestLookingForGameAction:
         action.bot.emojis_cache = [mt_emoji]
 
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_user",
+            "spellbot.actions.game_start.safe_fetch_user",
             AsyncMock(return_value=mock_user),
         )
-        send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
+        send_stub = mocker.patch("spellbot.actions.game_start.safe_send_user", AsyncMock())
         mocker.patch.object(services.awards, "give_awards", AsyncMock(return_value={}))
 
-        await action.handle_direct_messages(game_data)
+        await action.game_start.handle_direct_messages(game_data)
 
         send_stub.assert_called_once()
         # Verify Mythic Track link was added to description
@@ -1193,13 +1193,13 @@ class TestLookingForGameAction:
         action.bot.emojis_cache = []
 
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_user",
+            "spellbot.actions.game_start.safe_fetch_user",
             AsyncMock(return_value=mock_user),
         )
-        send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
+        send_stub = mocker.patch("spellbot.actions.game_start.safe_send_user", AsyncMock())
         mocker.patch.object(services.awards, "give_awards", AsyncMock(return_value={}))
 
-        await action.handle_direct_messages(game_data)
+        await action.game_start.handle_direct_messages(game_data)
 
         send_stub.assert_called_once()
         # Verify Mythic Track link was added to description
@@ -1220,8 +1220,8 @@ class TestLookingForGameAction:
         game_data.player_pins = {123: None}
 
         # Player cannot be fetched
-        mocker.patch("spellbot.actions.lfg_action.safe_fetch_user", AsyncMock(return_value=None))
-        mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
+        mocker.patch("spellbot.actions.game_start.safe_fetch_user", AsyncMock(return_value=None))
+        mocker.patch("spellbot.actions.game_start.safe_send_user", AsyncMock())
 
         # Award for unfetched player
         new_award = NewAward(role="SomeRole", message="Congrats!", remove=False)
@@ -1231,11 +1231,11 @@ class TestLookingForGameAction:
             AsyncMock(return_value={123: [new_award]}),
         )
         followup_stub = mocker.patch(
-            "spellbot.actions.lfg_action.safe_followup_channel",
+            "spellbot.actions.game_start.safe_followup_channel",
             AsyncMock(),
         )
 
-        await action.handle_direct_messages(game_data)
+        await action.game_start.handle_direct_messages(game_data)
 
         # Should have 2 calls:
         # 1. "Unable to give role SomeRole to user <@123>"
@@ -1257,11 +1257,11 @@ class TestLookingForGameAction:
         game_data.player_pins = {123: None}
 
         mocker.patch(
-            "spellbot.actions.lfg_action.safe_fetch_user",
+            "spellbot.actions.game_start.safe_fetch_user",
             AsyncMock(return_value=mock_user),
         )
-        send_stub = mocker.patch("spellbot.actions.lfg_action.safe_send_user", AsyncMock())
-        add_role_stub = mocker.patch("spellbot.actions.lfg_action.safe_add_role", AsyncMock())
+        send_stub = mocker.patch("spellbot.actions.game_start.safe_send_user", AsyncMock())
+        add_role_stub = mocker.patch("spellbot.actions.game_start.safe_add_role", AsyncMock())
 
         # Award for fetched player
         new_award = NewAward(role="SomeRole", message="Congrats!", remove=False)
@@ -1271,7 +1271,7 @@ class TestLookingForGameAction:
             AsyncMock(return_value={123: [new_award]}),
         )
 
-        await action.handle_direct_messages(game_data)
+        await action.game_start.handle_direct_messages(game_data)
 
         # Should give role
         add_role_stub.assert_called_once()
@@ -1347,7 +1347,7 @@ class TestLookingForGameAction:
         mocker.patch.object(services.users, "is_waiting", AsyncMock(return_value=game_data))
         stub = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
         shrink_stub = mocker.patch.object(services.games, "shrink_game", AsyncMock())
-        ready_stub = mocker.patch.object(action, "make_game_ready", AsyncMock())
+        ready_stub = mocker.patch.object(action.game_start, "make_game_ready", AsyncMock())
 
         await action.execute_start()
 
@@ -1403,21 +1403,21 @@ class TestLookingForGameAction:
 
         mock_suggestion = VoiceChannelSuggestion(already_picked=None, random_empty=None)
         make_game_ready = mocker.patch.object(
-            action,
+            action.game_start,
             "make_game_ready",
             AsyncMock(return_value=(game_data, mock_suggestion)),
         )
         voice_stub = mocker.patch.object(
-            action,
+            action.game_start,
             "handle_voice_creation",
             AsyncMock(return_value=game_data),
         )
         embed_stub = mocker.patch.object(
-            action,
+            action.game_posts,
             "handle_embed_creation",
             AsyncMock(return_value=game_data),
         )
-        dm_stub = mocker.patch.object(action, "handle_direct_messages", AsyncMock())
+        dm_stub = mocker.patch.object(action.game_start, "handle_direct_messages", AsyncMock())
 
         await action.execute_start()
 
@@ -1538,7 +1538,7 @@ class TestLookingForGameActionGuildWar:
     ) -> None:
         # `/lfg` still goes through this method, so a request with no war must be
         # returned exactly as it came in.
-        result = await action.resolve_guild_war(
+        result = await action.guild_war.resolve_guild_war(
             None,
             service=GameService.X_MAGE.value,
             seats=6,
@@ -1567,7 +1567,7 @@ class TestLookingForGameActionGuildWar:
         mocker: MockerFixture,
     ) -> None:
         self.patch_resolver(mocker, LIVE_WAR)
-        result = await action.resolve_guild_war(
+        result = await action.guild_war.resolve_guild_war(
             WAR_ID,
             service=None,
             seats=None,
@@ -1586,7 +1586,7 @@ class TestLookingForGameActionGuildWar:
         mocker: MockerFixture,
     ) -> None:
         stub = self.patch_resolver(mocker, LIVE_WAR)
-        await action.resolve_guild_war(
+        await action.guild_war.resolve_guild_war(
             f"  {WAR_ID}  ",
             service=None,
             seats=None,
@@ -1600,7 +1600,7 @@ class TestLookingForGameActionGuildWar:
         mocker: MockerFixture,
     ) -> None:
         self.patch_resolver(mocker, LIVE_WAR)
-        result = await action.resolve_guild_war(
+        result = await action.guild_war.resolve_guild_war(
             WAR_ID,
             service=None,
             seats=6,
@@ -1618,7 +1618,7 @@ class TestLookingForGameActionGuildWar:
         # than rejected — `/war` never offers the choice in the first place.
         self.patch_resolver(mocker, LIVE_WAR)
 
-        result = await action.resolve_guild_war(
+        result = await action.guild_war.resolve_guild_war(
             WAR_ID,
             service=GameService.X_MAGE.value,
             seats=None,
@@ -1633,10 +1633,10 @@ class TestLookingForGameActionGuildWar:
         action: LookingForGameAction,
         mocker: MockerFixture,
     ) -> None:
-        reply = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        reply = mocker.patch("spellbot.actions.guild_war.safe_followup_channel", AsyncMock())
         self.patch_resolver(mocker, None)
 
-        result = await action.resolve_guild_war(
+        result = await action.guild_war.resolve_guild_war(
             "not-a-real-war",
             service=None,
             seats=None,
@@ -1659,10 +1659,10 @@ class TestLookingForGameActionGuildWar:
         mocker: MockerFixture,
         seats: int,
     ) -> None:
-        reply = mocker.patch("spellbot.actions.lfg_action.safe_followup_channel", AsyncMock())
+        reply = mocker.patch("spellbot.actions.guild_war.safe_followup_channel", AsyncMock())
         self.patch_resolver(mocker, LIVE_WAR)
 
-        result = await action.resolve_guild_war(
+        result = await action.guild_war.resolve_guild_war(
             WAR_ID,
             service=None,
             seats=seats,
@@ -1683,7 +1683,7 @@ class TestLookingForGameActionGuildWar:
     ) -> None:
         self.patch_resolver(mocker, LIVE_WAR)
         for seats in (convoke.MIN_WAR_SEATS, convoke.MAX_WAR_SEATS):
-            result = await action.resolve_guild_war(
+            result = await action.guild_war.resolve_guild_war(
                 WAR_ID,
                 service=None,
                 seats=seats,

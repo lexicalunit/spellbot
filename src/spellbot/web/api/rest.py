@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from dataclasses import dataclass
 from datetime import UTC
 from typing import TYPE_CHECKING, Any
 
@@ -30,24 +31,28 @@ routes = web.RouteTableDef()
 
 UNRECOVERABLE = {400, 401, 403, 404}
 
+
 # Process-wide aiohttp client session, lazily created on first use and reused
 # for the lifetime of the process. aiohttp recommends a single long-lived
 # session per application rather than creating a new one per request.
-_http_session: aiohttp.ClientSession | None = None
+@dataclass
+class HttpSessionHolder:
+    session: aiohttp.ClientSession | None = None
+
+
+shared = HttpSessionHolder()
 
 
 def get_http_session() -> aiohttp.ClientSession:
-    global _http_session  # noqa: PLW0603
-    if _http_session is None or _http_session.closed:
-        _http_session = aiohttp.ClientSession()
-    return _http_session
+    if shared.session is None or shared.session.closed:
+        shared.session = aiohttp.ClientSession()
+    return shared.session
 
 
 async def close_http_session() -> None:
-    global _http_session  # noqa: PLW0603
-    if _http_session is not None and not _http_session.closed:
-        await _http_session.close()
-    _http_session = None
+    if shared.session is not None and not shared.session.closed:
+        await shared.session.close()
+    shared.session = None
 
 
 def reply(

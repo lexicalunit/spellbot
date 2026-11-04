@@ -79,3 +79,11 @@ class TestDescribeHttpError:
 
     def test_arbitrary_exception_returns_empty_string(self) -> None:
         assert describe_http_error(ValueError("nope")) == ""
+
+
+class TestDescribeUnreadBody:
+    def test_unread_streaming_body(self) -> None:
+        request = httpx.Request("GET", "https://api.example.com/thing")
+        response = httpx.Response(500, request=request, stream=httpx.ByteStream(b"never read"))
+        ex = httpx.HTTPStatusError("500", request=request, response=response)
+        assert describe_http_error(ex).endswith(": <unavailable>")

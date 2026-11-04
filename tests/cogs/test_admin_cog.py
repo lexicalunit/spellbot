@@ -595,3 +595,43 @@ class TestCogAdminUserInfo:
         embed = await get_last_send_message(decoy, interaction, "embed")
         fields = {f["name"]: f["value"] for f in embed["fields"]}
         assert "Blocked by 1 user" in fields["Block Status"]  # singular
+
+
+@pytest.mark.asyncio
+class TestCogAdminMoveUser:
+    async def test_moves_user(
+        self,
+        decoy: Decoy,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+        factories: Factories,
+    ) -> None:
+        old = factories.user.create()
+        new_xid = old.xid + 1000
+        await run_command(
+            cog.move_user,
+            interaction,
+            from_user_id=str(old.xid),
+            to_user_id=str(new_xid),
+        )
+        decoy.verify(
+            await interaction.response.send_message(
+                f"User {old.xid} has been moved to {new_xid}",
+                ephemeral=True,
+            ),
+            times=1,
+        )
+
+    async def test_reports_errors(
+        self,
+        decoy: Decoy,
+        cog: AdminCog,
+        interaction: discord.Interaction,
+        guild: Guild,
+    ) -> None:
+        await run_command(cog.move_user, interaction, from_user_id="404", to_user_id="405")
+        decoy.verify(
+            await interaction.response.send_message("Error: user not found", ephemeral=True),
+            times=1,
+        )

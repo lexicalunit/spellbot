@@ -153,7 +153,7 @@ class BaseAction:
         self.guild = cast("discord.Guild", self.interaction.guild)
         self.channel = cast("discord.TextChannel", self.interaction.channel)
 
-    async def upsert_request_objects(self) -> None:  # pragma: no cover
+    async def upsert_request_objects(self) -> None:
         self.guild_data: GuildData | None = None
         if self.guild:
             self.guild_data = await services.guilds.upsert(
@@ -258,5 +258,5 @@ class BaseAction:
                         audit.SOURCE_DISCORD,
                     ):
                         yield action
-                except Exception as ex:  # pragma: no cover
+                except Exception as ex:
                     await handle_exception(ex)

@@ -160,14 +160,14 @@ class Settings(BaseSettings):
         url = self.DATABASE_URL or f"postgresql://postgres@{self.HOST}:5432/postgres"
 
         # Always use a separate test database when running in pytest
-        if running_in_pytest() and not url.endswith("-test"):  # pragma: no cover
+        if running_in_pytest() and not url.endswith("-test"):
             url += "-test"
 
         # SQLAlchemy 1.4.x removed support for the postgres:// URI scheme
-        if url.startswith("postgres://"):  # pragma: no cover
+        if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         # Ensure that we're asking for the psycopg3+ driver (and not psycopg2)
-        if url.startswith("postgresql://"):  # pragma: no cover
+        if url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+psycopg://", 1)
 
         object.__setattr__(self, "_database_url_resolved", url)

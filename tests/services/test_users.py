@@ -4,18 +4,20 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
-from spellbot.models import Block, Game, Queue, User
+from spellbot.models import Block, Game, Play, Queue, User, UserAward
 from spellbot.services import users
 from spellbot.settings import settings
 from tests.factories import UserFactory
 
 if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
+
     from tests.fixtures import Factories
 
 pytestmark = pytest.mark.use_db
@@ -281,3 +283,78 @@ class TestServiceUsersFilterPendingGames:
                 factories.queue.create(user_xid=user.xid, game_id=game.id, og_guild_xid=guild.xid)
 
         assert await users.filter_pending_games([busy.xid, free.xid]) == [free.xid]
+
+
+@pytest.mark.asyncio
+class TestServiceUsersMoveUser:
+    async def test_user_not_found(self) -> None:
+        assert await users.move_user(1, 404, 405) == "user not found"
+
+    async def test_user_is_queued(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(guild=guild, channel=channel)
+        user = factories.user.create(game=game)
+        assert await users.move_user(guild.xid, user.xid, 999) == "user is queued"
+
+    async def test_moves_user_data(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        other_guild = factories.guild.create()
+        channel = factories.channel.create(guild=guild)
+        other_channel = factories.channel.create(guild=other_guild)
+        old = factories.user.create(name="old-name", banned=True)
+        friend = factories.user.create()
+        foe = factories.user.create()
+        factories.block.create(user_xid=old.xid, blocked_user_xid=foe.xid)
+        factories.block.create(user_xid=friend.xid, blocked_user_xid=old.xid)
+        game = factories.game.create(guild=guild, channel=channel, started_at=datetime.now(tz=UTC))
+        other_game = factories.game.create(
+            guild=other_guild,
+            channel=other_channel,
+            started_at=datetime.now(tz=UTC),
+        )
+        factories.play.create(user_xid=old.xid, game_id=game.id, og_guild_xid=guild.xid)
+        factories.play.create(user_xid=old.xid, game_id=other_game.id, og_guild_xid=other_guild.xid)
+        award = factories.guild_award.create(guild=guild, count=1)
+        factories.user_award.create(user_xid=old.xid, guild_xid=guild.xid, guild_award_id=award.id)
+        new_xid = old.xid + 1000
+
+        assert await users.move_user(guild.xid, old.xid, new_xid) is None
+
+        DatabaseSession.expire_all()
+        new = await DatabaseSession.get(User, new_xid)
+        assert new is not None
+        assert (new.name, new.banned) == ("old-name", True)
+        blocks = (await DatabaseSession.execute(select(Block))).scalars().all()
+        assert {(b.user_xid, b.blocked_user_xid) for b in blocks} >= {
+            (new_xid, foe.xid),
+            (friend.xid, new_xid),
+        }
+        plays = (
+            (await DatabaseSession.execute(select(Play).where(Play.user_xid == new_xid)))
+            .scalars()
+            .all()
+        )
+        # Only the plays in the given guild move, keeping where each game was joined from.
+        assert [(p.game_id, p.og_guild_xid) for p in plays] == [(game.id, guild.xid)]
+        new_award = await DatabaseSession.get(UserAward, (new_xid, guild.xid))
+        assert new_award is not None
+        assert new_award.guild_award_id == award.id
+
+    async def test_existing_target_user_is_updated(self, factories: Factories) -> None:
+        guild = factories.guild.create()
+        old = factories.user.create(name="old-name")
+        target = factories.user.create(name="target-name")
+        assert await users.move_user(guild.xid, old.xid, target.xid) is None
+        DatabaseSession.expire_all()
+        moved = await DatabaseSession.get(User, target.xid)
+        assert moved is not None
+        assert moved.name == "old-name"
+
+    async def test_database_error(self, factories: Factories, mocker: MockerFixture) -> None:
+        guild = factories.guild.create()
+        old = factories.user.create()
+        mocker.patch.object(DatabaseSession, "commit", side_effect=RuntimeError("boom"))
+        rollback = mocker.patch.object(DatabaseSession, "rollback", AsyncMock())
+        assert await users.move_user(guild.xid, old.xid, old.xid + 1) == "database error"
+        rollback.assert_awaited_once()

@@ -325,7 +325,7 @@ async def blocklist(user_xid: int) -> list[UserData]:
 
 
 @tracer.wrap()
-async def move_user(  # pragma: no cover
+async def move_user(
     guild_xid: int,
     from_user_xid: int,
     to_user_xid: int,
@@ -423,6 +423,9 @@ async def move_user(  # pragma: no cover
             play_values = {
                 "user_xid": to_user_xid,
                 "game_id": play.game_id,
+                "og_guild_xid": play.og_guild_xid,
+                "pin": play.pin,
+                "verified_at": play.verified_at,
             }
             logger.info("upsert play: %s", play_values)
             play_upsert = insert(Play).values(**play_values)

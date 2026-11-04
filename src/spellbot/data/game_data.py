@@ -11,6 +11,7 @@ from ddtrace.trace import tracer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.i18n import t
+from spellbot.metrics import tag_span
 from spellbot.models import GameStatus
 from spellbot.settings import settings
 
@@ -179,15 +180,12 @@ class GameData:
         locale: str | None = None,
     ) -> str:
         locale = locale or self.locale
-        if span := tracer.current_span():  # pragma: no cover
-            span.set_tags(
-                {
-                    "game_id": str(self.id),
-                    "dm": str(dm),
-                    "already_picked": str(suggested_vc.already_picked if suggested_vc else None),
-                    "random_empty": str(suggested_vc.random_empty if suggested_vc else None),
-                },
-            )
+        tag_span(
+            game_id=self.id,
+            dm=dm,
+            already_picked=suggested_vc.already_picked if suggested_vc else None,
+            random_empty=suggested_vc.random_empty if suggested_vc else None,
+        )
 
         effective_service = GameService(int(self.service))
         parts: list[str] = []

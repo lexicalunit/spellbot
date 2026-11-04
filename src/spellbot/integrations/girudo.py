@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import logging
+from dataclasses import dataclass
 from random import randint
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-ROUND_ROBIN: int | None = None
 ROUND_ROBIN_LOCK = asyncio.Lock()
 USER_LOCKS: dict[str, asyncio.Lock] = {}
 USER_LOCKS_LOCK = asyncio.Lock()
@@ -41,8 +41,16 @@ class GirudoGameFormat(NamedTuple):
     name: str
 
 
-GIRUDO_FORMATS_CACHE: dict[str, GirudoGameFormat] | None = None
-TCG_NAMES_CACHE: dict[str, str] | None = None
+@dataclass
+class GirudoState:
+    """Process-wide Girudo state: API lookups cached after the first fetch, and account rotation."""
+
+    formats: dict[str, GirudoGameFormat] | None = None
+    tcg_names: dict[str, str] | None = None
+    round_robin: int | None = None
+
+
+state = GirudoState()
 
 
 def get_default_girudo_format() -> GirudoGameFormat:
@@ -65,10 +73,8 @@ async def fetch_and_cache_formats(
     client: httpx.AsyncClient,
     token: str,
 ) -> dict[str, GirudoGameFormat]:
-    global GIRUDO_FORMATS_CACHE  # noqa: PLW0603
-
-    if GIRUDO_FORMATS_CACHE is not None:
-        return GIRUDO_FORMATS_CACHE
+    if state.formats is not None:
+        return state.formats
 
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -82,8 +88,8 @@ async def fetch_and_cache_formats(
 
         if data.get("status") != "success":
             logger.warning("Girudo format-list returned non-success status: %s", data.get("status"))
-            GIRUDO_FORMATS_CACHE = {}
-            return GIRUDO_FORMATS_CACHE
+            state.formats = {}
+            return state.formats
 
         formats = {}
         for fmt in data.get("data", []):
@@ -97,43 +103,42 @@ async def fetch_and_cache_formats(
 
         if not formats:
             logger.warning("Girudo format-list returned empty data")
-            GIRUDO_FORMATS_CACHE = {}
-            return GIRUDO_FORMATS_CACHE
+            state.formats = {}
+            return state.formats
 
         logger.info("Successfully cached %d Girudo game formats", len(formats))
-        GIRUDO_FORMATS_CACHE = formats
-        return formats  # noqa: TRY300
+        state.formats = formats
 
     except Exception as ex:
         logger.warning("Failed to fetch Girudo formats from API: %s", ex, exc_info=True)
-        GIRUDO_FORMATS_CACHE = {}
-        return GIRUDO_FORMATS_CACHE
+        state.formats = {}
+        return state.formats
+
+    return formats
 
 
 async def fetch_and_cache_tcg_names(
     client: httpx.AsyncClient,
     token: str,
 ) -> dict[str, str]:
-    global TCG_NAMES_CACHE  # noqa: PLW0603
-
-    if TCG_NAMES_CACHE is not None:
-        return TCG_NAMES_CACHE
+    if state.tcg_names is not None:
+        return state.tcg_names
 
     headers = {"Authorization": f"Bearer {token}"}
 
     try:
         if not settings.GIRUDO_STORE_DATA_URL:
             logger.warning("GIRUDO_STORE_DATA_URL not configured")
-            TCG_NAMES_CACHE = {}
-            return TCG_NAMES_CACHE
+            state.tcg_names = {}
+            return state.tcg_names
         resp = await client.get(settings.GIRUDO_STORE_DATA_URL, headers=headers)
         resp.raise_for_status()
         data = resp.json()
 
         if data.get("status") != "success":
             logger.warning("Girudo store-data returned non-success status: %s", data.get("status"))
-            TCG_NAMES_CACHE = {}
-            return TCG_NAMES_CACHE
+            state.tcg_names = {}
+            return state.tcg_names
 
         tcg_names = {}
         store_games = (data.get("data") or {}).get("store_games", [])
@@ -146,21 +151,22 @@ async def fetch_and_cache_tcg_names(
 
         if not tcg_names:
             logger.warning("Girudo store-data returned empty store_games")
-            TCG_NAMES_CACHE = {}
-            return TCG_NAMES_CACHE
+            state.tcg_names = {}
+            return state.tcg_names
 
         logger.info("Successfully cached %d TCG names", len(tcg_names))
-        TCG_NAMES_CACHE = tcg_names
-        return tcg_names  # noqa: TRY300
+        state.tcg_names = tcg_names
 
     except Exception as ex:
         logger.warning("Failed to fetch Girudo TCG names from API: %s", ex, exc_info=True)
-        TCG_NAMES_CACHE = {}
-        return TCG_NAMES_CACHE
+        state.tcg_names = {}
+        return state.tcg_names
+
+    return tcg_names
 
 
 def girudo_game_format(game_format: GameFormat) -> GirudoGameFormat:
-    formats = GIRUDO_FORMATS_CACHE or {}
+    formats = state.formats or {}
     default = get_default_girudo_format()
 
     format_map = {
@@ -185,12 +191,12 @@ def girudo_game_format(game_format: GameFormat) -> GirudoGameFormat:
     if game_format in GIRUDO_COMMANDER_FORMATS:
         return formats.get("commander_edh", default)
 
-    logger.info(  # pragma: no cover
+    logger.info(
         "No Girudo format mapping for %s, using fallback format %s",
         game_format.name,
         default.name,
     )
-    return default  # pragma: no cover
+    return default
 
 
 def encode_password(raw_password: str) -> str:
@@ -215,12 +221,11 @@ def get_accounts() -> list[tuple[str, str]]:
 
 
 async def pick_account(accounts: list[tuple[str, str]]) -> tuple[str, str]:
-    global ROUND_ROBIN  # noqa: PLW0603
     async with ROUND_ROBIN_LOCK:
-        if ROUND_ROBIN is None:
-            ROUND_ROBIN = randint(0, len(accounts) - 1)
-        email, password = accounts[ROUND_ROBIN % len(accounts)]
-        ROUND_ROBIN += 1
+        if state.round_robin is None:
+            state.round_robin = randint(0, len(accounts) - 1)
+        email, password = accounts[state.round_robin % len(accounts)]
+        state.round_robin += 1
         return email, password
 
 
@@ -276,7 +281,7 @@ async def create_game(
     headers = {"Authorization": f"Bearer {token}"}
     girudo_format = girudo_game_format(GameFormat(game_data.format))
     tcg_uuid = settings.GIRUDO_DEFAULT_TCG_MAGIC_UUID or ""
-    tcg_name = (TCG_NAMES_CACHE or {}).get(tcg_uuid, get_default_tcg()[1])
+    tcg_name = (state.tcg_names or {}).get(tcg_uuid, get_default_tcg()[1])
 
     payload: dict[str, Any] = {
         "game_title": f"SB{game_data.id}",
@@ -308,11 +313,11 @@ async def create_game(
 
         msg = data.get("message") if isinstance(data, dict) else None
         logger.warning("Girudo create game failed (status=%s): %s", status, msg)
-        return None  # noqa: TRY300
 
     except Exception as ex:
         logger.warning("Girudo create game error: %s", ex, exc_info=True)
-        return None
+
+    return None
 
 
 async def generate_link(game_data: GameData) -> GameLinkDetails:
@@ -341,9 +346,9 @@ async def generate_link(game_data: GameData) -> GameLinkDetails:
                     continue
 
                 if attempt == 0:
-                    if GIRUDO_FORMATS_CACHE is None:
+                    if state.formats is None:
                         await fetch_and_cache_formats(client, auth_token)
-                    if TCG_NAMES_CACHE is None:
+                    if state.tcg_names is None:
                         await fetch_and_cache_tcg_names(client, auth_token)
 
                 link = await create_game(client, auth_token, game_data)

@@ -34,7 +34,7 @@ def parse_active_hours(raw: Any) -> dict[str, Any] | None:
         return None
     if not isinstance(raw, dict):
         msg = "active_hours must be an object"
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)  # noqa: TRY004 -- callers report any ValueError to the user
     try:
         start = int(raw["start"])
         end = int(raw["end"])

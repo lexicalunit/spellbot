@@ -138,3 +138,12 @@ class TestServiceChannelsUpdateSettings:
         updated = await DatabaseSession.get(Channel, channel.xid)
         assert updated is not None
         assert updated.name == "keep"
+
+
+class TestIsCached:
+    def test_cache_outside_pytest(self, mocker: MockerFixture) -> None:
+        mocker.patch.object(channels, "running_in_pytest", return_value=False)
+        mocker.patch.dict(channel_cache, {1: "general"}, clear=True)
+        assert channels.is_cached(1, "general") is True
+        assert channels.is_cached(1, "renamed") is False
+        assert channels.is_cached(2, "general") is False

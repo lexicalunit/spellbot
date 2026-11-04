@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Refreshing a player's other game posts now loads those games in one batch.
 - Models no longer import data classes or open database sessions; that lives in the services.
 - Removed the unused `channels` and `awards` lists from guild data.
+- Split `lfg_action.py` into `game_start.py`, `game_posts.py` and `guild_war.py` helpers.
+- Replaced the repeated span-tagging blocks with a `tag_span()` helper.
+- Replaced module `global` statements with small holder objects.
+- Tested code that was excluded from coverage, removing 42 `pragma: no cover` lines.
 
 ### Fixed
 
@@ -52,6 +56,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed the first new API tokens colliding with the ids of tokens that were added by hand.
 - Fixed French plurals for zero, which now read "0 partie" instead of "0 parties".
 - Fixed "autres joueur" in the French message for waiting on one more player.
+- Fixed `/move_user` failing with a database error for any user who had played a game.
 
 ## [v24.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.2) - 2026-11-03
 

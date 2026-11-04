@@ -23,7 +23,7 @@ pytestmark = pytest.mark.use_db
 
 @pytest_asyncio.fixture(autouse=True)
 async def reset_redis_client() -> AsyncGenerator[None]:
-    redis_client._redis_client = None
+    redis_client.shared.client = None
     yield
     await close_redis()
 

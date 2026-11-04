@@ -408,9 +408,9 @@ class TestSendMessage:
             return_value={"id": "12345"},
         )
         await send_message(123, {"content": "Hello"})
-        first = rest._http_session
+        first = rest.shared.session
         await send_message(123, {"content": "Hello"})
-        assert rest._http_session is first
+        assert rest.shared.session is first
 
 
 @pytest.mark.asyncio

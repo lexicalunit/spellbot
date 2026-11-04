@@ -15,6 +15,7 @@ from spellbot.metrics import (
     MAX_SPAN_ERROR_MSG,
     REPORTED_ERROR_TAG,
     span_error_tags,
+    tag_span,
     trace_discord_requests,
 )
 
@@ -110,3 +111,22 @@ class TestTraceDiscordRequests:
         }
         assert interaction_token not in str(trace.call_args) + str(tags)
         assert Client.request.__name__ == "request"
+
+
+class TestTagSpan:
+    def test_tags_the_current_span_with_strings(self, mocker: MockerFixture) -> None:
+        span = MagicMock()
+        mocker.patch("spellbot.metrics.tracer.current_span", return_value=span)
+        tag_span({"warning.type": "x"}, guild_xid=123, remove=False, missing=None)
+        span.set_tags.assert_called_once_with(
+            {
+                "warning.type": "x",
+                "guild_xid": "123",
+                "remove": "False",
+                "missing": "None",
+            },
+        )
+
+    def test_no_current_span(self, mocker: MockerFixture) -> None:
+        mocker.patch("spellbot.metrics.tracer.current_span", return_value=None)
+        tag_span(guild_xid=123)  # nothing to tag, and no error

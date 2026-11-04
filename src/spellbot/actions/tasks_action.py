@@ -99,7 +99,7 @@ class TasksAction:
             async with db_session_manager():
                 try:
                     yield action
-                except Exception as ex:  # pragma: no cover
+                except Exception as ex:
                     await handle_exception(ex)
 
     async def cleanup_old_voice_channels(self) -> None:
