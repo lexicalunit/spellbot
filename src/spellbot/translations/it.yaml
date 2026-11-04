@@ -148,7 +148,7 @@ it:
     title: "SpellBot"
     version: "Versione"
     author: "Autore"
-    description: "Il bot Discord per Webcam Magic.\n\nHai problemi con SpellBot? Per favore, [segnala i bug](%{issues})!\n\n[🔗 Aggiungi SpellBot al tuo server Discord!](%{invite})\n\nLa continuità del servizio di SpellBot è resa possibile da [PlayEDH] (https://www.playedh.com/) e dai miei sostenitori su Patreon.\n\n💜 Aiutaci a mantenere SpellBot attivo [diventando un sostenitore!](%{patreon})"
+    description: "_Il bot Discord per Webcam Magic._\n\nHai problemi con SpellBot? Per favore, [segnala i bug](%{issues})!\n\n[🔗 Aggiungi SpellBot al tuo server Discord!](%{invite})\n\nLa continuità del servizio di SpellBot è resa possibile da [PlayEDH](https://www.playedh.com/) e dai miei sostenitori su Patreon.\n\n💜 Aiutaci a mantenere SpellBot attivo [diventando un sostenitore!](%{patreon})"
   # Interaction error messages
   errors:
     no_permission: "Non hai il permesso di farlo."

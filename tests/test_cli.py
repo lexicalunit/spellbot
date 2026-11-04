@@ -54,6 +54,7 @@ class TestCLI:
         assert result.output == ""
         cli.hupper.start_reloader.assert_not_called()
         cli.configure_logging.assert_called_once_with("INFO")
+        cli.settings.require.assert_called_once_with("SECRET_TOKEN")
         cli.build_bot.assert_called_once_with(mock_games=False, disable_tasks=False)
         cli.uvloop.run.assert_called_once()
 

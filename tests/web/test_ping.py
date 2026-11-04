@@ -37,6 +37,19 @@ class TestWebPing:
 
 
 @pytest.mark.asyncio
+class TestSecurityHeaders:
+    @pytest.mark.parametrize("path", ["/", "/no-such-page"])
+    async def test_security_headers(self, client: ClientSession, path: str) -> None:
+        resp = await client.get(path)
+        assert resp.headers["Server"] == "SpellBot"
+        assert resp.headers["X-Content-Type-Options"] == "nosniff"
+        assert resp.headers["X-Frame-Options"] == "DENY"
+        assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+        assert "X-XSS-Protection" not in resp.headers
+        assert "Access-Control-Allow-Origin" not in resp.headers
+
+
+@pytest.mark.asyncio
 class TestWebStaticFiles:
     async def test_analytics_js(self, client: ClientSession) -> None:
         resp = await client.get("/analytics.js")

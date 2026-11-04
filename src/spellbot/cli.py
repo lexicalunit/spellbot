@@ -126,6 +126,8 @@ def main(
         if bot_token is None:
             raise SystemExit(1)
 
+        settings.require("SECRET_TOKEN")
+
         bot = build_bot(mock_games=mock_games, disable_tasks=disable_tasks)
 
         async def run_bot() -> None:  # pragma: no cover

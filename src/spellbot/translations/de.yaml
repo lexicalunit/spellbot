@@ -32,10 +32,10 @@ de:
       updated_at: "Aktualisiert am"
       voice_channel: "🔊 Empfohlener Sprachkanal"
       support: "Unterstützen Sie SpellBot"
-      support_text: "Werden Sie [ein Patron](%{subscribe}) oder geben Sie einen [einmalige Tipp](%{donate})."
+      support_text: "Werden Sie [Patron](%{subscribe}) oder geben Sie ein [einmaliges Trinkgeld](%{donate})."
       convoke_guild: "Spiele mehr mit **%{name}** auf Convoke. [Tritt der Gilde bei!](%{url})"
       settings: "Einstellungen"
-      settings_text: "Sieh dir [Live-Spiele](%{queues}) an und konfiguriere [deine Benachrichtigungen](%{notify})."
+      settings_text: "Sehen Sie sich [Live-Spiele](%{queues}) an und konfigurieren Sie [Ihre Benachrichtigungen](%{notify})."
     footer: "SpellBot-Spiel-ID: #SB%{game_id} – Service: %{service}"
   # Game services pending messages
   service:

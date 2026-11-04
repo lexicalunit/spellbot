@@ -10,7 +10,6 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import discord
-from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot import services
@@ -47,10 +46,10 @@ class VoiceChannelFilterer:
     def __init__(self) -> None:
         grace_delta = timedelta(minutes=settings.VOICE_GRACE_PERIOD_M)
         grace_time_ago = datetime.now(tz=UTC) - grace_delta
-        self.grace_time_ago = grace_time_ago.replace(tzinfo=tz.UTC)
+        self.grace_time_ago = grace_time_ago.replace(tzinfo=UTC)
         age_limit_delta = timedelta(hours=settings.VOICE_AGE_LIMIT_H)
         age_limit_ago = datetime.now(tz=UTC) - age_limit_delta
-        self.age_limit_ago = age_limit_ago.replace(tzinfo=tz.UTC)
+        self.age_limit_ago = age_limit_ago.replace(tzinfo=UTC)
 
     async def filter(self, voice_channels: list[VoiceChannel]) -> list[VoiceChannel]:
         channels: list[VoiceChannel] = []
@@ -58,7 +57,7 @@ class VoiceChannelFilterer:
         for channel in voice_channels:
             logger.info("considering channel %s(%s)", channel.name, channel.id)
             occupied = bool(channel.voice_states.keys())
-            channel_created_at = channel.created_at.replace(tzinfo=tz.UTC)
+            channel_created_at = channel.created_at.replace(tzinfo=UTC)
 
             if channel_created_at > self.grace_time_ago:
                 logger.info("channel is in grace period")

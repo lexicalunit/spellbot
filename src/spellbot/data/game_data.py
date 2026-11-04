@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 import discord
-from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot.enums import GameBracket, GameFormat, GameService
@@ -99,12 +99,12 @@ class GameData:
     @property
     def started_at_timestamp(self) -> int:
         assert self.started_at is not None
-        return int(self.started_at.replace(tzinfo=tz.UTC).timestamp())
+        return int(self.started_at.replace(tzinfo=UTC).timestamp())
 
     @property
     def updated_at_timestamp(self) -> int:
         assert self.updated_at is not None
-        return int(self.updated_at.replace(tzinfo=tz.UTC).timestamp())
+        return int(self.updated_at.replace(tzinfo=UTC).timestamp())
 
     @property
     def format_name(self) -> str:

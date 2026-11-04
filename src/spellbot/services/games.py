@@ -9,7 +9,6 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, cast
 
-from dateutil import tz
 from ddtrace.trace import tracer
 from sqlalchemy import TIMESTAMP, delete, func, literal, select, update
 from sqlalchemy import cast as sql_cast
@@ -223,7 +222,7 @@ def to_ms(dt: datetime | None) -> float | None:
     """Convert a naive UTC datetime to millis since epoch, or `None`."""
     if dt is None:
         return None
-    return dt.replace(tzinfo=tz.UTC).timestamp() * 1000
+    return dt.replace(tzinfo=UTC).timestamp() * 1000
 
 
 @tracer.wrap()

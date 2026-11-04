@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import re
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
+import pytest
+import yaml
+
 from spellbot.i18n import (
+    AVAILABLE_LOCALES,
+    TRANSLATIONS_DIR,
     best_locale,
     guild_locale,
     normalize_locale,
@@ -12,6 +19,60 @@ from spellbot.i18n import (
     t,
     user_locale,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+PLACEHOLDER = re.compile(r"%\{(\w+)\}")
+LINK = re.compile(r"\]\(")
+BROKEN_LINK = re.compile(r"\]\s+\(")
+
+
+def flatten(node: object, prefix: str = "") -> Iterator[tuple[str, object]]:
+    if isinstance(node, dict):
+        for key, value in node.items():
+            yield from flatten(value, f"{prefix}.{key}" if prefix else str(key))
+    else:
+        yield prefix, node
+
+
+def load_strings(locale: str) -> dict[str, str]:
+    data = yaml.safe_load((TRANSLATIONS_DIR / f"{locale}.yaml").read_text(encoding="utf-8"))
+    return {key: str(value) for key, value in flatten(data[locale])}
+
+
+ENGLISH = load_strings("en")
+
+
+@pytest.mark.parametrize("locale", sorted(AVAILABLE_LOCALES - {"en"}))
+class TestTranslationFiles:
+    """Catch translations that would render broken in Discord or on the web."""
+
+    def test_same_keys_as_english(self, locale: str) -> None:
+        assert set(load_strings(locale)) == set(ENGLISH)
+
+    def test_same_placeholders_as_english(self, locale: str) -> None:
+        mismatched = {
+            key: value
+            for key, value in load_strings(locale).items()
+            if set(PLACEHOLDER.findall(value)) != set(PLACEHOLDER.findall(ENGLISH[key]))
+        }
+        assert mismatched == {}
+
+    def test_links_are_well_formed(self, locale: str) -> None:
+        broken = {
+            key: value
+            for key, value in load_strings(locale).items()
+            if BROKEN_LINK.search(value)
+            or len(LINK.findall(value)) != len(LINK.findall(ENGLISH[key]))
+        }
+        assert broken == {}
+
+    def test_bold_markers_are_balanced(self, locale: str) -> None:
+        unbalanced = {
+            key: value for key, value in load_strings(locale).items() if value.count("**") % 2
+        }
+        assert unbalanced == {}
 
 
 class TestParseAcceptLanguage:

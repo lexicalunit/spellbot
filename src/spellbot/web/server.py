@@ -22,6 +22,8 @@ configure_tracing()
 
 logger = logging.getLogger(__name__)
 
+if not running_in_pytest():  # pragma: no cover
+    settings.require("SECRET_TOKEN", "SESSION_SECRET_KEY")
 
 # gunicorn entrypoint, it needs an "app" object. See start.sh for details.
 app = build_web_app()

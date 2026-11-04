@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     PORT: int = 3008
     HOST: str = "localhost"
     DEBUG_GUILD: str | None = None
-    API_BASE_URL: str = "https://bot.spellbot.io"
+    API_BASE_URL: str = "http://localhost:3008"
     OWNER_XID: int | None = None
     SECRET_TOKEN: str | None = None
     CHECK_SIGNATURE: bool = True
@@ -204,6 +204,17 @@ class Settings(BaseSettings):
     @property
     def GUILD_OBJECT(self) -> Snowflake | None:
         return Object(id=self.DEBUG_GUILD) if self.DEBUG_GUILD else None
+
+    def require(self, *names: str) -> None:
+        """
+        Exit with a clear error when any of the named settings is unset.
+
+        Called when the bot or web server starts rather than when `Settings` is built,
+        so commands like `spellbot --help` and `spellbot --version` work without them.
+        """
+        if missing := [name for name in names if not getattr(self, name)]:
+            msg = f"missing required settings: {', '.join(missing)}"
+            raise SystemExit(msg)
 
 
 settings = Settings()

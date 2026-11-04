@@ -22,6 +22,17 @@ class TestSettings:
         assert obj
         assert obj.id == 1234
 
+    def test_require_passes_when_set(self, settings: Settings) -> None:
+        settings.SECRET_TOKEN = "secret"
+        settings.SESSION_SECRET_KEY = "key"
+        settings.require("SECRET_TOKEN", "SESSION_SECRET_KEY")
+
+    def test_require_exits_when_unset(self, settings: Settings) -> None:
+        settings.SECRET_TOKEN = None
+        settings.SESSION_SECRET_KEY = ""
+        with pytest.raises(SystemExit, match="SECRET_TOKEN, SESSION_SECRET_KEY"):
+            settings.require("SECRET_TOKEN", "SESSION_SECRET_KEY")
+
     def test_derived_urls_explicit(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that explicitly set derived URLs are not overwritten."""
         custom_edhlab = "https://custom.edhlab.com/create"

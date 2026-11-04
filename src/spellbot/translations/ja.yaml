@@ -32,7 +32,7 @@ ja:
       updated_at: "更新日時"
       voice_channel: "🔊 推奨ボイスチャンネル"
       support: "SpellBot を支援"
-      support_text: "[額で支援する](%{subscribe})か、[単発で支援する](%{donate})ことができます。"
+      support_text: "[月額で支援する](%{subscribe})か、[単発で支援する](%{donate})ことができます。"
       convoke_guild: "Convoke の **%{name}** でもっと遊ぼう。[ギルドに参加する！](%{url})"
       settings: "設定"
       settings_text: "[ライブ中のゲーム](%{queues})を見たり、[通知](%{notify})を設定したりできます。"
@@ -125,7 +125,7 @@ ja:
     self_block: "自分をブロックすることはできません。"
     blocked: "<@%{user_id}> をブロックしました。"
     unblocked: "<@%{user_id}> のブロックを解除しました。"
-    manage_message: "ブロックされたユーザーは、プロフィールページから閲覧・管理できます。\n\n[spellbot.ioでプロフィールを開く] (%{link})"
+    manage_message: "ブロックされたユーザーは、プロフィールページから閲覧・管理できます。\n\n[spellbot.ioでプロフィールを開く](%{link})"
   # Leave action messages
   leave:
     removed_channel: "このチャンネル内の保留中のゲームからすべて退出しました。"

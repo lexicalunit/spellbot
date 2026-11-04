@@ -5,12 +5,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from datetime import UTC
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
 import tenacity
 from aiohttp import web
-from dateutil import tz
 from ddtrace.trace import tracer
 
 from spellbot import services
@@ -131,7 +131,7 @@ def game_record_embed(
     channel_xid = game_data.channel_xid
     started_at = game_data.started_at
     assert started_at is not None
-    started_at_ts = int(started_at.replace(tzinfo=tz.UTC).timestamp())
+    started_at_ts = int(started_at.replace(tzinfo=UTC).timestamp())
     game_start = f"<t:{started_at_ts}>"
     description += (
         f"\n\nThe game was played in <#{channel_xid}> on {game_start}. "

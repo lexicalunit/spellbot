@@ -6,8 +6,6 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from dateutil import tz
-from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
 from sqlalchemy.sql.expression import and_, extract, func, text
 
@@ -411,7 +409,7 @@ def record_row(
     game_id, updated_at, message_xid, link, format, service, seats, bracket, locale, scores = row
     return {
         "id": game_id,
-        "updated_at": updated_at.replace(tzinfo=tz.UTC).timestamp() * 1000,
+        "updated_at": updated_at.replace(tzinfo=UTC).timestamp() * 1000,
         "guild": guild_xid,
         "channel": channel_xid,
         "message": message_xid,
@@ -612,9 +610,10 @@ async def top_records(
         Game.channel_xid == channel_xid,
     ]
     if monthly:
-        target = datetime.now(tz=UTC).date() + relativedelta(months=-ago)
-        filters.append(extract("year", Game.started_at) == target.year)
-        filters.append(extract("month", Game.started_at) == target.month)
+        today = datetime.now(tz=UTC).date()
+        year, month_index = divmod(today.year * 12 + today.month - 1 - ago, 12)
+        filters.append(extract("year", Game.started_at) == year)
+        filters.append(extract("month", Game.started_at) == month_index + 1)
     result = await DatabaseSession.execute(
         select(
             Play.user_xid,

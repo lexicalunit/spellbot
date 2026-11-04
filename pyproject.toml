@@ -29,7 +29,6 @@ dependencies = [
   "packaging>=24.0",
   "psycopg[binary]>=3.2.9",
   "pydantic-settings>=2.14.1",
-  "python-dateutil>=2.8.2",
   "python-i18n[yaml]>=0.3.9",
   "python-json-logger>=3.3.0",
   "redis>=6.1.0",
@@ -55,17 +54,12 @@ spellbot = "spellbot:main"
 
 [dependency-groups]
 dev = [
-  "callee>=0",
   "coverage>=7",
   "decoy>=2",
-  "exceptiongroup>=1",
   "factory-boy>=3",
   "faker>=24",
   "gitpython>=3",
   "ipython>=9",
-  "nest-asyncio>=1",
-  "pexpect>=4",
-  "ptyprocess>=0",
   "pylic>=3",
   "pytest-aiohttp>=1",
   "pytest-asyncio>=0",
@@ -76,14 +70,9 @@ dev = [
   "pytest-xdist>=3",
   "pytest>=8",
   "ruff>=0",
-  "shellingham>=1",
   "syrupy>=5.1.0",
-  "tomli>=2",
-  "tomlkit>=0",
   "ty>=0",
-  "types-python-dateutil>=2",
   "types-pyyaml>=6",
-  "virtualenv>=20",
   "vulture>=2",
 ]
 
@@ -285,7 +274,7 @@ paths = ["src/spellbot", "tests", ".vulture_allowlist.py"]
 
 [tool.pytest.ini_options]
 addopts = """
-    --no-header --disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,::1 --cov --cov-append --cov-report xml:coverage.xml --cov-report=html -vv
+    --no-header --disable-socket --allow-unix-socket --allow-hosts=127.0.0.1,::1 --cov --cov-report xml:coverage.xml --cov-report=html -vv
 """
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [

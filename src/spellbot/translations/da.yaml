@@ -32,7 +32,7 @@ da:
       updated_at: "Opdateret kl."
       voice_channel: "🔊 Foreslået stemmekanal"
       support: "Støt SpellBot"
-      support_text: "Bliv [patron] (%{subscribe}) eller giv et [engangstip] (%{donate})."
+      support_text: "Bliv [patron](%{subscribe}) eller giv et [engangstip](%{donate})."
       convoke_guild: "Spil mere med **%{name}** på Convoke. [Bliv medlem af guilden!](%{url})"
       settings: "Indstillinger"
       settings_text: "Se [live spil](%{queues}) og konfigurer [dine notifikationer](%{notify})."
@@ -148,7 +148,7 @@ da:
     title: "SpellBot"
     version: "Version"
     author: "Forfatter"
-    description: "_The Discord bot for Webcam Magic._\n\nHar du problemer med SpellBot? [anmeld bugs](%{issues})!\n\n[🔗 Tilføj SpellBot til din Discord!](%{invite})\n\nSpellBots fortsatte drift er gjort mulig af [PlayEDH] (https://www.playedh.com/) og mine Patreon-supportere.\n\n💜 Hjælp med at holde SpellBot i gang ved at [blive patron!](%{patreon})"
+    description: "_Discord-botten til Webcam Magic._\n\nHar du problemer med SpellBot? [anmeld bugs](%{issues})!\n\n[🔗 Tilføj SpellBot til din Discord!](%{invite})\n\nSpellBots fortsatte drift er gjort mulig af [PlayEDH](https://www.playedh.com/) og mine Patreon-supportere.\n\n💜 Hjælp med at holde SpellBot i gang ved at [blive patron!](%{patreon})"
   # Interaction error messages
   errors:
     no_permission: "Du har ikke tilladelse til at gøre det."

@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal, TypeIs, get_args
-
-from dateutil.relativedelta import relativedelta
 
 Bucket = Literal["day", "week", "month"]
 Period = Literal["7d", "30d", "90d", "180d", "365d", "730d", "all"]
@@ -54,7 +52,7 @@ def parse_period(period: str | None) -> PeriodSpec:
     if p == "all":
         return PeriodSpec(period="all", start_dt=None, bucket=bucket)
     days = PERIOD_DAYS[p]
-    start = datetime.now(tz=UTC) + relativedelta(days=-days)
+    start = datetime.now(tz=UTC) - timedelta(days=days)
     return PeriodSpec(period=p, start_dt=start, bucket=bucket)
 
 

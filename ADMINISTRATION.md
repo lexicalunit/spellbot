@@ -14,7 +14,7 @@ The admin dashboard at `/admin/dashboard` is protected by Discord OAuth2. Only t
 | `BOT_CLIENT_SECRET`  | The bot's Discord OAuth2 client secret. Obtain from the Discord developer portal.                              |
 | `OWNER_XID`          | Discord user xid of the bot owner. Always granted dashboard access.                                            |
 | `SESSION_SECRET_KEY` | A Fernet key used to encrypt admin session cookies. See [generating a session key](#generating-a-session-key). |
-| `API_BASE_URL`       | The publicly reachable base URL of the bot's web server (e.g. `https://bot.spellbot.io`).                      |
+| `API_BASE_URL`       | The publicly reachable base URL of the bot's web server (e.g. `https://prod.app.spellbot.io`).                      |
 
 ### Granting and revoking admin access
 
@@ -45,7 +45,7 @@ uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_
 
 Store the generated value in your `.env` file (or your deployment's secret manager) as `SESSION_SECRET_KEY`. Keep it secret — anyone with the key can forge admin session cookies.
 
-> If `SESSION_SECRET_KEY` is left unset, the server generates a fresh ephemeral key on startup. This is fine for local development but means that all admin sessions are invalidated on every restart, and the key cannot be shared between replicas.
+> The web server refuses to start if `SESSION_SECRET_KEY` or `SECRET_TOKEN` is unset. Generate a `SECRET_TOKEN` with `make secret-token`. The bot itself only requires `SECRET_TOKEN`.
 
 ### Discord developer portal setup
 
@@ -55,7 +55,7 @@ In the [Discord developer portal][dev-portal], open your bot's application and u
 {API_BASE_URL}/admin/oauth/callback
 ```
 
-For example, in production this is `https://bot.spellbot.io/admin/oauth/callback`.
+For example, in production this is `https://prod.app.spellbot.io/admin/oauth/callback`.
 
 The OAuth2 flow uses only the `identify` scope; no guild membership or message content access is requested.
 
@@ -68,7 +68,7 @@ The OAuth2 flow uses only the `identify` scope; no guild membership or message c
 5. On success an encrypted `spellbot_admin` cookie is set with a 24h TTL and the user is redirected to `/admin/dashboard`.
 6. Sign out at any time with `POST /admin/logout`.
 
-> Admin status is checked only at login. If you `!demote` a user, their existing session remains valid until it expires (up to 24h) or the session key is rotated. Restart the web server or rotate `SESSION_SECRET_KEY` to invalidate all sessions immediately.
+> Admin status is checked only at login. If you `!demote` a user, their existing session remains valid until it expires (up to 24h) or the session key is rotated. Rotate `SESSION_SECRET_KEY` (see below) to invalidate all sessions immediately.
 
 ### Rotating the session key
 

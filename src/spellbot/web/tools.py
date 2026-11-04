@@ -41,7 +41,7 @@ def redirect(location: str) -> web.Response:
     Build a 302 redirect response.
 
     Returning `web.HTTPFound` is deprecated by aiohttp and raising it would skip
-    middlewares like `security_headers_middleware`, so return a plain response instead.
+    the middlewares, so return a plain response instead.
     """
     return web.Response(status=302, headers={"Location": location})
 

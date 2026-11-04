@@ -122,20 +122,21 @@ async def nav_context(request: web.Request) -> dict[str, object]:
     }
 
 
-@web.middleware
-async def security_headers_middleware(
-    request: web.Request,
-    handler: Handler,
-) -> web.StreamResponse:
-    """Add security headers to all responses."""
-    response = await handler(request)
+async def add_security_headers(request: web.Request, response: web.StreamResponse) -> None:
+    """
+    Add security headers to every response, including errors such as 404s.
+
+    This runs as an `on_response_prepare` hook rather than a middleware: a middleware
+    never sees the responses for exceptions raised past it (unknown routes, for one).
+    It also runs after aiohttp fills in its default `Server` header, which names the
+    exact Python and aiohttp versions, so the override here wins.
+    """
+    response.headers["Server"] = "SpellBot"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     if request.path in PUBLIC_CORS_PATHS:
         response.headers["Access-Control-Allow-Origin"] = "*"
-    return response
 
 
 @web.middleware
@@ -197,12 +198,8 @@ async def serve_robots_txt(_: web.Request) -> web.Response:
 
 def build_web_app() -> web.Application:
     import_models()
-    app = web.Application(
-        middlewares=[
-            security_headers_middleware,
-            auth_middleware,
-        ],
-    )
+    app = web.Application(middlewares=[auth_middleware])
+    app.on_response_prepare.append(add_security_headers)
     # `setup_admin_sessions` appends the aiohttp_session middleware;
     # so it must come before `admin_auth_middleware`
     admin_auth.setup_admin_sessions(app)

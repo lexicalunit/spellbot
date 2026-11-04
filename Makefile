@@ -1,4 +1,4 @@
-.PHONY: all install test lint format format-check typecheck check dev clean session-key
+.PHONY: all install test lint format format-check typecheck check dev clean session-key secret-token
 .PHONY: infra-stage infra-prod infra-o11y
 
 all: check
@@ -40,6 +40,9 @@ dev: install
 
 session-key: install
 	@uv run --frozen python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+secret-token: install
+	@uv run --frozen python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 clean:
 	@echo "cleaning runtime artifacts..."

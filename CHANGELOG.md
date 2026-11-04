@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added `make secret-token` to generate a `SECRET_TOKEN`.
+- Added translation checks for broken links, mismatched placeholders, and unbalanced bold.
+
+### Changed
+
+- The bot now requires `SECRET_TOKEN` to start.
+- The web server now requires both `SECRET_TOKEN` and `SESSION_SECRET_KEY` to start.
+- `API_BASE_URL` now defaults to `http://localhost:3008`.
+- Web security headers now apply to error pages, such as 404s, too.
+- Removed the deprecated `X-XSS-Protection` header.
+- The `Server` header no longer reveals Python and aiohttp versions.
+- Replaced `python-dateutil` with the standard library.
+- The dev shell (`shell.py`) no longer needs `nest-asyncio`.
+- Removed unused dev dependencies.
+- Test coverage no longer accumulates across local runs.
+
+### Fixed
+
+- Fixed broken links in the Danish, Greek, Italian, and Japanese translations.
+- Fixed the French Mythic Track message, which said the feature was on after turning it off.
+- Fixed wording in the French, German, Japanese, and Tagalog translations.
+
 ## [v24.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.2) - 2026-11-03
 
 ### Changed

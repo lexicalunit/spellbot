@@ -148,7 +148,7 @@ el:
     title: "SpellBot"
     version: "Έκδοση"
     author: "Συντάκτης"
-    description: "_Το Discord bot για το Webcam Magic.\n\nΕίχε προβλήματα με το SpellBot; [Αναφέρετε σφάλματα](%{issues})!\n\n[🔗 Προσθέστε το SpellBot στο Discord σας! (%{invite})\n\nΗ συνεχής λειτουργία του SpellBot είναι δυνατή χάρη στο [PlayEDH](https://www.playedh.com/) και τους υποστηρικτές μου στο Patreon.\n\n💜 Βοηθήστε να διατηρήσουμε τη συνεχή λειτουργία του SpellBot. [Γίνετε χορηγός!](%{patreon})"
+    description: "_Το Discord bot για το Webcam Magic._\n\nΕίχε προβλήματα με το SpellBot; [Αναφέρετε σφάλματα](%{issues})!\n\n[🔗 Προσθέστε το SpellBot στο Discord σας!](%{invite})\n\nΗ συνεχής λειτουργία του SpellBot είναι δυνατή χάρη στο [PlayEDH](https://www.playedh.com/) και τους υποστηρικτές μου στο Patreon.\n\n💜 Βοηθήστε να διατηρήσουμε τη συνεχή λειτουργία του SpellBot. [Γίνετε χορηγός!](%{patreon})"
   # Interaction error messages
   errors:
     no_permission: "Δεν έχετε άδεια να το κάνετε αυτό."

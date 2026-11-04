@@ -159,7 +159,7 @@ tl:
   # Playgroup Live commands
   playgroup:
     already_linked: "Naka-link na sa Playgroup Live ang iyong Discord account!"
-    linked: "Naka-link na! Maligayang pagdating, %{username}. Ang iyong mga laro sa Playgroup Live ay iaa-attribute na sa iyong account."
+    linked: "Naka-link na! Maligayang pagdating, **%{username}**. Ang iyong mga laro sa Playgroup Live ay iaa-attribute na sa iyong account."
     not_found: "Walang natagpuang Playgroup account para sa iyong Discord. Pumunta sa <https://playgroup.gg/profiles> at i-click ang **Link Discord,** pagkatapos ay patakbuhin muli ang `/playgroup link` para makumpirma."
   # Web pages (records, queues, etc.) rendered server-side in the viewer's
   # browser language. See spellbot/web/builder.py i18n_context_processor.

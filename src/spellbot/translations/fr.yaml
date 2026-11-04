@@ -31,8 +31,8 @@ fr:
       started_at: "Commencé à"
       updated_at: "Mis à jour à"
       voice_channel: "🔊 Canal vocal suggéré"
-      support: "SpellBot pris en charge"
-      support_text: "Devenez [un client](%{subscribe}) ou donnez une [astuce unique](%{donate})."
+      support: "Soutenir SpellBot"
+      support_text: "Devenez [mécène](%{subscribe}) ou faites un [don ponctuel](%{donate})."
       convoke_guild: "Jouez davantage avec **%{name}** sur Convoke. [Rejoignez la guilde !](%{url})"
       settings: "Paramètres"
       settings_text: "Consultez les [parties en direct](%{queues}) et configurez [vos notifications](%{notify})."
@@ -119,7 +119,7 @@ fr:
     user_info_footer: "ID d'utilisateur : %{user_id}"
     mythic_track_title: "Configuration de Mythic Track pour %{guild}"
     mythic_track_on: "✅ Mythic Track a été **activé** sur ce serveur !\n\nPour continuer la configuration, [connectez votre compte Discord à Mythic Track](%{guide}).\n\nQuand cette fonctionnalité est activée, SpellBot génère des codes PIN que les joueurs peuvent saisir dans leur Mythic Track pour permettre de suivre leurs parties."
-    mythic_track_off: "❌ Mythic Track activé** sur ce serveur. Exécutez à nouveau cette commande pour réactiver la fonctionnalité. Veuillez noter que désactiver cette fonctionnalité ne supprime pas les données Mythic Track existantes."
+    mythic_track_off: "❌ Mythic Track a été **désactivé** sur ce serveur. Exécutez à nouveau cette commande pour réactiver la fonctionnalité. Veuillez noter que désactiver cette fonctionnalité ne supprime pas les données Mythic Track existantes."
   # Block action messages
   block:
     self_block: "Vous ne pouvez pas vous bloquer vous-même."
