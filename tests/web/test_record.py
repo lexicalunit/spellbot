@@ -4,25 +4,26 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from aiohttp import web
 from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat
 from spellbot.models import Block, Channel, GameStatus, Guild, GuildAward, User
-from spellbot.web.api import record
+from spellbot.web.api import record, viewer_auth
+from tests.mocks import decoys
+from tests.mocks.decoys import ANY
 
 if TYPE_CHECKING:
-    from aiohttp import web
     from aiohttp.abc import AbstractStreamWriter
     from aiohttp.client import ClientSession
+    from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
-    from pytest_mock import MockerFixture
     from syrupy.assertion import SnapshotAssertion
 
-    from tests.fixtures import Factories
+    from tests.fixtures import Factories, Stub
 
 pytestmark = pytest.mark.use_db
 
@@ -153,7 +154,8 @@ class TestWebRecord:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         user = factories.user.create(xid=101, name="user")
         guild = factories.guild.create(xid=201, name="guild")
@@ -176,18 +178,18 @@ class TestWebRecord:
         assert "https://example.com/play/abc" not in await resp.text()
 
         # A different logged-in viewer must not see another user's links either.
-        mocker.patch(
-            "spellbot.web.api.record.get_viewer",
-            AsyncMock(return_value=(999, "stranger")),
+        get_viewer_fake = stub(record, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (999, "stranger")
         )
         resp = await client.get(f"/u/{user.xid}")
         assert resp.status == 200
         assert "https://example.com/play/abc" not in await resp.text()
 
         # The profile owner sees the link column.
-        mocker.patch(
-            "spellbot.web.api.record.get_viewer",
-            AsyncMock(return_value=(user.xid, "user")),
+        get_viewer_fake = stub(record, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (user.xid, "user")
         )
         resp = await client.get(f"/u/{user.xid}")
         assert resp.status == 200
@@ -197,7 +199,8 @@ class TestWebRecord:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         user = factories.user.create(xid=101, name="user")
         guild = factories.guild.create(xid=201, name="guild")
@@ -215,14 +218,12 @@ class TestWebRecord:
         factories.play.create(game_id=game.id, user_xid=user.xid)
 
         # Even a logged-in moderator must never see the link column on a channel page.
-        mocker.patch(
-            "spellbot.web.api.record.get_viewer",
-            AsyncMock(return_value=(user.xid, "user")),
+        get_viewer_fake = stub(record, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (user.xid, "user")
         )
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=True),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(True)
         resp = await client.get(f"/g/{guild.xid}/c/{channel.xid}")
         assert resp.status == 200
         assert "https://example.com/play/abc" not in await resp.text()
@@ -786,7 +787,7 @@ class TestWebRecordExport:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         user = factories.user.create(xid=101, name="user")
@@ -806,10 +807,10 @@ class TestWebRecordExport:
         factories.play.create(game_id=game.id, user_xid=user.xid)
 
         # Simulate the client dropping the connection partway through the stream.
-        mocker.patch.object(
+        monkeypatch.setattr(
             record.web.StreamResponse,
             "write",
-            side_effect=ConnectionResetError("Cannot write to closing transport"),
+            decoys.async_raising(ConnectionResetError("Cannot write to closing transport")),
         )
 
         with caplog.at_level("INFO"):
@@ -823,7 +824,7 @@ class TestWebRecordExport:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         user = factories.user.create(xid=101, name="user")
@@ -857,7 +858,7 @@ class TestWebRecordExport:
                 raise ConnectionResetError("Cannot write to closing transport")
             return await original_prepare(response, request)
 
-        mocker.patch.object(record.web.StreamResponse, "prepare", flaky_prepare)
+        monkeypatch.setattr(record.web.StreamResponse, "prepare", flaky_prepare)
 
         with caplog.at_level("INFO"):
             resp = await client.get(f"/u/{user.xid}/export.csv")
@@ -873,15 +874,17 @@ class TestWebRecordExport:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
         method: str,
         kind: str,
     ) -> None:
         user = factories.user.create(xid=101, name="user")
         guild = factories.guild.create(xid=201, name="guild")
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
-        stream_user = mocker.spy(record.services.plays, "stream_user_records")
-        stream_channel = mocker.spy(record.services.plays, "stream_channel_records")
+        # Crawlers are turned away before any records are read.
+        refuse = decoys.async_raising(AssertionError("crawler export reached the database"))
+        monkeypatch.setattr(record.services.plays, "stream_user_records", refuse)
+        monkeypatch.setattr(record.services.plays, "stream_channel_records", refuse)
         path = (
             f"/u/{user.xid}/export.csv"
             if kind == "user"
@@ -895,8 +898,6 @@ class TestWebRecordExport:
         )
 
         assert resp.status == 403
-        stream_user.assert_not_called()
-        stream_channel.assert_not_called()
 
     async def test_channel_export_success(
         self,
@@ -1122,7 +1123,8 @@ class TestWebGameDetail:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=201, name="guild", show_links=False)
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
@@ -1135,9 +1137,9 @@ class TestWebGameDetail:
         )
         factories.user.create(xid=101, name="user-1")
         factories.play.create(game_id=game.id, user_xid=101, og_guild_xid=guild.xid)
-        mocker.patch(
-            "spellbot.web.api.record.get_viewer",
-            AsyncMock(return_value=(101, "player")),
+        get_viewer_fake = stub(record, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (101, "player")
         )
 
         resp = await client.get(f"/game/{game.id}")
@@ -1149,7 +1151,8 @@ class TestWebGameDetail:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=201, name="guild", show_links=False)
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
@@ -1162,14 +1165,12 @@ class TestWebGameDetail:
         )
         factories.user.create(xid=101, name="user-1")
         factories.play.create(game_id=game.id, user_xid=101, og_guild_xid=guild.xid)
-        mocker.patch(
-            "spellbot.web.api.record.get_viewer",
-            AsyncMock(return_value=(999, "stranger")),
+        get_viewer_fake = stub(record, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (999, "stranger")
         )
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=False),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
 
         resp = await client.get(f"/game/{game.id}")
         assert resp.status == 200
@@ -1180,7 +1181,8 @@ class TestWebGameDetail:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=201, name="guild", show_links=False)
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
@@ -1193,14 +1195,12 @@ class TestWebGameDetail:
         )
         factories.user.create(xid=101, name="user-1")
         factories.play.create(game_id=game.id, user_xid=101, og_guild_xid=guild.xid)
-        mocker.patch(
-            "spellbot.web.api.record.get_viewer",
-            AsyncMock(return_value=(999, "mod")),
+        get_viewer_fake = stub(record, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (999, "mod")
         )
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=True),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(True)
 
         resp = await client.get(f"/game/{game.id}")
         assert resp.status == 200
@@ -1262,7 +1262,8 @@ class TestWebGameDetail:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=201, name="guild")
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
@@ -1279,13 +1280,13 @@ class TestWebGameDetail:
         # Logged in: the link to the viewer's own records page also shows. The
         # shared site header reads identity from the global nav context
         # (viewer_auth.get_viewer), the same session the handler sees in production.
-        mocker.patch(
-            "spellbot.web.api.record.get_viewer",
-            AsyncMock(return_value=(777, "Me")),
+        get_viewer_fake = stub(record, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (777, "Me")
         )
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_viewer",
-            AsyncMock(return_value=(777, "Me")),
+        get_viewer_fake = stub(viewer_auth, "get_viewer")
+        decoy.when(await get_viewer_fake(request=ANY), ignore_extra_args=True).then_return(
+            (777, "Me")
         )
         resp = await client.get(f"/game/{game.id}")
         text = await resp.text()
@@ -1578,12 +1579,11 @@ class TestWebGuildSettings:
         self,
         owner_client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=False),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
         guild = factories.guild.create(xid=702, name="guild")
         resp = await owner_client.get(f"/g/{guild.xid}")
         text = await resp.text()
@@ -1681,12 +1681,11 @@ class TestWebGuildSettings:
         self,
         owner_client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=False),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
         guild = factories.guild.create(xid=707, name="guild", motd="keep")
         resp = await owner_client.post(
             f"/g/{guild.xid}/settings",
@@ -1773,12 +1772,11 @@ class TestWebGuildAwards:
         self,
         owner_client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=False),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
         guild = factories.guild.create(xid=752, name="guild")
         resp = await owner_client.get(f"/g/{guild.xid}/awards", allow_redirects=False)
         assert resp.status == 403
@@ -1999,12 +1997,11 @@ class TestWebGuildAwards:
         self,
         owner_client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=False),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
         guild = factories.guild.create(xid=745, name="guild")
         award = factories.guild_award.create(guild=guild, count=5, role="r", message="m")
         resp = await owner_client.post(
@@ -2037,12 +2034,11 @@ class TestWebGuildAwards:
         self,
         owner_client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=False),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
         guild = factories.guild.create(xid=747, name="guild")
         award = factories.guild_award.create(guild=guild, count=5, role="keep", message="m")
         resp = await owner_client.post(
@@ -2373,12 +2369,11 @@ class TestWebChannelForget:
         self,
         owner_client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.record.viewer_is_moderator",
-            AsyncMock(return_value=False),
-        )
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
         guild = factories.guild.create(xid=724, name="guild")
         channel = factories.channel.create(xid=824, name="channel", guild=guild)
         resp = await owner_client.post(
@@ -2677,13 +2672,13 @@ class TestParseChannelSettings:
 
 
 class TestLoginUrl:
-    def test_returns_to_safe_relative_path(self) -> None:
-        request = MagicMock()
-        request.path = "/g/1/audit"
+    def test_returns_to_safe_relative_path(self, decoy: Decoy) -> None:
+        request = decoy.mock(cls=web.Request)
+        decoy.when(request.path).then_return("/g/1/audit")
         assert record.login_url(request) == "/login?next=%2Fg%2F1%2Faudit"
 
-    def test_hostile_path_falls_back_to_root(self) -> None:
+    def test_hostile_path_falls_back_to_root(self, decoy: Decoy) -> None:
         # A protocol-relative request target must not be reflected into `next`.
-        request = MagicMock()
-        request.path = "//evil.example/x"
+        request = decoy.mock(cls=web.Request)
+        decoy.when(request.path).then_return("//evil.example/x")
         assert record.login_url(request) == "/login?next=%2F"

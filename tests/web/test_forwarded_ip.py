@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
@@ -11,9 +9,6 @@ from multidict import CIMultiDict
 
 from spellbot.settings import settings
 from spellbot.web.builder import forwarded_client_ip, forwarded_ip_middleware
-
-if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
 
 
 def make_request(*forwarded: str) -> web.Request:
@@ -57,17 +52,23 @@ class TestForwardedIpMiddleware:
         await forwarded_ip_middleware(request, handler)
         return seen[0]
 
-    async def test_uses_forwarded_ip_when_trusted(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(settings, "TRUSTED_PROXY_HOPS", 1)
+    async def test_uses_forwarded_ip_when_trusted(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 1)
         request = make_request("1.1.1.1, 203.0.113.7")
         assert await self.remote_seen_by_handler(request) == "203.0.113.7"
 
-    async def test_ignores_header_when_no_trusted_proxies(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(settings, "TRUSTED_PROXY_HOPS", 0)
+    async def test_ignores_header_when_no_trusted_proxies(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 0)
         request = make_request("203.0.113.7")
         assert await self.remote_seen_by_handler(request) == request.remote
 
-    async def test_keeps_remote_without_usable_header(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(settings, "TRUSTED_PROXY_HOPS", 1)
+    async def test_keeps_remote_without_usable_header(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 1)
         request = make_request("not-an-ip")
         assert await self.remote_seen_by_handler(request) == request.remote

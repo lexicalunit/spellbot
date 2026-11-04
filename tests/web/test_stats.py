@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from spellbot import database
 from spellbot.public_stats import PublicStats
+from spellbot.web.api import stats
 from spellbot.web.builder import PUBLIC_CORS_PATHS
 
 if TYPE_CHECKING:
     from aiohttp import web
     from aiohttp.test_utils import TestClient
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
 
     WebClient = TestClient[web.Request, web.Application]
 
@@ -28,37 +32,39 @@ STATS = PublicStats(
 
 @pytest.mark.asyncio
 class TestStatsJson:
-    async def test_serves_cached_stats(self, client: WebClient) -> None:
-        with patch(
-            "spellbot.web.api.stats.get_public_stats",
-            AsyncMock(return_value=STATS),
-        ):
-            resp = await client.get("/stats.json")
+    async def test_serves_cached_stats(self, client: WebClient, decoy: Decoy, stub: Stub) -> None:
+        get_public_stats_fake = stub(stats, "get_public_stats")
+        decoy.when(await get_public_stats_fake(), ignore_extra_args=True).then_return(STATS)
+        resp = await client.get("/stats.json")
 
         assert resp.status == 200
         assert await resp.json() == STATS.to_dict()
         assert resp.headers.get("Cache-Control") == "public, max-age=60"
 
-    async def test_never_touches_the_database(self, client: WebClient) -> None:
+    async def test_never_touches_the_database(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         """The whole point of the endpoint is to keep site traffic off the DB."""
-        with (
-            patch(
-                "spellbot.web.api.stats.get_public_stats",
-                AsyncMock(return_value=STATS),
-            ),
-            patch("spellbot.database.begin_session", AsyncMock()) as begin_session,
-        ):
-            resp = await client.get("/stats.json")
+        get_public_stats_fake = stub(stats, "get_public_stats")
+        decoy.when(await get_public_stats_fake(), ignore_extra_args=True).then_return(STATS)
+        begin_session = stub(database, "begin_session")
+        resp = await client.get("/stats.json")
 
         assert resp.status == 200
-        begin_session.assert_not_called()
+        decoy.verify(await begin_session(), times=0, ignore_extra_args=True)
 
-    async def test_returns_503_when_no_stats_are_cached(self, client: WebClient) -> None:
-        with patch(
-            "spellbot.web.api.stats.get_public_stats",
-            AsyncMock(return_value=None),
-        ):
-            resp = await client.get("/stats.json")
+    async def test_returns_503_when_no_stats_are_cached(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        get_public_stats_fake = stub(stats, "get_public_stats")
+        decoy.when(await get_public_stats_fake(), ignore_extra_args=True).then_return(None)
+        resp = await client.get("/stats.json")
 
         assert resp.status == 503
         assert await resp.json() == {"error": "stats unavailable"}
@@ -68,12 +74,15 @@ class TestStatsJson:
 
 @pytest.mark.asyncio
 class TestPublicCors:
-    async def test_stats_json_is_readable_cross_origin(self, client: WebClient) -> None:
-        with patch(
-            "spellbot.web.api.stats.get_public_stats",
-            AsyncMock(return_value=STATS),
-        ):
-            resp = await client.get("/stats.json", headers={"Origin": "https://spellbot.io"})
+    async def test_stats_json_is_readable_cross_origin(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        get_public_stats_fake = stub(stats, "get_public_stats")
+        decoy.when(await get_public_stats_fake(), ignore_extra_args=True).then_return(STATS)
+        resp = await client.get("/stats.json", headers={"Origin": "https://spellbot.io"})
 
         assert resp.headers.get("Access-Control-Allow-Origin") == "*"
 

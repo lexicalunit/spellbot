@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
-from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock, MagicMock
+from typing import TYPE_CHECKING
 
 import httpx
 import pytest
@@ -13,10 +12,15 @@ import pytest
 from spellbot.enums import GameFormat
 from spellbot.integrations import girudo
 from spellbot.integrations.girudo import GirudoGameFormat
+from tests.mocks import decoys
 from tests.mocks.girudo import GirudoTestData, MockHTTPClient, MockHTTPResponse, create_mock_game
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+    from decoy import Decoy
+
+    from spellbot.data import GameData
 
 
 @pytest.fixture(autouse=True)
@@ -272,7 +276,7 @@ class TestGirudoFormats:
         """Test fetch_and_cache_formats handles exception gracefully."""
         monkeypatch.setattr(girudo.settings, "GIRUDO_BASE_URL", GirudoTestData.API_BASE_URL)
         client = MockHTTPClient(MockHTTPResponse(200, {}))
-        client.get = AsyncMock(side_effect=RuntimeError("Network error"))
+        monkeypatch.setattr(client, "get", decoys.async_raising(RuntimeError("Network error")))
         result = await girudo.fetch_and_cache_formats(client, GirudoTestData.AUTH_TOKEN)
         assert result == {}
 
@@ -391,7 +395,7 @@ class TestGirudoFormats:
             f"{GirudoTestData.API_BASE_URL}/store",
         )
         client = MockHTTPClient(MockHTTPResponse(200, {}))
-        client.get = AsyncMock(side_effect=RuntimeError("Network error"))
+        monkeypatch.setattr(client, "get", decoys.async_raising(RuntimeError("Network error")))
         result = await girudo.fetch_and_cache_tcg_names(client, GirudoTestData.AUTH_TOKEN)
         assert result == {}
 
@@ -413,11 +417,12 @@ class TestGirudoFormats:
 class TestGirudoFormatMapping:
     """Test game format mapping."""
 
-    def test_unmapped_format_uses_the_default(self) -> None:
+    def test_unmapped_format_uses_the_default(self, decoy: Decoy) -> None:
         """A format added to SpellBot before Girudo's mapping catches up gets the default."""
         girudo.state.formats = GirudoTestData.formats_cache()
-        unmapped = MagicMock(spec=GameFormat)
-        unmapped.name = "SOMETHING_NEW"
+        # Every real format is mapped today, so stand in for one that isn't yet.
+        unmapped = decoy.mock(cls=GameFormat)
+        decoy.when(unmapped.name).then_return("SOMETHING_NEW")
         assert girudo.girudo_game_format(unmapped) == girudo.get_default_girudo_format()
 
     def test_girudo_game_format_standard(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -543,7 +548,7 @@ class TestGirudoGameCreation:
             f"{GirudoTestData.API_BASE_URL}/create",
         )
         client = MockHTTPClient(MockHTTPResponse(200, {}))
-        client.post = AsyncMock(side_effect=RuntimeError("Network error"))
+        monkeypatch.setattr(client, "post", decoys.async_raising(RuntimeError("Network error")))
         game = create_mock_game()
         link = await girudo.create_game(client, GirudoTestData.AUTH_TOKEN, game)
         assert link is None
@@ -573,11 +578,15 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo.settings, "GIRUDO_TIMEOUT_S", 5)
 
         # Mock authenticate to return a token
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str:
             return GirudoTestData.AUTH_TOKEN
 
         # Mock create_game to return a link
-        async def mock_create(client: Any, token: str, game: Any, **kwargs: Any) -> str:
+        async def mock_create(client: httpx.AsyncClient, token: str, game: GameData) -> str:
             return (
                 f"{GirudoTestData.GAME_BASE_URL}/join-game/{GirudoTestData.GAME_UUID}?type=player"
             )
@@ -585,8 +594,8 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo, "authenticate", mock_auth)
         monkeypatch.setattr(girudo, "create_game", mock_create)
 
-        mock_func_cahce_formats = AsyncMock(return_value={})
-        mock_func_cahce_tcg_names = AsyncMock(return_value={})
+        mock_func_cahce_formats = decoys.async_returning({})
+        mock_func_cahce_tcg_names = decoys.async_returning({})
 
         monkeypatch.setattr(girudo, "fetch_and_cache_formats", mock_func_cahce_formats)
         monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", mock_func_cahce_tcg_names)
@@ -610,14 +619,18 @@ class TestGirudoGenerateLink:
         call_count = 0
 
         # Mock authenticate to fail first, succeed second
-        async def mock_auth(client: Any, **kwargs: Any) -> str | None:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str | None:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
                 return None
             return GirudoTestData.AUTH_TOKEN
 
-        async def mock_create(client: Any, token: str, game: Any, **kwargs: Any) -> str:
+        async def mock_create(client: httpx.AsyncClient, token: str, game: GameData) -> str:
             return (
                 f"{GirudoTestData.GAME_BASE_URL}/join-game/{GirudoTestData.GAME_UUID}?type=player"
             )
@@ -649,22 +662,26 @@ class TestGirudoGenerateLink:
 
         attempt_count = 0
 
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str:
             nonlocal attempt_count
             attempt_count += 1
             if attempt_count == 1:
                 raise RuntimeError("Simulated failure")
             return GirudoTestData.AUTH_TOKEN
 
-        async def mock_create(client: Any, token: str, game: Any, **kwargs: Any) -> str:
+        async def mock_create(client: httpx.AsyncClient, token: str, game: GameData) -> str:
             return (
                 f"{GirudoTestData.GAME_BASE_URL}/join-game/{GirudoTestData.GAME_UUID}?type=player"
             )
 
         monkeypatch.setattr(girudo, "authenticate", mock_auth)
         monkeypatch.setattr(girudo, "create_game", mock_create)
-        monkeypatch.setattr(girudo, "fetch_and_cache_formats", AsyncMock(return_value={}))
-        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", AsyncMock(return_value={}))
+        monkeypatch.setattr(girudo, "fetch_and_cache_formats", decoys.async_returning({}))
+        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", decoys.async_returning({}))
 
         game = create_mock_game()
         result = await girudo.generate_link(game)
@@ -686,7 +703,11 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo.settings, "GIRUDO_RETRY_ATTEMPTS", 1)
         monkeypatch.setattr(girudo.settings, "GIRUDO_TIMEOUT_S", 5)
 
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str:
             raise RuntimeError("Final failure")
 
         monkeypatch.setattr(girudo, "authenticate", mock_auth)
@@ -711,16 +732,20 @@ class TestGirudoGenerateLink:
         monkeypatch.setattr(girudo.settings, "GIRUDO_RETRY_ATTEMPTS", 2)
         monkeypatch.setattr(girudo.settings, "GIRUDO_TIMEOUT_S", 5)
 
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str:
             return GirudoTestData.AUTH_TOKEN
 
-        async def mock_create(client: Any, token: str, game: Any, **kwargs: Any) -> None:
+        async def mock_create(client: httpx.AsyncClient, token: str, game: GameData) -> None:
             return None
 
         monkeypatch.setattr(girudo, "authenticate", mock_auth)
         monkeypatch.setattr(girudo, "create_game", mock_create)
-        monkeypatch.setattr(girudo, "fetch_and_cache_formats", AsyncMock(return_value={}))
-        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", AsyncMock(return_value={}))
+        monkeypatch.setattr(girudo, "fetch_and_cache_formats", decoys.async_returning({}))
+        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", decoys.async_returning({}))
 
         game = create_mock_game()
         result = await girudo.generate_link(game)
@@ -743,14 +768,18 @@ class TestGirudoGenerateLink:
 
         auth_count = 0
 
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str:
             nonlocal auth_count
             auth_count += 1
             return GirudoTestData.AUTH_TOKEN
 
         create_count = 0
 
-        async def mock_create(client: Any, token: str, game: Any, **kwargs: Any) -> str | None:
+        async def mock_create(client: httpx.AsyncClient, token: str, game: GameData) -> str | None:
             nonlocal create_count
             create_count += 1
             if create_count == 1:
@@ -762,12 +791,15 @@ class TestGirudoGenerateLink:
         format_calls = 0
         tcg_calls = 0
 
-        async def mock_formats(client: Any, token: str) -> dict[str, Any]:
+        async def mock_formats(
+            client: httpx.AsyncClient,
+            token: str,
+        ) -> dict[str, GirudoGameFormat]:
             nonlocal format_calls
             format_calls += 1
             return {}
 
-        async def mock_tcg(client: Any, token: str) -> dict[str, Any]:
+        async def mock_tcg(client: httpx.AsyncClient, token: str) -> dict[str, str]:
             nonlocal tcg_calls
             tcg_calls += 1
             return {}
@@ -781,7 +813,8 @@ class TestGirudoGenerateLink:
         result = await girudo.generate_link(game)
 
         assert result.link is not None
-        # Caching only happens on first attempt (attempt == 0)
+        # Every attempt authenticates, but caching only happens on the first (attempt == 0)
+        assert auth_count == 2
         assert format_calls == 1
         assert tcg_calls == 1
 
@@ -807,10 +840,14 @@ class TestGirudoGenerateLink:
         )
         monkeypatch.setattr(girudo.state, "tcg_names", {"mtg": "Magic: The Gathering"})
 
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str:
             return GirudoTestData.AUTH_TOKEN
 
-        async def mock_create(client: Any, token: str, game: Any, **kwargs: Any) -> str | None:
+        async def mock_create(client: httpx.AsyncClient, token: str, game: GameData) -> str | None:
             return (
                 f"{GirudoTestData.GAME_BASE_URL}/join-game/{GirudoTestData.GAME_UUID}?type=player"
             )
@@ -818,12 +855,18 @@ class TestGirudoGenerateLink:
         format_calls = 0
         tcg_calls = 0
 
-        async def mock_formats(client: Any, token: str) -> dict[str, Any]:  # pragma: no cover
+        async def mock_formats(
+            client: httpx.AsyncClient,
+            token: str,
+        ) -> dict[str, GirudoGameFormat]:  # pragma: no cover
             nonlocal format_calls
             format_calls += 1
             return {}
 
-        async def mock_tcg(client: Any, token: str) -> dict[str, Any]:  # pragma: no cover
+        async def mock_tcg(
+            client: httpx.AsyncClient,
+            token: str,
+        ) -> dict[str, str]:  # pragma: no cover
             nonlocal tcg_calls
             tcg_calls += 1
             return {}
@@ -863,14 +906,18 @@ class TestGirudoTerminalClientErrors:
 
         attempts = 0
 
-        async def mock_auth(client: Any, **kwargs: Any) -> str:
+        async def mock_auth(
+            client: httpx.AsyncClient,
+            email: str | None = None,
+            password: str | None = None,
+        ) -> str:
             nonlocal attempts
             attempts += 1
             raise error
 
         monkeypatch.setattr(girudo, "authenticate", mock_auth)
-        monkeypatch.setattr(girudo, "fetch_and_cache_formats", AsyncMock(return_value={}))
-        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", AsyncMock(return_value={}))
+        monkeypatch.setattr(girudo, "fetch_and_cache_formats", decoys.async_returning({}))
+        monkeypatch.setattr(girudo, "fetch_and_cache_tcg_names", decoys.async_returning({}))
 
         result = await girudo.generate_link(create_mock_game())
         assert result.link is None

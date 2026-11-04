@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-from unittest.mock import MagicMock
 from uuid import uuid4
 
 import httpx
 import pytest
+from ddtrace._trace.span import Span
 from ddtrace.constants import ERROR_MSG, ERROR_TYPE
 from discord.http import HTTPClient, Route
 
+from spellbot import metrics
 from spellbot.metrics import (
     MAX_SPAN_ERROR_MSG,
     REPORTED_ERROR_TAG,
@@ -21,9 +22,12 @@ from spellbot.metrics import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+    from types import TracebackType
 
+    from decoy import Decoy
     from discord import File
-    from pytest_mock import MockerFixture
+
+    from tests.fixtures import Stub
 
 
 class TestSpanErrorTags:
@@ -60,14 +64,48 @@ class TestSpanErrorTags:
         assert tags[ERROR_TYPE] != "OperationalError"
 
 
+class RecordingSpan(Span):
+    """A real span that records when it opens and closes, and the tags it is given."""
+
+    events: list[str]
+    tags: dict[str, str]
+
+    @classmethod
+    def into(cls, events: list[str]) -> RecordingSpan:
+        span = cls("test")
+        span.events = events
+        span.tags = {}
+        return span
+
+    def __enter__(self) -> Span:
+        self.events.append("open")
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        self.events.append("close")
+
+    def set_tags(self, tags: dict[str, str]) -> None:
+        self.tags.update(tags)
+
+
 @pytest.mark.asyncio
 class TestTraceDiscordRequests:
-    async def test_span_wraps_the_whole_request(self, mocker: MockerFixture) -> None:
+    async def test_span_wraps_the_whole_request(self, decoy: Decoy, stub: Stub) -> None:
         events: list[str] = []
-        span = MagicMock()
-        trace = mocker.patch("spellbot.metrics.tracer.trace")
-        trace.return_value.__enter__.side_effect = lambda: events.append("open") or span
-        trace.return_value.__exit__.side_effect = lambda *_: events.append("close")
+        span = RecordingSpan.into(events)
+        trace = stub(metrics.tracer, "trace")
+        decoy.when(
+            trace(
+                service="discord",
+                name="http",
+                resource="/interactions/{interaction_id}/{interaction_token}/callback",
+            ),
+        ).then_return(span)
 
         class Client(HTTPClient):
             async def request(
@@ -89,7 +127,7 @@ class TestTraceDiscordRequests:
             interaction_id=123,
             interaction_token=interaction_token,
         )
-        client = MagicMock(spec=HTTPClient)
+        client = decoy.mock(cls=Client)
         assert await Client.request(client, route, json={"content": "hi"}) == "response"
 
         assert events == [
@@ -97,37 +135,37 @@ class TestTraceDiscordRequests:
             "request files=None form=None {'json': {'content': 'hi'}}",
             "close",
         ]
-        trace.assert_called_once_with(
-            service="discord",
-            name="http",
-            resource="/interactions/{interaction_id}/{interaction_token}/callback",
-        )
-        tags = span.set_tags.call_args.args[0]
-        assert tags == {
+        # The span is named by the route template, never the interaction token.
+        assert span.tags == {
             "base": Route.BASE,
             "channel_xid": "None",
             "guild_xid": "None",
             "method": "POST",
             "data": "{'files': None, 'form': None, 'json': {'content': 'hi'}}",
         }
-        assert interaction_token not in str(trace.call_args) + str(tags)
+        assert interaction_token not in str(span.tags)
         assert Client.request.__name__ == "request"
 
 
 class TestTagSpan:
-    def test_tags_the_current_span_with_strings(self, mocker: MockerFixture) -> None:
-        span = MagicMock()
-        mocker.patch("spellbot.metrics.tracer.current_span", return_value=span)
+    def test_tags_the_current_span_with_strings(self, decoy: Decoy, stub: Stub) -> None:
+        span = decoy.mock(cls=Span)
+        current_span_fake = stub(metrics.tracer, "current_span")
+        decoy.when(current_span_fake(), ignore_extra_args=True).then_return(span)
         tag_span({"warning.type": "x"}, guild_xid=123, remove=False, missing=None)
-        span.set_tags.assert_called_once_with(
-            {
-                "warning.type": "x",
-                "guild_xid": "123",
-                "remove": "False",
-                "missing": "None",
-            },
+        decoy.verify(
+            span.set_tags(
+                {
+                    "warning.type": "x",
+                    "guild_xid": "123",
+                    "remove": "False",
+                    "missing": "None",
+                },
+            ),
+            times=1,
         )
 
-    def test_no_current_span(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.metrics.tracer.current_span", return_value=None)
+    def test_no_current_span(self, decoy: Decoy, stub: Stub) -> None:
+        current_span_fake = stub(metrics.tracer, "current_span")
+        decoy.when(current_span_fake(), ignore_extra_args=True).then_return(None)
         tag_span(guild_xid=123)  # nothing to tag, and no error

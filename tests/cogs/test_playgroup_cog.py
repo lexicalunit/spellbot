@@ -3,24 +3,25 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
 from sqlalchemy import select
 
-from spellbot.cogs import PlaygroupCog
+from spellbot.actions import playgroup_action
+from spellbot.cogs import PlaygroupCog, playgroup_cog
 from spellbot.database import DatabaseSession
 from spellbot.errors import UserBannedError
 from spellbot.models import User
 from tests.fixtures import Factories, run_command
+from tests.mocks.decoys import ANY
 
 if TYPE_CHECKING:
     import discord
     from decoy import Decoy
-    from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
+    from tests.fixtures import Stub
 
 pytestmark = pytest.mark.use_db
 
@@ -38,13 +39,10 @@ class TestCogPlaygroup:
         cog: PlaygroupCog,
         interaction: discord.Interaction,
         factories: Factories,
-        mocker: MockerFixture,
+        stub: Stub,
     ) -> None:
         factories.user.create(xid=interaction.user.id, playgroup_user_id=42)
-        lookup_stub = mocker.patch(
-            "spellbot.actions.playgroup_action.find_playgroup_user",
-            AsyncMock(),
-        )
+        lookup_stub = stub(playgroup_action, "find_playgroup_user")
 
         await run_command(cog.link, interaction)
 
@@ -57,7 +55,7 @@ class TestCogPlaygroup:
             ),
             times=1,
         )
-        lookup_stub.assert_not_called()
+        decoy.verify(await lookup_stub(discord_id=ANY), times=0, ignore_extra_args=True)
 
     async def test_link_success(
         self,
@@ -65,13 +63,14 @@ class TestCogPlaygroup:
         cog: PlaygroupCog,
         interaction: discord.Interaction,
         factories: Factories,
-        mocker: MockerFixture,
+        stub: Stub,
     ) -> None:
         factories.user.create(xid=interaction.user.id)
-        mocker.patch(
-            "spellbot.actions.playgroup_action.find_playgroup_user",
-            AsyncMock(return_value=(99, "testuser")),
-        )
+        find_playgroup_user_fake = stub(playgroup_action, "find_playgroup_user")
+        decoy.when(
+            await find_playgroup_user_fake(discord_id=ANY),
+            ignore_extra_args=True,
+        ).then_return((99, "testuser"))
 
         await run_command(cog.link, interaction)
 
@@ -96,12 +95,13 @@ class TestCogPlaygroup:
         decoy: Decoy,
         cog: PlaygroupCog,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.actions.playgroup_action.find_playgroup_user",
-            AsyncMock(return_value=(None, None)),
-        )
+        find_playgroup_user_fake = stub(playgroup_action, "find_playgroup_user")
+        decoy.when(
+            await find_playgroup_user_fake(discord_id=ANY),
+            ignore_extra_args=True,
+        ).then_return((None, None))
 
         await run_command(cog.link, interaction)
 
@@ -121,29 +121,29 @@ class TestCogPlaygroup:
         cog: PlaygroupCog,
         interaction: discord.Interaction,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         factories.user.create(xid=interaction.user.id, banned=True)
-        lookup_stub = mocker.patch(
-            "spellbot.actions.playgroup_action.find_playgroup_user",
-            AsyncMock(),
-        )
+        lookup_stub = stub(playgroup_action, "find_playgroup_user")
 
         with pytest.raises(UserBannedError):
             await run_command(cog.link, interaction)
 
-        lookup_stub.assert_not_called()
+        decoy.verify(await lookup_stub(discord_id=ANY), times=0, ignore_extra_args=True)
 
     async def test_link_stops_when_defer_fails(
         self,
         cog: PlaygroupCog,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.cogs.playgroup_cog.safe_defer_interaction",
-            AsyncMock(return_value=False),
-        )
-        create = mocker.patch("spellbot.cogs.playgroup_cog.PlaygroupAction.create")
+        safe_defer_interaction_fake = stub(playgroup_cog, "safe_defer_interaction")
+        decoy.when(
+            await safe_defer_interaction_fake(interaction=ANY),
+            ignore_extra_args=True,
+        ).then_return(False)
+        create = stub(playgroup_cog.PlaygroupAction, "create")
         await run_command(cog.link, interaction)
-        create.assert_not_called()
+        decoy.verify(create(bot=ANY, interaction=ANY), times=0, ignore_extra_args=True)

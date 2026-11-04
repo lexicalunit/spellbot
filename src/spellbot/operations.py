@@ -566,13 +566,14 @@ async def safe_delete_channel(
     channel_xid: int = channel.id
     tag_span(channel_xid=channel_xid)
 
-    result = await safe_call(
+    success, _ = await safe_call_with_expected(
         delete,
+        [],
         "in guild %(guild_xid)s, could not delete channel %(channel_xid)s",
         guild_xid=guild_xid,
         channel_xid=channel_xid,
     )
-    return result is not None
+    return success
 
 
 async def safe_send_and_get_message(

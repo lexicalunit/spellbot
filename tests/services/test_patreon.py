@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import TYPE_CHECKING, Any
 
+import httpx
 import pytest
 
 from spellbot.services import patreon
 from spellbot.services.patreon import get_patreon_campaign_url, get_patron_ids, get_supporters
+from tests.mocks.http import in_order, raising, serve_httpx
+
+if TYPE_CHECKING:
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
 
 
 @pytest.fixture(autouse=True)
@@ -17,10 +23,9 @@ def use_fake_patreon_campaign(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 class TestGetPatreonCampaignUrl:
-    def test_returns_valid_url(self) -> None:
-        with patch("spellbot.services.patreon.settings") as mock_settings:
-            mock_settings.PATREON_CAMPAIGN = "12345"
-            url = get_patreon_campaign_url()
+    def test_returns_valid_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(patreon.settings, "PATREON_CAMPAIGN", "12345")
+        url = get_patreon_campaign_url()
 
         assert "https://www.patreon.com/api/oauth2/v2/campaigns/12345/members" in url
         assert "fields%5Bmember%5D=patron_status" in url
@@ -240,7 +245,12 @@ class TestPatreonService:
         result = await patreon.supporters()
         assert result == set()
 
-    async def test_supporters_with_mocked_http_success(self) -> None:
+    async def test_supporters_with_mocked_http_success(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test successful HTTP response with pagination."""
         page1_data = {
             "data": [
@@ -279,57 +289,42 @@ class TestPatreonService:
             "links": {},
         }
 
-        mock_response1 = MagicMock()
-        mock_response1.status_code = 200
-        mock_response1.json.return_value = page1_data
+        requests = serve_httpx(
+            monkeypatch,
+            in_order(httpx.Response(200, json=page1_data), httpx.Response(200, json=page2_data)),
+        )
+        running_in_pytest_fake = stub(patreon, "running_in_pytest")
+        decoy.when(running_in_pytest_fake()).then_return(False)
+        result = await patreon.supporters()
 
-        mock_response2 = MagicMock()
-        mock_response2.status_code = 200
-        mock_response2.json.return_value = page2_data
-
-        mock_client = MagicMock()
-        mock_client.get = AsyncMock(side_effect=[mock_response1, mock_response2])
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
-
-        with (
-            patch("spellbot.services.patreon.running_in_pytest", return_value=False),
-            patch("spellbot.services.patreon.httpx.AsyncClient", return_value=mock_client),
-        ):
-            result = await patreon.supporters()
+        assert len(requests) == 2  # both pages
 
         assert 123456 in result
         assert 789012 in result
         assert 711717544435646494 in result
 
-    async def test_supporters_with_http_error(self) -> None:
-        mock_response = MagicMock()
-        mock_response.status_code = 401
-        mock_response.text = "Unauthorized"
-
-        mock_client = MagicMock()
-        mock_client.get = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
-
-        with (
-            patch("spellbot.services.patreon.running_in_pytest", return_value=False),
-            patch("spellbot.services.patreon.httpx.AsyncClient", return_value=mock_client),
-        ):
-            result = await patreon.supporters()
+    async def test_supporters_with_http_error(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(monkeypatch, in_order(httpx.Response(401, text="Unauthorized")))
+        running_in_pytest_fake = stub(patreon, "running_in_pytest")
+        decoy.when(running_in_pytest_fake()).then_return(False)
+        result = await patreon.supporters()
 
         assert 711717544435646494 in result
 
-    async def test_supporters_with_exception(self) -> None:
-        mock_client = MagicMock()
-        mock_client.get = AsyncMock(side_effect=Exception("Connection error"))
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=False)
-
-        with (
-            patch("spellbot.services.patreon.running_in_pytest", return_value=False),
-            patch("spellbot.services.patreon.httpx.AsyncClient", return_value=mock_client),
-        ):
-            result = await patreon.supporters()
+    async def test_supporters_with_exception(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(monkeypatch, raising())
+        running_in_pytest_fake = stub(patreon, "running_in_pytest")
+        decoy.when(running_in_pytest_fake()).then_return(False)
+        result = await patreon.supporters()
 
         assert result == set()

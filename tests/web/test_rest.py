@@ -4,17 +4,19 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock
 
 import aiohttp
 import pytest
 import pytest_asyncio
+from aiohttp.client import _BaseRequestContextManager
 from sqlalchemy import select
 
 from spellbot.data import PostData
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
 from spellbot.models import Game, GameStatus, Play
+from spellbot.services import plays
+from spellbot.web import builder
 from spellbot.web.api import rest
 from spellbot.web.api.rest import (
     close_http_session,
@@ -26,16 +28,17 @@ from spellbot.web.api.rest import (
     send_message,
 )
 from tests.mocks import create_mock_game, create_mock_user
+from tests.mocks.decoys import ANY, async_raising, async_returning
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Mapping
 
     from aiohttp.client import ClientSession
     from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
-    from pytest_mock import MockerFixture
 
-    from tests.fixtures import Factories
+    from tests.fixtures import Factories, Stub
+    from tests.mocks.http import JSON
 
 pytestmark = pytest.mark.use_db
 
@@ -53,7 +56,9 @@ class TestWebRecord:
         client: ClientSession,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
         user1 = factories.user.create(xid=101, name="user-1")
@@ -135,7 +140,8 @@ class TestWebRecord:
         assert await resp.json() == {"error": "Unauthorized"}
 
         # bad authentication with rate limiting
-        mocker.patch("spellbot.web.builder.rate_limited", return_value=True)
+        rate_limited_fake = stub(builder, "rate_limited")
+        decoy.when(await rate_limited_fake(ANY), ignore_extra_args=True).then_return(True)
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer BOGUS"},
@@ -183,10 +189,7 @@ class TestWebRecord:
         }
 
         # unexpected error
-        mocker.patch(
-            "spellbot.services.plays.verify_game_pin",
-            side_effect=Exception("BOOM"),
-        )
+        monkeypatch.setattr(plays, "verify_game_pin", async_raising(Exception("BOOM")))
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
@@ -196,11 +199,8 @@ class TestWebRecord:
         assert await resp.json() == {"error": "BOOM"}
 
         # Test rate limiting on failed verification
-        mocker.patch(
-            "spellbot.services.plays.verify_game_pin",
-            return_value=False,
-        )
-        mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
+        monkeypatch.setattr(plays, "verify_game_pin", async_returning(False))
+        monkeypatch.setattr(rest, "rate_limited", async_returning(True))
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
@@ -210,7 +210,7 @@ class TestWebRecord:
         assert await resp.json() == {"error": "Rate limited"}
 
         # Test rate limiting on ValueError
-        mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
+        monkeypatch.setattr(rest, "rate_limited", async_returning(True))
         resp = await client.post(
             "/api/game/FOO/verify",
             headers={"Authorization": "Bearer XYZ"},
@@ -220,7 +220,7 @@ class TestWebRecord:
         assert await resp.json() == {"error": "Rate limited"}
 
         # Test rate limiting on KeyError
-        mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
+        monkeypatch.setattr(rest, "rate_limited", async_returning(True))
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
@@ -230,11 +230,8 @@ class TestWebRecord:
         assert await resp.json() == {"error": "Rate limited"}
 
         # Test rate limiting on Exception
-        mocker.patch(
-            "spellbot.services.plays.verify_game_pin",
-            side_effect=Exception("BOOM"),
-        )
-        mocker.patch("spellbot.web.api.rest.rate_limited", return_value=True)
+        monkeypatch.setattr(plays, "verify_game_pin", async_raising(Exception("BOOM")))
+        monkeypatch.setattr(rest, "rate_limited", async_returning(True))
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
@@ -283,35 +280,31 @@ class TestRetryIfNotUnrecoverable:
 
 @pytest.mark.asyncio
 class TestPostWithRetry:
-    async def test_post_with_retry_success(self, mocker: MockerFixture) -> None:
-        """Test post_with_retry makes correct API call and returns response."""
-        mock_response = mocker.MagicMock()
-        mock_response.raise_for_status = mocker.MagicMock()
-        mock_response.json = mocker.AsyncMock(return_value={"id": "12345"})
-        mock_response.__aenter__ = mocker.AsyncMock(return_value=mock_response)
-        mock_response.__aexit__ = mocker.AsyncMock(return_value=None)
+    @staticmethod
+    async def discord_session(
+        decoy: Decoy,
+        method: str,
+        body: Mapping[str, JSON],
+    ) -> aiohttp.ClientSession:
+        """Build a session whose `method` request to `/test/path` answers with `body`."""
+        response = decoy.mock(cls=aiohttp.ClientResponse)
+        decoy.when(await response.json()).then_return(body)
+        request = decoy.mock(cls=_BaseRequestContextManager)
+        decoy.when(await request.__aenter__()).then_return(response)
+        session = decoy.mock(cls=aiohttp.ClientSession)
+        url = "https://discord.com/api/test/path"
+        decoy.when(getattr(session, method)(url, headers=ANY, json=ANY)).then_return(request)
+        return session
 
-        mock_session = mocker.MagicMock()
-        mock_session.post = mocker.MagicMock(return_value=mock_response)
-
-        result = await post_with_retry(mock_session, "/test/path", {"key": "value"})
+    async def test_post_with_retry_success(self, decoy: Decoy) -> None:
+        session = await self.discord_session(decoy, "post", {"id": "12345"})
+        result = await post_with_retry(session, "/test/path", {"key": "value"})
         assert result == {"id": "12345"}
-        mock_session.post.assert_called_once()
 
-    async def test_post_with_retry_get_method(self, mocker: MockerFixture) -> None:
-        """Test post_with_retry with GET method."""
-        mock_response = mocker.MagicMock()
-        mock_response.raise_for_status = mocker.MagicMock()
-        mock_response.json = mocker.AsyncMock(return_value={"data": "test"})
-        mock_response.__aenter__ = mocker.AsyncMock(return_value=mock_response)
-        mock_response.__aexit__ = mocker.AsyncMock(return_value=None)
-
-        mock_session = mocker.MagicMock()
-        mock_session.get = mocker.MagicMock(return_value=mock_response)
-
-        result = await post_with_retry(mock_session, "/test/path", method="get")
+    async def test_post_with_retry_get_method(self, decoy: Decoy) -> None:
+        session = await self.discord_session(decoy, "get", {"data": "test"})
+        result = await post_with_retry(session, "/test/path", method="get")
         assert result == {"data": "test"}
-        mock_session.get.assert_called_once()
 
 
 class TestGameRecordEmbed:
@@ -384,28 +377,27 @@ class TestGameRecordEmbed:
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("reset_http_session")
 class TestSendMessage:
-    async def test_send_message_success(self, mocker: MockerFixture) -> None:
-        mock_post = mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            return_value={"id": "12345"},
-        )
+    async def test_send_message_success(self, decoy: Decoy, stub: Stub) -> None:
+        mock_post = stub(rest, "post_with_retry")
+        decoy.when(
+            await mock_post(ANY, "/channels/123/messages", {"content": "Hello"}),
+        ).then_return({"id": "12345"})
         result = await send_message(123, {"content": "Hello"})
         assert result == {"id": "12345"}
-        mock_post.assert_called_once()
 
-    async def test_send_message_failure(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            side_effect=Exception("Connection error"),
+    async def test_send_message_failure(self, decoy: Decoy, stub: Stub) -> None:
+        post_with_retry_fake = stub(rest, "post_with_retry")
+        decoy.when(await post_with_retry_fake(ANY, ANY), ignore_extra_args=True).then_raise(
+            Exception("Connection error")
         )
         result = await send_message(123, {"content": "Hello"})
         assert result is None
 
-    async def test_session_is_reused(self, mocker: MockerFixture) -> None:
+    async def test_session_is_reused(self, decoy: Decoy, stub: Stub) -> None:
         """Repeated calls share a single aiohttp ClientSession."""
-        mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            return_value={"id": "12345"},
+        post_with_retry_fake = stub(rest, "post_with_retry")
+        decoy.when(await post_with_retry_fake(ANY, ANY), ignore_extra_args=True).then_return(
+            {"id": "12345"}
         )
         await send_message(123, {"content": "Hello"})
         first = rest.shared.session
@@ -416,39 +408,43 @@ class TestSendMessage:
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("reset_http_session")
 class TestSendDm:
-    async def test_send_dm_success(self, mocker: MockerFixture) -> None:
-        mock_post = mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            side_effect=[{"id": "channel123"}, {"id": "message456"}],
+    async def test_send_dm_success(self, decoy: Decoy, stub: Stub) -> None:
+        mock_post = stub(rest, "post_with_retry")
+        decoy.when(await mock_post(ANY, ANY), ignore_extra_args=True).then_return(
+            {"id": "channel123"},
+            {"id": "message456"},
         )
         await send_dm(101, {"content": "Hello"})
-        assert mock_post.call_count == 2
+        # The second call posts the message to the DM channel the first call opened.
+        decoy.verify(await mock_post(ANY, "/channels/channel123/messages", {"content": "Hello"}))
 
     async def test_send_dm_unrecoverable_error(
         self,
         decoy: Decoy,
-        mocker: MockerFixture,
+        stub: Stub,
     ) -> None:
         exc = aiohttp.ClientResponseError(decoy.mock(cls=aiohttp.RequestInfo), (), status=403)
-        mocker.patch("spellbot.web.api.rest.post_with_retry", side_effect=exc)
+        post_with_retry_fake = stub(rest, "post_with_retry")
+        decoy.when(await post_with_retry_fake(ANY, ANY), ignore_extra_args=True).then_raise(exc)
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})
 
     async def test_send_dm_recoverable_client_error(
         self,
         decoy: Decoy,
-        mocker: MockerFixture,
+        stub: Stub,
     ) -> None:
         # 500 is not in UNRECOVERABLE, so it should be re-raised and caught by outer except
         exc = aiohttp.ClientResponseError(decoy.mock(cls=aiohttp.RequestInfo), (), status=500)
-        mocker.patch("spellbot.web.api.rest.post_with_retry", side_effect=exc)
+        post_with_retry_fake = stub(rest, "post_with_retry")
+        decoy.when(await post_with_retry_fake(ANY, ANY), ignore_extra_args=True).then_raise(exc)
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})
 
-    async def test_send_dm_other_exception(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.rest.post_with_retry",
-            side_effect=Exception("Network error"),
+    async def test_send_dm_other_exception(self, decoy: Decoy, stub: Stub) -> None:
+        post_with_retry_fake = stub(rest, "post_with_retry")
+        decoy.when(await post_with_retry_fake(ANY, ANY), ignore_extra_args=True).then_raise(
+            Exception("Network error")
         )
         # Should not raise, just log
         await send_dm(101, {"content": "Hello"})
@@ -461,7 +457,8 @@ class TestGameRecordEndpoint:
         client: ClientSession,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
         user1 = factories.user.create(xid=1001, name="user-1")
@@ -494,7 +491,8 @@ class TestGameRecordEndpoint:
         )
         factories.token.create(key="RECORD1")
 
-        mocker.patch("spellbot.web.api.rest.send_dm", return_value=None)
+        send_dm_fake = stub(rest, "send_dm")
+        decoy.when(await send_dm_fake(ANY, ANY), ignore_extra_args=True).then_return(None)
 
         resp = await client.post(
             f"/api/game/{game.id}/record",
@@ -707,11 +705,13 @@ class TestGameRecordEndpoint:
         client: ClientSession,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         """Test that usernames can be used instead of xids for tracker."""
         freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
-        mocker.patch("spellbot.web.api.rest.send_dm", return_value=None)
+        send_dm_fake = stub(rest, "send_dm")
+        decoy.when(await send_dm_fake(ANY, ANY), ignore_extra_args=True).then_return(None)
 
         guild = factories.guild.create(xid=201, name="guild")
         channel = factories.channel.create(xid=301, name="channel", guild=guild)
@@ -962,16 +962,16 @@ class TestGameMetadataEndpoint:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=2110, name="guild")
         channel = factories.channel.create(xid=3110, name="channel", guild=guild)
         game = factories.game.create(id=1110, seats=2, guild=guild, channel=channel)
         factories.token.create(key="META10")
-        mock_report_match = mocker.patch(
-            "spellbot.web.api.rest.castlog.report_match",
-            new_callable=AsyncMock,
-            return_value={"match_id": "abc-123"},
+        mock_report_match = stub(rest.castlog, "report_match")
+        decoy.when(await mock_report_match(payload=ANY), ignore_extra_args=True).then_return(
+            {"match_id": "abc-123"}
         )
 
         report = {"source": "convoke", "players": [{"xid": 501, "commander": "Atraxa"}]}
@@ -984,23 +984,21 @@ class TestGameMetadataEndpoint:
         assert resp.status == 200
         # The game id only arrives in the URL, so it is added to the forwarded body to give
         # Castlog a stable key for de-duplicating repeat reports of the same match.
-        mock_report_match.assert_awaited_once_with(report | {"spellbot_game_id": game.id})
+        decoy.verify(await mock_report_match(report | {"spellbot_game_id": game.id}), times=1)
 
     async def test_game_metadata_does_not_forward_stale_report_to_castlog(
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=2114, name="guild")
         channel = factories.channel.create(xid=3114, name="channel", guild=guild)
         game = factories.game.create(id=1114, seats=2, guild=guild, channel=channel)
         factories.token.create(key="META14")
-        mock_report_match = mocker.patch(
-            "spellbot.web.api.rest.castlog.report_match",
-            new_callable=AsyncMock,
-            return_value=None,
-        )
+        mock_report_match = stub(rest.castlog, "report_match")
+        decoy.when(await mock_report_match(payload=ANY), ignore_extra_args=True).then_return(None)
         headers = {"Authorization": "Bearer META14"}
 
         newer = {"source": "convoke", "reported_at": "2026-07-11T18:30:00+00:00", "turns": 20}
@@ -1012,7 +1010,7 @@ class TestGameMetadataEndpoint:
 
         # The older report is accepted-and-ignored locally, so Castlog must not be told
         # about it either -- doing so would regress Castlog to data we rejected ourselves.
-        mock_report_match.assert_awaited_once_with(newer | {"spellbot_game_id": game.id})
+        decoy.verify(await mock_report_match(newer | {"spellbot_game_id": game.id}), times=1)
 
     async def test_game_metadata_accumulates_links_across_reports(
         self,
@@ -1060,17 +1058,15 @@ class TestGameMetadataEndpoint:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=2111, name="guild")
         channel = factories.channel.create(xid=3111, name="channel", guild=guild)
         game = factories.game.create(id=1111, seats=2, guild=guild, channel=channel)
         factories.token.create(key="META11")
-        mocker.patch(
-            "spellbot.web.api.rest.castlog.report_match",
-            new_callable=AsyncMock,
-            return_value=None,
-        )
+        report_match_fake = stub(rest.castlog, "report_match")
+        decoy.when(await report_match_fake(payload=ANY), ignore_extra_args=True).then_return(None)
 
         resp = await client.post(
             f"/api/game/{game.id}/metadata",
@@ -1085,21 +1081,21 @@ class TestGameMetadataEndpoint:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=2112, name="guild")
         channel = factories.channel.create(xid=3112, name="channel", guild=guild)
         game = factories.game.create(id=1112, seats=2, guild=guild, channel=channel)
         factories.token.create(key="META12")
-        mocker.patch(
-            "spellbot.web.api.rest.castlog.report_match",
-            new_callable=AsyncMock,
-            return_value={
+        report_match_fake = stub(rest.castlog, "report_match")
+        decoy.when(await report_match_fake(payload=ANY), ignore_extra_args=True).then_return(
+            {
                 "match_id": "abc-123",
                 "castlog_url": "https://app.castlog.gg/match/abc-123",
                 "linked_players": ["ravepool"],
                 "unlinked_players": [],
-            },
+            }
         )
 
         report = {
@@ -1126,16 +1122,16 @@ class TestGameMetadataEndpoint:
         self,
         client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=2113, name="guild")
         channel = factories.channel.create(xid=3113, name="channel", guild=guild)
         game = factories.game.create(id=1113, seats=2, guild=guild, channel=channel)
         factories.token.create(key="META13")
-        mocker.patch(
-            "spellbot.web.api.rest.castlog.report_match",
-            new_callable=AsyncMock,
-            return_value={"match_id": "abc-123"},  # no castlog_url
+        report_match_fake = stub(rest.castlog, "report_match")
+        decoy.when(await report_match_fake(payload=ANY), ignore_extra_args=True).then_return(
+            {"match_id": "abc-123"}
         )
 
         resp = await client.post(

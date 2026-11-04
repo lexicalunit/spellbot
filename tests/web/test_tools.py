@@ -3,20 +3,31 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from aiohttp.test_utils import make_mocked_request
+from ddtrace._trace.span import Span
 
-from spellbot import redis_client
+from spellbot import metrics, redis_client
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
-from spellbot.web.tools import is_crawler, rate_limited, tag_web_request
+from spellbot.web.tools import (
+    RATE_LIMIT_SCRIPT,
+    TIME_WINDOW,
+    is_crawler,
+    rate_limited,
+    tag_web_request,
+)
+from tests.mocks.redis import FakeRedis, serve_redis
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-    from pytest_mock import MockerFixture
+    from aiohttp import web
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -26,96 +37,59 @@ async def reset_redis_client() -> AsyncGenerator[None]:
     await close_redis()
 
 
+def request_from(remote: str, headers: dict[str, str] | None = None) -> web.Request:
+    return make_mocked_request("GET", "/", headers=headers).clone(remote=remote)
+
+
 @pytest.mark.asyncio
 class TestRateLimited:
-    async def test_no_redis_url(self) -> None:
+    async def test_no_redis_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that rate limiting is disabled when Redis URL is not configured."""
-        request = MagicMock()
-        with patch.object(settings, "REDIS_URL", None):
-            result = await rate_limited(request)
-            assert result is False
+        monkeypatch.setattr(settings, "REDIS_URL", None)
+        assert await rate_limited(request_from("192.168.1.1")) is False
 
-    async def test_under_rate_limit(self) -> None:
+    async def test_under_rate_limit(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test request under rate limit."""
-        request = MagicMock()
-        request.remote = "192.168.1.1"
+        serve_redis(monkeypatch, FakeRedis(eval_result="5"))
+        assert await rate_limited(request_from("192.168.1.1")) is False
 
-        mock_redis = AsyncMock()
-        mock_redis.eval = AsyncMock(return_value="5")
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.redis_client.aioredis.from_url", AsyncMock(return_value=mock_redis)),
-        ):
-            result = await rate_limited(request)
-            assert result is False
-
-    async def test_over_rate_limit(self) -> None:
+    async def test_over_rate_limit(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test request over rate limit."""
-        request = MagicMock()
-        request.remote = "192.168.1.1"
+        serve_redis(monkeypatch, FakeRedis(eval_result="15"))  # Over RATE_LIMIT of 10
+        assert await rate_limited(request_from("192.168.1.1")) is True
 
-        mock_redis = AsyncMock()
-        mock_redis.eval = AsyncMock(return_value="15")  # Over RATE_LIMIT of 10
+    async def test_keys_on_the_client_ip(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        redis = FakeRedis(eval_result="1")
+        serve_redis(monkeypatch, redis)
+        await rate_limited(request_from("192.168.1.1"))
+        [(script, numkeys, key, window)] = redis.evals
+        assert (script, numkeys, key, window) == (
+            RATE_LIMIT_SCRIPT,
+            1,
+            "rate_limit:192.168.1.1",
+            str(TIME_WINDOW),
+        )
 
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.redis_client.aioredis.from_url", AsyncMock(return_value=mock_redis)),
-        ):
-            result = await rate_limited(request)
-            assert result is True
-
-    async def test_with_custom_key(self) -> None:
+    async def test_with_custom_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test rate limiting with custom key."""
-        request = MagicMock()
-        request.remote = "192.168.1.1"
+        redis = FakeRedis(eval_result="3")
+        serve_redis(monkeypatch, redis)
+        assert await rate_limited(request_from("192.168.1.1"), key="custom:key") is False
+        [(_script, _numkeys, key, _window)] = redis.evals
+        assert key == "custom:key"
 
-        mock_redis = AsyncMock()
-        mock_redis.eval = AsyncMock(return_value="3")
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.redis_client.aioredis.from_url", AsyncMock(return_value=mock_redis)),
-        ):
-            result = await rate_limited(request, key="custom:key")
-            assert result is False
-            # Verify the custom key was used
-            mock_redis.eval.assert_called_once()
-            call_args = mock_redis.eval.call_args[0]
-            assert call_args[2] == "custom:key"
-
-    async def test_redis_error(self) -> None:
+    async def test_redis_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that Redis errors are handled gracefully."""
-        request = MagicMock()
-        request.remote = "192.168.1.1"
+        serve_redis(monkeypatch, FakeRedis(error=Exception("Redis error")))
+        # Should return False on error (fail open)
+        assert await rate_limited(request_from("192.168.1.1")) is False
 
-        mock_redis = AsyncMock()
-        mock_redis.eval = AsyncMock(side_effect=Exception("Redis error"))
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.redis_client.aioredis.from_url", AsyncMock(return_value=mock_redis)),
-        ):
-            result = await rate_limited(request)
-            # Should return False on error (fail open)
-            assert result is False
-
-    async def test_client_is_reused(self) -> None:
-        """Repeated calls share a single Redis client (from_url called once)."""
-        request = MagicMock()
-        request.remote = "192.168.1.1"
-
-        mock_redis = AsyncMock()
-        mock_redis.eval = AsyncMock(return_value="1")
-
-        from_url = AsyncMock(return_value=mock_redis)
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.redis_client.aioredis.from_url", from_url),
-        ):
-            await rate_limited(request)
-            await rate_limited(request)
-            assert from_url.call_count == 1
+    async def test_client_is_reused(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Repeated calls share a single Redis client (one connection)."""
+        connections = serve_redis(monkeypatch, FakeRedis(eval_result="1"))
+        await rate_limited(request_from("192.168.1.1"))
+        await rate_limited(request_from("192.168.1.1"))
+        assert connections == ["redis://localhost"]
 
 
 class TestIsCrawler:
@@ -137,9 +111,7 @@ class TestIsCrawler:
         ],
     )
     def test_crawler(self, user_agent: str) -> None:
-        request = MagicMock()
-        request.headers = {"User-Agent": user_agent}
-        assert is_crawler(request)
+        assert is_crawler(request_from("192.168.1.1", {"User-Agent": user_agent}))
 
     @pytest.mark.parametrize(
         "user_agent",
@@ -157,21 +129,16 @@ class TestIsCrawler:
         ],
     )
     def test_not_crawler(self, user_agent: str) -> None:
-        request = MagicMock()
-        request.headers = {"User-Agent": user_agent}
-        assert not is_crawler(request)
+        assert not is_crawler(request_from("192.168.1.1", {"User-Agent": user_agent}))
 
     def test_missing_user_agent(self) -> None:
-        request = MagicMock()
-        request.headers = {}
-        assert not is_crawler(request)
+        assert not is_crawler(request_from("192.168.1.1"))
 
 
 class TestTagWebRequest:
-    def test_tags_client_ip(self, mocker: MockerFixture) -> None:
-        span = MagicMock()
-        mocker.patch("spellbot.metrics.tracer.current_span", return_value=span)
-        request = MagicMock()
-        request.remote = "203.0.113.7"
-        tag_web_request(request)
-        span.set_tags.assert_called_once_with({"client_ip": "203.0.113.7"})
+    def test_tags_client_ip(self, decoy: Decoy, stub: Stub) -> None:
+        span = decoy.mock(cls=Span)
+        current_span = stub(metrics.tracer, "current_span")
+        decoy.when(current_span()).then_return(span)
+        tag_web_request(request_from("203.0.113.7"))
+        decoy.verify(span.set_tags({"client_ip": "203.0.113.7"}), times=1)

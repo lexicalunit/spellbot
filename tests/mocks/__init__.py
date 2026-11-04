@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
-from types import ModuleType, SimpleNamespace
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, cast, overload
-from unittest.mock import AsyncMock, MagicMock, NonCallableMock
 
-import discord
 import pytest
 
 from spellbot import operations
-from spellbot.models import Channel, Guild, User
+from spellbot.models import Guild, User
+from tests.mocks import decoys
 from tests.mocks.girudo import (
     GirudoTestData,
     MockHTTPClient,
@@ -22,14 +21,13 @@ from tests.mocks.girudo import (
     create_mock_guild,
     create_mock_user,
 )
+from tests.mocks.ids import CLIENT_USER_ID, OWNER_USER_ID
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Sequence
 
-    from discord.types.role import Role as RolePayload
-
-CLIENT_USER_ID = 1  # id of the test bot itself
-OWNER_USER_ID = 2  # id of the test guild owner
+    import discord
+    from decoy import Decoy
 
 
 class MockClient:  # pragma: no cover
@@ -39,25 +37,25 @@ class MockClient:  # pragma: no cover
         user: discord.User | None = None,
         channels: list[discord.TextChannel] | None = None,
         guilds: list[discord.Guild] | None = None,
-        users: list[discord.User] | None = None,
+        users: Sequence[discord.User | discord.Member] | None = None,
         categories: list[discord.CategoryChannel] | None = None,
     ) -> None:
-        self.user = user or MagicMock(spec=discord.User)
+        self.user = user
         self.channels = channels or []
         self.guilds = guilds or []
-        self.users = users or []
+        self.users = list(users or [])
         self.categories = categories or []
 
-    def __get_user(self, xid: int) -> discord.User | None:
+    def __get_user(self, xid: int) -> discord.User | discord.Member | None:
         for user in self.users:
             if user.id == xid:
                 return user
         return None
 
-    def get_user(self, xid: int) -> discord.User | None:
+    def get_user(self, xid: int) -> discord.User | discord.Member | None:
         return self.__get_user(xid)
 
-    async def fetch_user(self, xid: int) -> discord.User | None:
+    async def fetch_user(self, xid: int) -> discord.User | discord.Member | None:
         return self.__get_user(xid)
 
     def __get_channel(self, xid: int) -> discord.TextChannel | None:
@@ -89,14 +87,6 @@ def mock_client(*args: Any, **kwargs: Any) -> discord.Client:
     return cast("discord.Client", MockClient(*args, **kwargs))
 
 
-class OperationMocks(SimpleNamespace):
-    """The mocks installed by `mock_operations()`, one attribute per mocked operation."""
-
-    if TYPE_CHECKING:
-
-        def __getattr__(self, name: str) -> AsyncMock | MagicMock: ...
-
-
 def action_modules(module: ModuleType) -> list[ModuleType]:
     """Every loaded `spellbot.actions` module, plus `module` itself."""
     modules = [
@@ -109,255 +99,63 @@ def action_modules(module: ModuleType) -> list[ModuleType]:
 
 @contextmanager
 def mock_operations(
+    decoy: Decoy,
     module: ModuleType,
-    users: list[discord.User] | None = None,
-) -> Generator[OperationMocks]:
+    users: Sequence[discord.User | discord.Member] | None = None,
+) -> Generator[None]:
     """
-    Mock out all operations.py functions used by a given action module.
+    Fake out all operations.py functions used by a given action module.
 
-    The same mocks are installed in every `spellbot.actions` module, since an action's work is
-    shared with `base_action` and helper modules (such as `game_posts` for `lfg_action`):
-    `ops.safe_x` controls a call whichever of those modules makes it.
+    Each fake is a decoy of the real operation, so it keeps its signature and sync/async-ness,
+    and returns `None` unless stubbed. `safe_fetch_user()` instead finds the `users` given.
 
-    Special care is given to the mock for `safe_fetch_user()` so that users passed
-    into `mock_operations()` will be findable via calls to `safe_fetch_user()`.
+    The fakes replace the real functions in `spellbot.operations` itself and in every
+    `spellbot.actions` module that imports them, since an action's work is shared with
+    `base_action` and helper modules (such as `game_posts` for `lfg_action`). So tests reach
+    them as `operations.safe_x`, typed with the real signature, whichever module makes the call.
 
     Example usage:
 
-        from spellbot.interactions import lfg_interaction
-
-        with mock_operations(lfg_interaction) as ops:
-            ops.safe_get_partial_message.return_value = MagicMock()
-            cog = LookingForGameCog(bot)
+        with mock_operations(decoy, lfg_action):
+            decoy.when(operations.safe_get_partial_message(ANY, ANY, ANY)).then_return(message)
             await cog.lfg.func(cog, ctx)
-            ops.safe_get_partial_message.assert_called_once()
+            decoy.verify(await operations.safe_send_channel(interaction, ANY, embed=ANY))
 
     """
-    _users: list[discord.User] = users or []
-    modules = action_modules(module)
+    known_users = list(users or [])
+    modules = [operations, *action_modules(module)]
 
-    mocks = OperationMocks()
-    for name in operations.__dict__:
-        if not any(name in m.__dict__ for m in modules):
-            continue
-        if name.startswith("safe_get_"):  # special handling for non-async get
-            setattr(mocks, name, MagicMock())
-        elif name.startswith("safe_"):  # all others we can assume are async
-            if name == "safe_fetch_user":
-
-                async def finder(_: Any, xid: int) -> discord.User | None:
-                    return next((user for user in _users if user.id == xid), None)
-
-                setattr(mocks, name, AsyncMock(side_effect=finder))
-            else:
-                setattr(mocks, name, AsyncMock())
+    async def find_user(client: discord.Client, xid: int) -> discord.User | discord.Member | None:
+        return next((user for user in known_users if user.id == xid), None)
 
     monkeypatch = pytest.MonkeyPatch()
-    for name, mock in vars(mocks).items():
-        for m in modules:
-            if name in m.__dict__:
-                monkeypatch.setattr(m, name, mock)
+    for name, real in list(operations.__dict__.items()):
+        users_of = [m for m in modules if name.startswith("safe_") and name in m.__dict__]
+        if len(users_of) < 2:
+            continue
+        fake = find_user if name == "safe_fetch_user" else decoy.mock(func=real)
+        for m in users_of:
+            monkeypatch.setattr(m, name, fake)
 
     try:
-        yield mocks
+        yield
     finally:
         monkeypatch.undo()
 
 
-###########################################################
-# Discord object builders that build from scratch
-###########################################################
-
-
-# def build_client_user() -> discord.User:
-#     client_user = MagicMock(spec=discord.User)
-#     client_user.id = CLIENT_USER_ID
-#     client_user.display_name = "SpellBot"
-#     client_user.mention = f"<@{client_user.id}>"
-#     client_user.top_role = None
-#     return client_user
-
-
-def build_author(offset: int = 1) -> discord.User:
-    author = MagicMock(spec=discord.User)
-    author.id = 1000 + offset
-    author.display_name = f"user-{author.id}"
-    author.mention = f"<@{author.id}>"
-    author.send = AsyncMock()
-    author.roles = []
-    author.top_role = None
-    return author
-
-
-def build_guild(offset: int = 1) -> discord.Guild:
-    guild = MagicMock(spec=discord.Guild)
-    guild.id = 2000 + offset
-    guild.name = f"guild-{guild.id}"
-    guild.owner_id = OWNER_USER_ID
-    guild.create_category_channel = AsyncMock()
-    guild.bitrate_limit = 64000.0
-    guild.preferred_locale = discord.Locale.american_english
-    return guild
-
-
-def build_channel(guild: discord.Guild, offset: int = 1) -> discord.TextChannel:
-    channel = MagicMock(spec=discord.TextChannel)
-    channel.id = 3000 + offset
-    channel.name = f"channel-{channel.id}"
-    channel.guild = guild
-    channel.type = discord.ChannelType.text
-    channel.permissions_for = MagicMock(return_value=discord.Permissions())
-    channel.is_set = False
-    return channel
-
-
-def build_role(guild: discord.Guild, *, role_id: int, name: str) -> discord.Role:
-    data: RolePayload = {
-        "id": role_id,
-        "name": name,
-        "color": 0,
-        "colors": {"primary_color": 0, "secondary_color": None, "tertiary_color": None},
-        "hoist": False,
-        "position": 0,
-        "permissions": "0",
-        "managed": False,
-        "mentionable": False,
-        "flags": 0,
-    }
-    return discord.Role(guild=guild, state=MagicMock(), data=data)
-
-
-def set_str(mock: NonCallableMock, value: str) -> None:
-    """
-    Make `str(mock)` return `value`.
-
-    Python looks up magic methods on the class, so this sets `__str__` on the mock's type. That
-    is safe because `unittest.mock` gives every mock instance its own class.
-    """
-    mock_type: type[Any] = type(mock)
-    mock_type.__str__ = lambda _: value
-
-
-def build_message(
-    guild: discord.Guild,
-    channel: discord.TextChannel,
-    author: discord.Member | discord.User,
-    offset: int = 1,
-) -> discord.Message:
-    message = MagicMock(spec=discord.Message)
-    message.id = 4000 + offset
-    message.name = f"message-{message.id}"
-    message.content = "content"
-    message.guild = guild
-    message.channel = channel
-    message.author = author
-    message.reply = AsyncMock()
-    message.delete = AsyncMock()
-    message.edit = AsyncMock()
-    return message
-
-
-# def build_voice_channel(guild: discord.Guild, offset: int = 1) -> discord.VoiceChannel:
-#     channel = MagicMock(spec=discord.VoiceChannel)
-#     channel.id = 6000 + offset
-#     channel.name = f"voice-channel-{channel.id}"
-#     channel.guild = guild
-#     return channel
-
-
-def build_interaction(
-    guild: discord.Guild,
-    channel: discord.TextChannel,
-    author: discord.User,
-    *,
-    response: discord.InteractionResponse | None = None,
-    followup: discord.Webhook | None = None,
-) -> discord.Interaction:
-    stub = AsyncMock(spec=discord.Interaction)
-    stub.response = response or AsyncMock()
-    message = build_message(guild, channel, author)
-    if followup is None:
-        followup = AsyncMock()
-        followup.send = AsyncMock(return_value=message)
-    stub.followup = followup
-    stub.guild = guild
-    stub.guild_id = guild.id
-    stub.channel = channel
-    stub.channel_id = channel.id
-    stub.user = author
-    stub.original_response = AsyncMock(return_value=message)
-    return stub
-
-
-###########################################################
-# Discord object builders that build from database objects
-###########################################################
-
-
-def mock_discord_user(user: User) -> discord.User:
-    member = MagicMock(spec=discord.User)
-    member.id = user.xid
-    member.display_name = user.name
-    member.mention = f"<@{member.id}>"
-    member.send = AsyncMock()
-    return member
-
-
-# def mock_discord_channel(
-#     channel: Channel,
-#     *,
-#     guild: discord.Guild | None = None,
-# ) -> discord.TextChannel:
-#     discord_channel = MagicMock(spec=discord.TextChannel)
-#     discord_channel.id = channel.xid
-#     discord_channel.type = discord.ChannelType.text
-#     discord_channel.name = channel.name
-#     if guild:
-#         discord_channel.guild = guild
-#     else:
-#         discord_channel.guild = mock_discord_guild(cast(Guild, channel.guild))
-#     discord_channel.fetch_message = AsyncMock()
-#     discord_channel.get_partial_message = MagicMock()
-#     discord_channel.permissions_for = MagicMock()
-#     discord_channel.mention = f"<#{discord_channel.id}>"
-#     return discord_channel
-
-
-def mock_discord_guild(guild: Guild) -> discord.Guild:
-    discord_guild = MagicMock(spec=discord.Guild)
-    discord_guild.id = guild.xid
-    discord_guild.name = guild.name
-    discord_guild.icon = guild.icon
-    discord_guild.bitrate_limit = 64000.0
-    discord_guild.preferred_locale = discord.Locale.american_english
-    return discord_guild
+@overload
+def mock_discord_object(decoy: Decoy, obj: User) -> discord.Member: ...
 
 
 @overload
-def mock_discord_object(obj: User) -> discord.User:  # pragma: no cover
-    ...
+def mock_discord_object(decoy: Decoy, obj: Guild) -> discord.Guild: ...
 
 
-@overload
-def mock_discord_object(obj: Channel) -> discord.TextChannel:  # pragma: no cover
-    ...
-
-
-@overload
-def mock_discord_object(obj: Guild) -> discord.Guild:  # pragma: no cover
-    ...
-
-
-def mock_discord_object(
-    obj: User | Channel | Guild,
-) -> discord.User | discord.TextChannel | discord.Guild:
+def mock_discord_object(decoy: Decoy, obj: User | Guild) -> discord.Member | discord.Guild:
+    """Build the Discord object for a database user or guild."""
     if isinstance(obj, User):
-        return mock_discord_user(obj)
-    # if isinstance(obj, Channel):
-    #     return mock_discord_channel(obj)
-    if isinstance(obj, Guild):
-        return mock_discord_guild(obj)
-    raise NotImplementedError
+        return decoys.from_user(decoy, obj)
+    return decoys.from_guild(decoy, obj)
 
 
 __all__ = [
@@ -371,8 +169,6 @@ __all__ = [
     "create_mock_game",
     "create_mock_guild",
     "create_mock_user",
-    "mock_discord_guild",
     "mock_discord_object",
-    "mock_discord_user",
     "mock_operations",
 ]

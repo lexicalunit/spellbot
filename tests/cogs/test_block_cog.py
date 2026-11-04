@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
 
+import discord
 import pytest
 import pytest_asyncio
 from sqlalchemy import select
@@ -15,7 +15,6 @@ from spellbot.models import Block, User
 from tests.fixtures import run_command
 
 if TYPE_CHECKING:
-    import discord
     from decoy import Decoy
 
     from spellbot import SpellBot
@@ -38,9 +37,9 @@ class TestCogBlock:
         interaction: discord.Interaction,
         settings: Settings,
     ) -> None:
-        target = MagicMock()
+        target = decoy.mock(cls=discord.Member)
         target.id = 2
-        target.display_name = "target-author-display-name"
+        decoy.when(target.display_name).then_return("target-author-display-name")
 
         cta = (
             "You can view and manage your blocked users from your profile page.\n\n"
@@ -105,9 +104,9 @@ class TestCogBlock:
         cog: BlockCog,
         interaction: discord.Interaction,
     ) -> None:
-        target = MagicMock()
+        target = decoy.mock(cls=discord.Member)
         target.id = interaction.user.id
-        target.display_name = interaction.user.display_name
+        decoy.when(target.display_name).then_return(interaction.user.display_name)
 
         await run_command(cog.block, interaction, target=target)
 

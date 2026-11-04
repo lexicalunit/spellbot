@@ -5,22 +5,22 @@ from __future__ import annotations
 from functools import partial
 from inspect import cleandoc
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import select
 
-from spellbot.cogs import OwnerCog
+from spellbot.cogs import OwnerCog, owner_cog
 from spellbot.database import DatabaseSession
 from spellbot.models import Guild, User
+from tests.mocks.decoys import ANY
 
 if TYPE_CHECKING:
     import discord
     from decoy import Decoy
     from discord.ext import commands
-    from pytest_mock import MockerFixture
 
     from spellbot import SpellBot
+    from tests.fixtures import Stub
 
 pytestmark = pytest.mark.use_db
 
@@ -44,27 +44,26 @@ class TestCogOwner:
         decoy_context: commands.Context[SpellBot],
         decoy_member: discord.Member,
     ) -> None:
-        target_user = MagicMock()
-        target_user.id = 1002
+        target_xid = 1002
         cog = OwnerCog(bot)
 
-        await run_owner_command(cog, cog.ban, decoy_context, str(target_user.id))
+        await run_owner_command(cog, cog.ban, decoy_context, str(target_xid))
 
         decoy.verify(
-            await decoy_member.send(f"User <@{target_user.id}> has been banned."),
+            await decoy_member.send(f"User <@{target_xid}> has been banned."),
         )
         user = (
-            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+            await DatabaseSession.execute(select(User).where(User.xid == target_xid))
         ).scalar_one()
-        assert user.xid == target_user.id
+        assert user.xid == target_xid
         assert user.banned
 
         DatabaseSession.expire_all()
-        await run_owner_command(cog, cog.unban, decoy_context, str(target_user.id))
+        await run_owner_command(cog, cog.unban, decoy_context, str(target_xid))
         user = (
-            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+            await DatabaseSession.execute(select(User).where(User.xid == target_xid))
         ).scalar_one()
-        assert user.xid == target_user.id
+        assert user.xid == target_xid
         assert not user.banned
 
     async def test_ban_without_target(
@@ -95,23 +94,26 @@ class TestCogOwner:
         decoy: Decoy,
         decoy_context: commands.Context[SpellBot],
         decoy_member: discord.Member,
-        mocker: MockerFixture,
+        stub: Stub,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        target_user = MagicMock()
-        target_user.id = 1002
+        target_xid = 1002
         cog = OwnerCog(bot)
 
-        mocker.patch("spellbot.cogs.owner_cog.set_banned", AsyncMock(side_effect=RuntimeError()))
+        set_banned_fake = stub(owner_cog, "set_banned")
+        decoy.when(
+            await set_banned_fake(banned=ANY, ctx=ANY, arg=ANY),
+            ignore_extra_args=True,
+        ).then_raise(RuntimeError())
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.ban, decoy_context, str(target_user.id))
+            await run_owner_command(cog, cog.ban, decoy_context, str(target_xid))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
         caplog.clear()
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.unban, decoy_context, str(target_user.id))
+            await run_owner_command(cog, cog.unban, decoy_context, str(target_xid))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
     async def test_ban_and_unban_guild(
@@ -171,16 +173,17 @@ class TestCogOwner:
         decoy: Decoy,
         decoy_context: commands.Context[SpellBot],
         decoy_member: discord.Member,
-        mocker: MockerFixture,
+        stub: Stub,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         target_guild = 1002
         cog = OwnerCog(bot)
 
-        mocker.patch(
-            "spellbot.cogs.owner_cog.set_banned_guild",
-            AsyncMock(side_effect=RuntimeError()),
-        )
+        set_banned_guild_fake = stub(owner_cog, "set_banned_guild")
+        decoy.when(
+            await set_banned_guild_fake(banned=ANY, ctx=ANY, arg=ANY),
+            ignore_extra_args=True,
+        ).then_raise(RuntimeError())
 
         with pytest.raises(RuntimeError):
             await run_owner_command(cog, cog.ban_guild, decoy_context, str(target_guild))
@@ -199,24 +202,23 @@ class TestCogOwner:
         decoy_context: commands.Context[SpellBot],
         decoy_member: discord.Member,
     ) -> None:
-        target_user = MagicMock()
-        target_user.id = 2002
+        target_xid = 2002
         cog = OwnerCog(bot)
 
-        await run_owner_command(cog, cog.promote, decoy_context, str(target_user.id))
+        await run_owner_command(cog, cog.promote, decoy_context, str(target_xid))
 
         decoy.verify(
-            await decoy_member.send(f"User <@{target_user.id}> is now an admin."),
+            await decoy_member.send(f"User <@{target_xid}> is now an admin."),
         )
         user = (
-            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+            await DatabaseSession.execute(select(User).where(User.xid == target_xid))
         ).scalar_one()
         assert user.is_admin
 
         DatabaseSession.expire_all()
-        await run_owner_command(cog, cog.demote, decoy_context, str(target_user.id))
+        await run_owner_command(cog, cog.demote, decoy_context, str(target_xid))
         user = (
-            await DatabaseSession.execute(select(User).where(User.xid == target_user.id))
+            await DatabaseSession.execute(select(User).where(User.xid == target_xid))
         ).scalar_one()
         assert not user.is_admin
 
@@ -248,23 +250,26 @@ class TestCogOwner:
         decoy: Decoy,
         decoy_context: commands.Context[SpellBot],
         decoy_member: discord.Member,
-        mocker: MockerFixture,
+        stub: Stub,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        target_user = MagicMock()
-        target_user.id = 2002
+        target_xid = 2002
         cog = OwnerCog(bot)
 
-        mocker.patch("spellbot.cogs.owner_cog.set_admin", AsyncMock(side_effect=RuntimeError()))
+        set_admin_fake = stub(owner_cog, "set_admin")
+        decoy.when(
+            await set_admin_fake(is_admin=ANY, ctx=ANY, arg=ANY),
+            ignore_extra_args=True,
+        ).then_raise(RuntimeError())
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.promote, decoy_context, str(target_user.id))
+            await run_owner_command(cog, cog.promote, decoy_context, str(target_xid))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
         caplog.clear()
 
         with pytest.raises(RuntimeError):
-            await run_owner_command(cog, cog.demote, decoy_context, str(target_user.id))
+            await run_owner_command(cog, cog.demote, decoy_context, str(target_xid))
         assert "rolling back database session due to unhandled exception" in caplog.text
 
     async def test_stats(
@@ -302,9 +307,9 @@ class TestCogOwner:
         decoy: Decoy,
         decoy_context: commands.Context[SpellBot],
         decoy_member: discord.Member,
-        mocker: MockerFixture,
+        stub: Stub,
     ) -> None:
-        mocker.patch("spellbot.cogs.owner_cog.load_extensions", AsyncMock())
+        stub(owner_cog, "load_extensions")
         cog = OwnerCog(bot)
         callback = partial(cog.sync.callback, cog)
 
@@ -318,11 +323,11 @@ class TestCogOwner:
         decoy: Decoy,
         decoy_context: commands.Context[SpellBot],
         decoy_member: discord.Member,
-        mocker: MockerFixture,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.cogs.owner_cog.load_extensions",
-            AsyncMock(side_effect=RuntimeError("oops")),
+        load_extensions_fake = stub(owner_cog, "load_extensions")
+        decoy.when(await load_extensions_fake(bot=ANY), ignore_extra_args=True).then_raise(
+            RuntimeError("oops")
         )
         cog = OwnerCog(bot)
         callback = partial(cog.sync.callback, cog)

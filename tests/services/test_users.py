@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock
 
+import discord
 import pytest
 from sqlalchemy import func, select
 
@@ -16,21 +16,21 @@ from spellbot.settings import settings
 from tests.factories import UserFactory
 
 if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
 
-    from tests.fixtures import Factories
+    from tests.fixtures import Factories, Stub
 
 pytestmark = pytest.mark.use_db
 
 
 @pytest.mark.asyncio
 class TestServiceUsers:
-    async def test_users_upsert(self) -> None:
+    async def test_users_upsert(self, decoy: Decoy) -> None:
         user = UserFactory.create(xid=201)
 
-        discord_user = MagicMock()
+        discord_user = decoy.mock(cls=discord.User)
         discord_user.id = 201
-        discord_user.display_name = "user-name"
+        decoy.when(discord_user.display_name).then_return("user-name")
 
         await users.upsert(discord_user)
 
@@ -40,7 +40,7 @@ class TestServiceUsers:
         assert user.xid == discord_user.id
         assert user.name == "user-name"
 
-        discord_user.display_name = "new-name"
+        decoy.when(discord_user.display_name).then_return("new-name")
         await users.upsert(discord_user)
 
         DatabaseSession.expire_all()
@@ -351,10 +351,11 @@ class TestServiceUsersMoveUser:
         assert moved is not None
         assert moved.name == "old-name"
 
-    async def test_database_error(self, factories: Factories, mocker: MockerFixture) -> None:
+    async def test_database_error(self, factories: Factories, decoy: Decoy, stub: Stub) -> None:
         guild = factories.guild.create()
         old = factories.user.create()
-        mocker.patch.object(DatabaseSession, "commit", side_effect=RuntimeError("boom"))
-        rollback = mocker.patch.object(DatabaseSession, "rollback", AsyncMock())
+        commit_fake = stub(DatabaseSession, "commit")
+        decoy.when(await commit_fake(), ignore_extra_args=True).then_raise(RuntimeError("boom"))
+        rollback = stub(DatabaseSession, "rollback")
         assert await users.move_user(guild.xid, old.xid, old.xid + 1) == "database error"
-        rollback.assert_awaited_once()
+        decoy.verify(await rollback(), times=1, ignore_extra_args=True)

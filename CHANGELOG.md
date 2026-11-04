@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Replaced the repeated span-tagging blocks with a `tag_span()` helper.
 - Replaced module `global` statements with small holder objects.
 - Tested code that was excluded from coverage, removing 42 `pragma: no cover` lines.
+- Tests now fake collaborators with decoy, monkeypatch, and helpers in `tests/mocks`.
+- Tests fake Redis and outside HTTP APIs with in-memory stand-ins instead of mocks.
+- Ruff now bans `unittest.mock` and `pytest_mock`; removed the `pytest-mock` dependency.
+- Tests reach faked operations as `operations.safe_x`, so their stubs are type checked.
+- Added a check, with a fixer in `scripts/packed_brackets.py`, for lists packed onto one line.
 
 ### Fixed
 
@@ -57,6 +62,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed French plurals for zero, which now read "0 partie" instead of "0 parties".
 - Fixed "autres joueur" in the French message for waiting on one more player.
 - Fixed `/move_user` failing with a database error for any user who had played a game.
+- Fixed deleting a voice channel reporting failure even when the channel was deleted.
 
 ## [v24.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.2) - 2026-11-03
 

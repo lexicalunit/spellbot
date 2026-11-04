@@ -4,58 +4,44 @@ from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock, MagicMock
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlparse
 
 import pytest
 import pytest_asyncio
 
+from spellbot.services import users
 from spellbot.web.api import admin_auth
+from tests.mocks.decoys import ANY
+from tests.mocks.http import discord_oauth, serve_httpx
 
 if TYPE_CHECKING:
     from aiohttp import web
     from aiohttp.test_utils import TestClient
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
 
     WebClient = TestClient[web.Request, web.Application]
 
 pytestmark = pytest.mark.use_db
 
 
-def make_httpx_client(*, identify_json: dict[str, Any] | None = None) -> MagicMock:
-    """Build an `httpx.AsyncClient` mock context manager for successful OAuth."""
-    inner = MagicMock()
-    token_resp = MagicMock(status_code=200)
-    token_resp.json = MagicMock(return_value={"access_token": "tok"})
-    inner.post = AsyncMock(return_value=token_resp)
-    identify_resp = MagicMock(status_code=200)
-    identify_resp.json = MagicMock(return_value=identify_json or {"id": "42", "username": "admin"})
-    inner.get = AsyncMock(return_value=identify_resp)
-    cm = MagicMock()
-    cm.__aenter__ = AsyncMock(return_value=inner)
-    cm.__aexit__ = AsyncMock(return_value=None)
-    return cm
-
-
-async def configure_admin(mocker: MockerFixture) -> None:
-    mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
-    mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
+async def configure_admin(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
+    monkeypatch.setattr(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
     # Must match the test client's host so `canonical_host_redirect` is a no-op.
-    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
-    mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
+    monkeypatch.setattr(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
+    monkeypatch.setattr(admin_auth.settings, "OWNER_XID", 42)
 
 
 @pytest_asyncio.fixture
-async def admin_client(client: WebClient, mocker: MockerFixture) -> WebClient:
+async def admin_client(client: WebClient, monkeypatch: pytest.MonkeyPatch) -> WebClient:
     """Return a test client whose cookie jar holds a valid admin session for xid=42."""
-    await configure_admin(mocker)
+    await configure_admin(monkeypatch)
     login_resp = await client.get("/admin/login", allow_redirects=False)
     state = parse_qs(urlparse(login_resp.headers["Location"]).query)["state"][0]
-    mocker.patch(
-        "spellbot.web.api.admin_auth.httpx.AsyncClient",
-        return_value=make_httpx_client(),
-    )
+    serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "admin"}))
     cb = await client.get(
         f"/admin/oauth/callback?code=abc&state={state}",
         allow_redirects=False,
@@ -181,16 +167,19 @@ class TestDashboardJsonEndpoints:
 
 
 @pytest_asyncio.fixture
-async def non_owner_admin_client(client: WebClient, mocker: MockerFixture) -> WebClient:
+async def non_owner_admin_client(
+    client: WebClient,
+    monkeypatch: pytest.MonkeyPatch,
+    decoy: Decoy,
+    stub: Stub,
+) -> WebClient:
     """Return a client logged in as an admin (xid=99) who is not the owner (xid=42)."""
-    await configure_admin(mocker)
-    mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=True))
+    await configure_admin(monkeypatch)
+    is_admin_fake = stub(users, "is_admin")
+    decoy.when(await is_admin_fake(user_xid=ANY), ignore_extra_args=True).then_return(True)
     login_resp = await client.get("/admin/login", allow_redirects=False)
     state = parse_qs(urlparse(login_resp.headers["Location"]).query)["state"][0]
-    mocker.patch(
-        "spellbot.web.api.admin_auth.httpx.AsyncClient",
-        return_value=make_httpx_client(identify_json={"id": "99", "username": "helper"}),
-    )
+    serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "99", "username": "helper"}))
     cb = await client.get(
         f"/admin/oauth/callback?code=abc&state={state}",
         allow_redirects=False,
