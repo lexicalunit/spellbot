@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from aiohttp import web
+from aiohttp.test_utils import make_mocked_request
 
-from spellbot.web import humanize
+from spellbot.web import builder, humanize
 from spellbot.web.builder import auth_middleware
+from tests.mocks import decoys
 
 if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
 
-    from tests.fixtures import Factories
+    from tests.fixtures import Factories, Stub
 
 pytestmark = pytest.mark.use_db
 
@@ -29,42 +31,43 @@ class TestWebFilters:
         assert s == "January 19, 1970, 3:02:17\u202fPM UTC"
 
 
+OK = web.Response(text="ok")
+
+
+def api_request(authorization: str) -> web.Request:
+    return make_mocked_request("GET", "/api/foo", headers={"Authorization": authorization})
+
+
+# For requests the middleware turns away, which must never reach the handler.
+UNREACHABLE = decoys.async_raising(AssertionError("request reached the handler"))
+
+
 @pytest.mark.asyncio
 class TestAuthMiddlewareDirect:
     """Direct invocation tests so coverage can track lines through aiohttp middleware."""
 
     async def test_empty_token_after_strip(self) -> None:
-        request = MagicMock()
-        request.path = "/api/foo"
-        request.headers = {"Authorization": "Bearer    "}
-        resp = await auth_middleware(request, AsyncMock())
+        request = api_request("Bearer    ")
+        resp = await auth_middleware(request, UNREACHABLE)
         assert resp.status == 401
 
-    async def test_unauthorized_unknown_token(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.web.builder.rate_limited", AsyncMock(return_value=False))
-        request = MagicMock()
-        request.path = "/api/foo"
-        request.headers = {"Authorization": "Bearer BOGUS"}
-        request.rel_url.path = "/api/foo"
-        resp = await auth_middleware(request, AsyncMock())
+    async def test_unauthorized_unknown_token(self, decoy: Decoy, stub: Stub) -> None:
+        request = api_request("Bearer BOGUS")
+        rate_limited_fake = stub(builder, "rate_limited")
+        decoy.when(await rate_limited_fake(request)).then_return(False)
+        resp = await auth_middleware(request, UNREACHABLE)
         assert resp.status == 403
 
-    async def test_rate_limited_unknown_token(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.web.builder.rate_limited", AsyncMock(return_value=True))
-        request = MagicMock()
-        request.path = "/api/foo"
-        request.headers = {"Authorization": "Bearer BOGUS"}
-        request.rel_url.path = "/api/foo"
-        resp = await auth_middleware(request, AsyncMock())
+    async def test_rate_limited_unknown_token(self, decoy: Decoy, stub: Stub) -> None:
+        request = api_request("Bearer BOGUS")
+        rate_limited_fake = stub(builder, "rate_limited")
+        decoy.when(await rate_limited_fake(request)).then_return(True)
+        resp = await auth_middleware(request, UNREACHABLE)
         assert resp.status == 429
 
-    async def test_valid_token_calls_handler(self, factories: Factories) -> None:
+    async def test_valid_token_calls_handler(self, factories: Factories, decoy: Decoy) -> None:
         factories.token.create(key="VALID-KEY")
-        handler = AsyncMock(return_value="handler-result")
-        request = MagicMock()
-        request.path = "/api/foo"
-        request.headers = {"Authorization": "Bearer VALID-KEY"}
-        request.rel_url.path = "/api/foo"
-        result = await auth_middleware(request, handler)
-        assert result == "handler-result"
-        handler.assert_awaited_once_with(request)
+        request = api_request("Bearer VALID-KEY")
+        handler = decoy.mock(name="handler", is_async=True)
+        decoy.when(await handler(request)).then_return(OK)
+        assert await auth_middleware(request, handler) is OK

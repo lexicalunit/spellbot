@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
 
+import discord
 import pytest
 from babel.messages.plurals import get_plural
 from babel.messages.pofile import read_po
@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from babel.messages.catalog import Catalog
+    from decoy import Decoy
 
 PLACEHOLDER = re.compile(r"%\((\w+)\)s")
 LINK = re.compile(r"\]\(")
@@ -260,30 +261,27 @@ class TestGuildLocale:
     def test_none_guild_returns_en(self) -> None:
         assert guild_locale(None) == "en"
 
-    def test_none_preferred_locale_returns_en(self) -> None:
-        guild = MagicMock()
-        guild.preferred_locale = None
+    def test_none_preferred_locale_returns_en(self, decoy: Decoy) -> None:
+        guild = decoy.mock(cls=discord.Guild)
+        # discord.py types this as always set, but `guild_locale` guards against a missing one.
+        guild.preferred_locale = None  # ty: ignore[invalid-assignment]
         assert guild_locale(guild) == "en"
 
-    def test_preferred_locale_with_value(self) -> None:
-        guild = MagicMock()
-        locale_enum = MagicMock()
-        locale_enum.value = "es-ES"
-        guild.preferred_locale = locale_enum
+    def test_preferred_locale_with_value(self, decoy: Decoy) -> None:
+        guild = decoy.mock(cls=discord.Guild)
+        guild.preferred_locale = discord.Locale.spain_spanish
         assert guild_locale(guild) == "es"
 
 
 class TestUserLocale:
-    def test_none_locale_returns_en(self) -> None:
-        interaction = MagicMock()
+    def test_none_locale_returns_en(self, decoy: Decoy) -> None:
+        interaction = decoy.mock(cls=discord.Interaction)
         interaction.locale = None
         assert user_locale(interaction) == "en"
 
-    def test_locale_with_value(self) -> None:
-        interaction = MagicMock()
-        locale_enum = MagicMock()
-        locale_enum.value = "fr-FR"
-        interaction.locale = locale_enum
+    def test_locale_with_value(self, decoy: Decoy) -> None:
+        interaction = decoy.mock(cls=discord.Interaction)
+        interaction.locale = discord.Locale.french
         assert user_locale(interaction) == "fr"
 
 
@@ -351,20 +349,16 @@ class TestPortugueseTranslations:
         assert t("button.join", locale="pt-BR") == "Entrar neste jogo!"
         assert t("button.join", locale="pt_PT") == "Entrar neste jogo!"
 
-    def test_user_locale_pt_returns_pt_translation(self) -> None:
-        interaction = MagicMock()
-        locale_enum = MagicMock()
-        locale_enum.value = "pt-BR"
-        interaction.locale = locale_enum
+    def test_user_locale_pt_returns_pt_translation(self, decoy: Decoy) -> None:
+        interaction = decoy.mock(cls=discord.Interaction)
+        interaction.locale = discord.Locale.brazil_portuguese
         locale = user_locale(interaction)
         assert locale == "pt"
         assert t("button.join", locale=locale) == "Entrar neste jogo!"
 
-    def test_guild_locale_pt_returns_pt_translation(self) -> None:
-        guild = MagicMock()
-        locale_enum = MagicMock()
-        locale_enum.value = "pt-BR"
-        guild.preferred_locale = locale_enum
+    def test_guild_locale_pt_returns_pt_translation(self, decoy: Decoy) -> None:
+        guild = decoy.mock(cls=discord.Guild)
+        guild.preferred_locale = discord.Locale.brazil_portuguese
         locale = guild_locale(guild)
         assert locale == "pt"
         assert t("admin.done", locale=locale) == "Concluído."

@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from spellbot import public_stats
 from spellbot.public_stats import (
     PUBLIC_STATS_KEY,
     PUBLIC_STATS_TTL,
@@ -18,11 +18,13 @@ from spellbot.public_stats import (
     update_public_stats,
 )
 from spellbot.settings import settings
+from tests.mocks.redis import FakeRedis, serve_redis
 
 if TYPE_CHECKING:
+    from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
 
-    from tests.fixtures import Factories
+    from tests.fixtures import Factories, Stub
 
 NOW = datetime(2024, 6, 15, 12, 0, tzinfo=UTC)
 
@@ -137,86 +139,79 @@ class TestPublicStatsSerialization:
 
 @pytest.mark.asyncio
 class TestUpdatePublicStats:
-    async def test_does_nothing_without_redis_configured(self) -> None:
-        with (
-            patch.object(settings, "REDIS_URL", None),
-            patch("spellbot.public_stats.get_redis", AsyncMock()) as get_redis,
-        ):
-            await update_public_stats()
+    async def test_does_nothing_without_redis_configured(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings, "REDIS_URL", None)
+        get_redis = stub(public_stats, "get_redis")
+        await update_public_stats()
 
-        get_redis.assert_not_called()
+        decoy.verify(await get_redis(), times=0, ignore_extra_args=True)
 
-    async def test_writes_computed_stats_with_a_ttl(self) -> None:
+    async def test_writes_computed_stats_with_a_ttl(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         stats = PublicStats(
             active_servers=2,
             active_players=7,
             active_games=4,
             last_updated="2024-06-15T12:00:00+00:00",
         )
-        redis = AsyncMock()
+        redis = FakeRedis()
+        serve_redis(monkeypatch, redis)
+        compute_public_stats_fake = stub(public_stats, "compute_public_stats")
+        decoy.when(await compute_public_stats_fake(), ignore_extra_args=True).then_return(stats)
+        await update_public_stats()
 
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.public_stats.compute_public_stats", AsyncMock(return_value=stats)),
-            patch("spellbot.public_stats.get_redis", AsyncMock(return_value=redis)),
-        ):
-            await update_public_stats()
+        assert redis.data == {PUBLIC_STATS_KEY: json.dumps(stats.to_dict())}
+        assert redis.expiry == {PUBLIC_STATS_KEY: PUBLIC_STATS_TTL}
 
-        redis.set.assert_awaited_once_with(
-            PUBLIC_STATS_KEY,
-            json.dumps(stats.to_dict()),
-            ex=PUBLIC_STATS_TTL,
+    async def test_swallows_errors_so_the_task_loop_survives(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings, "REDIS_URL", "redis://localhost")
+        compute_public_stats_fake = stub(public_stats, "compute_public_stats")
+        decoy.when(await compute_public_stats_fake(), ignore_extra_args=True).then_raise(
+            RuntimeError("boom")
         )
-
-    async def test_swallows_errors_so_the_task_loop_survives(self) -> None:
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.public_stats.compute_public_stats",
-                AsyncMock(side_effect=RuntimeError("boom")),
-            ),
-        ):
-            await update_public_stats()  # must not raise
+        await update_public_stats()  # must not raise
 
 
 @pytest.mark.asyncio
 class TestGetPublicStats:
-    async def test_returns_none_without_redis_configured(self) -> None:
-        with patch.object(settings, "REDIS_URL", None):
-            assert await get_public_stats() is None
+    async def test_returns_none_without_redis_configured(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings, "REDIS_URL", None)
+        assert await get_public_stats() is None
 
-    async def test_returns_none_when_nothing_is_cached(self) -> None:
-        redis = AsyncMock()
-        redis.get = AsyncMock(return_value=None)
+    async def test_returns_none_when_nothing_is_cached(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_redis(monkeypatch, FakeRedis())
+        assert await get_public_stats() is None
 
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.public_stats.get_redis", AsyncMock(return_value=redis)),
-        ):
-            assert await get_public_stats() is None
-
-    async def test_returns_the_cached_stats(self) -> None:
+    async def test_returns_the_cached_stats(self, monkeypatch: pytest.MonkeyPatch) -> None:
         stats = PublicStats(
             active_servers=2,
             active_players=7,
             active_games=4,
             last_updated="2024-06-15T12:00:00+00:00",
         )
-        redis = AsyncMock()
-        redis.get = AsyncMock(return_value=json.dumps(stats.to_dict()))
+        serve_redis(monkeypatch, FakeRedis(data={PUBLIC_STATS_KEY: json.dumps(stats.to_dict())}))
+        assert await get_public_stats() == stats
 
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.public_stats.get_redis", AsyncMock(return_value=redis)),
-        ):
-            assert await get_public_stats() == stats
-
-    async def test_returns_none_when_redis_errors(self) -> None:
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.public_stats.get_redis",
-                AsyncMock(side_effect=RuntimeError("boom")),
-            ),
-        ):
-            assert await get_public_stats() is None
+    async def test_returns_none_when_redis_errors(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        serve_redis(monkeypatch, FakeRedis(error=RuntimeError("boom")))
+        assert await get_public_stats() is None

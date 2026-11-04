@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from functools import partial
-from typing import TYPE_CHECKING, Any, cast
-from unittest.mock import AsyncMock, MagicMock
+from typing import TYPE_CHECKING, cast
 
 import discord
 import pytest
@@ -16,10 +15,13 @@ from spellbot.actions import game_posts, game_start, lfg_action
 from spellbot.cogs import LookingForGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Game
-from tests.mocks import build_author, build_channel, build_guild, build_interaction
+from tests.mocks import decoys
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
+
+    from decoy import Decoy
+    from discord.abc import MessageableChannel
 
     from spellbot import SpellBot
 
@@ -37,12 +39,22 @@ async def run_lfg(cog: LookingForGameCog, interaction: discord.Interaction) -> N
 
 @pytest.mark.asyncio
 class TestCogLookingForGameConcurrency:
-    async def test_concurrent_lfg_requests_different_channels(self, bot: SpellBot) -> None:
+    async def test_concurrent_lfg_requests_different_channels(
+        self,
+        bot: SpellBot,
+        decoy: Decoy,
+    ) -> None:
         cog = LookingForGameCog(bot)
-        guild = build_guild()
+        guild = decoys.guild(decoy)
         n = 100
         interactions = [
-            build_interaction(guild, build_channel(guild, i), build_author(i)) for i in range(n)
+            await decoys.interaction(
+                decoy,
+                guild,
+                decoys.channel(decoy, guild, offset=i),
+                decoys.member(decoy, offset=i),
+            )
+            for i in range(n)
         ]
         tasks = [asyncio.create_task(run_lfg(cog, interactions[i])) for i in range(n)]
 
@@ -78,35 +90,53 @@ class TestCogLookingForGameConcurrency:
         self,
         bot: SpellBot,
         monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
     ) -> None:
         next_message_xid = 1
 
-        def get_next_message(*args: Any, **kwargs: Any) -> discord.Message:
+        def next_message() -> discord.Message:
             nonlocal next_message_xid
-            message = MagicMock(spec=discord.Message)
+            message = decoy.mock(cls=discord.Message)
             message.id = next_message_xid
             next_message_xid += 1
             return message
 
-        mocks = {
-            "safe_fetch_user": AsyncMock(),
-            "safe_followup_channel": AsyncMock(side_effect=get_next_message),
-            "safe_get_partial_message": MagicMock(side_effect=get_next_message),
-            "safe_update_embed_origin": AsyncMock(return_value=True),
-            "safe_update_embed": AsyncMock(return_value=True),
+        def get_partial_message(
+            channel: MessageableChannel,
+            guild_xid: int,
+            message_xid: int,
+        ) -> discord.Message:
+            return next_message()
+
+        async def followup_channel(
+            interaction: discord.Interaction,
+            *content: str,
+            **kwargs: str | discord.Embed | discord.ui.View | None,
+        ) -> discord.Message:
+            return next_message()
+
+        fakes = {
+            "safe_fetch_user": decoys.async_returning(None),
+            "safe_followup_channel": followup_channel,
+            "safe_get_partial_message": get_partial_message,
+            "safe_update_embed_origin": decoys.async_returning(True),
+            "safe_update_embed": decoys.async_returning(True),
         }
         # The /lfg flow calls these from `lfg_action` and its helper modules.
         for module in (lfg_action, game_posts, game_start):
-            for name, mock in mocks.items():
+            for name, fake in fakes.items():
                 if hasattr(module, name):
-                    monkeypatch.setattr(module, name, mock)
+                    monkeypatch.setattr(module, name, fake)
 
         cog = LookingForGameCog(bot)
-        guild = build_guild()
-        channel = build_channel(guild)
+        guild = decoys.guild(decoy)
+        channel = decoys.channel(decoy, guild)
         default_seats = 4
         n = default_seats * 25
-        interactions = [build_interaction(guild, channel, build_author(i)) for i in range(n)]
+        interactions = [
+            await decoys.interaction(decoy, guild, channel, decoys.member(decoy, offset=i))
+            for i in range(n)
+        ]
         tasks = [asyncio.create_task(run_lfg(cog, interactions[i])) for i in range(n)]
 
         done, pending = await asyncio.wait(tasks)

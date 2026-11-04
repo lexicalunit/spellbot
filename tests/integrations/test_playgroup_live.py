@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
@@ -11,6 +11,7 @@ import pytest
 import spellbot.integrations.playgroup_live as playgroup_live_module
 from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket, GameFormat, GameService
+from spellbot.integrations import http_errors
 from spellbot.integrations.playgroup_live import (
     fetch_playgroup_live_session,
     find_linked_player,
@@ -19,10 +20,45 @@ from spellbot.integrations.playgroup_live import (
     playgroup_bracket,
     playgroup_life_amount,
 )
-from tests.mocks import create_mock_game, create_mock_user
+from tests.mocks import create_mock_game, create_mock_user, decoys
+from tests.mocks.http import client_for, in_order, recording_client, serve_httpx
 
 if TYPE_CHECKING:
     from spellbot.data import GameData
+    from tests.fixtures import Stub
+
+API_URL = "https://playgroup.gg"
+SESSIONS_URL = f"{API_URL}/api/public/v1/live_sessions"
+
+
+@pytest.fixture(autouse=True)
+def playgroup_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key")
+    monkeypatch.setattr(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_URL", API_URL)
+
+
+@pytest.fixture
+def quiet_span_errors(stub: Stub) -> None:
+    stub(http_errors, "add_span_error")
+
+
+def linked_game(seats: int = 4) -> GameData:
+    """Build a Playgroup Live game hosted by a player linked to Playgroup user 42."""
+    game = create_mock_game(
+        game_id=42,
+        game_format=GameFormat.COMMANDER.value,
+        service=GameService.PLAYGROUP_LIVE.value,
+        seats=seats,
+        bracket=GameBracket.NONE.value,
+    )
+    host = create_mock_user(xid=100)
+    host.playgroup_user_id = 42
+    game.players = [host]
+    return game
+
+
+def session(url: str | None) -> httpx.Response:
+    return httpx.Response(200, json={"url": url} if url else {})
 
 
 class TestPlaygroupLifeAmount:
@@ -104,107 +140,33 @@ class TestFindLinkedPlayer:
         assert find_linked_player(game) == 99
 
 
+@pytest.mark.asyncio
 class TestLookupPlaygroupUser:
-    @pytest.mark.asyncio
     async def test_success(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"id": 42, "username": "testplayer"}
-        mock_client.get = AsyncMock(return_value=mock_response)
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-        ):
-            user_id, username = await lookup_playgroup_user(mock_client, 123456789)
-
-        assert user_id == 42
-        assert username == "testplayer"
-        mock_client.get.assert_called_once()
-        call_url = mock_client.get.call_args[0][0]
-        assert "123456789" in call_url
-
-    @pytest.mark.asyncio
-    async def test_not_found(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_client.get = AsyncMock(return_value=mock_response)
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-        ):
-            user_id, username = await lookup_playgroup_user(mock_client, 999)
-
-        assert user_id is None
-        assert username is None
-
-    @pytest.mark.asyncio
-    async def test_http_error(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        mock_response.raise_for_status = MagicMock(
-            side_effect=httpx.HTTPStatusError(
-                "Server Error",
-                request=MagicMock(),
-                response=mock_response,
-            ),
+        client, requests = recording_client(
+            httpx.Response(200, json={"id": 42, "username": "testplayer"}),
         )
-        mock_client.get = AsyncMock(return_value=mock_response)
+        assert await lookup_playgroup_user(client, 123456789) == (42, "testplayer")
+        [request] = requests
+        assert str(request.url) == f"{API_URL}/api/v2/users/by_discord/123456789"
 
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-        ):
-            user_id, username = await lookup_playgroup_user(mock_client, 123)
+    async def test_not_found(self) -> None:
+        client, _ = recording_client(httpx.Response(404))
+        assert await lookup_playgroup_user(client, 999) == (None, None)
 
-        assert user_id is None
-        assert username is None
+    async def test_http_error(self) -> None:
+        client, _ = recording_client(httpx.Response(500))
+        assert await lookup_playgroup_user(client, 123) == (None, None)
 
-    @pytest.mark.asyncio
     async def test_network_error(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.get = AsyncMock(side_effect=Exception("Connection refused"))
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-        ):
-            user_id, username = await lookup_playgroup_user(mock_client, 123)
-
-        assert user_id is None
-        assert username is None
+        client = client_for(in_order(httpx.ConnectError))
+        assert await lookup_playgroup_user(client, 123) == (None, None)
 
 
+@pytest.mark.asyncio
 class TestFetchPlaygroupLiveSession:
-    @pytest.mark.asyncio
     async def test_success(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"url": "https://playgroup.gg/live/abc123"}
-        mock_client.post = AsyncMock(return_value=mock_response)
-
+        client, requests = recording_client(session("https://playgroup.gg/live/abc123"))
         game = create_mock_game(
             game_id=42,
             game_format=GameFormat.COMMANDER.value,
@@ -212,32 +174,20 @@ class TestFetchPlaygroupLiveSession:
             bracket=GameBracket.NONE.value,
         )
 
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-        ):
-            result = await fetch_playgroup_live_session(mock_client, game, 42, 4)
+        result = await fetch_playgroup_live_session(client, game, 42, 4)
 
         assert result == {"url": "https://playgroup.gg/live/abc123"}
-        payload = mock_client.post.call_args.kwargs["json"]
-        assert payload["player_amount"] == 4
-        assert payload["life_amount"] == 40
-        assert payload["client_identifier"] == "spellbot"
-        assert payload["on_behalf_of_user_id"] == 42
-        assert "bracket" not in payload
+        [request] = requests
+        assert str(request.url) == SESSIONS_URL
+        assert json.loads(request.content) == {
+            "player_amount": 4,
+            "life_amount": 40,
+            "client_identifier": "spellbot",
+            "on_behalf_of_user_id": 42,
+        }
 
-    @pytest.mark.asyncio
     async def test_with_bracket(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"url": "https://playgroup.gg/live/xyz"}
-        mock_client.post = AsyncMock(return_value=mock_response)
-
+        client, requests = recording_client(session("https://playgroup.gg/live/xyz"))
         game = create_mock_game(
             game_id=42,
             game_format=GameFormat.COMMANDER.value,
@@ -245,27 +195,12 @@ class TestFetchPlaygroupLiveSession:
             bracket=GameBracket.BRACKET_3.value,
         )
 
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-        ):
-            await fetch_playgroup_live_session(mock_client, game, 42, 4)
+        await fetch_playgroup_live_session(client, game, 42, 4)
 
-        payload = mock_client.post.call_args.kwargs["json"]
-        assert payload["bracket"] == 3
+        assert json.loads(requests[0].content)["bracket"] == 3
 
-    @pytest.mark.asyncio
     async def test_player_amount_capped_at_6(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"url": "https://playgroup.gg/live/big"}
-        mock_client.post = AsyncMock(return_value=mock_response)
-
+        client, requests = recording_client(session("https://playgroup.gg/live/big"))
         game = create_mock_game(
             game_id=42,
             game_format=GameFormat.COMMANDER.value,
@@ -273,269 +208,96 @@ class TestFetchPlaygroupLiveSession:
             bracket=GameBracket.NONE.value,
         )
 
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-        ):
-            await fetch_playgroup_live_session(mock_client, game, 42, 10)
+        await fetch_playgroup_live_session(client, game, 42, 10)
 
-        payload = mock_client.post.call_args.kwargs["json"]
-        assert payload["player_amount"] == 6
+        assert json.loads(requests[0].content)["player_amount"] == 6
 
 
+@pytest.mark.asyncio
 class TestGenerateLink:
-    @pytest.mark.asyncio
-    async def test_no_api_key(self) -> None:
-        game = create_mock_game()
+    async def test_no_api_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "")
+        assert await generate_link(create_mock_game()) == GameLinkDetails()
 
-        with patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", ""):
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-
-    @pytest.mark.asyncio
     async def test_no_linked_player(self) -> None:
         game = create_mock_game(service=GameService.PLAYGROUP_LIVE.value)
         game.players = [create_mock_user(xid=100)]
+        assert await generate_link(game) == GameLinkDetails()
 
-        with patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"):
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-
-    @pytest.mark.asyncio
-    async def test_success(self) -> None:
-        game = create_mock_game(
-            game_id=42,
-            game_format=GameFormat.COMMANDER.value,
-            service=GameService.PLAYGROUP_LIVE.value,
-            seats=4,
-            bracket=GameBracket.NONE.value,
-        )
-        host = create_mock_user(xid=100)
-        host.playgroup_user_id = 42
-        game.players = [host]
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module,
-                "fetch_playgroup_live_session",
-                AsyncMock(return_value={"url": "https://playgroup.gg/live/abc123"}),
-            ),
-        ):
-            result = await generate_link(game)
-
+    async def test_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        serve_httpx(monkeypatch, in_order(session("https://playgroup.gg/live/abc123")))
+        result = await generate_link(linked_game())
         assert result == GameLinkDetails("https://playgroup.gg/live/abc123")
 
-    @pytest.mark.asyncio
-    async def test_uses_original_seats(self) -> None:
-        game = create_mock_game(
-            game_id=42,
-            game_format=GameFormat.COMMANDER.value,
-            service=GameService.PLAYGROUP_LIVE.value,
-            seats=2,
-            bracket=GameBracket.NONE.value,
-        )
-        host = create_mock_user(xid=100)
-        host.playgroup_user_id = 42
-        game.players = [host]
+    async def test_uses_original_seats(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        requests = serve_httpx(monkeypatch, in_order(session("https://playgroup.gg/live/abc123")))
 
-        mock_fetch = AsyncMock(return_value={"url": "https://playgroup.gg/live/abc123"})
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(playgroup_live_module, "fetch_playgroup_live_session", mock_fetch),
-        ):
-            result = await generate_link(game, original_seats=4)
+        result = await generate_link(linked_game(seats=2), original_seats=4)
 
         assert result == GameLinkDetails("https://playgroup.gg/live/abc123")
-        call_args = mock_fetch.call_args
-        assert call_args[0][3] == 4  # player_amount argument
+        assert json.loads(requests[0].content)["player_amount"] == 4
 
-    @pytest.mark.asyncio
-    async def test_retries_on_failure_then_succeeds(self) -> None:
-        game = create_mock_game(
-            game_id=42,
-            game_format=GameFormat.COMMANDER.value,
-            service=GameService.PLAYGROUP_LIVE.value,
-            seats=4,
-            bracket=GameBracket.NONE.value,
+    @pytest.mark.usefixtures("quiet_span_errors")
+    async def test_retries_on_failure_then_succeeds(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        requests = serve_httpx(
+            monkeypatch,
+            in_order(httpx.ConnectError, session("https://playgroup.gg/live/retry")),
         )
-        host = create_mock_user(xid=100)
-        host.playgroup_user_id = 42
-        game.players = [host]
-
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"url": "https://playgroup.gg/live/retry"}
-
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(side_effect=[Exception("Connection error"), mock_response])
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-            patch("httpx.AsyncClient") as mock_client_class,
-            patch("spellbot.integrations.http_errors.add_span_error"),
-        ):
-            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
-
+        result = await generate_link(linked_game())
         assert result == GameLinkDetails("https://playgroup.gg/live/retry")
-        assert mock_client.post.call_count == 2
+        assert len(requests) == 2
 
-    @pytest.mark.asyncio
-    async def test_fails_after_all_retries(self) -> None:
-        game = create_mock_game(
-            game_id=42,
-            game_format=GameFormat.COMMANDER.value,
-            service=GameService.PLAYGROUP_LIVE.value,
-            seats=4,
-            bracket=GameBracket.NONE.value,
-        )
-        host = create_mock_user(xid=100)
-        host.playgroup_user_id = 42
-        game.players = [host]
+    @pytest.mark.usefixtures("quiet_span_errors")
+    async def test_fails_after_all_retries(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        attempts = [httpx.ConnectError] * playgroup_live_module.RETRY_ATTEMPTS
+        requests = serve_httpx(monkeypatch, in_order(*attempts))
+        assert await generate_link(linked_game()) == GameLinkDetails()
+        assert len(requests) == playgroup_live_module.RETRY_ATTEMPTS
 
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(side_effect=Exception("Connection error"))
+    async def test_returns_none_when_session_data_empty(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(monkeypatch, in_order(session(None)))
+        assert await generate_link(linked_game()) == GameLinkDetails()
 
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-            patch("httpx.AsyncClient") as mock_client_class,
-            patch("spellbot.integrations.http_errors.add_span_error"),
-        ):
-            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-        assert mock_client.post.call_count == playgroup_live_module.RETRY_ATTEMPTS
-
-    @pytest.mark.asyncio
-    async def test_returns_none_when_session_data_empty(self) -> None:
-        game = create_mock_game(
-            game_id=42,
-            game_format=GameFormat.COMMANDER.value,
-            service=GameService.PLAYGROUP_LIVE.value,
-            seats=4,
-            bracket=GameBracket.NONE.value,
-        )
-        host = create_mock_user(xid=100)
-        host.playgroup_user_id = 42
-        game.players = [host]
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module,
-                "fetch_playgroup_live_session",
-                AsyncMock(return_value={}),
-            ),
-        ):
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-
-    @pytest.mark.asyncio
-    async def test_returns_none_when_no_retry_attempts(self) -> None:
-        game = create_mock_game(
-            game_id=42,
-            game_format=GameFormat.COMMANDER.value,
-            service=GameService.PLAYGROUP_LIVE.value,
-            seats=4,
-            bracket=GameBracket.NONE.value,
-        )
-        host = create_mock_user(xid=100)
-        host.playgroup_user_id = 42
-        game.players = [host]
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(playgroup_live_module, "RETRY_ATTEMPTS", 0),
-        ):
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-
-
-def status_error(status: int, body: str = "") -> httpx.HTTPStatusError:
-    request = httpx.Request("POST", "https://playgroup.gg/session")
-    response = httpx.Response(status, text=body, request=request)
-    return httpx.HTTPStatusError(f"{status}", request=request, response=response)
-
-
-class TestPlaygroupLiveTerminalClientErrors:
-    @staticmethod
-    def make_game() -> GameData:
-        game = create_mock_game(
-            game_id=42,
-            game_format=GameFormat.COMMANDER.value,
-            service=GameService.PLAYGROUP_LIVE.value,
-            seats=4,
-            bracket=GameBracket.NONE.value,
-        )
-        host = create_mock_user(xid=100)
-        host.playgroup_user_id = 42
-        game.players = [host]
-        return game
-
-    async def run(self, error: Exception) -> tuple[object, int]:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(side_effect=error)
-
-        with (
-            patch.object(playgroup_live_module.settings, "PLAYGROUP_LIVE_API_KEY", "test-key"),
-            patch.object(
-                playgroup_live_module.settings,
-                "PLAYGROUP_LIVE_API_URL",
-                "https://playgroup.gg",
-            ),
-            patch("httpx.AsyncClient") as mock_client_class,
-            patch("spellbot.integrations.http_errors.add_span_error"),
-        ):
-            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(self.make_game())
-        return result, mock_client.post.call_count
-
-    @pytest.mark.asyncio
-    async def test_400_is_not_retried(self) -> None:
-        result, calls = await self.run(status_error(400, "bad session request"))
-        assert result == GameLinkDetails()
-        assert calls == 1
-
-    @pytest.mark.asyncio
-    async def test_500_is_still_retried(self) -> None:
-        result, calls = await self.run(status_error(500))
-        assert result == GameLinkDetails()
-        assert calls == playgroup_live_module.RETRY_ATTEMPTS
-
-
-class TestFindPlaygroupUser:
-    @pytest.mark.asyncio
-    async def test_looks_up_with_a_fresh_client(self) -> None:
-        with patch.object(
+    async def test_returns_none_when_no_retry_attempts(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(playgroup_live_module, "RETRY_ATTEMPTS", 0)
+        monkeypatch.setattr(
             playgroup_live_module,
-            "lookup_playgroup_user",
-            AsyncMock(return_value=(7, "seven")),
-        ) as lookup:
-            assert await playgroup_live_module.find_playgroup_user(123) == (7, "seven")
-        client, discord_id = lookup.call_args.args
-        assert isinstance(client, httpx.AsyncClient)
-        assert discord_id == 123
+            "fetch_playgroup_live_session",
+            decoys.async_raising(AssertionError("no attempts means no requests")),
+        )
+        assert await generate_link(linked_game()) == GameLinkDetails()
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("quiet_span_errors")
+class TestPlaygroupLiveTerminalClientErrors:
+    async def test_400_is_not_retried(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        requests = serve_httpx(
+            monkeypatch,
+            in_order(httpx.Response(400, text="bad session request")),
+        )
+        assert await generate_link(linked_game()) == GameLinkDetails()
+        assert len(requests) == 1
+
+    async def test_500_is_still_retried(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        attempts = [httpx.Response(500)] * playgroup_live_module.RETRY_ATTEMPTS
+        requests = serve_httpx(monkeypatch, in_order(*attempts))
+        assert await generate_link(linked_game()) == GameLinkDetails()
+        assert len(requests) == playgroup_live_module.RETRY_ATTEMPTS
+
+
+@pytest.mark.asyncio
+class TestFindPlaygroupUser:
+    async def test_looks_up_with_a_fresh_client(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        requests = serve_httpx(
+            monkeypatch,
+            in_order(httpx.Response(200, json={"id": 7, "username": "seven"})),
+        )
+        assert await playgroup_live_module.find_playgroup_user(123) == (7, "seven")
+        assert str(requests[0].url) == f"{API_URL}/api/v2/users/by_discord/123"

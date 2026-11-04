@@ -15,6 +15,8 @@ import pytest
 from babel.messages.pofile import read_po
 from git.repo import Repo
 
+from scripts.packed_brackets import find_packed
+
 from . import REPO_ROOT, SRC_DIRS, SRC_ROOT
 
 if TYPE_CHECKING:
@@ -235,3 +237,22 @@ class TestCodebase:
             for error in sorted(errors):
                 print(f"\t{error}", file=sys.stderr)  # noqa: T201
             pytest.fail("Inline imports require an 'allow_inline' comment.")
+
+    def test_no_packed_brackets(self) -> None:  # pragma: no cover
+        """
+        Checks that no bracketed list has its elements packed onto one line between brackets.
+
+        A list that doesn't fit on one line puts one element per line, with a trailing comma.
+        Run `uv run python scripts/packed_brackets.py <files>` to fix what this finds.
+        """
+        errors = [
+            f"{path.relative_to(REPO_ROOT)}:{packed.line}"
+            for src_dir in SRC_DIRS
+            for path in sorted(src_dir.rglob("*.py"))
+            for packed in find_packed(path.read_bytes())
+        ]
+        if errors:
+            print("Bracketed lists with elements packed onto one line:", file=sys.stderr)  # noqa: T201
+            for error in errors:
+                print(f"\t{error}", file=sys.stderr)  # noqa: T201
+            pytest.fail("Put one element per line, with a trailing comma.")

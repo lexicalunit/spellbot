@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-import discord
 import pytest
 import pytest_asyncio
 
 from spellbot.cogs import RecordCog
 from tests.fixtures import Factories, get_last_send_message, run_command
-from tests.mocks import build_channel, build_guild, build_interaction, mock_discord_object
+from tests.mocks import decoys, mock_discord_object
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    import discord
     from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
 
@@ -96,15 +96,10 @@ class TestCogRecord:
             "flags": 0,
         }
 
-        new_guild = build_guild(2)
-        new_channel = build_channel(new_guild, 2)
-        discord_user = mock_discord_object(user)
-        new_interaction = build_interaction(
-            new_guild,
-            new_channel,
-            discord_user,
-            response=decoy.mock(cls=discord.InteractionResponse),
-        )
+        new_guild = decoys.guild(decoy, offset=2)
+        new_channel = decoys.channel(decoy, new_guild, offset=2)
+        discord_user = mock_discord_object(decoy, user)
+        new_interaction = await decoys.interaction(decoy, new_guild, new_channel, discord_user)
         await run_command(cog.record, new_interaction)
 
         assert await get_last_send_message(decoy, new_interaction, "embed") == {
@@ -128,7 +123,7 @@ class TestCogRecord:
         settings: Settings,
     ) -> None:
         target_user = add_user()
-        target_member = cast("discord.Member", mock_discord_object(target_user))
+        target_member = mock_discord_object(decoy, target_user)
         await run_command(cog.record, interaction, user=target_member)
 
         assert await get_last_send_message(decoy, interaction, "embed") == {

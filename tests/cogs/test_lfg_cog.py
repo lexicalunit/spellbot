@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
-from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import discord
 import pytest
+from decoy import matchers
 from sqlalchemy import func, select, update
 
+from spellbot import operations
 from spellbot.actions import lfg_action
-from spellbot.cogs import LookingForGameCog
+from spellbot.cogs import LookingForGameCog, lfg_cog
 from spellbot.cogs.lfg_cog import guild_war_autocomplete
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
@@ -20,17 +21,19 @@ from spellbot.models import Channel, Game, GameStatus, Guild, Queue, User
 from spellbot.services.games import game_players
 from spellbot.services.users import current_game
 from spellbot.settings import settings as runtime_settings
-from spellbot.views import GameView
+from spellbot.views import GameView, lfg_view
 from tests.fixtures import Factories, run_command
-from tests.mocks import mock_discord_object, mock_operations
+from tests.mocks import decoys, mock_discord_object, mock_operations
+from tests.mocks.decoys import ANY, captured
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
 
     from spellbot import SpellBot
     from spellbot.settings import Settings
+    from tests.fixtures import Stub
 
 pytestmark = pytest.mark.use_db
 
@@ -63,23 +66,35 @@ class TestCogLookingForGame:
         channel: Channel,
         interaction: discord.Interaction,
         guild: Guild,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(lfg_action) as ops:
-            message = MagicMock(spec=discord.Message)
+        with mock_operations(decoy, lfg_action):
+            message = decoy.mock(cls=discord.Message)
             message.id = 123
-            ops.safe_followup_channel.return_value = message
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.lfg, interaction)
 
-            ops.safe_followup_channel.assert_called_once_with(
-                interaction,
-                content=None,
-                embed=ANY,
-                view=ANY,
-                allowed_mentions=ANY,
+            decoy.verify(
+                await operations.safe_followup_channel(
+                    interaction,
+                    content=None,
+                    embed=ANY,
+                    view=ANY,
+                    allowed_mentions=ANY,
+                ),
+                times=1,
             )
             # check that the view (join/leave buttons) exists for pending games:
-            assert isinstance(ops.safe_followup_channel.call_args.kwargs["view"], GameView)
+            safe_followup_channel_view = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_followup_channel(ANY, view=safe_followup_channel_view),
+                ignore_extra_args=True,
+            )
+            assert isinstance(captured(safe_followup_channel_view, object), GameView)
 
         # Find the user created by this interaction
         user = (
@@ -113,6 +128,7 @@ class TestCogLookingForGame:
         cog: LookingForGameCog,
         channel: Channel,
         interaction: discord.Interaction,
+        decoy: Decoy,
     ) -> None:
         await DatabaseSession.execute(
             update(Channel)
@@ -121,8 +137,13 @@ class TestCogLookingForGame:
         )
         await DatabaseSession.commit()
 
-        with mock_operations(lfg_action) as ops:
-            ops.safe_followup_channel.return_value = MagicMock(spec=discord.Message, id=123)
+        message = decoy.mock(cls=discord.Message)
+        message.id = 123
+        with mock_operations(decoy, lfg_action):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
             await run_command(cog.lfg, interaction)
 
         game = (await DatabaseSession.execute(select(Game))).scalar_one()
@@ -137,6 +158,7 @@ class TestCogLookingForGame:
         guild: Guild,
         factories: Factories,
         settings: Settings,
+        decoy: Decoy,
     ) -> None:
         channel = add_channel(
             default_format=GameFormat.MODERN.value,
@@ -154,20 +176,32 @@ class TestCogLookingForGame:
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=123)
 
         other_user = factories.user.create(xid=interaction.user.id + 1, game=game)
-        other_player = mock_discord_object(other_user)
+        other_player = mock_discord_object(decoy, other_user)
 
-        with mock_operations(lfg_action, users=[other_player]) as ops:
-            message = MagicMock(spec=discord.Message)
+        with mock_operations(decoy, lfg_action, users=[other_player]):
+            message = decoy.mock(cls=discord.Message)
             message.id = game.posts[0].message_xid
-            ops.safe_get_partial_message.return_value = message
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.lfg, interaction)
 
             DatabaseSession.expire_all()
             game = (await DatabaseSession.execute(select(Game))).scalar_one()
             started_at_timestamp = int(game.started_at.replace(tzinfo=UTC).timestamp())
-            mock_call = ops.safe_update_embed
-            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+            safe_update_embed_embed = matchers.ValueCaptor()
+            safe_update_embed_view = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_update_embed(
+                    ANY,
+                    embed=safe_update_embed_embed,
+                    view=safe_update_embed_view,
+                ),
+                ignore_extra_args=True,
+            )
+            assert captured(safe_update_embed_embed, discord.Embed).to_dict() == {
                 "color": settings.STARTED_EMBED_COLOR,
                 "description": (
                     "Please check your Direct Messages for your game details.\n\n"
@@ -198,7 +232,7 @@ class TestCogLookingForGame:
                 "flags": 0,
             }
             # check that the view (join/leave buttons) is removed from fully seated games:
-            assert mock_call.call_args_list[0].kwargs["view"] is None
+            assert captured(safe_update_embed_view, object) is None
 
     async def test_lfg_when_blocked(
         self,
@@ -237,14 +271,18 @@ class TestCogLookingForGame:
         interaction: discord.Interaction,
         channel: Channel,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(lfg_action, users=[mock_discord_object(player)]) as ops:
+        with mock_operations(decoy, lfg_action, users=[mock_discord_object(decoy, player)]):
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction)
 
-            ops.safe_followup_channel.assert_called_once_with(
-                interaction,
-                "You're already in a game in this channel.",
+            decoy.verify(
+                await operations.safe_followup_channel(
+                    interaction,
+                    "You're already in a game in this channel.",
+                ),
+                times=1,
             )
 
         found = (
@@ -287,12 +325,16 @@ class TestCogLookingForGame:
         factories: Factories,
         guild: Guild,
         channel: Channel,
+        decoy: Decoy,
     ) -> None:
         friend1 = factories.user.create()
         friend2 = factories.user.create()
-        players = [mock_discord_object(x) for x in (user, friend1, friend2)]
-        with mock_operations(lfg_action, users=players) as ops:
-            ops.safe_followup_channel.return_value = message
+        players = [mock_discord_object(decoy, x) for x in (user, friend1, friend2)]
+        with mock_operations(decoy, lfg_action, users=players):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
@@ -312,13 +354,17 @@ class TestCogLookingForGame:
         factories: Factories,
         guild: Guild,
         channel: Channel,
+        decoy: Decoy,
     ) -> None:
         friend1 = factories.user.create()
         friend2 = factories.user.create()
         factories.block.create(user_xid=user.xid, blocked_user_xid=friend1.xid)
-        players = [mock_discord_object(x) for x in (user, friend1, friend2)]
-        with mock_operations(lfg_action, users=players) as ops:
-            ops.safe_followup_channel.return_value = message
+        players = [mock_discord_object(decoy, x) for x in (user, friend1, friend2)]
+        with mock_operations(decoy, lfg_action, users=players):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
@@ -339,13 +385,17 @@ class TestCogLookingForGame:
         factories: Factories,
         guild: Guild,
         channel: Channel,
+        decoy: Decoy,
     ) -> None:
         friend1 = factories.user.create()
         friend2 = factories.user.create()
         factories.block.create(user_xid=friend1.xid, blocked_user_xid=user.xid)
-        players = [mock_discord_object(x) for x in (user, friend1, friend2)]
-        with mock_operations(lfg_action, users=players) as ops:
-            ops.safe_followup_channel.return_value = message
+        players = [mock_discord_object(decoy, x) for x in (user, friend1, friend2)]
+        with mock_operations(decoy, lfg_action, users=players):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             cog = LookingForGameCog(bot)
             await run_command(cog.lfg, interaction, friends=f"<@{friend1.xid}><@{friend2.xid}>")
@@ -366,14 +416,20 @@ class TestCogLookingForGame:
         factories: Factories,
         guild: Guild,
         channel: Channel,
+        decoy: Decoy,
     ) -> None:
         friend1 = factories.user.create()
         friend2 = factories.user.create()
         friend3 = factories.user.create()
         friend4 = factories.user.create()
-        players = [mock_discord_object(x) for x in (user, friend1, friend2, friend3, friend4)]
-        with mock_operations(lfg_action, users=players) as ops:
-            ops.safe_followup_channel.return_value = message
+        players = [
+            mock_discord_object(decoy, x) for x in (user, friend1, friend2, friend3, friend4)
+        ]
+        with mock_operations(decoy, lfg_action, users=players):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             cog = LookingForGameCog(bot)
             await run_command(
@@ -405,6 +461,7 @@ class TestCogLookingForGame:
         interaction: discord.Interaction,
         guild: Guild,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         friend = factories.user.create()
         game = factories.game.create(
@@ -416,7 +473,7 @@ class TestCogLookingForGame:
             status=GameStatus.STARTED.value,
             started_at=datetime.now(tz=UTC),
         )
-        message = MagicMock(spec=discord.Message)
+        message = decoy.mock(cls=discord.Message)
         message.id = 123
         factories.post.create(
             guild=guild,
@@ -426,21 +483,27 @@ class TestCogLookingForGame:
         )
         factories.play.create(user_xid=user.xid, game_id=game.id)
         factories.play.create(user_xid=friend.xid, game_id=game.id)
-        players = [mock_discord_object(x) for x in (user, friend)]
+        players = [mock_discord_object(decoy, x) for x in (user, friend)]
 
-        with mock_operations(lfg_action, users=players) as ops:
-            message = MagicMock(spec=discord.Message)
+        with mock_operations(decoy, lfg_action, users=players):
+            message = decoy.mock(cls=discord.Message)
             message.id = 456
-            ops.safe_followup_channel.return_value = message
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.rematch, interaction)
 
-            ops.safe_followup_channel.assert_called_once_with(
-                interaction,
-                content=None,
-                embed=ANY,
-                view=ANY,
-                allowed_mentions=ANY,
+            decoy.verify(
+                await operations.safe_followup_channel(
+                    interaction,
+                    content=None,
+                    embed=ANY,
+                    view=ANY,
+                    allowed_mentions=ANY,
+                ),
+                times=1,
             )
 
         DatabaseSession.expire_all()
@@ -456,18 +519,22 @@ class TestCogLookingForGame:
         interaction: discord.Interaction,
         guild: Guild,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         game = factories.game.create(guild=guild, channel=channel, seats=4)
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=123)
         factories.queue.create(user_xid=user.xid, game_id=game.id, og_guild_xid=guild.xid)
         other_user = factories.user.create()
         factories.queue.create(user_xid=other_user.xid, game_id=game.id, og_guild_xid=guild.xid)
-        players = [mock_discord_object(x) for x in (user, other_user)]
+        players = [mock_discord_object(decoy, x) for x in (user, other_user)]
 
-        with mock_operations(lfg_action, users=players) as ops:
-            message = MagicMock(spec=discord.Message)
+        with mock_operations(decoy, lfg_action, users=players):
+            message = decoy.mock(cls=discord.Message)
             message.id = 456
-            ops.safe_followup_channel.return_value = message
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.start, interaction)
 
@@ -489,23 +556,29 @@ class TestCogLookingForGameJoinButton:
         guild: Guild,
         channel: Channel,
         settings: Settings,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        with (
-            mock_operations(lfg_action, users=[mock_discord_object(user)]) as ops,
-            patch(
-                "spellbot.views.lfg_view.safe_original_response",
-                return_value=message,
-            ),
-        ):
-            ops.safe_update_embed_origin.return_value = message
+        monkeypatch.setattr(lfg_view, "safe_original_response", decoys.async_returning(message))
+        with mock_operations(decoy, lfg_action, users=[mock_discord_object(decoy, user)]):
+            decoy.when(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(True)
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            mock_call = ops.safe_update_embed_origin
-            mock_call.assert_called_once()
-            assert mock_call.call_args_list[0].kwargs["embed"].to_dict() == {
+            safe_update_embed_origin_embed = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_update_embed_origin(
+                    ANY,
+                    embed=safe_update_embed_origin_embed,
+                ),
+                ignore_extra_args=True,
+            )
+            assert captured(safe_update_embed_origin_embed, discord.Embed).to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
                 + support_cta(guild.xid),
@@ -532,21 +605,21 @@ class TestCogLookingForGameJoinButton:
         message: discord.Message,
         interaction: discord.Interaction,
         bot: SpellBot,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        with (
-            mock_operations(lfg_action, users=[mock_discord_object(user)]) as ops,
-            patch(
-                "spellbot.views.lfg_view.safe_original_response",
-                return_value=None,
-            ),
-        ):
-            ops.safe_update_embed_origin.return_value = message
+        monkeypatch.setattr(lfg_view, "safe_original_response", decoys.async_returning(None))
+        with mock_operations(decoy, lfg_action, users=[mock_discord_object(decoy, user)]):
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_join_when_blocked(
         self,
@@ -556,25 +629,27 @@ class TestCogLookingForGameJoinButton:
         interaction: discord.Interaction,
         bot: SpellBot,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         other_user = factories.user.create(xid=user.xid + 1, game=game)
         factories.block.create(user_xid=other_user.xid, blocked_user_xid=user.xid)
 
         with mock_operations(
+            decoy,
             lfg_action,
             users=[
-                mock_discord_object(user),
-                mock_discord_object(other_user),
+                mock_discord_object(decoy, user),
+                mock_discord_object(decoy, other_user),
             ],
-        ) as ops:
+        ):
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            ops.safe_send_user.assert_called_once_with(
-                interaction.user,
-                "You can not join this game.",
+            decoy.verify(
+                await operations.safe_send_user(interaction.user, "You can not join this game."),
+                times=1,
             )
 
         assert (
@@ -589,6 +664,7 @@ class TestCogLookingForGameJoinButton:
         interaction: discord.Interaction,
         bot: SpellBot,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         # Tournament organizer mode ignores blocks, so the blocked user joins the game.
         other_user = factories.user.create(xid=user.xid + 1, game=game)
@@ -599,18 +675,19 @@ class TestCogLookingForGameJoinButton:
         await DatabaseSession.commit()
 
         with mock_operations(
+            decoy,
             lfg_action,
             users=[
-                mock_discord_object(user),
-                mock_discord_object(other_user),
+                mock_discord_object(decoy, user),
+                mock_discord_object(decoy, other_user),
             ],
-        ) as ops:
+        ):
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            ops.safe_send_user.assert_not_called()
+            decoy.verify(await operations.safe_send_user(user=ANY), times=0, ignore_extra_args=True)
 
         assert (
             (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
@@ -626,6 +703,7 @@ class TestCogLookingForGameJoinButton:
         interaction: discord.Interaction,
         bot: SpellBot,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         # fully seat and start the game
         factories.user.create(game=game)
@@ -641,17 +719,21 @@ class TestCogLookingForGameJoinButton:
 
         # then try to join it
         with mock_operations(
+            decoy,
             lfg_action,
-            users=[mock_discord_object(user)],
-        ) as ops:
+            users=[mock_discord_object(decoy, user)],
+        ):
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            ops.safe_send_user.assert_called_once_with(
-                interaction.user,
-                "Sorry, that game has already started.",
+            decoy.verify(
+                await operations.safe_send_user(
+                    interaction.user,
+                    "Sorry, that game has already started.",
+                ),
+                times=1,
             )
 
         assert (
@@ -665,20 +747,21 @@ class TestCogLookingForGameJoinButton:
         message: discord.Message,
         interaction: discord.Interaction,
         bot: SpellBot,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        with (
-            mock_operations(lfg_action, users=[mock_discord_object(user)]) as ops,
-            patch(
-                "spellbot.views.lfg_view.safe_defer_interaction",
-                return_value=False,
-            ),
-        ):
+        monkeypatch.setattr(lfg_view, "safe_defer_interaction", decoys.async_returning(False))
+        with mock_operations(decoy, lfg_action, users=[mock_discord_object(decoy, user)]):
             interaction.message = message
             view = GameView(bot=bot)
 
             await view.join(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
 
 WAR_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -701,16 +784,21 @@ class TestCogWar:
         channel: Channel,
         interaction: discord.Interaction,
         guild: Guild,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.integrations.convoke.resolve_live_guild_war",
-            AsyncMock(return_value=live_war()),
-        )
-        with mock_operations(lfg_action) as ops:
-            message = MagicMock(spec=discord.Message)
+        resolve_live_guild_war_fake = stub(convoke, "resolve_live_guild_war")
+        decoy.when(
+            await resolve_live_guild_war_fake(war_id=ANY),
+            ignore_extra_args=True,
+        ).then_return(live_war())
+        with mock_operations(decoy, lfg_action):
+            message = decoy.mock(cls=discord.Message)
             message.id = 123
-            ops.safe_followup_channel.return_value = message
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.war, interaction, war=WAR_ID)
 
@@ -738,19 +826,24 @@ class TestCogWar:
         add_channel: Callable[..., Channel],
         interaction: discord.Interaction,
         guild: Guild,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         # Guild Wars only exist on Convoke, so `/war` must win over a channel that
         # defaults to some other service rather than failing the request.
         add_channel(xid=interaction.channel_id, default_service=GameService.COCKATRICE.value)
-        mocker.patch(
-            "spellbot.integrations.convoke.resolve_live_guild_war",
-            AsyncMock(return_value=live_war()),
-        )
-        with mock_operations(lfg_action) as ops:
-            message = MagicMock(spec=discord.Message)
+        resolve_live_guild_war_fake = stub(convoke, "resolve_live_guild_war")
+        decoy.when(
+            await resolve_live_guild_war_fake(war_id=ANY),
+            ignore_extra_args=True,
+        ).then_return(live_war())
+        with mock_operations(decoy, lfg_action):
+            message = decoy.mock(cls=discord.Message)
             message.id = 123
-            ops.safe_followup_channel.return_value = message
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.war, interaction, war=WAR_ID)
 
@@ -762,16 +855,23 @@ class TestCogWar:
         self,
         cog: LookingForGameCog,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.integrations.convoke.resolve_live_guild_war",
-            AsyncMock(return_value=None),
-        )
-        with mock_operations(lfg_action) as ops:
+        resolve_live_guild_war_fake = stub(convoke, "resolve_live_guild_war")
+        decoy.when(
+            await resolve_live_guild_war_fake(war_id=ANY),
+            ignore_extra_args=True,
+        ).then_return(None)
+        with mock_operations(decoy, lfg_action):
             await run_command(cog.war, interaction, war="not-a-real-war")
 
-            reply = ops.safe_followup_channel.call_args.args[1]
+            safe_followup_channel_content = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_followup_channel(ANY, safe_followup_channel_content),
+                ignore_extra_args=True,
+            )
+            reply = captured(safe_followup_channel_content, str)
             assert "not available" in reply
 
         assert (await DatabaseSession.execute(select(func.count(Game.id)))).scalar_one() == 0
@@ -799,11 +899,12 @@ class TestGuildWarAutocomplete:
     async def test_lists_every_live_war_when_nothing_is_typed(
         self,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.integrations.convoke.get_live_guild_wars",
-            AsyncMock(return_value=[live_war(), live_war("id-2", "Winter Clash", "winter-clash")]),
+        get_live_guild_wars_fake = stub(convoke, "get_live_guild_wars")
+        decoy.when(await get_live_guild_wars_fake(), ignore_extra_args=True).then_return(
+            [live_war(), live_war("id-2", "Winter Clash", "winter-clash")]
         )
         choices = await guild_war_autocomplete(interaction, "")
         assert [(c.name, c.value) for c in choices] == [
@@ -814,11 +915,12 @@ class TestGuildWarAutocomplete:
     async def test_filters_by_title(
         self,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.integrations.convoke.get_live_guild_wars",
-            AsyncMock(return_value=[live_war(), live_war("id-2", "Winter Clash", "winter-clash")]),
+        get_live_guild_wars_fake = stub(convoke, "get_live_guild_wars")
+        decoy.when(await get_live_guild_wars_fake(), ignore_extra_args=True).then_return(
+            [live_war(), live_war("id-2", "Winter Clash", "winter-clash")]
         )
         choices = await guild_war_autocomplete(interaction, "  WINTER ")
         assert [c.value for c in choices] == ["id-2"]
@@ -826,13 +928,14 @@ class TestGuildWarAutocomplete:
     async def test_filters_by_slug(
         self,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         # The slug is what shows up in Convoke URLs, so someone pasting one should
         # still find their war.
-        mocker.patch(
-            "spellbot.integrations.convoke.get_live_guild_wars",
-            AsyncMock(return_value=[live_war(), live_war("id-2", "Winter Clash", "winter-clash")]),
+        get_live_guild_wars_fake = stub(convoke, "get_live_guild_wars")
+        decoy.when(await get_live_guild_wars_fake(), ignore_extra_args=True).then_return(
+            [live_war(), live_war("id-2", "Winter Clash", "winter-clash")]
         )
         choices = await guild_war_autocomplete(interaction, "summer-cl")
         assert [c.value for c in choices] == [WAR_ID]
@@ -840,11 +943,12 @@ class TestGuildWarAutocomplete:
     async def test_truncates_names_over_the_discord_limit(
         self,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.integrations.convoke.get_live_guild_wars",
-            AsyncMock(return_value=[live_war(title="W" * 200)]),
+        get_live_guild_wars_fake = stub(convoke, "get_live_guild_wars")
+        decoy.when(await get_live_guild_wars_fake(), ignore_extra_args=True).then_return(
+            [live_war(title="W" * 200)]
         )
         choices = await guild_war_autocomplete(interaction, "")
         assert len(choices[0].name) == 100
@@ -855,13 +959,12 @@ class TestGuildWarAutocomplete:
     async def test_caps_at_the_discord_choice_limit(
         self,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.integrations.convoke.get_live_guild_wars",
-            AsyncMock(
-                return_value=[live_war(f"id-{i}", f"War {i}", f"war-{i}") for i in range(40)],
-            ),
+        get_live_guild_wars_fake = stub(convoke, "get_live_guild_wars")
+        decoy.when(await get_live_guild_wars_fake(), ignore_extra_args=True).then_return(
+            [live_war(f"id-{i}", f"War {i}", f"war-{i}") for i in range(40)]
         )
         choices = await guild_war_autocomplete(interaction, "")
         assert len(choices) == 25
@@ -869,14 +972,13 @@ class TestGuildWarAutocomplete:
     async def test_an_unreachable_convoke_offers_nothing(
         self,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         # `get_live_guild_wars` swallows failures and returns []; autocomplete must
         # degrade to an empty list rather than erroring inside Discord's UI.
-        mocker.patch(
-            "spellbot.integrations.convoke.get_live_guild_wars",
-            AsyncMock(return_value=[]),
-        )
+        get_live_guild_wars_fake = stub(convoke, "get_live_guild_wars")
+        decoy.when(await get_live_guild_wars_fake(), ignore_extra_args=True).then_return([])
         assert await guild_war_autocomplete(interaction, "summer") == []
 
 
@@ -897,12 +999,17 @@ class TestCogDeferFailure:
         self,
         bot: SpellBot,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
         command: str,
         kwargs: dict[str, Any],
     ) -> None:
-        mocker.patch("spellbot.cogs.lfg_cog.safe_defer_interaction", AsyncMock(return_value=False))
-        create = mocker.patch("spellbot.cogs.lfg_cog.LookingForGameAction.create")
+        safe_defer_interaction_fake = stub(lfg_cog, "safe_defer_interaction")
+        decoy.when(
+            await safe_defer_interaction_fake(interaction=ANY),
+            ignore_extra_args=True,
+        ).then_return(False)
+        create = stub(lfg_cog.LookingForGameAction, "create")
         cog = LookingForGameCog(bot)
         await run_command(getattr(cog, command), interaction, **kwargs)
-        create.assert_not_called()
+        decoy.verify(create(bot=ANY, interaction=ANY), times=0, ignore_extra_args=True)

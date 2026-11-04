@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -15,17 +14,19 @@ from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Guild
 from spellbot.services import alerts, guilds
-from spellbot.web.api import admin_auth
+from spellbot.web.api import admin_auth, viewer_auth
 from spellbot.web.api import queues as queues_endpoint_mod
 from spellbot.web.api.queues import SPELLBOT_DEFAULT_LOGO, format_wait, language_name
+from tests.mocks.decoys import ANY
+from tests.mocks.http import discord_oauth, serve_httpx
 
 if TYPE_CHECKING:
     from aiohttp import web
     from aiohttp.test_utils import TestClient
+    from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
-    from pytest_mock import MockerFixture
 
-    from tests.fixtures import Factories
+    from tests.fixtures import Factories, Stub
 
     WebClient = TestClient[web.Request, web.Application]
 
@@ -151,6 +152,8 @@ class TestQueuesEndpoint:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(xid=980002, name="No Icon Guild", icon=None)
@@ -165,15 +168,13 @@ class TestQueuesEndpoint:
         factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
 
         fetched = "https://cdn.discordapp.com/icons/980002/fetched.png"
-        with patch(
-            "spellbot.services.guilds.fetch_icon_url",
-            new=AsyncMock(return_value=fetched),
-        ) as mock_fetch:
-            resp = await client.get("/queues")
+        mock_fetch = stub(guilds, "fetch_icon_url")
+        decoy.when(await mock_fetch(ANY), ignore_extra_args=True).then_return(fetched)
+        resp = await client.get("/queues")
         assert resp.status == 200
         body = await resp.text()
         assert fetched in body
-        mock_fetch.assert_awaited_once_with(guild.xid)
+        decoy.verify(await mock_fetch(guild.xid), times=1)
         DatabaseSession.expire_all()
         refreshed = await DatabaseSession.get(Guild, guild.xid)
         assert refreshed
@@ -184,6 +185,8 @@ class TestQueuesEndpoint:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(xid=980003, name="Iconless Guild", icon=None)
@@ -197,11 +200,9 @@ class TestQueuesEndpoint:
         )
         factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
 
-        with patch(
-            "spellbot.services.guilds.fetch_icon_url",
-            new=AsyncMock(return_value=None),
-        ):
-            resp = await client.get("/queues")
+        fetch_icon_url_fake = stub(guilds, "fetch_icon_url")
+        decoy.when(await fetch_icon_url_fake(ANY), ignore_extra_args=True).then_return(None)
+        resp = await client.get("/queues")
         assert resp.status == 200
         body = await resp.text()
         assert SPELLBOT_DEFAULT_LOGO in body
@@ -278,6 +279,7 @@ class TestQueuesEndpoint:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(xid=980005, name="Retry Guild", icon=None)
@@ -291,14 +293,18 @@ class TestQueuesEndpoint:
         )
         factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
 
-        mock = AsyncMock(return_value=None)
-        with patch("spellbot.services.guilds.fetch_icon_url", new=mock):
-            assert (await client.get("/queues")).status == 200
-            assert (await client.get("/queues")).status == 200
-            assert mock.await_count == 1
-            freezer.move_to(NOW + queues_endpoint_mod.ICON_FETCH_TTL)
-            assert (await client.get("/queues")).status == 200
-            assert mock.await_count == 2
+        fetches: list[int] = []
+
+        async def fetch_icon_url(guild_xid: int) -> None:
+            fetches.append(guild_xid)
+
+        monkeypatch.setattr(guilds, "fetch_icon_url", fetch_icon_url)
+        assert (await client.get("/queues")).status == 200
+        assert (await client.get("/queues")).status == 200
+        assert len(fetches) == 1
+        freezer.move_to(NOW + queues_endpoint_mod.ICON_FETCH_TTL)
+        assert (await client.get("/queues")).status == 200
+        assert len(fetches) == 2
 
     async def test_renders_inline_active_games_stat(
         self,
@@ -406,10 +412,10 @@ class TestQueuesEndpoint:
     async def test_renders_login_link_when_login_enabled_and_anonymous(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        mocker.patch.object(queues_endpoint_mod.settings, "BOT_APPLICATION_ID", "appid-1")
-        mocker.patch.object(queues_endpoint_mod.settings, "BOT_CLIENT_SECRET", "secret-1")
+        monkeypatch.setattr(queues_endpoint_mod.settings, "BOT_APPLICATION_ID", "appid-1")
+        monkeypatch.setattr(queues_endpoint_mod.settings, "BOT_CLIENT_SECRET", "secret-1")
         resp = await client.get("/queues")
         assert resp.status == 200
         body = await resp.text()
@@ -425,7 +431,8 @@ class TestQueuesEndpoint:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         mine = factories.guild.create(
@@ -452,17 +459,13 @@ class TestQueuesEndpoint:
         # A started game in `mine` should still count.
         factories.game.create(guild=mine, channel=ch1, started_at=NOW - timedelta(minutes=10))
 
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
         # The shared site header reads identity from the global nav context
         # (viewer_auth.get_viewer); in production this is the same session the
         # handler sees, so mirror it here.
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(viewer_auth, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
         resp = await client.get("/queues?my=1")
         body = await resp.text()
         assert "Mine" in body
@@ -500,13 +503,12 @@ class TestQueuesEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         me = factories.user.create(xid=880401, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
         resp = await client.get("/queues?my=1")
         body = await resp.text()
         assert "played in. Uncheck the filter to see all servers" in body
@@ -653,6 +655,8 @@ class TestQueuesJsonEndpoint:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(xid=980502, name="No Icon JSON", icon=None)
@@ -661,11 +665,9 @@ class TestQueuesJsonEndpoint:
         game = factories.game.create(guild=guild, channel=ch, started_at=None)
         factories.queue.create(user_xid=u1.xid, game_id=game.id, og_guild_xid=guild.xid)
 
-        with patch(
-            "spellbot.services.guilds.fetch_icon_url",
-            new=AsyncMock(return_value=None),
-        ):
-            resp = await client.get("/queues.json")
+        fetch_icon_url_fake = stub(guilds, "fetch_icon_url")
+        decoy.when(await fetch_icon_url_fake(ANY), ignore_extra_args=True).then_return(None)
+        resp = await client.get("/queues.json")
         assert resp.status == 200
         payload = await resp.json()
         assert payload["queues"][0]["logo"] == SPELLBOT_DEFAULT_LOGO
@@ -675,17 +677,17 @@ class TestQueuesJsonEndpoint:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(xid=980503, name="No Icon Game", icon=None)
         ch = factories.channel.create(xid=980513, name="lfg", guild=guild)
         factories.game.create(guild=guild, channel=ch, started_at=NOW - timedelta(minutes=5))
 
-        with patch(
-            "spellbot.services.guilds.fetch_icon_url",
-            new=AsyncMock(return_value=None),
-        ):
-            resp = await client.get("/queues.json")
+        fetch_icon_url_fake = stub(guilds, "fetch_icon_url")
+        decoy.when(await fetch_icon_url_fake(ANY), ignore_extra_args=True).then_return(None)
+        resp = await client.get("/queues.json")
         assert resp.status == 200
         payload = await resp.json()
         assert payload["queues"] == []
@@ -700,7 +702,8 @@ class TestPlayedGuildsSection:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(
@@ -717,14 +720,10 @@ class TestPlayedGuildsSection:
             og_guild_xid=guild.xid,
             created_at=NOW - timedelta(days=3),
         )
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
+        get_viewer_fake = stub(viewer_auth, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get("/queues")
         body = await resp.text()
@@ -749,7 +748,8 @@ class TestPlayedGuildsSection:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(
@@ -767,10 +767,8 @@ class TestPlayedGuildsSection:
             created_at=NOW - timedelta(days=2),
         )
         await alerts.upsert(guild.xid, me.xid, formats=[1])
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get("/queues")
         body = await resp.text()
@@ -800,13 +798,12 @@ class TestPlayedGuildsSection:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         me = factories.user.create(xid=881_003, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
         resp = await client.get("/queues")
         body = await resp.text()
         assert "Your Servers" not in body
@@ -816,7 +813,8 @@ class TestPlayedGuildsSection:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         stale = factories.guild.create(xid=981_004, name="Stale Guild", icon="s.png")
@@ -829,10 +827,8 @@ class TestPlayedGuildsSection:
             og_guild_xid=stale.xid,
             created_at=NOW - timedelta(days=400),
         )
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
         resp = await client.get("/queues")
         body = await resp.text()
         assert "Your Servers" not in body
@@ -843,7 +839,8 @@ class TestPlayedGuildsSection:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         played_guild = factories.guild.create(xid=981_005, name="Played", icon="p.png")
@@ -876,10 +873,8 @@ class TestPlayedGuildsSection:
             game_id=active_game.id,
             og_guild_xid=active_guild.xid,
         )
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get("/queues")
         body = await resp.text()
@@ -895,7 +890,8 @@ class TestGuildNotifyEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(
             xid=982_001,
@@ -904,14 +900,10 @@ class TestGuildNotifyEndpoint:
             locale="en",
         )
         me = factories.user.create(xid=882_001, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
+        get_viewer_fake = stub(viewer_auth, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -950,24 +942,22 @@ class TestGuildNotifyEndpoint:
     async def test_returns_404_for_unknown_guild(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(882_004, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((882_004, "Me"))
         resp = await client.get("/queues/g/77777777", allow_redirects=False)
         assert resp.status == 404
 
     async def test_returns_404_for_non_integer_guild(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(882_005, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((882_005, "Me"))
         resp = await client.get("/queues/g/not-a-number", allow_redirects=False)
         assert resp.status == 404
 
@@ -975,13 +965,12 @@ class TestGuildNotifyEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=982_006, name="Banned", banned=True)
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(882_006, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((882_006, "Me"))
         resp = await client.get(f"/queues/g/{guild.xid}", allow_redirects=False)
         assert resp.status == 404
 
@@ -989,7 +978,8 @@ class TestGuildNotifyEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=982_007, name="Prepop", icon="p.png")
         me = factories.user.create(xid=882_007, name="me")
@@ -998,10 +988,8 @@ class TestGuildNotifyEndpoint:
             user_xid=me.xid,
             preferences={"formats": [1], "brackets": [2]},
         )
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1017,16 +1005,15 @@ class TestGuildNotifyEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=982_008, name="Restore", icon="r.png")
         me = factories.user.create(xid=882_008, name="me")
         await alerts.upsert(guild.xid, me.xid, formats=[1], brackets=[2])
         await alerts.delete(guild.xid, me.xid)
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1045,14 +1032,13 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_001, name="Save Guild", icon="s.png")
         me = factories.user.create(xid=883_001, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1071,13 +1057,14 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_003, name="No User Guild", icon="n.png")
         viewer_xid = 883_003
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(viewer_xid, "Me")),
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return(
+            (viewer_xid, "Me")
         )
 
         resp = await client.post(
@@ -1096,14 +1083,13 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_010, name="Ajax Guild", icon="a.png")
         me = factories.user.create(xid=883_010, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1125,14 +1111,13 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_011, name="Bad Guild", icon="b.png")
         me = factories.user.create(xid=883_011, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1148,14 +1133,13 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_012, name="Unk Guild", icon="u.png")
         me = factories.user.create(xid=883_012, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1193,15 +1177,14 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_020, name="Off Guild", icon="d.png")
         me = factories.user.create(xid=883_020, name="me")
         await alerts.upsert(guild.xid, me.xid, formats=[1], brackets=[2])
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1216,15 +1199,14 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_021, name="Off Ajax", icon="d.png")
         me = factories.user.create(xid=883_021, name="me")
         await alerts.upsert(guild.xid, me.xid, formats=[1])
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1240,14 +1222,13 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_022, name="Off Noop", icon="d.png")
         me = factories.user.create(xid=883_022, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1261,16 +1242,15 @@ class TestGuildNotifySaveEndpoint:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=983_023, name="Restore Save", icon="r.png")
         me = factories.user.create(xid=883_023, name="me")
         original = await alerts.upsert(guild.xid, me.xid, formats=[1], brackets=[2])
         await alerts.delete(guild.xid, me.xid)
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1294,14 +1274,13 @@ class TestGuildNotifyChannelsFieldset:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=984_001, name="NoChans", icon="n.png")
         me = factories.user.create(xid=884_001, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1313,17 +1292,16 @@ class TestGuildNotifyChannelsFieldset:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=984_002, name="OneChan", icon="o.png")
         ch = factories.channel.create(xid=984_201, name="lfg", guild=guild)
         me = factories.user.create(xid=884_002, name="me")
         game = factories.game.create(guild=guild, channel=ch)
         factories.play.create(user_xid=me.xid, game_id=game.id, og_guild_xid=guild.xid)
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1335,7 +1313,8 @@ class TestGuildNotifyChannelsFieldset:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=984_003, name="MultiChan", icon="m.png")
         ch_a = factories.channel.create(xid=984_301, name="alpha", guild=guild)
@@ -1350,10 +1329,8 @@ class TestGuildNotifyChannelsFieldset:
             user_xid=me.xid,
             preferences={"formats": [], "brackets": [], "channels": [ch_a.xid]},
         )
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1374,7 +1351,8 @@ class TestGuildNotifyChannelsFieldset:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=984_004, name="SaveChan", icon="c.png")
         ch_a = factories.channel.create(xid=984_401, name="alpha", guild=guild)
@@ -1384,10 +1362,8 @@ class TestGuildNotifyChannelsFieldset:
         game_b = factories.game.create(guild=guild, channel=ch_b)
         factories.play.create(user_xid=me.xid, game_id=game_a.id, og_guild_xid=guild.xid)
         factories.play.create(user_xid=me.xid, game_id=game_b.id, og_guild_xid=guild.xid)
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1409,17 +1385,16 @@ class TestGuildNotifyChannelsFieldset:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=984_005, name="BadChan", icon="x.png")
         ch_a = factories.channel.create(xid=984_501, name="alpha", guild=guild)
         me = factories.user.create(xid=884_005, name="me")
         game_a = factories.game.create(guild=guild, channel=ch_a)
         factories.play.create(user_xid=me.xid, game_id=game_a.id, og_guild_xid=guild.xid)
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1436,7 +1411,8 @@ class TestGuildNotifyChannelsFieldset:
         client: WebClient,
         factories: Factories,
         freezer: FrozenDateTimeFactory,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         freezer.move_to(NOW)
         guild = factories.guild.create(xid=984_006, name="StaleGuild", icon="s.png")
@@ -1457,10 +1433,8 @@ class TestGuildNotifyChannelsFieldset:
             og_guild_xid=guild.xid,
             created_at=NOW - timedelta(days=400),
         )
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1485,14 +1459,13 @@ class TestGuildNotifyActiveHours:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=985_001, name="Hours Guild", icon="h.png")
         me = factories.user.create(xid=885_001, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1507,7 +1480,8 @@ class TestGuildNotifyActiveHours:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=985_002, name="Pref Guild", icon="p.png")
         me = factories.user.create(xid=885_002, name="me")
@@ -1521,10 +1495,8 @@ class TestGuildNotifyActiveHours:
                 "active_hours": {"start": 19, "end": 23, "tz": "America/New_York"},
             },
         )
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.get(f"/queues/g/{guild.xid}")
         assert resp.status == 200
@@ -1538,14 +1510,13 @@ class TestGuildNotifyActiveHours:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=985_010, name="Save Hours", icon="s.png")
         me = factories.user.create(xid=885_010, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1578,14 +1549,13 @@ class TestGuildNotifyActiveHours:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=985_011, name="No Hours", icon="n.png")
         me = factories.user.create(xid=885_011, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1602,14 +1572,13 @@ class TestGuildNotifyActiveHours:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=985_020, name="Wide Hours", icon="w.png")
         me = factories.user.create(xid=885_020, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1631,14 +1600,13 @@ class TestGuildNotifyActiveHours:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=985_021, name="Bad TZ", icon="b.png")
         me = factories.user.create(xid=885_021, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1656,14 +1624,13 @@ class TestGuildNotifyActiveHours:
         self,
         client: WebClient,
         factories: Factories,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         guild = factories.guild.create(xid=985_022, name="Equal Hours", icon="e.png")
         me = factories.user.create(xid=885_022, name="me")
-        mocker.patch(
-            "spellbot.web.api.queues.get_viewer",
-            AsyncMock(return_value=(me.xid, "Me")),
-        )
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
 
         resp = await client.post(
             f"/queues/g/{guild.xid}/notify",
@@ -1679,34 +1646,19 @@ class TestGuildNotifyActiveHours:
         assert resp.status == 400
 
 
-def make_admin_httpx_client() -> MagicMock:
-    """Mock `httpx.AsyncClient` for an OAuth flow identifying the owner (xid=42)."""
-    inner = MagicMock()
-    token_resp = MagicMock(status_code=200)
-    token_resp.json = MagicMock(return_value={"access_token": "tok"})
-    inner.post = AsyncMock(return_value=token_resp)
-    identify_resp = MagicMock(status_code=200)
-    identify_resp.json = MagicMock(return_value={"id": "42", "username": "admin"})
-    inner.get = AsyncMock(return_value=identify_resp)
-    cm = MagicMock()
-    cm.__aenter__ = AsyncMock(return_value=inner)
-    cm.__aexit__ = AsyncMock(return_value=None)
-    return cm
-
-
 @pytest_asyncio.fixture
-async def admin_session_client(client: WebClient, mocker: MockerFixture) -> WebClient:
+async def admin_session_client(
+    client: WebClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> WebClient:
     """Return a client whose cookie jar holds an authenticated admin session."""
-    mocker.patch.object(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
-    mocker.patch.object(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
-    mocker.patch.object(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
-    mocker.patch.object(admin_auth.settings, "OWNER_XID", 42)
+    monkeypatch.setattr(admin_auth.settings, "BOT_APPLICATION_ID", "appid-1")
+    monkeypatch.setattr(admin_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
+    monkeypatch.setattr(admin_auth.settings, "API_BASE_URL", "http://127.0.0.1")
+    monkeypatch.setattr(admin_auth.settings, "OWNER_XID", 42)
     login_resp = await client.get("/admin/login", allow_redirects=False)
     state = parse_qs(urlparse(login_resp.headers["Location"]).query)["state"][0]
-    mocker.patch(
-        "spellbot.web.api.admin_auth.httpx.AsyncClient",
-        return_value=make_admin_httpx_client(),
-    )
+    serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "admin"}))
     cb = await client.get(
         f"/admin/oauth/callback?code=abc&state={state}",
         allow_redirects=False,
@@ -1784,26 +1736,35 @@ class TestGuildIconEndpoint:
         assert resp.status == 302
         assert resp.headers["Location"] == SPELLBOT_DEFAULT_LOGO
 
-    async def test_unknown_guild_gets_default_logo(self, client: WebClient) -> None:
-        with patch("spellbot.services.guilds.fetch_icon_url", new=AsyncMock()) as mock_fetch:
-            resp = await client.get("/g/990003/icon", allow_redirects=False)
+    async def test_unknown_guild_gets_default_logo(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        mock_fetch = stub(guilds, "fetch_icon_url")
+        resp = await client.get("/g/990003/icon", allow_redirects=False)
 
         assert resp.status == 302
         assert resp.headers["Location"] == SPELLBOT_DEFAULT_LOGO
-        mock_fetch.assert_not_awaited()
+        decoy.verify(await mock_fetch(ANY), times=0, ignore_extra_args=True)
         assert resp.headers["Cache-Control"] == (
             f"public, max-age={queues_endpoint_mod.GUILD_ICON_FALLBACK_MAX_AGE}"
         )
 
-    async def test_backfills_missing_icon(self, client: WebClient, factories: Factories) -> None:
+    async def test_backfills_missing_icon(
+        self,
+        client: WebClient,
+        factories: Factories,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         factories.guild.create(xid=990004, name="No Icon", icon=None)
         fetched = "https://cdn.discordapp.com/icons/990004/fetched.png"
 
-        with patch(
-            "spellbot.services.guilds.fetch_icon_url",
-            new=AsyncMock(return_value=fetched),
-        ):
-            resp = await client.get("/g/990004/icon", allow_redirects=False)
+        fetch_icon_url_fake = stub(guilds, "fetch_icon_url")
+        decoy.when(await fetch_icon_url_fake(ANY), ignore_extra_args=True).then_return(fetched)
+        resp = await client.get("/g/990004/icon", allow_redirects=False)
 
         assert resp.headers["Location"] == fetched
         DatabaseSession.expire_all()

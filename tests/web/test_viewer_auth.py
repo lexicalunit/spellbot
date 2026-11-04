@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import contextlib
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from aiohttp import web
+from aiohttp.test_utils import make_mocked_request
 from aiohttp_session import Session
+from yarl import URL
 
+from spellbot.services import users
 from spellbot.web.api import oauth, viewer_auth
 from spellbot.web.api.admin_auth import ADMIN_NAME_KEY, ADMIN_XID_KEY
 from spellbot.web.api.oauth import DISCORD_AUTHORIZE_URL, canonical_host_redirect
@@ -20,74 +23,101 @@ from spellbot.web.api.viewer_auth import (
     has_viewer_session,
     viewer_oauth_redirect_uri,
 )
-from tests.web.test_admin_auth import make_httpx_client
+from tests.mocks.decoys import ANY
+from tests.mocks.http import discord_oauth, raising, serve_httpx
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-    from aiohttp import web
     from aiohttp.test_utils import TestClient
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
 
     WebClient = TestClient[web.Request, web.Application]
 
 
 class TestViewerOauthRedirectUri:
-    def test_strips_trailing_slash(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(viewer_auth.settings, "API_BASE_URL", "https://example.com/")
+    def test_strips_trailing_slash(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(viewer_auth.settings, "API_BASE_URL", "https://example.com/")
         assert viewer_oauth_redirect_uri() == "https://example.com/queues/oauth/callback"
 
 
 class TestCanonicalHostRedirect:
     @staticmethod
-    def make_request(host: str, rel_url: str) -> MagicMock:
-        request = MagicMock()
-        request.url.host = host
-        request.rel_url = rel_url
+    def make_request(decoy: Decoy, host: str, rel_url: str) -> web.Request:
+        # A decoy rather than `make_mocked_request`, which would normalize away the
+        # malformed targets these tests feed in; `encoded=True` keeps them verbatim.
+        request = decoy.mock(cls=web.Request)
+        decoy.when(request.url).then_return(URL(f"http://{host}/"))
+        decoy.when(request.rel_url).then_return(URL(rel_url, encoded=True))
         return request
 
-    def test_returns_none_when_api_base_url_unset(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(oauth.settings, "API_BASE_URL", None)
-        assert canonical_host_redirect(MagicMock()) is None
+    def test_returns_none_when_api_base_url_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(oauth.settings, "API_BASE_URL", None)
+        assert canonical_host_redirect(make_mocked_request("GET", "/")) is None
 
-    def test_returns_none_when_base_has_no_host(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(oauth.settings, "API_BASE_URL", "/no-host")
-        assert canonical_host_redirect(self.make_request("alias.example.com", "/foo")) is None
+    def test_returns_none_when_base_has_no_host(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+    ) -> None:
+        monkeypatch.setattr(oauth.settings, "API_BASE_URL", "/no-host")
+        assert (
+            canonical_host_redirect(self.make_request(decoy, "alias.example.com", "/foo")) is None
+        )
 
-    def test_returns_none_when_host_already_matches(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
-        request = self.make_request("bot.spellbot.io", "/queues?my=1")
+    def test_returns_none_when_host_already_matches(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+    ) -> None:
+        monkeypatch.setattr(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request(decoy, "bot.spellbot.io", "/queues?my=1")
         assert canonical_host_redirect(request) is None
 
     def test_redirects_to_canonical_host_with_path_and_query(
         self,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
     ) -> None:
-        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
-        request = self.make_request("queues.spellbot.io", "/queues?my=1")
+        monkeypatch.setattr(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request(decoy, "queues.spellbot.io", "/queues?my=1")
         resp = canonical_host_redirect(request)
         assert resp is not None
         assert resp.headers["Location"] == "https://bot.spellbot.io/queues?my=1"
 
-    def test_rejects_target_with_scheme(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
-        request = self.make_request("queues.spellbot.io", "https://evil.example.com/x")
+    def test_rejects_target_with_scheme(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+    ) -> None:
+        monkeypatch.setattr(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request(decoy, "queues.spellbot.io", "https://evil.example.com/x")
         resp = canonical_host_redirect(request)
         assert resp is not None
         assert resp.headers["Location"] == "https://bot.spellbot.io/"
 
-    def test_rejects_protocol_relative_target(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
-        request = self.make_request("queues.spellbot.io", "//evil.example.com/x")
+    def test_rejects_protocol_relative_target(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+    ) -> None:
+        monkeypatch.setattr(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+        request = self.make_request(decoy, "queues.spellbot.io", "//evil.example.com/x")
         resp = canonical_host_redirect(request)
         assert resp is not None
         assert resp.headers["Location"] == "https://bot.spellbot.io/"
 
-    def test_rejects_backslash_protocol_relative_target(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
+    def test_rejects_backslash_protocol_relative_target(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+    ) -> None:
+        monkeypatch.setattr(oauth.settings, "API_BASE_URL", "https://bot.spellbot.io")
         # Some browsers treat backslashes as forward slashes, so `/\evil.com`
         # would otherwise resolve to `//evil.com` (a host swap).
-        request = self.make_request("queues.spellbot.io", "/\\evil.example.com/x")
+        request = self.make_request(decoy, "queues.spellbot.io", "/\\evil.example.com/x")
         resp = canonical_host_redirect(request)
         assert resp is not None
         assert resp.headers["Location"] == "https://bot.spellbot.io/"
@@ -124,93 +154,91 @@ class TestSafeRelativePath:
 
 @pytest.mark.asyncio
 class TestGetViewer:
-    async def test_empty_session(self, mocker: MockerFixture) -> None:
-        mocker.patch("spellbot.web.api.viewer_auth.get_session", AsyncMock(return_value={}))
-        assert await get_viewer(MagicMock()) == (None, None)
+    async def test_empty_session(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return({})
+        assert await get_viewer(make_mocked_request("GET", "/")) == (None, None)
 
-    async def test_non_int_xid(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={VIEWER_XID_KEY: "nope"}),
+    async def test_non_int_xid(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {VIEWER_XID_KEY: "nope"}
         )
-        assert await get_viewer(MagicMock()) == (None, None)
+        assert await get_viewer(make_mocked_request("GET", "/")) == (None, None)
 
-    async def test_valid_xid_with_name(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={VIEWER_XID_KEY: 7, VIEWER_NAME_KEY: "Amy"}),
+    async def test_valid_xid_with_name(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {VIEWER_XID_KEY: 7, VIEWER_NAME_KEY: "Amy"}
         )
-        assert await get_viewer(MagicMock()) == (7, "Amy")
+        assert await get_viewer(make_mocked_request("GET", "/")) == (7, "Amy")
 
-    async def test_valid_xid_no_name(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={VIEWER_XID_KEY: 7, VIEWER_NAME_KEY: 123}),
+    async def test_valid_xid_no_name(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {VIEWER_XID_KEY: 7, VIEWER_NAME_KEY: 123}
         )
-        assert await get_viewer(MagicMock()) == (7, None)
+        assert await get_viewer(make_mocked_request("GET", "/")) == (7, None)
 
-    async def test_falls_back_to_admin_session(self, mocker: MockerFixture) -> None:
+    async def test_falls_back_to_admin_session(self, decoy: Decoy, stub: Stub) -> None:
         # An admin session (no viewer keys) is honored as a viewer identity.
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={ADMIN_XID_KEY: 9, ADMIN_NAME_KEY: "Boss"}),
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {ADMIN_XID_KEY: 9, ADMIN_NAME_KEY: "Boss"}
         )
-        assert await get_viewer(MagicMock()) == (9, "Boss")
+        assert await get_viewer(make_mocked_request("GET", "/")) == (9, "Boss")
 
-    async def test_admin_fallback_non_str_name(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={ADMIN_XID_KEY: 9, ADMIN_NAME_KEY: 123}),
+    async def test_admin_fallback_non_str_name(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {ADMIN_XID_KEY: 9, ADMIN_NAME_KEY: 123}
         )
-        assert await get_viewer(MagicMock()) == (9, None)
+        assert await get_viewer(make_mocked_request("GET", "/")) == (9, None)
 
     async def test_viewer_session_takes_precedence_over_admin(
         self,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(
-                return_value={
-                    VIEWER_XID_KEY: 7,
-                    VIEWER_NAME_KEY: "Amy",
-                    ADMIN_XID_KEY: 9,
-                    ADMIN_NAME_KEY: "Boss",
-                },
-            ),
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {
+                VIEWER_XID_KEY: 7,
+                VIEWER_NAME_KEY: "Amy",
+                ADMIN_XID_KEY: 9,
+                ADMIN_NAME_KEY: "Boss",
+            }
         )
-        assert await get_viewer(MagicMock()) == (7, "Amy")
+        assert await get_viewer(make_mocked_request("GET", "/")) == (7, "Amy")
 
-    async def test_admin_fallback_non_int_xid(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={ADMIN_XID_KEY: "nope"}),
+    async def test_admin_fallback_non_int_xid(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {ADMIN_XID_KEY: "nope"}
         )
-        assert await get_viewer(MagicMock()) == (None, None)
+        assert await get_viewer(make_mocked_request("GET", "/")) == (None, None)
 
 
 @pytest.mark.asyncio
 class TestHasViewerSession:
-    async def test_true_with_viewer_key(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={VIEWER_XID_KEY: 7}),
+    async def test_true_with_viewer_key(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {VIEWER_XID_KEY: 7}
         )
-        assert await has_viewer_session(MagicMock()) is True
+        assert await has_viewer_session(make_mocked_request("GET", "/")) is True
 
-    async def test_false_with_admin_key_only(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={ADMIN_XID_KEY: 9}),
+    async def test_false_with_admin_key_only(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return(
+            {ADMIN_XID_KEY: 9}
         )
-        assert await has_viewer_session(MagicMock()) is False
+        assert await has_viewer_session(make_mocked_request("GET", "/")) is False
 
-    async def test_false_when_empty(self, mocker: MockerFixture) -> None:
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.get_session",
-            AsyncMock(return_value={}),
-        )
-        assert await has_viewer_session(MagicMock()) is False
+    async def test_false_when_empty(self, decoy: Decoy, stub: Stub) -> None:
+        get_session_fake = stub(viewer_auth, "get_session")
+        decoy.when(await get_session_fake(ANY), ignore_extra_args=True).then_return({})
+        assert await has_viewer_session(make_mocked_request("GET", "/")) is False
 
 
 @contextlib.asynccontextmanager
@@ -224,18 +252,19 @@ def blank_session() -> Session:
     return Session(None, data=None, new=True)
 
 
-def configure_viewer(mocker: MockerFixture) -> None:
-    mocker.patch.object(viewer_auth.settings, "BOT_APPLICATION_ID", "appid-1")
-    mocker.patch.object(viewer_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
+async def configure_viewer(decoy: Decoy, stub: Stub, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(viewer_auth.settings, "BOT_APPLICATION_ID", "appid-1")
+    monkeypatch.setattr(viewer_auth.settings, "BOT_CLIENT_SECRET", "secret-1")
     # Must match the test client's host (127.0.0.1) so `canonical_host_redirect`
     # in `viewer_login` doesn't bounce the request away before issuing state.
-    mocker.patch.object(viewer_auth.settings, "API_BASE_URL", "http://127.0.0.1")
+    monkeypatch.setattr(viewer_auth.settings, "API_BASE_URL", "http://127.0.0.1")
     # The viewer callback now elevates owner/admin identities to a full admin session
     # (`grant_admin_if_authorized`), which consults the database for non-owners. Default
     # the flow to a non-admin identity and stub the DB session so the public-viewer path
     # never touches a real database. Tests that exercise elevation override these.
-    mocker.patch("spellbot.web.api.viewer_auth.db_session_manager", noop_db_session)
-    mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=False))
+    monkeypatch.setattr(viewer_auth, "db_session_manager", noop_db_session)
+    is_admin_fake = stub(users, "is_admin")
+    decoy.when(await is_admin_fake(ANY), ignore_extra_args=True).then_return(False)
 
 
 async def start_viewer_login(client: WebClient) -> str:
@@ -246,15 +275,21 @@ async def start_viewer_login(client: WebClient) -> str:
 
 @pytest.mark.asyncio
 class TestViewerLogin:
-    async def test_unconfigured(self, client: WebClient, mocker: MockerFixture) -> None:
-        mocker.patch.object(viewer_auth.settings, "BOT_APPLICATION_ID", None)
-        mocker.patch.object(viewer_auth.settings, "BOT_CLIENT_SECRET", None)
+    async def test_unconfigured(self, client: WebClient, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(viewer_auth.settings, "BOT_APPLICATION_ID", None)
+        monkeypatch.setattr(viewer_auth.settings, "BOT_CLIENT_SECRET", None)
         resp = await client.get("/queues/login")
         assert resp.status == 503
         assert "Sign-in isn't set up here" in await resp.text()
 
-    async def test_redirects_to_discord(self, client: WebClient, mocker: MockerFixture) -> None:
-        configure_viewer(mocker)
+    async def test_redirects_to_discord(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await configure_viewer(decoy, stub, monkeypatch)
         resp = await client.get("/queues/login", allow_redirects=False)
         assert resp.status == 302
         loc = resp.headers["Location"]
@@ -267,18 +302,16 @@ class TestViewerLogin:
     async def test_redirects_to_canonical_host_when_on_vanity_alias(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
         # Simulate the user arriving via a vanity hostname (e.g.
         # `queues.spellbot.io`). The session cookie set here would not be
         # visible on the canonical callback host, so the handler must bounce
         # the request to the canonical host before issuing OAuth state.
-        configure_viewer(mocker)
-        mocker.patch.object(
-            viewer_auth.settings,
-            "API_BASE_URL",
-            "https://prod.app.spellbot.io",
-        )
+        await configure_viewer(decoy, stub, monkeypatch)
+        monkeypatch.setattr(viewer_auth.settings, "API_BASE_URL", "https://prod.app.spellbot.io")
         resp = await client.get("/queues/login?foo=bar", allow_redirects=False)
         assert resp.status == 302
         assert resp.headers["Location"] == "https://prod.app.spellbot.io/queues/login?foo=bar"
@@ -286,64 +319,84 @@ class TestViewerLogin:
 
 @pytest.mark.asyncio
 class TestViewerOauthCallback:
-    async def test_unconfigured(self, client: WebClient, mocker: MockerFixture) -> None:
-        mocker.patch.object(viewer_auth.settings, "BOT_APPLICATION_ID", None)
-        mocker.patch.object(viewer_auth.settings, "BOT_CLIENT_SECRET", None)
+    async def test_unconfigured(self, client: WebClient, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(viewer_auth.settings, "BOT_APPLICATION_ID", None)
+        monkeypatch.setattr(viewer_auth.settings, "BOT_CLIENT_SECRET", None)
         resp = await client.get("/queues/oauth/callback")
         assert resp.status == 503
 
-    async def test_missing_state(self, client: WebClient, mocker: MockerFixture) -> None:
-        configure_viewer(mocker)
+    async def test_missing_state(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await configure_viewer(decoy, stub, monkeypatch)
         resp = await client.get("/queues/oauth/callback?code=abc")
         assert resp.status == 400
 
-    async def test_state_mismatch(self, client: WebClient, mocker: MockerFixture) -> None:
-        configure_viewer(mocker)
+    async def test_state_mismatch(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await configure_viewer(decoy, stub, monkeypatch)
         await start_viewer_login(client)
         resp = await client.get("/queues/oauth/callback?code=abc&state=wrong")
         assert resp.status == 400
 
-    async def test_token_exchange_fails(self, client: WebClient, mocker: MockerFixture) -> None:
-        configure_viewer(mocker)
+    async def test_token_exchange_fails(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await configure_viewer(decoy, stub, monkeypatch)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(token_status=400),
-        )
+        serve_httpx(monkeypatch, discord_oauth(token_status=400))
         resp = await client.get(f"/queues/oauth/callback?code=abc&state={state}")
         assert resp.status == 401
 
-    async def test_http_error(self, client: WebClient, mocker: MockerFixture) -> None:
-        configure_viewer(mocker)
+    async def test_http_error(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await configure_viewer(decoy, stub, monkeypatch)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(raise_http=True),
-        )
+        serve_httpx(monkeypatch, raising())
         resp = await client.get(f"/queues/oauth/callback?code=abc&state={state}")
         assert resp.status == 502
 
-    async def test_bad_user_payload(self, client: WebClient, mocker: MockerFixture) -> None:
-        configure_viewer(mocker)
+    async def test_bad_user_payload(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await configure_viewer(decoy, stub, monkeypatch)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"no_id": True}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"no_id": True}))
         resp = await client.get(f"/queues/oauth/callback?code=abc&state={state}")
         assert resp.status == 401
 
     async def test_success_redirects_to_queues_with_my(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        configure_viewer(mocker)
+        await configure_viewer(decoy, stub, monkeypatch)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "42", "global_name": "Amy"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "global_name": "Amy"}))
         resp = await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,
@@ -354,15 +407,14 @@ class TestViewerOauthCallback:
     async def test_success_redirects_to_safe_next(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        configure_viewer(mocker)
+        await configure_viewer(decoy, stub, monkeypatch)
         login = await client.get("/queues/login?next=/g/123", allow_redirects=False)
         state = parse_qs(urlparse(login.headers["Location"]).query)["state"][0]
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "u"}))
         resp = await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,
@@ -373,18 +425,17 @@ class TestViewerOauthCallback:
     async def test_unsafe_next_falls_back_to_default(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        configure_viewer(mocker)
+        await configure_viewer(decoy, stub, monkeypatch)
         login = await client.get(
             "/queues/login?next=https://evil.example/x",
             allow_redirects=False,
         )
         state = parse_qs(urlparse(login.headers["Location"]).query)["state"][0]
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "u"}))
         resp = await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,
@@ -392,12 +443,18 @@ class TestViewerOauthCallback:
         assert resp.status == 302
         assert resp.headers["Location"] == "/queues?my=1"
 
-    async def test_identify_returns_none(self, client: WebClient, mocker: MockerFixture) -> None:
-        configure_viewer(mocker)
+    async def test_identify_returns_none(
+        self,
+        client: WebClient,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        await configure_viewer(decoy, stub, monkeypatch)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.viewer_auth.fetch_oauth_identify",
-            AsyncMock(return_value=None),
+        fetch_oauth_identify_fake = stub(viewer_auth, "fetch_oauth_identify")
+        decoy.when(await fetch_oauth_identify_fake(ANY, ANY), ignore_extra_args=True).then_return(
+            None
         )
         resp = await client.get(f"/queues/oauth/callback?code=abc&state={state}")
         assert resp.status == 401
@@ -405,14 +462,13 @@ class TestViewerOauthCallback:
     async def test_state_pops_after_success(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        configure_viewer(mocker)
+        await configure_viewer(decoy, stub, monkeypatch)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "u"}))
         await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,
@@ -427,14 +483,13 @@ class TestViewerLogout:
     async def test_logout_clears_viewer_keys(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        configure_viewer(mocker)
+        await configure_viewer(decoy, stub, monkeypatch)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "u"}))
         await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,
@@ -446,8 +501,8 @@ class TestViewerLogout:
 
 @pytest.mark.asyncio
 class TestGrantAdminIfAuthorized:
-    async def test_owner_gets_admin_keys(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 42)
+    async def test_owner_gets_admin_keys(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(viewer_auth.settings, "OWNER_XID", 42)
         session = blank_session()
         await viewer_auth.grant_admin_if_authorized(
             session,
@@ -457,22 +512,30 @@ class TestGrantAdminIfAuthorized:
         assert session[ADMIN_XID_KEY] == 42
         assert session[ADMIN_NAME_KEY] == "Owner"
 
-    async def test_owner_check_skips_database(self, mocker: MockerFixture) -> None:
+    async def test_owner_check_skips_database(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         # An owner is recognized without ever consulting the database.
-        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 42)
-        is_admin = mocker.patch(
-            "spellbot.services.users.is_admin",
-            AsyncMock(return_value=False),
-        )
+        monkeypatch.setattr(viewer_auth.settings, "OWNER_XID", 42)
+        is_admin = stub(users, "is_admin")
         session = blank_session()
         await viewer_auth.grant_admin_if_authorized(session, {"id": "42"}, 42)
         assert session[ADMIN_XID_KEY] == 42
-        is_admin.assert_not_awaited()
+        decoy.verify(await is_admin(ANY), times=0, ignore_extra_args=True)
 
-    async def test_dashboard_admin_gets_admin_keys(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 99)
-        mocker.patch("spellbot.web.api.viewer_auth.db_session_manager", noop_db_session)
-        mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=True))
+    async def test_dashboard_admin_gets_admin_keys(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(viewer_auth.settings, "OWNER_XID", 99)
+        monkeypatch.setattr(viewer_auth, "db_session_manager", noop_db_session)
+        is_admin_fake = stub(users, "is_admin")
+        decoy.when(await is_admin_fake(ANY), ignore_extra_args=True).then_return(True)
         session = blank_session()
         await viewer_auth.grant_admin_if_authorized(
             session,
@@ -482,10 +545,16 @@ class TestGrantAdminIfAuthorized:
         assert session[ADMIN_XID_KEY] == 7
         assert session[ADMIN_NAME_KEY] == "mod"
 
-    async def test_non_admin_gets_no_admin_keys(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 99)
-        mocker.patch("spellbot.web.api.viewer_auth.db_session_manager", noop_db_session)
-        mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=False))
+    async def test_non_admin_gets_no_admin_keys(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(viewer_auth.settings, "OWNER_XID", 99)
+        monkeypatch.setattr(viewer_auth, "db_session_manager", noop_db_session)
+        is_admin_fake = stub(users, "is_admin")
+        decoy.when(await is_admin_fake(ANY), ignore_extra_args=True).then_return(False)
         session = blank_session()
         await viewer_auth.grant_admin_if_authorized(session, {"id": "7"}, 7)
         assert ADMIN_XID_KEY not in session
@@ -499,14 +568,13 @@ class TestAdminIsolation:
     async def test_viewer_session_does_not_unlock_admin(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        configure_viewer(mocker)  # defaults this identity to a non-admin
+        await configure_viewer(decoy, stub, monkeypatch)  # defaults this identity to a non-admin
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "42", "username": "u"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "u"}))
         callback = await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,
@@ -520,17 +588,16 @@ class TestAdminIsolation:
     async def test_owner_viewer_login_unlocks_admin(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # Logging in as the owner from the public /queues flow also starts an admin
         # session, so /admin/* is reachable without a separate /admin/login.
-        configure_viewer(mocker)
-        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 42)
+        await configure_viewer(decoy, stub, monkeypatch)
+        monkeypatch.setattr(viewer_auth.settings, "OWNER_XID", 42)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "42", "username": "owner"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "42", "username": "owner"}))
         callback = await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,
@@ -542,16 +609,16 @@ class TestAdminIsolation:
     async def test_dashboard_admin_viewer_login_unlocks_admin(
         self,
         client: WebClient,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        configure_viewer(mocker)
-        mocker.patch.object(viewer_auth.settings, "OWNER_XID", 99)
-        mocker.patch("spellbot.services.users.is_admin", AsyncMock(return_value=True))
+        await configure_viewer(decoy, stub, monkeypatch)
+        monkeypatch.setattr(viewer_auth.settings, "OWNER_XID", 99)
+        is_admin_fake = stub(users, "is_admin")
+        decoy.when(await is_admin_fake(ANY), ignore_extra_args=True).then_return(True)
         state = await start_viewer_login(client)
-        mocker.patch(
-            "spellbot.web.api.oauth.httpx.AsyncClient",
-            return_value=make_httpx_client(identify_json={"id": "7", "username": "mod"}),
-        )
+        serve_httpx(monkeypatch, discord_oauth(identify_json={"id": "7", "username": "mod"}))
         callback = await client.get(
             f"/queues/oauth/callback?code=abc&state={state}",
             allow_redirects=False,

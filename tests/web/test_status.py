@@ -4,15 +4,19 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from spellbot.settings import settings
 from spellbot.shard_status import ShardStatus
+from spellbot.web.api import status
 from spellbot.web.api.status import format_latency, format_time_ago, get_int, get_latency_class
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
 
 
 class TestGetInt:
@@ -90,17 +94,25 @@ class TestGetLatencyClass:
 
 @pytest.mark.asyncio
 class TestWebStatus:
-    async def test_status_no_redis(self, client: ClientSession) -> None:
+    async def test_status_no_redis(
+        self,
+        client: ClientSession,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test status page when Redis is not configured."""
-        with patch("spellbot.shard_status.settings") as mock_settings:
-            mock_settings.REDIS_URL = None
-            resp = await client.get("/status")
-            assert resp.status == 200
-            text = await resp.text()
-            assert "SpellBot Status" in text
-            assert "No shard data available" in text
+        monkeypatch.setattr(settings, "REDIS_URL", None)
+        resp = await client.get("/status")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "SpellBot Status" in text
+        assert "No shard data available" in text
 
-    async def test_status_with_shards(self, client: ClientSession) -> None:
+    async def test_status_with_shards(
+        self,
+        client: ClientSession,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         """Test status page with shard data."""
         mock_statuses = [
             ShardStatus(
@@ -126,22 +138,21 @@ class TestWebStatus:
             "last_updated": "2026-01-13T12:00:00+00:00",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status")
-            assert resp.status == 200
-            text = await resp.text()
-            assert "SpellBot Status" in text
-            assert "Shard 0" in text
-            assert "Shard 1" in text
-            assert "45.5ms" in text
-            assert "250" in text  # total guilds
-            assert "healthy" in text.lower()
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "SpellBot Status" in text
+        assert "Shard 0" in text
+        assert "Shard 1" in text
+        assert "45.5ms" in text
+        assert "250" in text  # total guilds
+        assert "healthy" in text.lower()
 
-    async def test_status_degraded(self, client: ClientSession) -> None:
+    async def test_status_degraded(self, client: ClientSession, decoy: Decoy, stub: Stub) -> None:
         """Test status page when some shards are down."""
         mock_statuses = [
             ShardStatus(
@@ -167,18 +178,17 @@ class TestWebStatus:
             "last_updated": "2026-01-13T12:00:00+00:00",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status")
-            assert resp.status == 200
-            text = await resp.text()
-            assert "degraded" in text.lower()
-            assert "Not Ready" in text
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "degraded" in text.lower()
+        assert "Not Ready" in text
 
-    async def test_status_upgrading(self, client: ClientSession) -> None:
+    async def test_status_upgrading(self, client: ClientSession, decoy: Decoy, stub: Stub) -> None:
         """Test status page during upgrade (multiple versions)."""
         mock_statuses = [
             ShardStatus(
@@ -205,17 +215,16 @@ class TestWebStatus:
             "version": "2.0.0",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status")
-            assert resp.status == 200
-            text = await resp.text()
-            assert "upgrading" in text.lower()
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "upgrading" in text.lower()
 
-    async def test_status_all_down(self, client: ClientSession) -> None:
+    async def test_status_all_down(self, client: ClientSession, decoy: Decoy, stub: Stub) -> None:
         """Test status page when all shards are down."""
         mock_statuses = [
             ShardStatus(
@@ -241,17 +250,21 @@ class TestWebStatus:
             "last_updated": "2026-01-13T12:00:00+00:00",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status")
-            assert resp.status == 200
-            text = await resp.text()
-            assert "down" in text.lower()
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "down" in text.lower()
 
-    async def test_status_high_latency(self, client: ClientSession) -> None:
+    async def test_status_high_latency(
+        self,
+        client: ClientSession,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         """Test status page with high latency shards."""
         mock_statuses = [
             ShardStatus(
@@ -269,20 +282,24 @@ class TestWebStatus:
             "last_updated": "2026-01-13T12:00:00+00:00",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status")
-            assert resp.status == 200
-            text = await resp.text()
-            assert "300.0ms" in text
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status")
+        assert resp.status == 200
+        text = await resp.text()
+        assert "300.0ms" in text
 
 
 @pytest.mark.asyncio
 class TestWebStatusJson:
-    async def test_status_json_healthy(self, client: ClientSession) -> None:
+    async def test_status_json_healthy(
+        self,
+        client: ClientSession,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         """Test JSON status endpoint when all shards are healthy."""
         mock_statuses = [
             ShardStatus(
@@ -309,24 +326,28 @@ class TestWebStatusJson:
             "version": "1.0.0",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status.json")
-            assert resp.status == 200
-            data = await resp.json()
-            assert data["status"]["indicator"] == "operational"
-            assert data["status"]["description"] == "All Systems Operational"
-            assert data["shards"]["total"] == 2
-            assert data["shards"]["ready"] == 2
-            assert len(data["shards"]["data"]) == 2
-            assert data["guilds"] == 250
-            assert data["version"] == "1.0.0"
-            assert data["upgrade_in_progress"] is False
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status.json")
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["status"]["indicator"] == "operational"
+        assert data["status"]["description"] == "All Systems Operational"
+        assert data["shards"]["total"] == 2
+        assert data["shards"]["ready"] == 2
+        assert len(data["shards"]["data"]) == 2
+        assert data["guilds"] == 250
+        assert data["version"] == "1.0.0"
+        assert data["upgrade_in_progress"] is False
 
-    async def test_status_json_degraded(self, client: ClientSession) -> None:
+    async def test_status_json_degraded(
+        self,
+        client: ClientSession,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         """Test JSON status endpoint when some shards are down."""
         mock_statuses = [
             ShardStatus(
@@ -353,18 +374,17 @@ class TestWebStatusJson:
             "version": "1.0.0",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status.json")
-            assert resp.status == 200
-            data = await resp.json()
-            assert data["status"]["indicator"] == "degraded_performance"
-            assert data["shards"]["ready"] == 1
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status.json")
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["status"]["indicator"] == "degraded_performance"
+        assert data["shards"]["ready"] == 1
 
-    async def test_status_json_down(self, client: ClientSession) -> None:
+    async def test_status_json_down(self, client: ClientSession, decoy: Decoy, stub: Stub) -> None:
         """Test JSON status endpoint when all shards are down."""
         mock_statuses = [
             ShardStatus(
@@ -383,17 +403,21 @@ class TestWebStatusJson:
             "version": "1.0.0",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status.json")
-            assert resp.status == 200
-            data = await resp.json()
-            assert data["status"]["indicator"] == "major_outage"
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status.json")
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["status"]["indicator"] == "major_outage"
 
-    async def test_status_json_upgrading(self, client: ClientSession) -> None:
+    async def test_status_json_upgrading(
+        self,
+        client: ClientSession,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         """Test JSON status endpoint during upgrade."""
         mock_statuses = [
             ShardStatus(
@@ -420,25 +444,28 @@ class TestWebStatusJson:
             "version": "1.1.0",
         }
 
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=(mock_statuses, mock_metadata),
-        ):
-            resp = await client.get("/status.json")
-            assert resp.status == 200
-            data = await resp.json()
-            assert data["status"]["indicator"] == "maintenance"
-            assert data["upgrade_in_progress"] is True
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            (mock_statuses, mock_metadata)
+        )
+        resp = await client.get("/status.json")
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["status"]["indicator"] == "maintenance"
+        assert data["upgrade_in_progress"] is True
 
-    async def test_status_json_no_data(self, client: ClientSession) -> None:
+    async def test_status_json_no_data(
+        self,
+        client: ClientSession,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
         """Test JSON status endpoint when no data is available."""
-        with patch(
-            "spellbot.web.api.status.get_all_shard_statuses",
-            new_callable=AsyncMock,
-            return_value=([], None),
-        ):
-            resp = await client.get("/status.json")
-            assert resp.status == 200
-            data = await resp.json()
-            assert data["status"]["indicator"] == "unknown"
+        get_all_shard_statuses_fake = stub(status, "get_all_shard_statuses")
+        decoy.when(await get_all_shard_statuses_fake(), ignore_extra_args=True).then_return(
+            ([], None)
+        )
+        resp = await client.get("/status.json")
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["status"]["indicator"] == "unknown"

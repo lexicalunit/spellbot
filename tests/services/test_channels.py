@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
 
+import discord
 import pytest
 
 from spellbot.database import DatabaseSession
@@ -12,20 +12,23 @@ from spellbot.models import Channel, Guild
 from spellbot.services import channels
 from spellbot.services.channels import channel_cache
 from tests.factories import ChannelFactory, GuildFactory
+from tests.mocks.decoys import ANY
 
 if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
 
 pytestmark = pytest.mark.use_db
 
 
 @pytest.mark.asyncio
 class TestServiceChannels:
-    async def test_channels_upsert(self, guild: Guild) -> None:
-        discord_channel = MagicMock()
+    async def test_channels_upsert(self, guild: Guild, decoy: Decoy) -> None:
+        discord_channel = decoy.mock(cls=discord.TextChannel)
         discord_channel.id = 201
         discord_channel.name = "channel-name"
-        discord_guild = MagicMock()
+        discord_guild = decoy.mock(cls=discord.Guild)
         discord_guild.id = guild.xid
         discord_channel.guild = discord_guild
         await channels.upsert(discord_channel)
@@ -56,11 +59,11 @@ class TestServiceChannels:
         assert data is not None
         assert data.default_seats == channel.default_seats
 
-    async def test_channels_forget(self, guild: Guild) -> None:
-        discord_channel = MagicMock()
+    async def test_channels_forget(self, guild: Guild, decoy: Decoy) -> None:
+        discord_channel = decoy.mock(cls=discord.TextChannel)
         discord_channel.id = 999
         discord_channel.name = "test-channel"
-        discord_guild = MagicMock()
+        discord_guild = decoy.mock(cls=discord.Guild)
         discord_guild.id = guild.xid
         discord_channel.guild = discord_guild
 
@@ -88,17 +91,19 @@ class TestServiceChannels:
     async def test_channels_upsert_cached_but_deleted(
         self,
         guild: Guild,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        discord_channel = MagicMock()
+        discord_channel = decoy.mock(cls=discord.TextChannel)
         discord_channel.id = 998
         discord_channel.name = "test-channel"
-        discord_guild = MagicMock()
+        discord_guild = decoy.mock(cls=discord.Guild)
         discord_guild.id = guild.xid
         discord_channel.guild = discord_guild
 
         # Simulate another process (the web app) deleting a channel this process has cached.
-        mocker.patch.object(channels, "is_cached", return_value=True)
+        is_cached_fake = stub(channels, "is_cached")
+        decoy.when(is_cached_fake(xid=ANY, name=ANY), ignore_extra_args=True).then_return(True)
         assert await channels.select(discord_channel.id) is None
 
         data = await channels.upsert(discord_channel)
@@ -141,9 +146,15 @@ class TestServiceChannelsUpdateSettings:
 
 
 class TestIsCached:
-    def test_cache_outside_pytest(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(channels, "running_in_pytest", return_value=False)
-        mocker.patch.dict(channel_cache, {1: "general"}, clear=True)
+    def test_cache_outside_pytest(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        running_in_pytest_fake = stub(channels, "running_in_pytest")
+        decoy.when(running_in_pytest_fake(), ignore_extra_args=True).then_return(False)
+        monkeypatch.setattr(channels, "channel_cache", {1: "general"})
         assert channels.is_cached(1, "general") is True
         assert channels.is_cached(1, "renamed") is False
         assert channels.is_cached(2, "general") is False

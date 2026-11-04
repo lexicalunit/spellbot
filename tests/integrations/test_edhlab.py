@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+import json
+from typing import TYPE_CHECKING
 
 import httpx
 import pytest
@@ -10,201 +11,116 @@ import pytest
 import spellbot.integrations.edhlab as edhlab_module
 from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket
+from spellbot.integrations import http_errors
 from spellbot.integrations.edhlab import fetch_edhlab_link, generate_link
-from tests.mocks import create_mock_game
+from tests.mocks import create_mock_game, decoys
+from tests.mocks.http import client_for, in_order, serve_httpx
+
+if TYPE_CHECKING:
+    from tests.fixtures import Stub
+
+CREATE_URL = "https://api.edhlab.gg/create-game"
 
 
+@pytest.fixture(autouse=True)
+def edhlab_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(edhlab_module.settings, "EDHLAB_API_KEY", "test_key")
+    monkeypatch.setattr(edhlab_module.settings, "EDHLAB_CREATE", CREATE_URL)
+
+
+def created(game_url: str | None) -> httpx.Response:
+    return httpx.Response(200, json={"gameUrl": game_url} if game_url else {})
+
+
+@pytest.mark.asyncio
 class TestFetchEdhlabLink:
-    @pytest.mark.asyncio
     async def test_fetch_edhlab_link_success(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"gameUrl": "https://edhlab.gg/game/123"}
-        mock_client.post = AsyncMock(return_value=mock_response)
+        requests: list[httpx.Request] = []
 
-        game = create_mock_game(
-            game_id=42,
-            bracket=GameBracket.NONE.value,
-        )
+        def respond(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return created("https://edhlab.gg/game/123")
 
-        with (
-            patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_api_key"),
-            patch.object(
-                edhlab_module.settings,
-                "EDHLAB_CREATE",
-                "https://api.edhlab.gg/create-game",
-            ),
-        ):
-            result = await fetch_edhlab_link(mock_client, game)
+        game = create_mock_game(game_id=42, bracket=GameBracket.NONE.value)
+        result = await fetch_edhlab_link(client_for(respond), game)
 
         assert result == {"gameUrl": "https://edhlab.gg/game/123"}
-        mock_client.post.assert_called_once()
-        call_args = mock_client.post.call_args
-        payload = call_args.kwargs["json"]
+        [request] = requests
+        assert str(request.url) == CREATE_URL
+        assert request.headers["Authorization"] == "Bearer test_key"
         # No bracket when NONE
-        assert "bracket" not in payload
+        assert json.loads(request.content) == {}
 
-    @pytest.mark.asyncio
     async def test_fetch_edhlab_link_with_bracket(self) -> None:
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"gameUrl": "https://edhlab.gg/game/456"}
-        mock_client.post = AsyncMock(return_value=mock_response)
+        requests: list[httpx.Request] = []
 
-        game = create_mock_game(
-            game_id=99,
-            bracket=GameBracket.BRACKET_2.value,
-        )
+        def respond(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return created("https://edhlab.gg/game/456")
 
-        with (
-            patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_api_key"),
-            patch.object(
-                edhlab_module.settings,
-                "EDHLAB_CREATE",
-                "https://api.edhlab.gg/create-game",
-            ),
-        ):
-            result = await fetch_edhlab_link(mock_client, game)
+        game = create_mock_game(game_id=99, bracket=GameBracket.BRACKET_2.value)
+        result = await fetch_edhlab_link(client_for(respond), game)
 
         assert result == {"gameUrl": "https://edhlab.gg/game/456"}
-        payload = mock_client.post.call_args.kwargs["json"]
         # BRACKET_2.value (3) -> bracket = 3 - 1 = 2
-        assert payload["bracket"] == 2
+        assert json.loads(requests[0].content) == {"bracket": 2}
 
 
+@pytest.mark.asyncio
 class TestGenerateLink:
-    @pytest.mark.asyncio
-    async def test_generate_link_no_api_key(self) -> None:
-        game = create_mock_game(game_id=1)
+    async def test_generate_link_no_api_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(edhlab_module.settings, "EDHLAB_API_KEY", "")
+        assert await generate_link(create_mock_game(game_id=1)) == GameLinkDetails()
 
-        with patch.object(edhlab_module.settings, "EDHLAB_API_KEY", ""):
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-
-    @pytest.mark.asyncio
-    async def test_generate_link_success(self) -> None:
-        game = create_mock_game(
-            game_id=1,
-            bracket=GameBracket.NONE.value,
-        )
-
-        with (
-            patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_key"),
-            patch.object(
-                edhlab_module,
-                "fetch_edhlab_link",
-                AsyncMock(return_value={"gameUrl": "https://edhlab.gg/game/123"}),
-            ),
-        ):
-            result = await generate_link(game)
-
+    async def test_generate_link_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        serve_httpx(monkeypatch, in_order(created("https://edhlab.gg/game/123")))
+        result = await generate_link(create_mock_game(game_id=1))
         assert result == GameLinkDetails("https://edhlab.gg/game/123")
 
-    @pytest.mark.asyncio
-    async def test_generate_link_retries_on_failure_then_succeeds(self) -> None:
+    async def test_generate_link_retries_on_failure_then_succeeds(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        stub: Stub,
+    ) -> None:
         """Test that generate_link retries after failure and succeeds on second attempt."""
-        game = create_mock_game(
-            game_id=1,
-            bracket=GameBracket.NONE.value,
+        stub(http_errors, "add_span_error")
+        requests = serve_httpx(
+            monkeypatch,
+            in_order(httpx.ConnectError, created("https://edhlab.gg/game/789")),
         )
 
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {"gameUrl": "https://edhlab.gg/game/789"}
-
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(side_effect=[Exception("Connection error"), mock_response])
-
-        with (
-            patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_key"),
-            patch.object(
-                edhlab_module.settings,
-                "EDHLAB_CREATE",
-                "https://api.edhlab.gg/create-game",
-            ),
-            patch("httpx.AsyncClient") as mock_client_class,
-            patch("spellbot.integrations.http_errors.add_span_error"),
-        ):
-            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
+        result = await generate_link(create_mock_game(game_id=1))
 
         assert result == GameLinkDetails("https://edhlab.gg/game/789")
-        assert mock_client.post.call_count == 2
+        assert len(requests) == 2
 
-    @pytest.mark.asyncio
-    async def test_generate_link_fails_after_all_retries(self) -> None:
+    async def test_generate_link_fails_after_all_retries(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        stub: Stub,
+    ) -> None:
         """Test that generate_link returns None after exhausting all retry attempts."""
-        game = create_mock_game(
-            game_id=1,
-            bracket=GameBracket.NONE.value,
-        )
+        stub(http_errors, "add_span_error")
+        attempts = [httpx.ConnectError] * edhlab_module.RETRY_ATTEMPTS
+        requests = serve_httpx(monkeypatch, in_order(*attempts))
 
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(side_effect=Exception("Connection error"))
+        assert await generate_link(create_mock_game(game_id=1)) == GameLinkDetails()
+        assert len(requests) == edhlab_module.RETRY_ATTEMPTS
 
-        with (
-            patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_key"),
-            patch.object(
-                edhlab_module.settings,
-                "EDHLAB_CREATE",
-                "https://api.edhlab.gg/create-game",
-            ),
-            patch("httpx.AsyncClient") as mock_client_class,
-            patch("spellbot.integrations.http_errors.add_span_error"),
-        ):
-            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-        assert mock_client.post.call_count == edhlab_module.RETRY_ATTEMPTS
-
-    @pytest.mark.asyncio
-    async def test_generate_link_returns_none_when_data_is_empty(self) -> None:
+    async def test_generate_link_returns_none_when_data_is_empty(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that generate_link returns None when fetch_edhlab_link returns empty dict."""
-        game = create_mock_game(
-            game_id=1,
-            bracket=GameBracket.NONE.value,
-        )
+        serve_httpx(monkeypatch, in_order(created(None)))
+        assert await generate_link(create_mock_game(game_id=1)) == GameLinkDetails()
 
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {}
-
-        mock_client = MagicMock(spec=httpx.AsyncClient)
-        mock_client.post = AsyncMock(return_value=mock_response)
-
-        with (
-            patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_key"),
-            patch.object(
-                edhlab_module.settings,
-                "EDHLAB_CREATE",
-                "https://api.edhlab.gg/create-game",
-            ),
-            patch("httpx.AsyncClient") as mock_client_class,
-        ):
-            mock_client_class.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-            mock_client_class.return_value.__aexit__ = AsyncMock(return_value=None)
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
-
-    @pytest.mark.asyncio
-    async def test_generate_link_zero_retry_attempts(self) -> None:
+    async def test_generate_link_zero_retry_attempts(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that generate_link returns None when RETRY_ATTEMPTS is 0."""
-        game = create_mock_game(
-            game_id=1,
-            bracket=GameBracket.NONE.value,
+        monkeypatch.setattr(edhlab_module, "RETRY_ATTEMPTS", 0)
+        monkeypatch.setattr(
+            edhlab_module,
+            "fetch_edhlab_link",
+            decoys.async_raising(AssertionError("no attempts means no requests")),
         )
-
-        with (
-            patch.object(edhlab_module.settings, "EDHLAB_API_KEY", "test_key"),
-            patch.object(edhlab_module, "RETRY_ATTEMPTS", 0),
-        ):
-            result = await generate_link(game)
-
-        assert result == GameLinkDetails()
+        assert await generate_link(create_mock_game(game_id=1)) == GameLinkDetails()

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
 import pytest
 import pytest_asyncio
 
-from spellbot import redis_client
+from spellbot import SpellBot, redis_client, shard_status
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
 from spellbot.shard_status import (
@@ -18,9 +18,35 @@ from spellbot.shard_status import (
     get_all_shard_statuses,
     update_shard_status,
 )
+from tests.mocks.redis import FakeRedis, serve_redis
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    from decoy import Decoy
+
+METADATA_KEY = f"{SHARD_STATUS_PREFIX}metadata"
+
+
+def one_shard_bot(decoy: Decoy, *, latency: float | None = 0.045, guilds: int = 1) -> SpellBot:
+    """Build a bot running a single, connected shard 0 that holds `guilds` guilds."""
+    shard = decoy.mock(cls=discord.ShardInfo)
+    # discord.py types `latency` as always set, but `update_shard_status` guards against `None`.
+    decoy.when(shard.latency).then_return(latency)  # ty: ignore[invalid-argument-type]
+    decoy.when(shard.is_closed()).then_return(False)
+    guild = decoy.mock(cls=discord.Guild)
+    decoy.when(guild.shard_id).then_return(0)
+    bot = decoy.mock(cls=SpellBot)
+    bot.shard_count = 1
+    bot.ready_shards = {0}
+    decoy.when(bot.shards).then_return({0: shard})
+    decoy.when(bot.get_shard(0)).then_return(shard)
+    decoy.when(bot.guilds).then_return([guild] * guilds)
+    return bot
+
+
+def shard_key(shard_id: int = 0) -> str:
+    return f"{SHARD_STATUS_PREFIX}{shard_id}:{shard_status.__version__}"
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -77,258 +103,122 @@ class TestShardStatus:
 
 @pytest.mark.asyncio
 class TestUpdateShardStatus:
-    async def test_update_shard_status_no_redis(self) -> None:
+    async def test_update_shard_status_no_redis(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that update_shard_status does nothing when Redis is not configured."""
-        with patch("spellbot.shard_status.settings") as mock_settings:
-            mock_settings.REDIS_URL = None
-            bot = MagicMock()
+        monkeypatch.setattr(settings, "REDIS_URL", None)
+        await update_shard_status(decoy.mock(cls=SpellBot))  # Should not raise
 
-            await update_shard_status(bot)  # Should not raise
+    async def test_update_shard_status_with_redis(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that update_shard_status writes the shard and the metadata to Redis."""
+        redis = FakeRedis()
+        serve_redis(monkeypatch, redis)
 
-    async def test_update_shard_status_with_redis(self) -> None:
-        """Test that update_shard_status writes to Redis."""
-        mock_redis = AsyncMock()
-        mock_redis.set = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=None)  # No existing metadata
-        mock_redis.aclose = AsyncMock()
+        await update_shard_status(one_shard_bot(decoy))
 
-        # Mock shard info
-        mock_shard = MagicMock()
-        mock_shard.latency = 0.045
-        mock_shard.is_closed.return_value = False
+        assert set(redis.data) == {shard_key(), METADATA_KEY}
+        shard = json.loads(redis.data[shard_key()])
+        assert (shard["latency_ms"], shard["guild_count"], shard["is_ready"]) == (45.0, 1, True)
+        metadata = json.loads(redis.data[METADATA_KEY])
+        assert (metadata["shard_count"], metadata["total_guilds"]) == (1, 1)
 
-        # Mock guild with shard_id
-        mock_guild = MagicMock()
-        mock_guild.shard_id = 0
-
-        bot = MagicMock()
-        bot.shard_count = 1
-        bot.shards = {0: mock_shard}
-        bot.ready_shards = {0}
-        bot.get_shard.return_value = mock_shard
-        bot.guilds = [mock_guild]
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.return_value = mock_redis
-
-            await update_shard_status(bot)
-
-            # Verify Redis was called
-            assert mock_redis.set.call_count == 2  # One for shard, one for metadata
-
-    async def test_update_shard_status_with_null_latency(self) -> None:
+    async def test_update_shard_status_with_null_latency(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that update_shard_status handles null latency."""
-        mock_redis = AsyncMock()
-        mock_redis.set = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=None)
-        mock_redis.aclose = AsyncMock()
+        redis = FakeRedis()
+        serve_redis(monkeypatch, redis)
 
-        mock_shard = MagicMock()
-        mock_shard.latency = None  # Null latency
-        mock_shard.is_closed.return_value = False
+        await update_shard_status(one_shard_bot(decoy, latency=None))
 
-        mock_guild = MagicMock()
-        mock_guild.shard_id = 0
+        assert json.loads(redis.data[shard_key()])["latency_ms"] is None
 
-        bot = MagicMock()
-        bot.shard_count = 1
-        bot.shards = {0: mock_shard}
-        bot.ready_shards = {0}
-        bot.get_shard.return_value = mock_shard
-        bot.guilds = [mock_guild]
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.return_value = mock_redis
-
-            await update_shard_status(bot)
-
-            # Verify Redis was called
-            assert mock_redis.set.call_count == 2
-            shard_call = mock_redis.set.call_args_list[0]
-            shard_json = json.loads(shard_call[0][1])
-            assert shard_json["latency_ms"] is None
-
-    async def test_update_shard_status_with_existing_newer_version(self) -> None:
+    async def test_update_shard_status_with_existing_newer_version(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test version comparison when existing version is newer."""
-        existing_metadata = json.dumps({"version": "99.99.99", "shard_count": 1})
-        mock_redis = AsyncMock()
-        mock_redis.set = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=existing_metadata)
-        mock_redis.aclose = AsyncMock()
+        existing = json.dumps({"version": "99.99.99", "shard_count": 1})
+        redis = FakeRedis(data={METADATA_KEY: existing})
+        serve_redis(monkeypatch, redis)
 
-        mock_shard = MagicMock()
-        mock_shard.latency = 0.045
-        mock_shard.is_closed.return_value = False
+        await update_shard_status(one_shard_bot(decoy))
 
-        mock_guild = MagicMock()
-        mock_guild.shard_id = 0
+        # The newer version is preserved
+        assert json.loads(redis.data[METADATA_KEY])["version"] == "99.99.99"
 
-        bot = MagicMock()
-        bot.shard_count = 1
-        bot.shards = {0: mock_shard}
-        bot.ready_shards = {0}
-        bot.get_shard.return_value = mock_shard
-        bot.guilds = [mock_guild]
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.return_value = mock_redis
-
-            await update_shard_status(bot)
-
-            # Verify the metadata was set with the newer version preserved
-            assert mock_redis.set.call_count == 2
-            metadata_call = mock_redis.set.call_args_list[1]
-            metadata_json = json.loads(metadata_call[0][1])
-            assert metadata_json["version"] == "99.99.99"
-
-    async def test_update_shard_status_with_invalid_existing_version(self) -> None:
+    async def test_update_shard_status_with_invalid_existing_version(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test version comparison when existing version is invalid."""
-        existing_metadata = json.dumps({"version": "invalid-version", "shard_count": 1})
-        mock_redis = AsyncMock()
-        mock_redis.set = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=existing_metadata)
-        mock_redis.aclose = AsyncMock()
+        existing = json.dumps({"version": "invalid-version", "shard_count": 1})
+        redis = FakeRedis(data={METADATA_KEY: existing})
+        serve_redis(monkeypatch, redis)
 
-        mock_shard = MagicMock()
-        mock_shard.latency = 0.045
-        mock_shard.is_closed.return_value = False
+        await update_shard_status(one_shard_bot(decoy))
 
-        mock_guild = MagicMock()
-        mock_guild.shard_id = 0
+        # Should not raise and should write current version
+        metadata = json.loads(redis.data[METADATA_KEY])
+        assert metadata["version"] == shard_status.__version__
 
-        bot = MagicMock()
-        bot.shard_count = 1
-        bot.shards = {0: mock_shard}
-        bot.ready_shards = {0}
-        bot.get_shard.return_value = mock_shard
-        bot.guilds = [mock_guild]
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.return_value = mock_redis
-
-            await update_shard_status(bot)
-
-            # Should not raise and should write current version
-            assert mock_redis.set.call_count == 2
-
-    async def test_update_shard_status_with_existing_older_version(self) -> None:
+    async def test_update_shard_status_with_existing_older_version(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test version comparison when existing version is older."""
-        existing_metadata = json.dumps({"version": "0.0.1", "shard_count": 1})
-        mock_redis = AsyncMock()
-        mock_redis.set = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=existing_metadata)
-        mock_redis.aclose = AsyncMock()
+        existing = json.dumps({"version": "0.0.1", "shard_count": 1})
+        redis = FakeRedis(data={METADATA_KEY: existing})
+        serve_redis(monkeypatch, redis)
+        monkeypatch.setattr(shard_status, "__version__", "1.0.0")
 
-        mock_shard = MagicMock()
-        mock_shard.latency = 0.045
-        mock_shard.is_closed.return_value = False
+        await update_shard_status(one_shard_bot(decoy))
 
-        mock_guild = MagicMock()
-        mock_guild.shard_id = 0
+        # The current version replaces the older one
+        assert json.loads(redis.data[METADATA_KEY])["version"] == "1.0.0"
 
-        bot = MagicMock()
-        bot.shard_count = 1
-        bot.shards = {0: mock_shard}
-        bot.ready_shards = {0}
-        bot.get_shard.return_value = mock_shard
-        bot.guilds = [mock_guild]
-
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-            patch("spellbot.shard_status.__version__", "1.0.0"),
-        ):
-            mock_from_url.return_value = mock_redis
-
-            await update_shard_status(bot)
-
-            # Verify the metadata was set with the current version (not the older one)
-            assert mock_redis.set.call_count == 2
-            metadata_call = mock_redis.set.call_args_list[1]
-            metadata_json = json.loads(metadata_call[0][1])
-            assert metadata_json["version"] == "1.0.0"
-
-    async def test_update_shard_status_redis_error(self) -> None:
+    async def test_update_shard_status_redis_error(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that Redis errors are handled gracefully."""
-        bot = MagicMock()
-        bot.shard_count = 1
-        bot.shards = {0: MagicMock()}
-        bot.ready_shards = {0}
+        serve_redis(monkeypatch, Exception("Redis connection failed"))
+        await update_shard_status(decoy.mock(cls=SpellBot))  # Should not raise
 
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.side_effect = Exception("Redis connection failed")
-
-            # Should not raise
-            await update_shard_status(bot)
-
-    async def test_update_shard_status_reuses_client(self) -> None:
-        """Repeated calls share a single Redis client (from_url called once)."""
-        mock_redis = AsyncMock()
-        mock_redis.set = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=None)
-        mock_shard = MagicMock()
-        mock_shard.latency = 0.045
-        mock_shard.is_closed.return_value = False
-        bot = MagicMock()
-        bot.shard_count = 1
-        bot.shards = {0: mock_shard}
-        bot.ready_shards = {0}
-        bot.get_shard.return_value = mock_shard
-        bot.guilds = []
-
-        from_url = AsyncMock(return_value=mock_redis)
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch("spellbot.redis_client.aioredis.from_url", from_url),
-        ):
-            await update_shard_status(bot)
-            await update_shard_status(bot)
-            assert from_url.call_count == 1
+    async def test_update_shard_status_reuses_client(
+        self,
+        decoy: Decoy,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Repeated calls share a single Redis client (one connection)."""
+        connections = serve_redis(monkeypatch, FakeRedis())
+        bot = one_shard_bot(decoy, guilds=0)
+        await update_shard_status(bot)
+        await update_shard_status(bot)
+        assert connections == ["redis://localhost"]
 
 
 @pytest.mark.asyncio
 class TestGetAllShardStatuses:
-    async def test_get_all_shard_statuses_no_redis(self) -> None:
+    async def test_get_all_shard_statuses_no_redis(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that get_all_shard_statuses returns empty when Redis is not configured."""
-        with patch.object(settings, "REDIS_URL", None):
-            statuses, metadata = await get_all_shard_statuses()
-            assert statuses == []
-            assert metadata is None
+        monkeypatch.setattr(settings, "REDIS_URL", None)
+        assert await get_all_shard_statuses() == ([], None)
 
-    async def test_get_all_shard_statuses_with_data(self) -> None:
+    async def test_get_all_shard_statuses_with_data(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test that get_all_shard_statuses returns data from Redis."""
         shard_data = {
             "shard_id": 0,
@@ -342,98 +232,37 @@ class TestGetAllShardStatuses:
             "total_guilds": 100,
             "last_updated": "2026-01-13T12:00:00+00:00",
         }
+        data = {METADATA_KEY: json.dumps(metadata), shard_key(): json.dumps(shard_data)}
+        serve_redis(monkeypatch, FakeRedis(data=data))
 
-        mock_redis = AsyncMock()
-        mock_redis.get = AsyncMock(
-            side_effect=[
-                json.dumps(metadata),  # First call for metadata
-                json.dumps(shard_data),  # Second call for shard data
-            ],
-        )
-        mock_redis.scan_iter = MagicMock(return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0"]))
-        mock_redis.aclose = AsyncMock()
+        statuses, meta = await get_all_shard_statuses()
 
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.return_value = mock_redis
+        assert [status.shard_id for status in statuses] == [0]
+        assert meta is not None
+        assert meta["shard_count"] == 1
 
-            statuses, meta = await get_all_shard_statuses()
-
-            assert len(statuses) == 1
-            assert statuses[0].shard_id == 0
-            assert meta is not None
-            assert meta["shard_count"] == 1
-
-    async def test_get_all_shard_statuses_with_empty_data(self) -> None:
-        """Test that empty shard data is handled."""
+    async def test_get_all_shard_statuses_with_empty_data(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A shard key that comes back empty (say, it expired mid-scan) is skipped."""
         metadata = {
             "shard_count": 1,
             "total_guilds": 0,
             "last_updated": "2026-01-13T12:00:00+00:00",
         }
+        data = {METADATA_KEY: json.dumps(metadata), f"{SHARD_STATUS_PREFIX}0:1.0.0": ""}
+        serve_redis(monkeypatch, FakeRedis(data=data))
 
-        mock_redis = AsyncMock()
-        mock_redis.get = AsyncMock(
-            side_effect=[
-                json.dumps(metadata),  # First call for metadata
-                None,  # Second call for shard data returns None
-            ],
-        )
-        mock_redis.scan_iter = MagicMock(
-            return_value=AsyncIterator([f"{SHARD_STATUS_PREFIX}0:1.0.0"]),
-        )
-        mock_redis.aclose = AsyncMock()
+        statuses, meta = await get_all_shard_statuses()
 
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.return_value = mock_redis
+        assert statuses == []
+        assert meta is not None
 
-            statuses, meta = await get_all_shard_statuses()
-
-            # No statuses because the get call returned None
-            assert len(statuses) == 0
-            assert meta is not None
-
-    async def test_get_all_shard_statuses_redis_error(self) -> None:
+    async def test_get_all_shard_statuses_redis_error(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that Redis errors are handled gracefully."""
-        with (
-            patch.object(settings, "REDIS_URL", "redis://localhost"),
-            patch(
-                "spellbot.redis_client.aioredis.from_url",
-                new_callable=AsyncMock,
-            ) as mock_from_url,
-        ):
-            mock_from_url.side_effect = Exception("Redis connection failed")
-
-            statuses, meta = await get_all_shard_statuses()
-
-            assert statuses == []
-            assert meta is None
-
-
-class AsyncIterator:
-    """Helper class to create an async iterator from a list."""
-
-    def __init__(self, items: list[str]) -> None:
-        self.items = items
-        self.index = 0
-
-    def __aiter__(self) -> AsyncIterator:
-        return self
-
-    async def __anext__(self) -> str:
-        if self.index >= len(self.items):
-            raise StopAsyncIteration
-        item = self.items[self.index]
-        self.index += 1
-        return item
+        serve_redis(monkeypatch, Exception("Redis connection failed"))
+        assert await get_all_shard_statuses() == ([], None)

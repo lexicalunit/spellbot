@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import select
@@ -15,10 +14,10 @@ from spellbot.models import Channel, Guild, User
 
 if TYPE_CHECKING:
     import discord
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
 
     from spellbot import SpellBot
-    from tests.fixtures import Factories
+    from tests.fixtures import Factories, Stub
 
 pytestmark = pytest.mark.use_db
 
@@ -52,9 +51,9 @@ class TestBaseActionCreate:
         self,
         bot: SpellBot,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
     ) -> None:
-        mocker.patch.object(interaction, "guild", None)
+        decoy.when(interaction.guild).then_return(None)
         async with BlockAction.create(bot, interaction) as action:
             assert action.guild_data is None
             assert action.user_data is not None
@@ -65,9 +64,9 @@ class TestBaseActionCreate:
         self,
         bot: SpellBot,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        mocker.patch.object(interaction, "channel", None)
+        monkeypatch.setattr(interaction, "channel", None)
         async with BlockAction.create(bot, interaction):
             pass
         assert (await DatabaseSession.execute(select(Channel))).scalars().all() == []
@@ -77,20 +76,26 @@ class TestBaseActionCreate:
         self,
         bot: SpellBot,
         interaction: discord.Interaction,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        rollback = mocker.patch.object(DatabaseSession, "rollback", AsyncMock())
+        rollback = stub(DatabaseSession, "rollback")
         with pytest.raises(RuntimeError, match="boom"):
             async with BlockAction.create(bot, interaction):
                 raise RuntimeError("boom")
-        rollback.assert_awaited_once()
+        decoy.verify(await rollback(), times=1, ignore_extra_args=True)
 
 
 @pytest.mark.asyncio
 class TestTasksActionCreate:
-    async def test_unhandled_error_rolls_back(self, bot: SpellBot, mocker: MockerFixture) -> None:
-        rollback = mocker.patch.object(DatabaseSession, "rollback", AsyncMock())
+    async def test_unhandled_error_rolls_back(
+        self,
+        bot: SpellBot,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        rollback = stub(DatabaseSession, "rollback")
         with pytest.raises(RuntimeError, match="boom"):
             async with TasksAction.create(bot):
                 raise RuntimeError("boom")
-        rollback.assert_awaited_once()
+        decoy.verify(await rollback(), times=1, ignore_extra_args=True)

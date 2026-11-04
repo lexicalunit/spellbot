@@ -4,138 +4,159 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock, MagicMock
+from typing import TYPE_CHECKING
 
 import httpx
 import pytest
 
 from spellbot.web.api import moderation
+from tests.mocks.decoys import ANY
+from tests.mocks.http import in_order, raising, serve_httpx
 
 if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+    from collections.abc import Mapping, Sequence
+
+    from decoy import Decoy
+
+    from tests.fixtures import Stub
+    from tests.mocks.http import JSON
 
 
-def make_httpx_client(responses: list[MagicMock]) -> MagicMock:
-    """Build a mock httpx.AsyncClient whose `get` returns `responses` in order."""
-    inner = MagicMock()
-    inner.get = AsyncMock(side_effect=responses)
-    cm = MagicMock()
-    cm.__aenter__ = AsyncMock(return_value=inner)
-    cm.__aexit__ = AsyncMock(return_value=None)
-    return cm
+def guild_response(owner_id: str, roles: Sequence[Mapping[str, JSON]]) -> httpx.Response:
+    return httpx.Response(200, json={"owner_id": owner_id, "roles": roles})
 
 
-def guild_response(owner_id: str, roles: list[dict[str, Any]]) -> MagicMock:
-    resp = MagicMock()
-    resp.status_code = 200
-    resp.raise_for_status = MagicMock()
-    resp.json = MagicMock(return_value={"owner_id": owner_id, "roles": roles})
-    return resp
+def member_response(role_ids: list[str], *, status_code: int = 200) -> httpx.Response:
+    return httpx.Response(status_code, json={"roles": role_ids})
 
 
-def member_response(role_ids: list[str], *, status_code: int = 200) -> MagicMock:
-    resp = MagicMock()
-    resp.status_code = status_code
-    resp.raise_for_status = MagicMock()
-    resp.json = MagicMock(return_value={"roles": role_ids})
-    return resp
+def record_fetches(monkeypatch: pytest.MonkeyPatch, *, result: bool) -> list[tuple[int, int]]:
+    """Answer `fetch_is_moderator` with `result`, recording each (viewer, guild) it's asked."""
+    calls: list[tuple[int, int]] = []
+
+    async def fetch(viewer_xid: int, guild_xid: int) -> bool:
+        calls.append((viewer_xid, guild_xid))
+        return result
+
+    monkeypatch.setattr(moderation, "fetch_is_moderator", fetch)
+    return calls
 
 
 @pytest.fixture(autouse=True)
-def reset_moderation_cache(mocker: MockerFixture) -> None:
+def reset_moderation_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     moderation.mod_cache.clear()
     moderation.mod_inflight.clear()
     moderation.guild_cache.clear()
-    mocker.patch.object(moderation.settings, "BOT_TOKEN", "bot-token")
+    monkeypatch.setattr(moderation.settings, "BOT_TOKEN", "bot-token")
 
 
 @pytest.mark.asyncio
 class TestViewerIsModerator:
-    async def test_returns_false_without_bot_token(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(moderation.settings, "BOT_TOKEN", None)
+    async def test_returns_false_without_bot_token(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(moderation.settings, "BOT_TOKEN", None)
         assert await moderation.viewer_is_moderator(1, 100) is False
 
-    async def test_bot_owner_moderates_every_guild(self, mocker: MockerFixture) -> None:
+    async def test_bot_owner_moderates_every_guild(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         # The owner is not a member of the guild, yet OWNER_XID overrides everything
         # without any Discord API round-trip.
-        mocker.patch.object(moderation.settings, "OWNER_XID", 42)
-        client = mocker.patch.object(moderation.httpx, "AsyncClient")
+        monkeypatch.setattr(moderation.settings, "OWNER_XID", 42)
+        requests = serve_httpx(monkeypatch, in_order())
         assert await moderation.viewer_is_moderator(42, 100) is True
-        client.assert_not_called()
+        assert requests == []
 
-    async def test_guild_owner_is_moderator(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("1", []), member_response([])]),
-        )
+    async def test_guild_owner_is_moderator(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(monkeypatch, in_order(guild_response("1", []), member_response([])))
         assert await moderation.viewer_is_moderator(1, 100) is True
 
-    async def test_administrator_permission_is_moderator(self, mocker: MockerFixture) -> None:
+    async def test_administrator_permission_is_moderator(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         roles = [{"id": "500", "name": "Staff", "permissions": str(0x8)}]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
-        )
+        serve_httpx(monkeypatch, in_order(guild_response("2", roles), member_response(["500"])))
         assert await moderation.viewer_is_moderator(1, 100) is True
 
-    async def test_ban_members_permission_is_moderator(self, mocker: MockerFixture) -> None:
+    async def test_ban_members_permission_is_moderator(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         roles = [{"id": "500", "name": "Staff", "permissions": str(0x4)}]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
-        )
+        serve_httpx(monkeypatch, in_order(guild_response("2", roles), member_response(["500"])))
         assert await moderation.viewer_is_moderator(1, 100) is True
 
-    async def test_mod_prefix_role_is_moderator(self, mocker: MockerFixture) -> None:
+    async def test_mod_prefix_role_is_moderator(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         roles = [{"id": "500", "name": "Moderator Team", "permissions": "0"}]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
-        )
+        serve_httpx(monkeypatch, in_order(guild_response("2", roles), member_response(["500"])))
         assert await moderation.viewer_is_moderator(1, 100) is True
 
-    async def test_plain_member_is_not_moderator(self, mocker: MockerFixture) -> None:
+    async def test_plain_member_is_not_moderator(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         roles = [{"id": "500", "name": "Members", "permissions": "0"}]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
+        serve_httpx(monkeypatch, in_order(guild_response("2", roles), member_response(["500"])))
+        assert await moderation.viewer_is_moderator(1, 100) is False
+
+    async def test_non_member_is_not_moderator(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(
+            monkeypatch,
+            in_order(guild_response("2", []), member_response([], status_code=404)),
         )
         assert await moderation.viewer_is_moderator(1, 100) is False
 
-    async def test_non_member_is_not_moderator(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client(
-                [guild_response("2", []), member_response([], status_code=404)],
-            ),
-        )
+    async def test_http_error_is_not_moderator(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(monkeypatch, raising())
         assert await moderation.viewer_is_moderator(1, 100) is False
 
-    async def test_http_error_is_not_moderator(self, mocker: MockerFixture) -> None:
-        inner = MagicMock()
-        inner.get = AsyncMock(side_effect=httpx.ConnectError("boom"))
-        cm = MagicMock()
-        cm.__aenter__ = AsyncMock(return_value=inner)
-        cm.__aexit__ = AsyncMock(return_value=None)
-        mocker.patch.object(moderation.httpx, "AsyncClient", return_value=cm)
-        assert await moderation.viewer_is_moderator(1, 100) is False
-
-    async def test_result_is_cached(self, mocker: MockerFixture) -> None:
-        client = make_httpx_client([guild_response("1", []), member_response([])])
-        factory = mocker.patch.object(moderation.httpx, "AsyncClient", return_value=client)
+    async def test_result_is_cached(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        requests = serve_httpx(monkeypatch, in_order(guild_response("1", []), member_response([])))
         assert await moderation.viewer_is_moderator(1, 100) is True
         # A second call for the same viewer/guild must not hit the REST API again.
         assert await moderation.viewer_is_moderator(1, 100) is True
-        assert factory.call_count == 1
+        assert len(requests) == 2
 
-    async def test_role_not_held_by_member_is_skipped(self, mocker: MockerFixture) -> None:
+    async def test_role_not_held_by_member_is_skipped(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         # The guild has an admin role, but the member does not hold it, so it must be
         # skipped and the member is not a moderator. The guild also defines the role the
         # member does hold, as Discord always returns every role it knows about.
@@ -143,33 +164,31 @@ class TestViewerIsModerator:
             {"id": "999", "name": "Admins", "permissions": str(0x8)},
             {"id": "500", "name": "Members", "permissions": str(0)},
         ]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
-        )
+        serve_httpx(monkeypatch, in_order(guild_response("2", roles), member_response(["500"])))
         assert await moderation.viewer_is_moderator(1, 100) is False
 
-    async def test_unparsable_permissions_default_to_zero(self, mocker: MockerFixture) -> None:
+    async def test_unparsable_permissions_default_to_zero(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         # A role whose permissions value is not coercible to int must not raise; it
         # contributes no permissions, so a plainly-named role is not a moderator.
         roles = [{"id": "500", "name": "Members", "permissions": None}]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
-        )
+        serve_httpx(monkeypatch, in_order(guild_response("2", roles), member_response(["500"])))
         assert await moderation.viewer_is_moderator(1, 100) is False
 
 
 class TestModerationCache:
-    def test_expired_entry_is_evicted(self, mocker: MockerFixture) -> None:
-        clock = mocker.patch.object(moderation.time, "monotonic", return_value=0.0)
+    def test_expired_entry_is_evicted(self, decoy: Decoy, stub: Stub) -> None:
+        clock = stub(moderation.time, "monotonic")
+        decoy.when(clock()).then_return(0.0)
         key = (1, 100)
         moderation.cache_put(key, result=True)
         assert moderation.cache_get(key) is True
         # Advance past the TTL: the entry expires, is dropped, and reads as a miss.
-        clock.return_value = moderation.MOD_CACHE_TTL_S + 1.0
+        decoy.when(clock()).then_return(moderation.MOD_CACHE_TTL_S + 1.0)
         assert moderation.cache_get(key) is None
         assert key not in moderation.mod_cache
 
@@ -178,7 +197,10 @@ class TestModerationCache:
 class TestModeratorResolutionIsShared:
     """One Discord round-trip per viewer and guild, however many requests arrive at once."""
 
-    async def test_concurrent_lookups_share_one_fetch(self, mocker: MockerFixture) -> None:
+    async def test_concurrent_lookups_share_one_fetch(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         started = 0
 
         async def slow_fetch(viewer_xid: int, guild_xid: int) -> bool:
@@ -187,25 +209,27 @@ class TestModeratorResolutionIsShared:
             await asyncio.sleep(0)
             return True
 
-        mocker.patch.object(moderation, "fetch_is_moderator", slow_fetch)
+        monkeypatch.setattr(moderation, "fetch_is_moderator", slow_fetch)
 
         results = await asyncio.gather(*(moderation.viewer_is_moderator(7, 100) for _ in range(8)))
 
         assert results == [True] * 8
         assert started == 1
 
-    async def test_inflight_entry_is_released(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(moderation, "fetch_is_moderator", AsyncMock(return_value=True))
+    async def test_inflight_entry_is_released(self, decoy: Decoy, stub: Stub) -> None:
+        fetch_is_moderator_fake = stub(moderation, "fetch_is_moderator")
+        decoy.when(await fetch_is_moderator_fake(ANY, ANY), ignore_extra_args=True).then_return(
+            True
+        )
 
         await moderation.viewer_is_moderator(8, 100)
 
         assert moderation.mod_inflight == {}
 
-    async def test_inflight_entry_is_released_on_failure(self, mocker: MockerFixture) -> None:
-        mocker.patch.object(
-            moderation,
-            "fetch_is_moderator",
-            AsyncMock(side_effect=RuntimeError("boom")),
+    async def test_inflight_entry_is_released_on_failure(self, decoy: Decoy, stub: Stub) -> None:
+        fetch_is_moderator_fake = stub(moderation, "fetch_is_moderator")
+        decoy.when(await fetch_is_moderator_fake(ANY, ANY), ignore_extra_args=True).then_raise(
+            RuntimeError("boom")
         )
 
         with pytest.raises(RuntimeError):
@@ -215,15 +239,16 @@ class TestModeratorResolutionIsShared:
 
     async def test_second_call_uses_the_cache_not_a_new_fetch(
         self,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        fetch = AsyncMock(return_value=True)
-        mocker.patch.object(moderation, "fetch_is_moderator", fetch)
+        calls = record_fetches(monkeypatch, result=True)
 
         assert await moderation.viewer_is_moderator(10, 100) is True
         assert await moderation.viewer_is_moderator(10, 100) is True
 
-        fetch.assert_awaited_once()
+        assert calls == [(10, 100)]
 
 
 @pytest.mark.asyncio
@@ -232,69 +257,86 @@ class TestUnresolvableModeratorStatus:
 
     async def test_unreachable_discord_denies_without_caching(
         self,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        fetch = AsyncMock(return_value=None)
-        mocker.patch.object(moderation, "fetch_is_moderator", fetch)
+        fetch = stub(moderation, "fetch_is_moderator")
+        decoy.when(await fetch(ANY, ANY)).then_return(None)
 
         assert await moderation.viewer_is_moderator(11, 100) is False
         assert (11, 100) not in moderation.mod_cache
 
-    async def test_recovers_on_the_next_request(self, mocker: MockerFixture) -> None:
-        fetch = AsyncMock(side_effect=[None, True])
-        mocker.patch.object(moderation, "fetch_is_moderator", fetch)
+    async def test_recovers_on_the_next_request(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        fetch = stub(moderation, "fetch_is_moderator")
+        decoy.when(await fetch(ANY, ANY)).then_return(None, True)
 
         assert await moderation.viewer_is_moderator(12, 100) is False
         assert await moderation.viewer_is_moderator(12, 100) is True
 
-    async def test_http_error_resolves_to_unknown(self, mocker: MockerFixture) -> None:
-        inner = MagicMock()
-        inner.get = AsyncMock(side_effect=httpx.ConnectError("down"))
-        cm = MagicMock()
-        cm.__aenter__ = AsyncMock(return_value=inner)
-        cm.__aexit__ = AsyncMock(return_value=None)
-        mocker.patch.object(moderation.httpx, "AsyncClient", return_value=cm)
+    async def test_http_error_resolves_to_unknown(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(monkeypatch, raising())
 
         assert await moderation.fetch_is_moderator(13, 100) is None
 
-    async def test_a_real_non_moderator_is_still_cached(self, mocker: MockerFixture) -> None:
-        fetch = AsyncMock(return_value=False)
-        mocker.patch.object(moderation, "fetch_is_moderator", fetch)
+    async def test_a_real_non_moderator_is_still_cached(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        calls = record_fetches(monkeypatch, result=False)
 
         assert await moderation.viewer_is_moderator(14, 100) is False
         assert await moderation.viewer_is_moderator(14, 100) is False
 
-        fetch.assert_awaited_once()
+        assert calls == [(14, 100)]
 
 
 @pytest.mark.asyncio
 class TestGuildRolesCache:
     """Role definitions are shared between viewers, so they are fetched once per guild."""
 
-    async def test_second_viewer_reuses_the_cached_guild(self, mocker: MockerFixture) -> None:
+    async def test_second_viewer_reuses_the_cached_guild(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         roles = [{"id": "500", "name": "Staff", "permissions": str(0x8)}]
-        client = make_httpx_client(
-            [
+        requests = serve_httpx(
+            monkeypatch,
+            in_order(
                 guild_response("2", roles),
                 member_response(["500"]),
                 member_response(["500"]),  # only the member half is fetched again
-            ],
+            ),
         )
-        mocker.patch.object(moderation.httpx, "AsyncClient", return_value=client)
 
         assert await moderation.viewer_is_moderator(1, 100) is True
         assert await moderation.viewer_is_moderator(2, 100) is True
 
-        assert client.__aenter__.return_value.get.await_count == 3
+        assert len(requests) == 3
 
-    async def test_expired_guild_entry_is_refetched(self, mocker: MockerFixture) -> None:
+    async def test_expired_guild_entry_is_refetched(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         roles = [{"id": "500", "name": "Staff", "permissions": str(0x8)}]
         moderation.guild_cache[100] = ({"owner_id": "2", "roles": []}, time.monotonic() - 1)
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([guild_response("2", roles), member_response(["500"])]),
-        )
+        serve_httpx(monkeypatch, in_order(guild_response("2", roles), member_response(["500"])))
 
         assert await moderation.viewer_is_moderator(1, 100) is True
 
@@ -325,27 +367,29 @@ class TestRolesAreStale:
 class TestNewRoleIsPickedUpImmediately:
     """The long TTL must not delay a brand new Moderator role."""
 
-    async def test_unknown_role_triggers_a_refetch(self, mocker: MockerFixture) -> None:
+    async def test_unknown_role_triggers_a_refetch(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         # The cached snapshot predates the role the viewer was just given, so a stale
         # cache would deny them for the whole TTL. The refetch sees the new role instead.
         moderation.guild_cache_put(100, {"owner_id": "2", "roles": []})
         fresh = [{"id": "500", "name": "Moderator Team", "permissions": str(0)}]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([member_response(["500"]), guild_response("2", fresh)]),
-        )
+        serve_httpx(monkeypatch, in_order(member_response(["500"]), guild_response("2", fresh)))
 
         assert await moderation.viewer_is_moderator(1, 100) is True
 
-    async def test_refetch_replaces_the_cached_guild(self, mocker: MockerFixture) -> None:
+    async def test_refetch_replaces_the_cached_guild(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         moderation.guild_cache_put(100, {"owner_id": "2", "roles": []})
         fresh = [{"id": "500", "name": "Moderator Team", "permissions": str(0)}]
-        mocker.patch.object(
-            moderation.httpx,
-            "AsyncClient",
-            return_value=make_httpx_client([member_response(["500"]), guild_response("2", fresh)]),
-        )
+        serve_httpx(monkeypatch, in_order(member_response(["500"]), guild_response("2", fresh)))
 
         await moderation.viewer_is_moderator(1, 100)
 

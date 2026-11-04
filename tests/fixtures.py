@@ -6,9 +6,10 @@ import asyncio
 import contextvars
 import itertools
 import logging
+from dataclasses import dataclass
 from functools import partial
+from types import CoroutineType, ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import freezegun
@@ -17,12 +18,19 @@ import pytest_asyncio
 from click.testing import CliRunner
 from decoy import matchers
 from discord.ext import commands
+from hupper.interfaces import IReloaderProxy
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
 
 # Importing registers the audit.activity / audit.transaction tables on Base.metadata so they are
 # created and truncated alongside the other tables in the test database.
-from spellbot import audit  # noqa: F401
+from spellbot import (
+    audit,  # noqa: F401
+    operations,
+)
+from spellbot import cli as cli_module
+from spellbot import client as client_module
+from spellbot import web as web_module
 from spellbot.client import build_bot
 from spellbot.database import (
     DatabaseSession,
@@ -53,14 +61,7 @@ from tests.factories import (
     UserFactory,
 )
 from tests.factories.session import FactorySession
-from tests.mocks import (
-    build_author,
-    build_channel,
-    build_guild,
-    build_interaction,
-    build_message,
-    decoys,
-)
+from tests.mocks import decoys
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator
@@ -91,7 +92,7 @@ _WORKER_OFFSET_MULTIPLIER = 10000
 
 
 @overload
-async def get_last_send_message(  # pragma: no cover
+async def get_last_send_message(
     decoy: Decoy,
     interaction: discord.Interaction,
     kwarg: Literal["embed"],
@@ -99,7 +100,7 @@ async def get_last_send_message(  # pragma: no cover
 
 
 @overload
-async def get_last_send_message(  # pragma: no cover
+async def get_last_send_message(
     decoy: Decoy,
     interaction: discord.Interaction,
     kwarg: Literal["view"],
@@ -107,7 +108,7 @@ async def get_last_send_message(  # pragma: no cover
 
 
 @overload
-async def get_last_send_message(  # pragma: no cover
+async def get_last_send_message(
     decoy: Decoy,
     interaction: discord.Interaction,
     kwarg: str,
@@ -266,7 +267,8 @@ def client(
     # `http://127.0.0.1`, so a `Secure` cookie would be dropped on the loopback
     # round-trip and `/admin/login` -> `/admin/oauth/callback` would lose its
     # `oauth_state`. Force an `http://` base URL while the app is built.
-    with patch.object(runtime_settings, "API_BASE_URL", "http://127.0.0.1"):
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(runtime_settings, "API_BASE_URL", "http://127.0.0.1")
         app = build_web_app()
     event_loop = asyncio.get_event_loop()
     # Disable the test server's access logger: on Python 3.14 aiohttp's access-log
@@ -328,12 +330,25 @@ async def user(interaction: discord.Interaction, add_user: Callable[..., User]) 
 
 
 @pytest.fixture
-def message(interaction: discord.Interaction) -> discord.Message:
-    """Create a mock discord.Message for the interaction."""
-    assert interaction.guild is not None
-    assert interaction.channel is not None
-    assert isinstance(interaction.channel, discord.TextChannel)
-    return build_message(interaction.guild, interaction.channel, interaction.user)
+def message(
+    decoy: Decoy,
+    decoy_guild: discord.Guild,
+    decoy_channel: discord.TextChannel,
+    decoy_member: discord.Member,
+) -> discord.Message:
+    """Create a message in the interaction's channel."""
+    return decoys.message(decoy, decoy_guild, decoy_channel, decoy_member)
+
+
+@pytest.fixture
+def original_message(decoy: Decoy, message: discord.Message) -> discord.InteractionMessage:
+    """Create `message` as an interaction's original response, which is the same message."""
+    original = decoy.mock(cls=discord.InteractionMessage)
+    original.id = message.id
+    original.guild = message.guild
+    original.channel = message.channel
+    original.author = message.author
+    return original
 
 
 @pytest.fixture
@@ -375,46 +390,14 @@ def unique_offset(worker_id: str) -> int:
     return next(_fixture_offset_counters[worker_id])
 
 
-@pytest.fixture
-def dpy_author(unique_offset: int) -> discord.User:
-    return build_author(offset=unique_offset)
-
-
-@pytest.fixture
-def dpy_guild(unique_offset: int) -> discord.Guild:
-    return build_guild(offset=unique_offset)
-
-
-@pytest.fixture
-def dpy_channel(dpy_guild: discord.Guild, unique_offset: int) -> discord.TextChannel:
-    return build_channel(dpy_guild, offset=unique_offset)
-
-
-@pytest.fixture
-def dpy_message(
-    dpy_guild: discord.Guild,
-    dpy_channel: discord.TextChannel,
-    dpy_author: discord.User,
-) -> discord.Message:
-    return build_message(dpy_guild, dpy_channel, dpy_author)
-
-
-@pytest.fixture
-def interaction(
+@pytest_asyncio.fixture
+async def interaction(
     decoy: Decoy,
-    dpy_guild: discord.Guild,
-    dpy_channel: discord.TextChannel,
-    dpy_author: discord.User,
+    decoy_guild: discord.Guild,
+    decoy_channel: discord.TextChannel,
+    decoy_member: discord.Member,
 ) -> discord.Interaction:
-    response = decoy.mock(cls=discord.InteractionResponse)
-    followup = decoy.mock(cls=discord.Webhook)
-    return build_interaction(
-        dpy_guild,
-        dpy_channel,
-        dpy_author,
-        response=response,
-        followup=followup,
-    )
+    return await decoys.interaction(decoy, decoy_guild, decoy_channel, decoy_member)
 
 
 @pytest.fixture
@@ -453,43 +436,79 @@ def decoy_context(decoy: Decoy, decoy_message: discord.Message) -> commands.Cont
     return context
 
 
-def close_coroutine(coro: Any, **kwargs: Any) -> None:
-    coro.close()
+@dataclass(frozen=True)
+class CliFakes:
+    """What `spellbot.cli.main` calls out to, faked by the `cli` fixture."""
+
+    configure_logging: Callable[..., None]
+    build_bot: Callable[..., SpellBot]
+    launch_dev_server: Callable[[bool, int], None]
+    start_reloader: Callable[..., IReloaderProxy]
+    reloader: IReloaderProxy
+    # The coroutines handed to `uvloop.run()`, by name; each is closed rather than run.
+    ran: list[str]
 
 
 @pytest.fixture
-def cli() -> Generator[MagicMock]:
-    with (
-        patch("spellbot.cli.asyncio") as mock_asyncio,
-        patch("spellbot.cli.uvloop") as mock_uvloop,
-        patch("spellbot.cli.configure_logging") as mock_configure_logging,
-        patch("spellbot.cli.configure_tracing") as mock_configure_tracing,
-        patch("spellbot.cli.hupper") as mock_hupper,
-        patch("spellbot.client.build_bot") as mock_build_bot,
-        patch("spellbot.cli.settings") as mock_settings,
-        patch("spellbot.web.launch_dev_server") as mock_launch_dev_server,
-    ):
-        mock_bot = MagicMock(name="bot")
-        mock_bot.run = MagicMock(name="run")
-        mock_build_bot.return_value = mock_bot
-        mock_hupper.start_reloader = MagicMock(name="start_reloader")
-        mock_settings.BOT_TOKEN = "facedeadbeef"
-        mock_settings.PORT = 404
-        mock_settings.LOG_LEVEL = "INFO"
-        mock_settings.DISABLE_UVLOOP = False
-        mock_uvloop.run = MagicMock(side_effect=close_coroutine)
+def cli(decoy: Decoy, stub: Stub, monkeypatch: pytest.MonkeyPatch) -> CliFakes:
+    ran: list[str] = []
 
-        obj = MagicMock()
-        obj.asyncio = mock_asyncio
-        obj.uvloop = mock_uvloop
-        obj.build_bot = mock_build_bot
-        obj.configure_logging = mock_configure_logging
-        obj.configure_tracing = mock_configure_tracing
-        obj.hupper = mock_hupper
-        obj.launch_dev_server = mock_launch_dev_server
-        obj.settings = mock_settings
-        obj.bot = mock_bot
-        yield obj
+    def run(coro: CoroutineType[Any, Any, None]) -> None:
+        ran.append(coro.__name__)
+        coro.close()
+
+    monkeypatch.setattr(cli_module, "uvloop", SimpleNamespace(run=run))
+    monkeypatch.setattr(runtime_settings, "BOT_TOKEN", "facedeadbeef")
+    monkeypatch.setattr(runtime_settings, "SECRET_TOKEN", "secret")
+    monkeypatch.setattr(runtime_settings, "PORT", 404)
+    monkeypatch.setattr(runtime_settings, "LOG_LEVEL", "INFO")
+    monkeypatch.setattr(runtime_settings, "DISABLE_UVLOOP", False)
+    stub(cli_module, "configure_tracing")
+    return CliFakes(
+        configure_logging=stub(cli_module, "configure_logging"),
+        build_bot=stub(client_module, "build_bot"),
+        launch_dev_server=stub(web_module, "launch_dev_server"),
+        start_reloader=stub(cli_module.hupper, "start_reloader"),
+        reloader=decoy.mock(cls=IReloaderProxy),
+        ran=ran,
+    )
+
+
+type Stub = Callable[[object, str], Any]
+
+
+@pytest.fixture
+def stub(
+    decoy: Decoy,
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> Stub:
+    """
+    Replace `target.name` with a decoy mock of it for the test, and return the mock.
+
+    The mock is built from the real function, so it keeps that signature. Set what it returns
+    with `decoy.when(...)` and check calls with `decoy.verify(...)`.
+    """
+    fakes: dict[tuple[int, str], Any] = {}
+
+    def replace(target: object, name: str) -> Any:
+        # Stubbing the same target twice (say, a helper and then the test) returns the same
+        # fake, so a later `decoy.when` overrides an earlier one instead of wrapping it.
+        key = (id(target), name)
+        if key not in fakes:
+            fakes[key] = decoy.mock(func=getattr(target, name))
+            if isinstance(target, type | ModuleType) or name in getattr(target, "__dict__", {}):
+                monkeypatch.setattr(target, name, fakes[key])
+            else:
+                # The attribute comes from the object's class, or (for a proxy such as
+                # `DatabaseSession`) from whatever it wraps right now. Monkeypatch would "restore"
+                # it by setting the value it saw, pinning that onto the object for good, so delete
+                # the override instead.
+                setattr(target, name, fakes[key])
+                request.addfinalizer(lambda: delattr(target, name))
+        return fakes[key]
+
+    return replace
 
 
 @pytest.fixture
@@ -520,7 +539,7 @@ async def use_consistent_date(freezer: FreezeTimeFactory) -> None:
 
 
 @pytest.fixture(autouse=True)
-def disable_integrations() -> Generator[None]:
+def disable_integrations(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     Clear integration credentials that `Settings` may have loaded from a local `.env`.
 
@@ -528,14 +547,9 @@ def disable_integrations() -> Generator[None]:
     while silently skipping them in CI. Tests that exercise an integration patch the
     credentials they need themselves.
     """
-    with (
-        patch.object(runtime_settings, "CASTLOG_ENDPOINT", ""),
-        patch.object(runtime_settings, "CASTLOG_SECRET", None),
-        patch.object(runtime_settings, "CONVOKE_API_KEY", None),
-        patch.object(runtime_settings, "EDHLAB_API_KEY", None),
-        patch.object(runtime_settings, "PLAYGROUP_LIVE_API_KEY", None),
-    ):
-        yield
+    monkeypatch.setattr(runtime_settings, "CASTLOG_ENDPOINT", "")
+    for name in ("CASTLOG_SECRET", "CONVOKE_API_KEY", "EDHLAB_API_KEY", "PLAYGROUP_LIVE_API_KEY"):
+        monkeypatch.setattr(runtime_settings, name, None)
 
 
 @pytest.fixture(autouse=True)
@@ -544,9 +558,6 @@ def clear_guild_cache() -> None:
 
 
 @pytest.fixture(autouse=True)
-def allow_all_dms(request: pytest.FixtureRequest) -> Generator[None]:
-    if "no_dm_limiter_patch" in request.keywords:
-        yield
-        return
-    with patch("spellbot.operations.try_consume_dm_slot", new=AsyncMock(return_value=True)):
-        yield
+def allow_all_dms(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    if "no_dm_limiter_patch" not in request.keywords:
+        monkeypatch.setattr(operations, "try_consume_dm_slot", decoys.async_returning(True))

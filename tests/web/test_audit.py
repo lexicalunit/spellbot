@@ -13,7 +13,6 @@ from spellbot.web.api import audit as audit_web
 
 if TYPE_CHECKING:
     from aiohttp.client import ClientSession
-    from pytest_mock import MockerFixture
 
     from tests.fixtures import Factories
 
@@ -152,7 +151,6 @@ class TestChannelAuditPage:
         self,
         mod_client: ClientSession,
         factories: Factories,
-        mocker: MockerFixture,
     ) -> None:
         guild = factories.guild.create(xid=204, name="guild")
         channel = factories.channel.create(xid=304, name="channel", guild=guild, blind_games=False)

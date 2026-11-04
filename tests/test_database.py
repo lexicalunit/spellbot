@@ -2,30 +2,33 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from typing import TYPE_CHECKING
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from spellbot.database import DatabaseSession, ProcessGlobal, end_session, to_async_url
 
+if TYPE_CHECKING:
+    from decoy import Decoy
+
 
 @pytest.mark.asyncio
-async def test_end_session_closes_when_commit_fails() -> None:
+async def test_end_session_closes_when_commit_fails(decoy: Decoy) -> None:
     """
     A failed commit must still return the connection to the pool.
 
     An `AsyncSession` cannot be reclaimed by the garbage collector, so skipping
     `close()` here would permanently burn a pool slot for the life of the process.
     """
-    session = MagicMock()
-    session.commit = AsyncMock(side_effect=RuntimeError("commit failed"))
-    session.close = AsyncMock()
+    session = decoy.mock(cls=AsyncSession)
+    decoy.when(await session.commit()).then_raise(RuntimeError("commit failed"))
     token = DatabaseSession.set(session)
 
     with pytest.raises(RuntimeError, match="commit failed"):
         await end_session(token)
 
-    session.close.assert_awaited_once_with()
+    decoy.verify(await session.close(), times=1)
 
 
 class TestProcessGlobal:

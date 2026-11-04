@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, cast
-from unittest.mock import MagicMock
 
 import discord
 import pytest
 import pytest_asyncio
+from decoy import matchers
 from sqlalchemy import select, update
 from sqlalchemy.sql.expression import and_
 
+from spellbot import operations
 from spellbot.actions import lfg_action
 from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
@@ -20,9 +21,12 @@ from spellbot.models import Channel, Game, GameStatus, Guild, Play, User
 from spellbot.services.users import current_game
 from tests.fixtures import run_command
 from tests.mocks import mock_discord_object, mock_operations
+from tests.mocks.decoys import ANY
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from decoy import Decoy
 
     from spellbot import SpellBot
     from tests.fixtures import Factories
@@ -36,7 +40,7 @@ def cog(bot: SpellBot) -> EventsCog:
 
 
 @pytest_asyncio.fixture
-async def make_voice_channel() -> Callable[..., discord.VoiceChannel]:
+async def make_voice_channel(decoy: Decoy) -> Callable[..., discord.VoiceChannel]:
     def factory(
         discord_guild: discord.Guild,
         id: int,
@@ -44,13 +48,13 @@ async def make_voice_channel() -> Callable[..., discord.VoiceChannel]:
         perms: discord.Permissions,
         created_at: datetime,
     ) -> discord.VoiceChannel:
-        voice = MagicMock(spec=discord.VoiceChannel)
+        voice = decoy.mock(cls=discord.VoiceChannel)
         voice.id = id
         voice.name = name
         voice.guild = discord_guild
-        voice.type = discord.ChannelType.voice
-        voice.permissions_for = MagicMock(return_value=perms)
-        voice.created_at = created_at
+        decoy.when(voice.type).then_return(discord.ChannelType.voice)
+        decoy.when(voice.permissions_for(matchers.Anything())).then_return(perms)
+        decoy.when(voice.created_at).then_return(created_at)
         return voice
 
     return factory
@@ -70,12 +74,16 @@ class TestCogEvents:
         add_user: Callable[..., User],
         interaction: discord.Interaction,
         guild: Guild,
+        decoy: Decoy,
     ) -> None:
         player1 = add_user()
         player2 = add_user()
-        users = [mock_discord_object(player1), mock_discord_object(player2)]
-        with mock_operations(lfg_action, users=users) as ops:
-            ops.safe_followup_channel.return_value = message
+        users = [mock_discord_object(decoy, player1), mock_discord_object(decoy, player2)]
+        with mock_operations(decoy, lfg_action, users=users):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(
                 cog.game,
@@ -111,6 +119,7 @@ class TestCogEvents:
         add_user: Callable[..., User],
         interaction: discord.Interaction,
         channel: Channel,
+        decoy: Decoy,
     ) -> None:
         await DatabaseSession.execute(
             update(Channel)
@@ -120,9 +129,12 @@ class TestCogEvents:
         await DatabaseSession.commit()
         player1 = add_user()
         player2 = add_user()
-        users = [mock_discord_object(player1), mock_discord_object(player2)]
-        with mock_operations(lfg_action, users=users) as ops:
-            ops.safe_followup_channel.return_value = message
+        users = [mock_discord_object(decoy, player1), mock_discord_object(decoy, player2)]
+        with mock_operations(decoy, lfg_action, users=users):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
             await run_command(
                 cog.game,
                 interaction,
@@ -140,10 +152,11 @@ class TestCogEvents:
         add_user: Callable[..., User],
         interaction: discord.Interaction,
         guild: Guild,
+        decoy: Decoy,
     ) -> None:
         player = add_user()
-        users = [mock_discord_object(player)]
-        with mock_operations(lfg_action, users=users) as ops:
+        users = [mock_discord_object(decoy, player)]
+        with mock_operations(decoy, lfg_action, users=users):
             await run_command(
                 cog.game,
                 interaction,
@@ -151,9 +164,12 @@ class TestCogEvents:
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
-            ops.safe_followup_channel.assert_called_once_with(
-                interaction,
-                "You can't create a Legacy game with 1 players.",
+            decoy.verify(
+                await operations.safe_followup_channel(
+                    interaction,
+                    "You can't create a Legacy game with 1 players.",
+                ),
+                times=1,
             )
 
     async def test_game_with_banned_player(
@@ -162,11 +178,12 @@ class TestCogEvents:
         add_user: Callable[..., User],
         interaction: discord.Interaction,
         guild: Guild,
+        decoy: Decoy,
     ) -> None:
         player = add_user()
         banned = add_user(banned=True)
-        users = [mock_discord_object(player), mock_discord_object(banned)]
-        with mock_operations(lfg_action, users=users) as ops:
+        users = [mock_discord_object(decoy, player), mock_discord_object(decoy, banned)]
+        with mock_operations(decoy, lfg_action, users=users):
             await run_command(
                 cog.game,
                 interaction,
@@ -174,9 +191,13 @@ class TestCogEvents:
                 format=cast("int", GameFormat.LEGACY.value),
             )
 
-            ops.safe_followup_channel.assert_called_once_with(
-                interaction,
-                f"Some of the players you mentioned can not be added to a game: <@{banned.xid}>",
+            decoy.verify(
+                await operations.safe_followup_channel(
+                    interaction,
+                    "Some of the players you mentioned can not be added to a game: "
+                    f"<@{banned.xid}>",
+                ),
+                times=1,
             )
 
     async def test_game_with_voice_channel(
@@ -187,12 +208,13 @@ class TestCogEvents:
         make_voice_channel: Callable[..., discord.VoiceChannel],
         interaction: discord.Interaction,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
-        discord_guild = mock_discord_object(guild)
+        discord_guild = mock_discord_object(decoy, guild)
         user_1 = factories.user.create()
         user_2 = factories.user.create()
-        discord_user_1 = mock_discord_object(user_1)
-        discord_user_2 = mock_discord_object(user_2)
+        discord_user_1 = mock_discord_object(decoy, user_1)
+        discord_user_2 = mock_discord_object(decoy, user_2)
         guild.voice_create = True
         await DatabaseSession.commit()
         channel = factories.channel.create(guild=guild, voice_invite=True)
@@ -205,12 +227,25 @@ class TestCogEvents:
             perms=manage_perms,
             created_at=datetime.now(tz=UTC),
         )
-        voice_invite = MagicMock(spec=discord.Invite, url="http://example")
+        voice_invite = decoy.mock(cls=discord.Invite)
+        decoy.when(voice_invite.url).then_return("http://example")
 
-        with mock_operations(lfg_action, users=[discord_user_1, discord_user_2]) as ops:
-            ops.safe_followup_channel.return_value = message
-            ops.safe_create_voice_channel.return_value = voice_channel
-            ops.safe_create_channel_invite.return_value = voice_invite
+        with mock_operations(decoy, lfg_action, users=[discord_user_1, discord_user_2]):
+            decoy.when(
+                await operations.safe_followup_channel(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
+            decoy.when(
+                await operations.safe_ensure_voice_category(ANY, guild.xid, ANY),
+            ).then_return(decoy.mock(cls=discord.CategoryChannel))
+            decoy.when(
+                await operations.safe_create_voice_channel(client=ANY, guild_xid=ANY, name=ANY),
+                ignore_extra_args=True,
+            ).then_return(voice_channel)
+            decoy.when(
+                await operations.safe_create_channel_invite(channel=ANY),
+                ignore_extra_args=True,
+            ).then_return(voice_invite)
 
             await run_command(
                 cog.game,

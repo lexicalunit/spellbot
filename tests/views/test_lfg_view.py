@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
@@ -11,13 +10,15 @@ import pytest
 from spellbot.views.lfg_view import GameButton, GameView
 
 if TYPE_CHECKING:
+    from decoy import Decoy
+
     from spellbot import SpellBot
 
 
 @pytest.mark.asyncio
 class TestGameView:
-    async def test_button_forwards_to_handler(self) -> None:
-        handler = AsyncMock()
+    async def test_button_forwards_to_handler(self, decoy: Decoy) -> None:
+        handler = decoy.mock(name="handler", is_async=True)
         button = GameButton(
             handler,
             custom_id="join",
@@ -25,11 +26,11 @@ class TestGameView:
             label="Join",
             style=discord.ButtonStyle.blurple,
         )
-        interaction = MagicMock()
+        interaction = decoy.mock(cls=discord.Interaction)
 
         await button.callback(interaction)
 
-        handler.assert_awaited_once_with(interaction)
+        decoy.verify(await handler(interaction), times=1)
 
     async def test_buttons_are_wired_to_view(self, bot: SpellBot) -> None:
         view = GameView(bot)

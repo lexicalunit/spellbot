@@ -3,27 +3,31 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from unittest.mock import ANY
 
+import discord
 import pytest
 import pytest_asyncio
+from decoy import matchers
 from sqlalchemy import delete, select, update
 
+from spellbot import operations
 from spellbot.actions import leave_action
 from spellbot.cogs import LeaveGameCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Game, Guild, Post, Queue, User
 from spellbot.settings import settings as runtime_settings
+from spellbot.views import lfg_view
 from spellbot.views.lfg_view import GameView
 from tests.fixtures import Factories, run_command
 from tests.mocks import mock_operations
+from tests.mocks.decoys import ANY, captured
 
 if TYPE_CHECKING:
-    import discord
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
 
     from spellbot import SpellBot
     from spellbot.settings import Settings
+    from tests.fixtures import Stub
 
 pytestmark = pytest.mark.use_db
 
@@ -73,6 +77,7 @@ async def cog(bot: SpellBot) -> LeaveGameCog:
 class TestCogLeaveGame:
     async def test_leave(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
@@ -82,25 +87,47 @@ class TestCogLeaveGame:
         channel: Channel,
         factories: Factories,
         settings: Settings,
+        decoy: Decoy,
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_command, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from any pending games in this channel.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from any pending games in this channel.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
-            ops.safe_update_embed.assert_called_once()
-            safe_update_embed_call = ops.safe_update_embed.call_args_list[0]
-            assert safe_update_embed_call.kwargs["embed"].to_dict() == {
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=1,
+                ignore_extra_args=True,
+            )
+            safe_update_embed_embed = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_update_embed(ANY, embed=safe_update_embed_embed),
+                ignore_extra_args=True,
+            )
+            assert captured(safe_update_embed_embed, discord.Embed).to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
                 + support_cta(guild.xid),
@@ -118,28 +145,48 @@ class TestCogLeaveGame:
 
     async def test_leave_then_delete(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
         player: User,
         interaction: discord.Interaction,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_command, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from any pending games in this channel.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from any pending games in this channel.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
-            ops.safe_update_embed.assert_not_called()
-            ops.safe_delete_message.assert_called_once_with(message, own_message=True)
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(await operations.safe_delete_message(message, own_message=True), times=1)
 
     async def test_leave_all(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
@@ -149,25 +196,47 @@ class TestCogLeaveGame:
         channel: Channel,
         factories: Factories,
         settings: Settings,
+        decoy: Decoy,
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_all, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from all pending games.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from all pending games.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
-            ops.safe_update_embed.assert_called_once()
-            safe_update_embed_call = ops.safe_update_embed.call_args_list[0]
-            assert safe_update_embed_call.kwargs["embed"].to_dict() == {
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=1,
+                ignore_extra_args=True,
+            )
+            safe_update_embed_embed = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_update_embed(ANY, embed=safe_update_embed_embed),
+                ignore_extra_args=True,
+            )
+            assert captured(safe_update_embed_embed, discord.Embed).to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
                 + support_cta(guild.xid),
@@ -185,6 +254,7 @@ class TestCogLeaveGame:
 
     async def test_leave_all_updates_every_post_by_its_own_message(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
@@ -192,6 +262,7 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         guild: Guild,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
@@ -201,57 +272,110 @@ class TestCogLeaveGame:
         post_xids = sorted(post.message_xid for post in game.posts)
         assert len(post_xids) == 2
 
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_all, interaction)
 
-            fetched = sorted(c.args[2] for c in ops.safe_get_partial_message.call_args_list)
-            assert fetched == post_xids
-            assert ops.safe_update_embed.call_count == 2
+            # Each post is fetched by its own message, once.
+            for xid in post_xids:
+                decoy.verify(operations.safe_get_partial_message(ANY, ANY, xid), times=1)
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=2,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_all_then_delete(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
         player: User,
         interaction: discord.Interaction,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_all, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from all pending games.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from all pending games.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
-            ops.safe_update_embed.assert_not_called()
-            ops.safe_delete_message.assert_called_once_with(message, own_message=True)
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(await operations.safe_delete_message(message, own_message=True), times=1)
 
     async def test_leave_all_when_no_games(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         user: User,
         interaction: discord.Interaction,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_all, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from all pending games.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from all pending games.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
-            ops.safe_update_embed.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_all_when_fetch_channel_fails(
         self,
@@ -260,63 +384,115 @@ class TestCogLeaveGame:
         player: User,
         interaction: discord.Interaction,
         game: Game,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = None
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(None)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_all, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from all pending games.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from all pending games.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
-            ops.safe_update_embed.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_all_when_get_message_fails(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         player: User,
         interaction: discord.Interaction,
         game: Game,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = None
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(None)
 
             await run_command(cog.leave_all, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from all pending games.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from all pending games.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
-            ops.safe_update_embed.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_when_no_message_xid(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         player: User,
         interaction: discord.Interaction,
         game: Game,
         channel: Channel,
+        decoy: Decoy,
     ) -> None:
         await DatabaseSession.execute(delete(Post).where(Post.game_id == game.id))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_command, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from any pending games in this channel.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from any pending games in this channel.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
 
     async def test_leave_when_not_in_game(
@@ -324,14 +500,18 @@ class TestCogLeaveGame:
         cog: LeaveGameCog,
         user: User,
         interaction: discord.Interaction,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
+        with mock_operations(decoy, leave_action):
             await run_command(cog.leave_command, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from any pending games in this channel.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from any pending games in this channel.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
 
     async def test_leave_when_no_channel(
@@ -341,40 +521,67 @@ class TestCogLeaveGame:
         player: User,
         interaction: discord.Interaction,
         game: Game,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = None
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(None)
 
             await run_command(cog.leave_command, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from any pending games in this channel.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from any pending games in this channel.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
 
     async def test_leave_when_no_message(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         player: User,
         interaction: discord.Interaction,
         game: Game,
         channel: Channel,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = channel
-            ops.safe_get_partial_message.return_value = None
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(None)
 
             await run_command(cog.leave_command, interaction)
 
-            ops.safe_send_channel.assert_called_once_with(
-                interaction,
-                "You were removed from any pending games in this channel.",
-                ephemeral=True,
+            decoy.verify(
+                await operations.safe_send_channel(
+                    interaction,
+                    "You were removed from any pending games in this channel.",
+                    ephemeral=True,
+                ),
+                times=1,
             )
 
     async def test_leave_button(
         self,
+        original_message: discord.InteractionMessage,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
@@ -385,20 +592,35 @@ class TestCogLeaveGame:
         factories: Factories,
         settings: Settings,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(original_message)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_called_once()
-            safe_update_embed_origin_call = ops.safe_update_embed_origin.call_args_list[0]
-            assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=1,
+                ignore_extra_args=True,
+            )
+            safe_update_embed_origin_embed = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_update_embed_origin(
+                    ANY,
+                    embed=safe_update_embed_origin_embed,
+                ),
+                ignore_extra_args=True,
+            )
+            assert captured(safe_update_embed_origin_embed, discord.Embed).to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
                 + support_cta(guild.xid),
@@ -416,77 +638,125 @@ class TestCogLeaveGame:
 
     async def test_leave_war_game_hands_post_to_convoke(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
         player: User,
         interaction: discord.Interaction,
+        decoy: Decoy,
     ) -> None:
         await open_convoke_war_table(game)
-        with mock_operations(leave_action) as ops:
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
 
             await run_command(cog.leave_command, interaction)
 
-            ops.safe_delete_message.assert_not_called()
-            ops.safe_update_embed.assert_called_once_with(
-                message,
-                content=WAR_CONVOKE_ONLY,
-                embed=ANY,
-                view=None,
+            decoy.verify(
+                await operations.safe_delete_message(message=ANY),
+                times=0,
+                ignore_extra_args=True,
             )
-            embed = ops.safe_update_embed.call_args.kwargs["embed"]
+            decoy.verify(
+                await operations.safe_update_embed(
+                    message,
+                    content=WAR_CONVOKE_ONLY,
+                    embed=ANY,
+                    view=None,
+                ),
+                times=1,
+            )
+            safe_update_embed_embed = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_update_embed(ANY, embed=safe_update_embed_embed),
+                ignore_extra_args=True,
+            )
+            embed = captured(safe_update_embed_embed, discord.Embed)
+            assert embed.description
             assert CONVOKE_TABLE in embed.description
         assert await is_deleted(game)
 
     async def test_leave_button_war_game_hands_post_to_convoke(
         self,
+        original_message: discord.InteractionMessage,
         message: discord.Message,
         game: Game,
         player: User,
         interaction: discord.Interaction,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
         await open_convoke_war_table(game)
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(original_message)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_delete_message.assert_not_called()
-            ops.safe_update_embed_origin.assert_called_once_with(
-                interaction,
-                content=WAR_CONVOKE_ONLY,
-                embed=ANY,
-                view=None,
+            decoy.verify(
+                await operations.safe_delete_message(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(
+                await operations.safe_update_embed_origin(
+                    interaction,
+                    content=WAR_CONVOKE_ONLY,
+                    embed=ANY,
+                    view=None,
+                ),
+                times=1,
             )
         assert await is_deleted(game)
 
     async def test_leave_button_then_delete(
         self,
+        original_message: discord.InteractionMessage,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
         player: User,
         interaction: discord.Interaction,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(original_message)
+            interaction.message = message
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
-            ops.safe_delete_message.assert_called_once_with(
-                interaction.message,
-                own_message=True,
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(
+                await operations.safe_delete_message(message, own_message=True),
+                times=1,
             )
 
     async def test_leave_button_with_other_players(
         self,
+        original_message: discord.InteractionMessage,
         cog: LeaveGameCog,
         message: discord.Message,
         game: Game,
@@ -497,23 +767,31 @@ class TestCogLeaveGame:
         factories: Factories,
         settings: Settings,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(original_message)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_called_once_with(
-                interaction,
-                embed=ANY,
+            decoy.verify(await operations.safe_update_embed_origin(interaction, embed=ANY), times=1)
+            safe_update_embed_origin_embed = matchers.ValueCaptor()
+            decoy.verify(
+                await operations.safe_update_embed_origin(
+                    ANY,
+                    embed=safe_update_embed_origin_embed,
+                ),
+                ignore_extra_args=True,
             )
-            safe_update_embed_origin_call = ops.safe_update_embed_origin.call_args_list[0]
-            assert safe_update_embed_origin_call.kwargs["embed"].to_dict() == {
+            assert captured(safe_update_embed_origin_embed, discord.Embed).to_dict() == {
                 "color": settings.PENDING_EMBED_COLOR,
                 "description": (f"{CONVOKE_PENDING_MSG}\n\n{guild.motd}\n\n{channel.motd}")
                 + support_cta(guild.xid),
@@ -529,46 +807,80 @@ class TestCogLeaveGame:
                 "flags": 0,
             }
 
-            ops.safe_delete_message.assert_not_called()
+            decoy.verify(
+                await operations.safe_delete_message(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_button_when_no_game(
         self,
+        original_message: discord.InteractionMessage,
         cog: LeaveGameCog,
         message: discord.Message,
         user: User,
         interaction: discord.Interaction,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(original_message)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_button_when_message_missing(
         self,
+        decoy_channel: discord.TextChannel,
+        original_message: discord.InteractionMessage,
         cog: LeaveGameCog,
         message: discord.Message,
         player: User,
         interaction: discord.Interaction,
         game: Game,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = None
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(None)
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
-            ops.safe_delete_message.assert_called_once_with(message, own_message=True)
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(await operations.safe_delete_message(message, own_message=True), times=1)
 
     async def test_leave_button_when_message_missing_with_other_players(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         player: User,
@@ -576,23 +888,49 @@ class TestCogLeaveGame:
         game: Game,
         bot: SpellBot,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         """Test leave button when original response doesn't match but other players remain."""
         p2 = factories.user.create()
         DatabaseSession.add(Queue(user_xid=p2.xid, game_id=game.id, og_guild_xid=game.guild_xid))
         await DatabaseSession.commit()
 
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = None
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(None)
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
-            ops.safe_update_embed.assert_called_once()
-            ops.safe_delete_message.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=1,
+                ignore_extra_args=True,
+            )
+            decoy.verify(
+                await operations.safe_delete_message(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_button_when_message_missing_and_fetch_channel_fails(
         self,
@@ -602,37 +940,82 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         game: Game,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = None
-            ops.safe_fetch_text_channel.return_value = None
-            ops.safe_get_partial_message.return_value = message
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(None)
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(None)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(message)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
-            ops.safe_update_embed.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_button_when_message_missing_and_get_message_fails(
         self,
+        decoy_channel: discord.TextChannel,
         cog: LeaveGameCog,
         message: discord.Message,
         player: User,
         interaction: discord.Interaction,
         game: Game,
         bot: SpellBot,
+        decoy: Decoy,
     ) -> None:
-        with mock_operations(leave_action) as ops:
-            ops.safe_original_response.return_value = None
-            ops.safe_fetch_text_channel.return_value = interaction.channel
-            ops.safe_get_partial_message.return_value = None
+        with mock_operations(decoy, leave_action):
+            decoy.when(
+                await operations.safe_original_response(interaction=ANY),
+                ignore_extra_args=True,
+            ).then_return(None)
+            decoy.when(
+                await operations.safe_fetch_text_channel(
+                    client=ANY,
+                    guild_xid=ANY,
+                    channel_xid=ANY,
+                ),
+                ignore_extra_args=True,
+            ).then_return(decoy_channel)
+            decoy.when(
+                operations.safe_get_partial_message(channel=ANY, guild_xid=ANY, message_xid=ANY),
+                ignore_extra_args=True,
+            ).then_return(None)
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
-            ops.safe_update_embed.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(
+                await operations.safe_update_embed(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
 
     async def test_leave_button_when_defer_fails(
         self,
@@ -642,16 +1025,26 @@ class TestCogLeaveGame:
         interaction: discord.Interaction,
         game: Game,
         bot: SpellBot,
-        mocker: MockerFixture,
+        decoy: Decoy,
+        stub: Stub,
     ) -> None:
-        mocker.patch(
-            "spellbot.views.lfg_view.safe_defer_interaction",
-            return_value=False,
-        )
-        with mock_operations(leave_action) as ops:
+        safe_defer_interaction_fake = stub(lfg_view, "safe_defer_interaction")
+        decoy.when(
+            await safe_defer_interaction_fake(interaction=ANY),
+            ignore_extra_args=True,
+        ).then_return(False)
+        with mock_operations(decoy, leave_action):
             view = GameView(bot)
 
             await view.leave(interaction)
 
-            ops.safe_update_embed_origin.assert_not_called()
-            ops.safe_delete_message.assert_not_called()
+            decoy.verify(
+                await operations.safe_update_embed_origin(interaction=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )
+            decoy.verify(
+                await operations.safe_delete_message(message=ANY),
+                times=0,
+                ignore_extra_args=True,
+            )

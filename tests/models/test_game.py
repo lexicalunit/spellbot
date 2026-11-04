@@ -5,21 +5,21 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import ANY, MagicMock
 
-import discord
 import pytest
 
-from spellbot.data import ChannelData, GameData, GuildData, PostData, UserData
+from spellbot.data import ChannelData, GameData, GuildData, PostData, UserData, game_data
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket, GameService
 from spellbot.models import Channel, Game, GameStatus, Guild
 from spellbot.operations import VoiceChannelSuggestion
 from spellbot.services.games import game_players, game_to_data
 from spellbot.settings import settings as runtime_settings
+from tests.mocks import decoys
+from tests.mocks.decoys import ANY
 
 if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
+    from decoy import Decoy
 
     from spellbot.enums import Emojis
     from spellbot.settings import Settings
@@ -233,14 +233,14 @@ class TestModelGame:
         self,
         settings: Settings,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
         factories.user.create(game=game)
 
-        convoke_emoji = MagicMock(spec=discord.Emoji)
-        convoke_emoji.name = "convoke"
+        convoke_emoji = decoys.emoji(decoy, "convoke")
         emojis: Emojis = [convoke_emoji]
 
         embed = (await game_to_data(game)).to_embed(emojis=emojis)
@@ -252,14 +252,14 @@ class TestModelGame:
         self,
         settings: Settings,
         factories: Factories,
+        decoy: Decoy,
     ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
         factories.user.create(game=game)
 
-        other_emoji = MagicMock(spec=discord.Emoji)
-        other_emoji.name = "some_other_emoji"
+        other_emoji = decoys.emoji(decoy, "some_other_emoji")
         emojis: Emojis = [other_emoji]
 
         embed = (await game_to_data(game)).to_embed(emojis=emojis)
@@ -1019,13 +1019,8 @@ class TestModelGame:
         player1 = factories.user.create(game=game)
         player2 = factories.user.create(game=game)
 
-        dg = MagicMock(spec=discord.Guild)
-        dt = MagicMock(spec=discord.CategoryChannel, guild=dg, name="voice-channels")
-        dc = MagicMock(spec=discord.VoiceChannel, guild=dg, category=dt, members=[])
-        dc.id = 501
-        dg.categories = [dt]
-        dg.voice_channels = [dc]
-        suggested_vc = VoiceChannelSuggestion(random_empty=dc.id)
+        voice_xid = 501
+        suggested_vc = VoiceChannelSuggestion(random_empty=voice_xid)
 
         assert (await game_to_data(game)).to_embed(suggested_vc=suggested_vc).to_dict() == {
             "color": settings.STARTED_EMBED_COLOR,
@@ -1044,7 +1039,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "🔊 Suggested Voice Channel",
-                    "value": f"<#{dc.id}>",
+                    "value": f"<#{voice_xid}>",
                 },
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
@@ -1061,7 +1056,7 @@ class TestModelGame:
             "description": (
                 f"# [Join your Convoke game now!]({game.game_link})"
                 "\n\n"
-                f"## Please consider using this available voice channel: <#{dc.id}>.\n"
+                f"## Please consider using this available voice channel: <#{voice_xid}>.\n"
                 "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
                 "\n\n"
                 "You can also [jump to the original game post](https://discord.com/channels/"
@@ -1081,7 +1076,7 @@ class TestModelGame:
                 {
                     "inline": False,
                     "name": "🔊 Suggested Voice Channel",
-                    "value": f"<#{dc.id}>",
+                    "value": f"<#{voice_xid}>",
                 },
             ],
             "footer": {"text": f"SpellBot Game ID: #SB{game.id} — Service: Convoke"},
@@ -1187,14 +1182,17 @@ class TestModelGame:
         game = factories.game.create(bracket=GameBracket.NONE.value, guild=guild, channel=channel)
         assert (await game_to_data(game)).bracket_title == ""
 
-    async def test_embed_players_with_supporter_emoji(self, factories: Factories) -> None:
+    async def test_embed_players_with_supporter_emoji(
+        self,
+        factories: Factories,
+        decoy: Decoy,
+    ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
         player = factories.user.create(game=game)
 
-        supporter_emoji = MagicMock(spec=discord.Emoji)
-        supporter_emoji.name = "spellbot_supporter"
+        supporter_emoji = decoys.emoji(decoy, "spellbot_supporter")
         emojis: Emojis = [supporter_emoji]
         supporters = {player.xid}
 
@@ -1205,17 +1203,17 @@ class TestModelGame:
     async def test_embed_players_with_owner_emoji(
         self,
         factories: Factories,
-        mocker: MockerFixture,
+        monkeypatch: pytest.MonkeyPatch,
+        decoy: Decoy,
     ) -> None:
         guild = factories.guild.create(motd=None)
         channel = factories.channel.create(guild=guild, motd=None)
         game = factories.game.create(guild=guild, channel=channel)
         player = factories.user.create(game=game, xid=12345)
 
-        mocker.patch("spellbot.data.game_data.settings.OWNER_XID", 12345)
+        monkeypatch.setattr(game_data.settings, "OWNER_XID", 12345)
 
-        owner_emoji = MagicMock(spec=discord.Emoji)
-        owner_emoji.name = "spellbot_creator"
+        owner_emoji = decoys.emoji(decoy, "spellbot_creator")
         emojis: Emojis = [owner_emoji]
 
         result = (await game_to_data(game)).embed_players(emojis=emojis, supporters=set())
@@ -1242,8 +1240,6 @@ class TestModelGame:
         factories.user.create(game=game)
         factories.user.create(game=game)
 
-        dg = MagicMock(spec=discord.Guild)
-        dg.id = guild.xid
         suggested_vc = VoiceChannelSuggestion()
 
         embed = (await game_to_data(game)).to_embed(dm=True, suggested_vc=suggested_vc)

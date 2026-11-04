@@ -2,56 +2,73 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from typing import TYPE_CHECKING
 
+import ddtrace.trace
 import pytest
+from ddtrace._trace.span import Span
 
 from spellbot.tracing import configure_tracing, is_empty_resource
+
+if TYPE_CHECKING:
+    from ddtrace.trace import TraceFilter
+
+
+def span(resource: str | None) -> Span:
+    real = Span("test")
+    # ddtrace types `resource` as `str`, but nothing stops it being `None` at runtime.
+    real.resource = resource  # ty: ignore[invalid-assignment]
+    return real
+
+
+class FakeTracer:
+    """Stands in for `ddtrace.trace.tracer`, which `configure()` force-enables like the real one."""
+
+    def __init__(self, *, enabled: bool = True) -> None:
+        self.enabled = enabled
+        self.processors: list[TraceFilter] = []
+
+    def configure(self, *, trace_processors: list[TraceFilter]) -> None:
+        self.processors = trace_processors
+        self.enabled = True
+
+
+@pytest.fixture
+def tracer(monkeypatch: pytest.MonkeyPatch) -> FakeTracer:
+    fake = FakeTracer()
+    monkeypatch.setattr(ddtrace.trace, "tracer", fake)
+    return fake
 
 
 class TestIsEmptyResource:
     @pytest.mark.parametrize("resource", ["", " ", ";", " ; ", ";;", " ;\t; "])
     def test_empty_variants_are_dropped(self, resource: str) -> None:
-        span = MagicMock(resource=resource)
-        assert is_empty_resource(span) is True
+        assert is_empty_resource(span(resource)) is True
 
     @pytest.mark.parametrize("resource", ["SELECT 1", "BEGIN", "SELECT 1;"])
     def test_meaningful_resources_are_kept(self, resource: str) -> None:
-        span = MagicMock(resource=resource)
-        assert is_empty_resource(span) is False
+        assert is_empty_resource(span(resource)) is False
 
     def test_none_resource_is_dropped(self) -> None:
-        span = MagicMock(resource=None)
-        assert is_empty_resource(span) is True
+        assert is_empty_resource(span(None)) is True
 
 
 class TestConfigureTracing:
-    def test_registers_filter(self) -> None:
-        with patch("ddtrace.trace.tracer") as mock_tracer:
-            configure_tracing()
-        mock_tracer.configure.assert_called_once()
-        processors = mock_tracer.configure.call_args.kwargs["trace_processors"]
-        assert len(processors) == 1
+    def test_registers_filter(self, tracer: FakeTracer) -> None:
+        configure_tracing()
+        assert len(tracer.processors) == 1
 
     @pytest.mark.parametrize("enabled", [True, False])
-    def test_preserves_enabled_state(self, enabled: bool) -> None:
-        with patch("ddtrace.trace.tracer") as mock_tracer:
-            mock_tracer.enabled = enabled
-            mock_tracer.configure.side_effect = lambda **_: setattr(mock_tracer, "enabled", True)
-            configure_tracing()
-        assert mock_tracer.enabled is enabled
+    def test_preserves_enabled_state(self, tracer: FakeTracer, enabled: bool) -> None:
+        tracer.enabled = enabled
+        configure_tracing()
+        assert tracer.enabled is enabled
 
-    def test_filter_drops_empty_resource_spans(self) -> None:
-        with patch("ddtrace.trace.tracer") as mock_tracer:
-            configure_tracing()
-        processor = mock_tracer.configure.call_args.kwargs["trace_processors"][0]
-        keep = MagicMock(resource="SELECT 1")
-        drop = MagicMock(resource=";")
-        assert processor.process_trace([keep, drop]) == [keep]
+    def test_filter_drops_empty_resource_spans(self, tracer: FakeTracer) -> None:
+        configure_tracing()
+        keep, drop = span("SELECT 1"), span(";")
+        assert tracer.processors[0].process_trace([keep, drop]) == [keep]
 
-    def test_filter_returns_none_when_all_dropped(self) -> None:
-        with patch("ddtrace.trace.tracer") as mock_tracer:
-            configure_tracing()
-        processor = mock_tracer.configure.call_args.kwargs["trace_processors"][0]
-        drop = MagicMock(resource=";")
-        assert processor.process_trace([drop]) is None
+    def test_filter_returns_none_when_all_dropped(self, tracer: FakeTracer) -> None:
+        configure_tracing()
+        assert tracer.processors[0].process_trace([span(";")]) is None

@@ -63,7 +63,6 @@ dev = [
   "pytest-asyncio>=0",
   "pytest-cov>=6",
   "pytest-freezer>=0",
-  "pytest-mock>=3",
   "pytest-socket>=0",
   "pytest-xdist>=3",
   "pytest>=8",
@@ -200,6 +199,11 @@ ignore = [
   "SLF001",
   "TRY003",
 ]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# Tests fake collaborators with decoy, monkeypatch, or the helpers in `tests/mocks`.
+"unittest.mock".msg = "Use decoy, monkeypatch, or a helper from `tests/mocks` instead."
+"pytest_mock".msg = "Use decoy, monkeypatch, or a helper from `tests/mocks` instead."
 
 [tool.ruff.lint.flake8-type-checking]
 # SQLAlchemy resolves `Mapped[...]` annotations at runtime, so their imports can't be type-only.
