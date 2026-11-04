@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
-from aiohttp import web
+from aiohttp import ClientPayloadError, http_writer, web
 from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
@@ -819,6 +819,54 @@ class TestWebRecordExport:
         # The disconnect is swallowed: the request completes without a 500/traceback.
         assert resp.status == 200
         assert any("client disconnected" in r.message for r in caplog.records)
+
+    async def test_user_export_client_disconnect_at_the_end(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+        factories.play.create(game_id=game.id, user_xid=user.xid)
+
+        # Simulate the client dropping the connection as the export ends: the gzip stream is
+        # finished, then sending its last bytes fails. Finishing it a second time would raise
+        # `zlib.error: inconsistent stream state`, as it did in production.
+        calls = 0
+
+        async def drop_after_finishing(
+            writer: http_writer.StreamWriter,
+            chunk: bytes = b"",
+        ) -> None:
+            nonlocal calls
+            calls += 1
+            assert writer._compress is not None
+            writer._compress.flush()
+            raise ConnectionResetError("Cannot write to closing transport")
+
+        monkeypatch.setattr(http_writer.StreamWriter, "write_eof", drop_after_finishing)
+
+        resp = await client.get(f"/u/{user.xid}/export.csv")
+        with pytest.raises(ClientPayloadError):
+            await resp.read()  # the stream never ends
+
+        # aiohttp treats the dropped connection as routine: no second finish, no traceback.
+        assert calls == 1
+        assert not any(r.name == "aiohttp.server" for r in caplog.records)
 
     async def test_user_export_client_disconnect_before_headers(
         self,
