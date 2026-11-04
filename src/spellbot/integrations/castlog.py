@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from spellbot.integrations.http_errors import USER_AGENT, request_with_retries
+from spellbot.integrations.http_errors import USER_AGENT, Integration, request_with_retries
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -57,7 +57,7 @@ async def report_match(payload: dict[str, Any]) -> dict[str, Any] | None:
         return None
 
     return await request_with_retries(
-        "Castlog",
+        Integration.CASTLOG,
         lambda client: fetch_castlog_report(client, payload),
         attempts=RETRY_ATTEMPTS,
         timeout_s=TIMEOUT_S,

@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from aiohttp.http_exceptions import HttpProcessingError
+from gunicorn.glogging import Logger as GunicornLogger
 from pythonjsonlogger.json import JsonFormatter
 
 from spellbot.settings import settings
+
+if TYPE_CHECKING:
+    from gunicorn.config import Config
 
 FORMAT = (
     "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] "
@@ -53,3 +58,33 @@ def configure_logging(level: int | str = "INFO") -> None:  # pragma: no cover
     root_logger.setLevel(level)
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
+
+
+def demote_bad_requests(record: logging.LogRecord) -> bool:
+    """
+    Log malformed HTTP from clients (scanners sending garbage) as a warning, not an error.
+
+    aiohttp logs these with a traceback at error level, but they're the client's mistake,
+    not ours, so they shouldn't page anyone.
+    """
+    exc = record.exc_info[1] if record.exc_info else None
+    if isinstance(exc, HttpProcessingError) and record.levelno > logging.WARNING:
+        record.levelno = logging.WARNING
+        record.levelname = logging.getLevelName(logging.WARNING)
+    return True
+
+
+class JsonGunicornLogger(GunicornLogger):
+    """
+    A gunicorn logger whose error log is JSON, like the rest of SpellBot's logs.
+
+    gunicorn's own format writes a traceback as many plain-text lines, which reach Datadog
+    as separate logs at `info`. As JSON, each record is one log with its real `status` and
+    its traceback in `exc_info`. Use with `gunicorn --logger-class`.
+    """
+
+    def setup(self, cfg: Config) -> None:
+        super().setup(cfg)
+        for handler in self.error_log.handlers:
+            handler.setFormatter(DatadogJsonFormatter(fmt=FORMAT, datefmt=DATE_FMT))
+            handler.addFilter(demote_bad_requests)

@@ -45,18 +45,67 @@ resource "datadog_monitor" "spellbot_application_error" {
   on_missing_data        = "default"
   require_full_window    = false
   monitor_thresholds {
-    critical = 1
+    critical = 0
   }
-  name    = "SpellBot: Application error: {{log.message}}"
-  type    = "log alert"
-  tags    = ["service:spellbot", "env:prod"]
+  name = "SpellBot: Application error: {{log.message}}"
+  type = "log alert"
+  tags = ["service:spellbot", "env:prod"]
+  # Any one error alerts: a log at error level (our JSON logs, gunicorn's included), or a
+  # Python traceback that arrives as plain text at info (from anything not logging JSON).
+  # Failures of outside services are left to their own monitors below, so an outage alerts
+  # once rather than for every failed request.
   query   = <<-EOT
-    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -404 -\"ELB-HealthChecker\" -\"Error handling request from\" -\"raise ex\" -\"raise LineTooLong\" -\"raise BadHttpMessage\" -\"raise BadHttpMethod\" -\"raise BadStatusLine\" -\"raise InvalidHeader\" -\"raise InvalidURLError\" (env:error OR status:error OR raise)").index("*").rollup("count").last("5m") > 1
+    logs("environment:prod -@aws.awslogs.logStream:datadog/datadog-agent/* -@integration:* (status:error OR (status:info \"Traceback (most recent call last)\"))").index("*").rollup("count").last("5m") > 0
   EOT
   message = <<-EOT
     {{#is_alert}}
     @${var.alert_email}
     {{/is_alert}}
+  EOT
+}
+
+# One monitor per outside service, matching SpellBot's `Integration` enum (a test checks
+# they agree). Failure logs carry `@integration:<name>`. A service is failing while any of
+# its failures fall in the window, which re-alerts every two hours, and recovers once a
+# whole window passes without one. Each window must outlast the gap between calls to that
+# service: Patreon is only synced hourly, so a shorter window would recover between syncs.
+locals {
+  integration_failure_windows = {
+    "Castlog"        = "30m"
+    "Convoke"        = "30m"
+    "EDHLab"         = "30m"
+    "Girudo"         = "30m"
+    "Patreon"        = "90m"
+    "Playgroup Live" = "30m"
+  }
+}
+
+resource "datadog_monitor" "spellbot_integration_failing" {
+  for_each = local.integration_failure_windows
+
+  enable_logs_sample  = true
+  on_missing_data     = "default"
+  require_full_window = false
+  renotify_interval   = 120
+  renotify_statuses   = ["alert"]
+  monitor_thresholds {
+    critical = 0
+  }
+  name    = "SpellBot: ${each.key} requests are failing"
+  type    = "log alert"
+  tags    = ["service:spellbot", "env:prod"]
+  query   = <<-EOT
+    logs("environment:prod status:error @integration:\"${each.key}\"").index("*").rollup("count").last("${each.value}") > 0
+  EOT
+  message = <<-EOT
+    {{#is_alert}}
+    Requests to ${each.key} are failing: {{value}} failures in the last ${each.value}.
+    @${var.alert_email}
+    {{/is_alert}}
+    {{#is_recovery}}
+    Requests to ${each.key} have stopped failing.
+    @${var.alert_email}
+    {{/is_recovery}}
   EOT
 }
 

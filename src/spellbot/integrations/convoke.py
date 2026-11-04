@@ -11,7 +11,7 @@ import httpx
 from spellbot import services
 from spellbot.data import GameLinkDetails
 from spellbot.enums import COMMANDER_FORMATS, GameBracket, GameFormat
-from spellbot.integrations.http_errors import USER_AGENT, request_with_retries
+from spellbot.integrations.http_errors import USER_AGENT, Integration, request_with_retries
 from spellbot.metrics import add_span_error
 from spellbot.models import Game, column_length
 from spellbot.settings import settings
@@ -110,7 +110,10 @@ async def get_live_guild_wars() -> list[LiveGuildWar]:
             return await fetch_live_guild_wars(client)
         except Exception as ex:
             add_span_error(ex)
-            logger.exception("Failed to fetch live Convoke Guild Wars")
+            logger.exception(
+                "Failed to fetch live Convoke Guild Wars",
+                extra=Integration.CONVOKE.about(),
+            )
             return []
 
 
@@ -212,7 +215,7 @@ async def generate_link(
         return GameLinkDetails()
 
     data = await request_with_retries(
-        "Convoke",
+        Integration.CONVOKE,
         lambda client: fetch_convoke_link(client, game_data, pins),
         attempts=RETRY_ATTEMPTS,
         timeout_s=TIMEOUT_S,
@@ -257,7 +260,7 @@ async def update_players(game_data: GameData, pins: dict[int, str]) -> None:
     if not settings.CONVOKE_API_KEY or not game_data.game_link:
         return
     await request_with_retries(
-        "Convoke",
+        Integration.CONVOKE,
         lambda client: put_convoke_players(client, game_data, pins),
         attempts=RETRY_ATTEMPTS,
         timeout_s=TIMEOUT_S,

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import httpx
@@ -29,6 +30,27 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
 logger = logging.getLogger(__name__)
+
+
+class Integration(StrEnum):
+    """
+    An outside service SpellBot depends on, named as it appears in logs and monitors.
+
+    Each one has its own outage monitor in `infrastructure/o11y/main.tf`, which finds its
+    failures by the `integration` attribute that `about()` adds to their logs.
+    """
+
+    CASTLOG = "Castlog"
+    CONVOKE = "Convoke"
+    EDHLAB = "EDHLab"
+    GIRUDO = "Girudo"
+    PATREON = "Patreon"
+    PLAYGROUP_LIVE = "Playgroup Live"
+
+    def about(self) -> dict[str, str]:
+        """Return the `extra` that marks a log as being about this integration."""
+        return {"integration": self.value}
+
 
 # Sent with every request so the services can tell SpellBot traffic and versions apart.
 USER_AGENT = f"spellbot/{__version__}"
@@ -68,7 +90,7 @@ def describe_http_error(ex: BaseException) -> str:
 
 
 async def request_with_retries[T](
-    label: str,
+    integration: Integration,
     request: Callable[[httpx.AsyncClient], Awaitable[T]],
     *,
     attempts: int,
@@ -76,7 +98,7 @@ async def request_with_retries[T](
     backoff_s: float = 0.0,
 ) -> T | None:
     """
-    Run a request against the `label` API, retrying failures. Returns `None` if it never succeeds.
+    Run a request against `integration`, retrying failures. Returns `None` if it never succeeds.
 
     A terminal client error ends the retries early. When `backoff_s` is set, the wait between
     attempts doubles each time, starting from `backoff_s`.
@@ -89,14 +111,20 @@ async def request_with_retries[T](
                 details = describe_http_error(ex)
                 if attempt == attempts - 1 or is_terminal_client_error(ex):
                     add_span_error(ex)
-                    logger.exception("%s API failure. %s", label, details)
+                    logger.exception(
+                        "%s API failure. %s",
+                        integration,
+                        details,
+                        extra=integration.about(),
+                    )
                     return None
                 logger.warning(
                     "%s API issue (attempt %s). %s",
-                    label,
+                    integration,
                     attempt + 1,
                     details,
                     exc_info=True,
+                    extra=integration.about(),
                 )
                 if backoff_s:
                     await asyncio.sleep(backoff_s * (2**attempt))

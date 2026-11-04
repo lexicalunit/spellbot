@@ -10,6 +10,7 @@ import httpx
 from ddtrace.trace import tracer
 
 from spellbot.environment import running_in_pytest
+from spellbot.integrations.http_errors import Integration
 from spellbot.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -87,7 +88,11 @@ async def supporters() -> set[int]:
                 response = await client.get(next_url, headers=headers)
 
                 if response.status_code != 200:
-                    logger.error("patreon sync failed, error response: %s", response.text)
+                    logger.error(
+                        "patreon sync failed, error response: %s",
+                        response.text,
+                        extra=Integration.PATREON.about(),
+                    )
                     break
 
                 data = response.json()
@@ -103,5 +108,6 @@ async def supporters() -> set[int]:
         logger.exception(
             "patreon sync failed, unknown error: %s",
             response.text if response else "no response",
+            extra=Integration.PATREON.about(),
         )
         return set()

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- The web server's error logs are now JSON, so tracebacks reach Datadog as one error log.
+- Malformed HTTP requests from clients now log as warnings rather than errors.
+- The application error monitor now alerts on any error log or plain-text traceback.
+- Each outside service now has its own monitor that alerts when it fails and when it recovers.
+- Outside service failures re-alert every two hours while they last, not on every error.
+
 ### Fixed
 
 - Fixed a `zlib.error` traceback when a client disconnects as a CSV export finishes.

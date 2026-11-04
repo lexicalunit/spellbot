@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 
+import re
+from typing import TYPE_CHECKING
+
 import httpx
 import pytest
 
+from spellbot.integrations import http_errors
 from spellbot.integrations.http_errors import (
     MAX_BODY_CHARS,
+    Integration,
     describe_http_error,
     is_terminal_client_error,
+    request_with_retries,
 )
+from tests import REPO_ROOT
+from tests.mocks.http import raising, serve_httpx
+
+if TYPE_CHECKING:
+    from tests.fixtures import Stub
 
 
 def status_error(
@@ -87,3 +98,49 @@ class TestDescribeUnreadBody:
         response = httpx.Response(500, request=request, stream=httpx.ByteStream(b"never read"))
         ex = httpx.HTTPStatusError("500", request=request, response=response)
         assert describe_http_error(ex).endswith(": <unavailable>")
+
+
+MONITORS = REPO_ROOT / "infrastructure" / "o11y" / "main.tf"
+
+
+class TestIntegration:
+    def test_about_marks_logs_with_the_integration(self) -> None:
+        assert Integration.PLAYGROUP_LIVE.about() == {"integration": "Playgroup Live"}
+
+    def test_every_integration_has_a_monitor(self) -> None:
+        source = MONITORS.read_text()
+        windows = source[source.index("integration_failure_windows = {") :]
+        windows = windows[: windows.index("}")]
+        monitored = set(re.findall(r'^\s*"([^"]+)"\s*=', windows, re.MULTILINE))
+        assert monitored == {integration.value for integration in Integration}
+
+
+@pytest.mark.asyncio
+class TestRequestWithRetries:
+    async def test_failures_are_logged_about_the_integration(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        stub: Stub,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        stub(http_errors, "add_span_error")
+        serve_httpx(monkeypatch, raising())
+
+        async def request(client: httpx.AsyncClient) -> httpx.Response:
+            return await client.get("https://api.example.com/thing")
+
+        result = await request_with_retries(
+            Integration.CASTLOG,
+            request,
+            attempts=2,
+            timeout_s=1,
+        )
+
+        assert result is None
+        retry, failure = caplog.records
+        assert (retry.levelname, retry.getMessage()) == (
+            "WARNING",
+            "Castlog API issue (attempt 1). ",
+        )
+        assert (failure.levelname, failure.getMessage()) == ("ERROR", "Castlog API failure. ")
+        assert retry.__dict__["integration"] == failure.__dict__["integration"] == "Castlog"

@@ -24,7 +24,7 @@ elif [ "$SPELL_APP" = "spellapi" ]; then
     else
         WORKERS=1
     fi
-    CMD="$CMD gunicorn --workers $WORKERS spellbot.web.server:app --worker-class aiohttp.worker.GunicornWebWorker --bind $HOST:$PORT --access-logfile -"
+    CMD="$CMD gunicorn --workers $WORKERS spellbot.web.server:app --worker-class aiohttp.worker.GunicornWebWorker --bind $HOST:$PORT --access-logfile - --logger-class spellbot.logs.JsonGunicornLogger"
 else
     echo "bad app name: $SPELL_APP; supported app names: spellbot, spellapi" >&2
     exit 1

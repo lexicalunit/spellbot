@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from spellbot.data import GameLinkDetails
 from spellbot.enums import GameBracket
-from spellbot.integrations.http_errors import USER_AGENT, request_with_retries
+from spellbot.integrations.http_errors import USER_AGENT, Integration, request_with_retries
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ async def generate_link(game_data: GameData) -> GameLinkDetails:
     if not settings.EDHLAB_API_KEY:
         return GameLinkDetails()
     data = await request_with_retries(
-        "EDHLAB",
+        Integration.EDHLAB,
         lambda client: fetch_edhlab_link(client, game_data),
         attempts=RETRY_ATTEMPTS,
         timeout_s=TIMEOUT_S,

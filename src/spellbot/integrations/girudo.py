@@ -13,7 +13,11 @@ import httpx
 
 from spellbot.data import GameLinkDetails
 from spellbot.enums import COMMANDER_FORMATS, GameFormat
-from spellbot.integrations.http_errors import describe_http_error, is_terminal_client_error
+from spellbot.integrations.http_errors import (
+    Integration,
+    describe_http_error,
+    is_terminal_client_error,
+)
 from spellbot.metrics import add_span_error
 from spellbot.settings import settings
 
@@ -360,7 +364,12 @@ async def generate_link(game_data: GameData) -> GameLinkDetails:
                 is_final_attempt = attempt == retry_attempts - 1
                 if is_final_attempt or is_terminal_client_error(ex):
                     add_span_error(ex)
-                    logger.exception("Girudo API failure (email=%s). %s", email, details)
+                    logger.exception(
+                        "Girudo API failure (email=%s). %s",
+                        email,
+                        details,
+                        extra=Integration.GIRUDO.about(),
+                    )
                     return GameLinkDetails()
 
                 logger.warning(
@@ -370,6 +379,7 @@ async def generate_link(game_data: GameData) -> GameLinkDetails:
                     email,
                     details,
                     exc_info=True,
+                    extra=Integration.GIRUDO.about(),
                 )
 
     return GameLinkDetails()

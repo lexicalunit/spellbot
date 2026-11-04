@@ -9,7 +9,7 @@ import httpx
 
 from spellbot.data import GameLinkDetails
 from spellbot.enums import COMMANDER_FORMATS, VALID_BRACKETS, GameBracket, GameFormat, GameService
-from spellbot.integrations.http_errors import USER_AGENT, request_with_retries
+from spellbot.integrations.http_errors import USER_AGENT, Integration, request_with_retries
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
@@ -135,7 +135,7 @@ async def generate_link(
 
     player_amount = original_seats or game_data.seats
     data = await request_with_retries(
-        "Playgroup Live",
+        Integration.PLAYGROUP_LIVE,
         lambda client: fetch_playgroup_live_session(
             client,
             game_data,
