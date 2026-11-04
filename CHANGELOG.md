@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed rate limiting behind the ALB, which put every client in one shared bucket.
 - Fixed Discord HTTP spans in Datadog closing before the request ran.
 - Stopped sending Discord request bodies to Datadog as span tags.
+- Fixed the first new API tokens colliding with the ids of tokens that were added by hand.
 
 ## [v24.0.2](https://github.com/lexicalunit/spellbot/releases/tag/v24.0.2) - 2026-11-03
 
