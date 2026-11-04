@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from aiohttp.client import ClientSession
+    from pytest_mock import MockerFixture
 
 pytestmark = pytest.mark.use_db
 
@@ -47,6 +48,16 @@ class TestSecurityHeaders:
         assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
         assert "X-XSS-Protection" not in resp.headers
         assert "Access-Control-Allow-Origin" not in resp.headers
+        assert "Strict-Transport-Security" not in resp.headers
+
+    async def test_hsts_when_served_over_https(
+        self,
+        client: ClientSession,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "API_BASE_URL", "https://prod.app.spellbot.io")
+        resp = await client.get("/")
+        assert resp.headers["Strict-Transport-Security"] == "max-age=31536000; includeSubDomains"
 
 
 @pytest.mark.asyncio

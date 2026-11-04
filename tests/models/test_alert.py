@@ -26,7 +26,7 @@ class TestModelAlert:
             preferences={"formats": [1, 4], "brackets": [2], "channels": [100, 200]},
         )
 
-        alert_data = alert.to_data()
+        alert_data = AlertData.from_model(alert)
         assert isinstance(alert_data, AlertData)
         assert asdict(alert_data) == {
             "id": alert.id,
@@ -46,7 +46,7 @@ class TestModelAlert:
         user = factories.user.create()
         alert = factories.alert.create(guild_xid=guild.xid, user_xid=user.xid)
 
-        alert_data = alert.to_data()
+        alert_data = AlertData.from_model(alert)
         assert alert_data.formats == []
         assert alert_data.brackets == []
         assert alert_data.channels == []
@@ -63,7 +63,7 @@ class TestModelAlert:
             deleted_at=deleted_at,
         )
 
-        alert_data = alert.to_data()
+        alert_data = AlertData.from_model(alert)
         assert alert_data.deleted_at == deleted_at
 
     def test_alert_to_data_with_active_hours(self, factories: Factories) -> None:
@@ -80,7 +80,7 @@ class TestModelAlert:
             },
         )
 
-        alert_data = alert.to_data()
+        alert_data = AlertData.from_model(alert)
         assert alert_data.active_hours == {
             "start": 17,
             "end": 22,

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
     from spellbot.data import ChannelData, GuildData, PostData, UserData
     from spellbot.enums import Emojis
+    from spellbot.models import Game
     from spellbot.operations import VoiceChannelSuggestion
 
 HR = "**˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙ॱ⋅.˳.⋅ॱ˙**"
@@ -54,6 +55,49 @@ class GameData:
     locale: str = "en"
     convoke_guild_name: str | None = None
     convoke_guild_url: str | None = None
+
+    @classmethod
+    def from_model(
+        cls,
+        model: Game,
+        *,
+        guild: GuildData,
+        channel: ChannelData,
+        posts: list[PostData],
+        players: list[UserData],
+        player_pins: dict[int, str | None],
+    ) -> GameData:
+        """Build from a game row plus its related rows, which `services.games` loads."""
+        return cls(
+            id=model.id,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            started_at=model.started_at,
+            deleted_at=model.deleted_at,
+            guild_xid=model.guild_xid,
+            guild=guild,
+            channel_xid=model.channel_xid,
+            channel=channel,
+            posts=posts,
+            voice_xid=model.voice_xid,
+            voice_invite_link=model.voice_invite_link,
+            seats=model.seats,
+            status=model.status,
+            format=model.format,
+            bracket=model.bracket,
+            service=model.service,
+            game_link=model.game_link,
+            password=model.password,
+            rules=model.rules,
+            war_id=model.war_id,
+            war_title=model.war_title,
+            convoke_guild_name=model.convoke_guild_name,
+            convoke_guild_url=model.convoke_guild_url,
+            blind=model.blind,
+            locale=model.locale,
+            players=players,
+            player_pins=player_pins,
+        )
 
     @property
     def convoke_table_open(self) -> bool:

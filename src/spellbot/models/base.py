@@ -11,7 +11,7 @@ import alembic.command
 import alembic.config
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Query
 
 from . import import_models
 
@@ -93,8 +93,6 @@ def reverse_all(database_url: str) -> None:
 
 def literalquery(statement: Any) -> str:  # pragma: no cover
     """WARNING: This is **insecure**. DO NOT execute returned strings."""
-    import sqlalchemy.orm  # allow_inline
-
-    if isinstance(statement, sqlalchemy.orm.Query):
+    if isinstance(statement, Query):
         statement = statement.statement
     return statement.compile(compile_kwargs={"literal_binds": True}).string

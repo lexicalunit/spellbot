@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `API_BASE_URL` now defaults to `http://localhost:3008`.
 - Web security headers now apply to error pages, such as 404s, too.
 - Removed the deprecated `X-XSS-Protection` header.
+- The web server now sends `Strict-Transport-Security` when served over HTTPS.
+- Chart scripts now load pinned to exact versions with integrity hashes.
 - The `Server` header no longer reveals Python and aiohttp versions.
 - Replaced `python-dateutil` with the standard library.
 - The dev shell (`shell.py`) no longer needs `nest-asyncio`.
@@ -33,6 +35,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Removed the direct `wrapt` dependency.
 - Moved translations from YAML to gettext `.po` files and replaced `python-i18n` with Babel.
 - Plurals now follow each language's own rules, including Polish's three forms.
+- Building game data now takes six queries for any number of games, instead of about eight each.
+- Awarding roles now takes three queries for any number of players, instead of three each.
+- Refreshing a player's other game posts now loads those games in one batch.
+- Models no longer import data classes or open database sessions; that lives in the services.
+- Removed the unused `channels` and `awards` lists from guild data.
 
 ### Fixed
 

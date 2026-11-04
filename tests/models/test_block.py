@@ -21,7 +21,7 @@ class TestModelBlock:
         user2 = factories.user.create()
         block = factories.block.create(user_xid=user1.xid, blocked_user_xid=user2.xid)
 
-        block_data = block.to_data()
+        block_data = BlockData.from_model(block)
         assert isinstance(block_data, BlockData)
         assert asdict(block_data) == {
             "user_xid": user1.xid,

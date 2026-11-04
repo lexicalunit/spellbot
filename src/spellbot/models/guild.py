@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, Boolean, DateTime, String, false, null, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,10 +12,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from . import Base, now, web_editable
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    from spellbot.data import GuildData
-
     from . import Channel, Game, GuildAward
 
 
@@ -158,36 +154,3 @@ class Guild(Base):
         order_by="GuildAward.count",
         doc="Awards available in this guild",
     )
-
-    async def to_data(self) -> GuildData:
-        from spellbot.data import GuildData  # allow_inline
-
-        channels = await self.awaitable_attrs.channels
-        awards = await self.awaitable_attrs.awards
-        return GuildData(
-            xid=self.xid,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            name=self.name,
-            motd=self.motd,
-            show_links=self.show_links,
-            voice_create=self.voice_create,
-            use_max_bitrate=self.use_max_bitrate,
-            channels=sorted(
-                [channel.to_data() for channel in cast("Iterable[Channel]", channels)],
-                key=lambda c: c.xid,
-            ),
-            awards=sorted(
-                [award.to_data() for award in cast("Iterable[GuildAward]", awards)],
-                key=lambda c: c.id,
-            ),
-            banned=self.banned,
-            notice=self.notice,
-            suggest_voice_category=self.suggest_voice_category,
-            enable_mythic_track=self.enable_mythic_track,
-            show_convoke_guild=self.show_convoke_guild,
-            active=self.active,
-            locale=self.locale,
-            icon=self.icon,
-            promote=self.promote,
-        )

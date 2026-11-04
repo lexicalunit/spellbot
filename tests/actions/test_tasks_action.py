@@ -21,6 +21,7 @@ from spellbot.database import DatabaseSession
 from spellbot.enums import GameBracket
 from spellbot.errors import SpellBotError
 from spellbot.models import Channel, Game, Guild
+from spellbot.services.games import game_to_data
 from tests.mocks import create_mock_channel, decoys, mock_discord_object
 
 if TYPE_CHECKING:
@@ -284,7 +285,7 @@ class TestTaskExpireInactiveChannels:
         factories.user.create(game=game)
         mocker.patch("spellbot.actions.tasks_action.services", mock_services)
         mocker.patch("spellbot.actions.base_action.services", mock_services)
-        mock_services.games.inactive_games = AsyncMock(return_value=[await game.to_data()])
+        mock_services.games.inactive_games = AsyncMock(return_value=[await game_to_data(game)])
         mock_services.games.delete_games = AsyncMock()
 
         mock_channel_data = create_mock_channel(
@@ -683,7 +684,7 @@ class TestNotifyPendingGames:
         guild: Guild = factories.guild.create()
         channel: Channel = factories.channel.create(guild=guild)
         game: Game = factories.game.create(guild=guild, channel=channel)
-        game_data = await game.to_data()
+        game_data = await game_to_data(game)
         mocker.patch("spellbot.actions.tasks_action.services", mock_services)
         mock_services.games.games_pending_notification = AsyncMock(return_value=[game_data])
         mock_services.alerts.find_matching_user_xids = AsyncMock(return_value=[101, 202])
@@ -711,7 +712,7 @@ class TestNotifyPendingGames:
         guild: Guild = factories.guild.create()
         channel: Channel = factories.channel.create(guild=guild)
         game: Game = factories.game.create(guild=guild, channel=channel)
-        game_data = await game.to_data()
+        game_data = await game_to_data(game)
         mocker.patch("spellbot.actions.tasks_action.services", mock_services)
         mock_services.games.games_pending_notification = AsyncMock(return_value=[game_data])
         mock_services.alerts.find_matching_user_xids = AsyncMock(return_value=[101])
@@ -736,7 +737,7 @@ class TestNotifyPendingGames:
         guild: Guild = factories.guild.create()
         channel: Channel = factories.channel.create(guild=guild)
         game: Game = factories.game.create(guild=guild, channel=channel)
-        game_data = await game.to_data()
+        game_data = await game_to_data(game)
         mocker.patch("spellbot.actions.tasks_action.services", mock_services)
         mock_services.games.games_pending_notification = AsyncMock(return_value=[game_data])
         mock_services.alerts.find_matching_user_xids = AsyncMock(return_value=[])
@@ -777,7 +778,7 @@ class TestNotifyPendingGames:
             bracket=GameBracket.BRACKET_3.value,
         )
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=99999)
-        game_data = await game.to_data()
+        game_data = await game_to_data(game)
 
         embed = action.build_notification_embed(game_data)
 
@@ -793,7 +794,7 @@ class TestNotifyPendingGames:
         guild: Guild = factories.guild.create()
         channel: Channel = factories.channel.create(guild=guild)
         game: Game = factories.game.create(guild=guild, channel=channel)
-        game_data = await game.to_data()
+        game_data = await game_to_data(game)
         assert game_data.bracket == GameBracket.NONE.value
 
         embed = action.build_notification_embed(game_data)

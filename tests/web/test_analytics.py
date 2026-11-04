@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -127,6 +128,12 @@ class TestWebAnalyticsShell:
         assert "Share this page" in text
         # The page links back to the guild page.
         assert 'href="/g/201"' in text
+        # Chart libraries load pinned to exact versions, each with an integrity hash.
+        scripts = re.findall(r'<script src="https://cdn[^>]*>', text)
+        assert len(scripts) == 4
+        assert all(
+            'integrity="sha384-' in tag and 'crossorigin="anonymous"' in tag for tag in scripts
+        )
 
     async def test_analytics_shell_bad_guild_in_url(
         self,

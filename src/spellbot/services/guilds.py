@@ -11,14 +11,13 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_, or_
 
 from spellbot import audit
+from spellbot.data import GuildAwardData, GuildData
 from spellbot.database import DatabaseSession
 from spellbot.models import Channel, Guild, GuildAward, column_length, web_editable_columns
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
     import discord
-
-    from spellbot.data import GuildAwardData, GuildData
 
 
 guild_cache: dict[int, tuple[str, str | None, str | None]] = {}
@@ -81,7 +80,7 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
     result = (
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild.id))
     ).scalar_one_or_none()
-    return await result.to_data() if result else None
+    return GuildData.from_model(result) if result else None
 
 
 async def update_guild(guild_xid: int, **values: Any) -> None:
@@ -163,7 +162,7 @@ async def get(guild_xid: int) -> GuildData | None:
     guild = (
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
     ).scalar_one_or_none()
-    return await guild.to_data() if guild else None
+    return GuildData.from_model(guild) if guild else None
 
 
 async def promoted_icon(guild_xid: int) -> dict[str, Any] | None:
@@ -232,7 +231,7 @@ async def award_list(guild_xid: int) -> list[GuildAwardData]:
         .scalars()
         .all()
     )
-    return [award.to_data() for award in awards]
+    return [GuildAwardData.from_model(award) for award in awards]
 
 
 async def award_add(
@@ -255,7 +254,7 @@ async def award_add(
     )
     DatabaseSession.add(award)
     await DatabaseSession.commit()
-    return award.to_data()
+    return GuildAwardData.from_model(award)
 
 
 async def award_update(
@@ -276,7 +275,7 @@ async def award_update(
     award.repeating = bool(options.get("repeating", False))
     award.remove = bool(options.get("remove", False))
     await DatabaseSession.commit()
-    return award.to_data()
+    return GuildAwardData.from_model(award)
 
 
 async def award_delete(guild_xid: int, guild_award_id: int) -> bool:
@@ -300,4 +299,4 @@ async def setup_mythic_track(guild_data: GuildData) -> GuildData:
     )
     async with audit.transaction():
         updated_guild: Guild = (await DatabaseSession.execute(stmt)).scalar_one()
-    return await updated_guild.to_data()
+    return GuildData.from_model(updated_guild)

@@ -23,7 +23,7 @@ class TestModelQueue:
         game = factories.game.create(guild_xid=guild.xid, channel_xid=channel.xid)
         queue = factories.queue.create(user_xid=user.xid, game_id=game.id)
 
-        queue_data = queue.to_data()
+        queue_data = QueueData.from_model(queue)
         assert isinstance(queue_data, QueueData)
         assert asdict(queue_data) == {
             "user_xid": queue.user_xid,

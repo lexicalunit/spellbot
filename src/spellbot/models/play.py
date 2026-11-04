@@ -5,15 +5,11 @@ from __future__ import annotations
 import secrets
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base, now
-
-if TYPE_CHECKING:
-    from spellbot.data import PlayData
 
 
 def generate_pin() -> str:
@@ -72,16 +68,3 @@ class Play(Base):
         default=None,
         doc="UTC timestamp when this play's PIN was verified",
     )
-
-    def to_data(self) -> PlayData:
-        from spellbot.data import PlayData  # allow_inline
-
-        return PlayData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            user_xid=self.user_xid,
-            game_id=self.game_id,
-            og_guild_xid=self.og_guild_xid,
-            pin=self.pin,
-            verified_at=self.verified_at,
-        )

@@ -17,6 +17,8 @@ from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.integrations import convoke
 from spellbot.models import Channel, Game, GameStatus, Guild, Queue, User
+from spellbot.services.games import game_players
+from spellbot.services.users import current_game
 from spellbot.settings import settings as runtime_settings
 from spellbot.views import GameView
 from tests.fixtures import Factories, run_command
@@ -102,7 +104,7 @@ class TestCogLookingForGame:
         assert game.channel_xid == channel.xid
         assert game.guild_xid == guild.xid
         assert interaction.channel is not None
-        user_game = await user.game(interaction.channel.id)
+        user_game = await current_game(user.xid, interaction.channel.id)
         assert user_game is not None
         assert user_game.id == game.id
 
@@ -248,7 +250,9 @@ class TestCogLookingForGame:
         found = (
             await DatabaseSession.execute(select(User).where(User.xid == player.xid))
         ).scalar_one()
-        assert (await found.game(channel.xid)).id == game.id
+        found_game = await current_game(found.xid, channel.xid)
+        assert found_game is not None
+        assert found_game.id == game.id
 
     async def test_lfg_with_format(
         self,
@@ -612,7 +616,7 @@ class TestCogLookingForGameJoinButton:
             (await DatabaseSession.execute(select(func.count()).select_from(Game))).scalar() or 0
         ) == 1
         DatabaseSession.expire_all()
-        assert sorted(p.xid for p in await game.players()) == sorted([user.xid, other_user.xid])
+        assert sorted(p.xid for p in await game_players(game)) == sorted([user.xid, other_user.xid])
 
     async def test_join_when_started(
         self,

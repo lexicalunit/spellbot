@@ -11,10 +11,12 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import and_
 
+from spellbot.data import UserData
 from spellbot.database import DatabaseSession, any_of
 from spellbot.models import (
     Block,
     Game,
+    GameStatus,
     GuildMember,
     Play,
     Post,
@@ -25,10 +27,12 @@ from spellbot.models import (
 )
 from spellbot.settings import settings
 
+from .games import game_to_data, games_to_data
+
 if TYPE_CHECKING:
     import discord
 
-    from spellbot.data import GameData, UserData
+    from spellbot.data import GameData
 
 
 logger = logging.getLogger(__name__)
@@ -91,7 +95,7 @@ async def upsert(
 
     await DatabaseSession.commit()
     user = await DatabaseSession.get(User, xid)
-    return user.to_data()
+    return UserData.from_model(user)
 
 
 @tracer.wrap()
@@ -100,7 +104,7 @@ async def get(user_xid: int) -> UserData | None:
     user: User | None = (
         await DatabaseSession.execute(select(User).where(User.xid == user_xid))
     ).scalar_one_or_none()
-    return user.to_data() if user else None
+    return UserData.from_model(user) if user else None
 
 
 async def upsert_flags(user_xid: int, **flags: bool) -> UserData:
@@ -114,7 +118,7 @@ async def upsert_flags(user_xid: int, **flags: bool) -> UserData:
     ).returning(User)
     updated_user: User = (await DatabaseSession.execute(stmt)).scalars().one()
     await DatabaseSession.commit()
-    return updated_user.to_data()
+    return UserData.from_model(updated_user)
 
 
 @tracer.wrap()
@@ -210,23 +214,52 @@ async def leave_game(user_data: UserData, channel_xid: int) -> list[GameData]:
         .execution_options(synchronize_session="fetch")
     )
     result = (await DatabaseSession.execute(query)).scalars()
-    updated_games: list[GameData] = [await g.to_data() for g in result.all()]
+    updated_games: list[GameData] = await games_to_data(result.all())
     await DatabaseSession.commit()
     return updated_games
+
+
+async def current_game(user_xid: int, channel_xid: int) -> Game | None:
+    """Return the most recently updated game the user is queued in for the given channel."""
+    queue_result = await DatabaseSession.execute(
+        select(Queue)
+        .join(Game)
+        .join(Post)
+        .where(
+            Queue.user_xid == user_xid,
+            Post.channel_xid == channel_xid,
+            Game.deleted_at.is_(None),
+        )
+        .order_by(Game.updated_at.desc()),
+    )
+    queue = queue_result.scalars().first()
+    if queue is None:
+        return None
+    return await DatabaseSession.get(Game, queue.game_id)
 
 
 @tracer.wrap()
 async def is_waiting(user_data: UserData, channel_xid: int) -> GameData | None:
     """Return the pending game the user is waiting in for the given channel, if any."""
-    user: User = await DatabaseSession.get(User, user_data.xid)
-    return await user.waiting(channel_xid)
+    game = await current_game(user_data.xid, channel_xid)
+    if game is None or game.status != GameStatus.PENDING.value:
+        return None
+    return await game_to_data(game)
 
 
 @tracer.wrap()
 async def pending_games(user_data: UserData) -> int:
     """Return the number of pending games the user is currently queued in."""
-    user: User = await DatabaseSession.get(User, user_data.xid)
-    return await user.pending_games()
+    result = await DatabaseSession.execute(
+        select(func.count())
+        .select_from(Queue)
+        .join(Game)
+        .where(
+            Queue.user_xid == user_data.xid,
+            Game.deleted_at.is_(None),
+        ),
+    )
+    return result.scalar() or 0
 
 
 @tracer.wrap()
@@ -277,7 +310,7 @@ async def unblock(author_xid: int, target_xid: int) -> None:
 async def blocklist(user_xid: int) -> list[UserData]:
     """Return the list of user ids that the given user has blocked."""
     return [
-        u.to_data()
+        UserData.from_model(u)
         for u in (
             await DatabaseSession.execute(
                 select(User)
@@ -451,7 +484,7 @@ async def move_user(  # pragma: no cover
 async def get_players_by_xid(xids: list[int]) -> list[UserData]:
     """Fetch user data for the given list of user ids."""
     return [
-        u.to_data()
+        UserData.from_model(u)
         for u in (await DatabaseSession.execute(select(User).where(any_of(User.xid, xids))))
         .scalars()
         .all()

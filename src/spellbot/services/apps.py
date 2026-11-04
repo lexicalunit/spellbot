@@ -5,16 +5,13 @@ from __future__ import annotations
 import hashlib
 import secrets
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
 
 from ddtrace.trace import tracer
 from sqlalchemy import select
 
+from spellbot.data import TokenData
 from spellbot.database import DatabaseSession
 from spellbot.models import Token
-
-if TYPE_CHECKING:
-    from spellbot.data import TokenData
 
 
 def hash_api_key(key: str) -> str:
@@ -58,7 +55,7 @@ async def create_token(*, scopes: str, note: str | None) -> tuple[TokenData, str
     token = Token(key_hash=hash_api_key(key), scopes=scopes, note=note)
     DatabaseSession.add(token)
     await DatabaseSession.commit()
-    return token.to_data(), key
+    return TokenData.from_model(token), key
 
 
 async def list_tokens(*, include_revoked: bool = False) -> list[TokenData]:
@@ -67,7 +64,7 @@ async def list_tokens(*, include_revoked: bool = False) -> list[TokenData]:
     if not include_revoked:
         query = query.where(Token.deleted_at.is_(None))
     result = await DatabaseSession.execute(query)
-    return [token.to_data() for token in result.scalars()]
+    return [TokenData.from_model(token) for token in result.scalars()]
 
 
 async def revoke_token(token_id: int) -> bool:

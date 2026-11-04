@@ -22,7 +22,7 @@ class TestModelPost:
         game = factories.game.create(guild=guild, channel=channel)
         post = factories.post.create(guild=guild, channel=channel, game=game)
 
-        post_data = post.to_data()
+        post_data = PostData.from_model(post)
         assert isinstance(post_data, PostData)
         assert asdict(post_data) == {
             "created_at": post.created_at,

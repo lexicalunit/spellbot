@@ -23,7 +23,7 @@ class TestModelPlay:
         game = factories.game.create(guild_xid=guild.xid, channel_xid=channel.xid)
         play = factories.play.create(user_xid=user.xid, game_id=game.id)
 
-        play_data = play.to_data()
+        play_data = PlayData.from_model(play)
         assert isinstance(play_data, PlayData)
         assert asdict(play_data) == {
             "user_xid": play.user_xid,

@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from datetime import datetime
 
-    from spellbot.data.award_data import GuildAwardData
-    from spellbot.data.channel_data import ChannelData
+    from spellbot.models import Guild
 
 
 @dataclass
@@ -31,5 +30,25 @@ class GuildData:
     icon: str | None = None
     promote: bool = True
     show_convoke_guild: bool = True
-    channels: list[ChannelData] = field(default_factory=list)
-    awards: list[GuildAwardData] = field(default_factory=list)
+
+    @classmethod
+    def from_model(cls, model: Guild) -> GuildData:
+        return cls(
+            xid=model.xid,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            name=model.name,
+            motd=model.motd,
+            show_links=model.show_links,
+            voice_create=model.voice_create,
+            use_max_bitrate=model.use_max_bitrate,
+            banned=model.banned,
+            notice=model.notice,
+            suggest_voice_category=model.suggest_voice_category,
+            enable_mythic_track=model.enable_mythic_track,
+            show_convoke_guild=model.show_convoke_guild,
+            active=model.active,
+            locale=model.locale,
+            icon=model.icon,
+            promote=model.promote,
+        )

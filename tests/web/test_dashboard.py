@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock
 from urllib.parse import parse_qs, urlparse
@@ -124,6 +125,11 @@ class TestDashboardShell:
         assert resp.status == 200
         body = await resp.text()
         assert "SpellBot" in body or "dashboard" in body.lower()
+        scripts = re.findall(r'<script src="https://cdn[^>]*>', body)
+        assert len(scripts) == 2
+        assert all(
+            'integrity="sha384-' in tag and 'crossorigin="anonymous"' in tag for tag in scripts
+        )
 
     async def test_shell_redirects_when_unauthenticated(self, client: WebClient) -> None:
         resp = await client.get("/admin/dashboard", allow_redirects=False)

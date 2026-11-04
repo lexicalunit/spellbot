@@ -3,25 +3,32 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import event, select
 from sqlalchemy.sql.expression import and_
 
 from spellbot.data import ChannelModes, GameCriteria, GameLinkDetails
-from spellbot.database import DatabaseSession
+from spellbot.database import DatabaseSession, engine
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import Channel, Game, GameStatus, Guild, Play, Post, Queue, User
 from spellbot.services import games
+from spellbot.services.games import game_players, game_to_data
+from spellbot.services.users import current_game
 from spellbot.settings import settings
 from tests.factories import (
     BlockFactory,
     ChannelFactory,
     GameFactory,
     GuildFactory,
+    PlayFactory,
     PostFactory,
     UserFactory,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
 
 pytestmark = pytest.mark.use_db
 
@@ -33,6 +40,13 @@ class TestServiceGames:
         assert game_data is not None
         assert game_data.id == game.id
         assert await games.get(404) is None
+
+    async def test_games_get_many(self, guild: Guild, channel: Channel) -> None:
+        first = GameFactory.create(guild=guild, channel=channel)
+        second = GameFactory.create(guild=guild, channel=channel)
+        found = await games.get_many([second.id, 404, first.id])
+        assert [game.id for game in found] == [first.id, second.id]
+        assert await games.get_many([]) == []
 
     async def test_games_get_by_voice_xid(self, guild: Guild, channel: Channel) -> None:
         game = GameFactory.create(guild=guild, channel=channel, voice_xid=12345)
@@ -67,7 +81,7 @@ class TestServiceGames:
         DatabaseSession.expire_all()
         found = await DatabaseSession.get(User, user.xid)
         assert found
-        found_game = await found.game(game.channel_xid)
+        found_game = await current_game(found.xid, game.channel_xid)
         assert found_game is not None
         assert found_game.id == game.id
 
@@ -88,11 +102,11 @@ class TestServiceGames:
         DatabaseSession.expire_all()
         found = await DatabaseSession.get(User, latecomer.xid)
         assert found
-        assert await found.game(game.channel_xid) is None
+        assert await current_game(found.xid, game.channel_xid) is None
 
     async def test_games_to_embed(self, game: Game) -> None:
         # The to_embed method is now on GameData, not GamesService
-        game_data = await game.to_data()
+        game_data = await game_to_data(game)
         public_embed = game_data.to_embed().to_dict()
         private_embed = game_data.to_embed(dm=True).to_dict()
 
@@ -256,8 +270,8 @@ class TestServiceGames:
         await games.dequeue_players([user1.xid, user2.xid])
 
         DatabaseSession.expire_all()
-        assert await user1.game(game.channel_xid) is None
-        assert await user2.game(game.channel_xid) is None
+        assert await current_game(user1.xid, game.channel_xid) is None
+        assert await current_game(user2.xid, game.channel_xid) is None
 
     async def test_player_convoke_data(self, game: Game) -> None:
         user1 = UserFactory.create(game=game)
@@ -709,8 +723,8 @@ class TestServiceGamesUpsert:
             await DatabaseSession.execute(select(Game).where(Game.id != game.id))
         ).scalar_one()
         assert new
-        assert [p.xid for p in await game.players()] == [user1.xid]
-        assert [p.xid for p in await other_game.players()] == [user2.xid]
+        assert [p.xid for p in await game_players(game)] == [user1.xid]
+        assert [p.xid for p in await game_players(other_game)] == [user2.xid]
 
     async def test_lfg_when_existing_game_and_blocker(self, game: Game) -> None:
         user1 = UserFactory.create(xid=101, game=game)
@@ -738,8 +752,8 @@ class TestServiceGamesUpsert:
             await DatabaseSession.execute(select(Game).where(Game.id != game.id))
         ).scalar_one()
         assert new
-        assert [p.xid for p in await game.players()] == [user1.xid]
-        assert [p.xid for p in await other_game.players()] == [user2.xid]
+        assert [p.xid for p in await game_players(game)] == [user1.xid]
+        assert [p.xid for p in await game_players(other_game)] == [user2.xid]
 
     async def test_lfg_when_existing_game_and_blocked_with_to_mode(self, game: Game) -> None:
         # In tournament organizer mode blocks are ignored, so the blocked user joins
@@ -768,7 +782,7 @@ class TestServiceGamesUpsert:
         all_games = (await DatabaseSession.execute(select(Game))).scalars().all()
         assert not new
         assert len(all_games) == 1
-        assert sorted(p.xid for p in await game.players()) == [user1.xid, user2.xid]
+        assert sorted(p.xid for p in await game_players(game)) == [user1.xid, user2.xid]
 
     async def test_lfg_to_mode_with_no_matching_game(self, game: Game) -> None:
         # to_mode still creates a fresh game when no existing game matches the criteria
@@ -1054,3 +1068,82 @@ class TestServiceGamesGuildWar:
 
         assert new
         assert second_id != first_id
+
+
+@pytest.mark.asyncio
+class TestGamesToData:
+    def count_statements(self) -> list[str]:
+        """Record every SQL statement the app's engine runs from now until the test ends."""
+        statements: list[str] = []
+
+        def record(*args: object) -> None:
+            statements.append(str(args[2]))
+
+        sync_engine = engine.get().sync_engine
+        event.listen(sync_engine, "before_cursor_execute", record)
+        self.listeners.append((sync_engine, record))
+        return statements
+
+    @pytest.fixture(autouse=True)
+    def remove_listeners(self) -> Iterator[None]:
+        self.listeners: list[tuple[Any, Callable[..., None]]] = []
+        yield
+        for target, listener in self.listeners:
+            event.remove(target, "before_cursor_execute", listener)
+
+    def make_games(self, guild: Guild, channel: Channel, count: int) -> list[Game]:
+        """Half pending games with queued players, half started games with plays and pins."""
+        made: list[Game] = []
+        for i in range(count):
+            if i % 2:
+                game = GameFactory.create(
+                    guild=guild,
+                    channel=channel,
+                    started_at=datetime.now(tz=UTC),
+                    status=GameStatus.STARTED.value,
+                )
+                for _ in range(2):
+                    user = UserFactory.create()
+                    PlayFactory.create(game_id=game.id, user_xid=user.xid, pin="123456")
+                PostFactory.create(game=game, guild=guild, channel=channel)
+            else:
+                game = GameFactory.create(guild=guild, channel=channel)
+                UserFactory.create(game=game)  # also creates the game's post
+                UserFactory.create(game=game)
+            made.append(game)
+        return made
+
+    async def test_query_count_does_not_grow_with_games(self) -> None:
+        guild = GuildFactory.create(enable_mythic_track=True)
+        channel = ChannelFactory.create(guild=guild)
+        one = self.make_games(guild, channel, 1)
+        many = self.make_games(guild, channel, 6)
+
+        statements = self.count_statements()
+        await games.games_to_data(one)
+        for_one = len(statements)
+        statements.clear()
+        built = await games.games_to_data(many)
+        # guilds, channels, posts, plays, queues and users: one query each, however many games.
+        assert for_one == len(statements) == 6
+
+        assert [game.id for game in built] == [game.id for game in many]
+        for game, data in zip(many, built, strict=True):
+            assert len(data.players) == 2
+            assert len(data.posts) == 1
+            if game.started_at:
+                assert set(data.player_pins.values()) == {"123456"}
+            else:
+                assert data.player_pins == {}
+
+    async def test_no_games(self) -> None:
+        statements = self.count_statements()
+        assert await games.games_to_data([]) == []
+        assert statements == []
+
+    async def test_pins_hidden_without_mythic_track(self) -> None:
+        guild = GuildFactory.create(enable_mythic_track=False)
+        channel = ChannelFactory.create(guild=guild)
+        started = self.make_games(guild, channel, 2)[1]
+        data = await game_to_data(started)
+        assert set(data.player_pins.values()) == {None}

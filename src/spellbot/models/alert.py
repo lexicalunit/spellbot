@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
@@ -12,9 +12,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.expression import text
 
 from . import Base, now
-
-if TYPE_CHECKING:
-    from spellbot.data import AlertData
 
 
 class Alert(Base):
@@ -72,21 +69,3 @@ class Alert(Base):
         server_default=text("'{}'::jsonb"),
         doc="JSON object describing the user's notification preferences",
     )
-
-    def to_data(self) -> AlertData:
-        from spellbot.data import AlertData  # allow_inline
-
-        prefs = self.preferences or {}
-        active_hours = prefs.get("active_hours")
-        return AlertData(
-            id=self.id,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            guild_xid=self.guild_xid,
-            user_xid=self.user_xid,
-            formats=list(prefs.get("formats") or []),
-            brackets=list(prefs.get("brackets") or []),
-            channels=list(prefs.get("channels") or []),
-            active_hours=dict(active_hours) if active_hours else None,
-            deleted_at=self.deleted_at,
-        )

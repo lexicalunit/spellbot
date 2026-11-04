@@ -54,6 +54,10 @@ TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
 # under `/api` or `/admin` belongs here.
 PUBLIC_CORS_PATHS = frozenset({"/stats.json", "/queues.json", "/status.json"})
 
+# One year, the usual minimum for HSTS. Subdomains are included since every SpellBot
+# host is served over HTTPS.
+HSTS_HEADER = "max-age=31536000; includeSubDomains"
+
 # Keep crawlers off the whole site. CSV exports, which are expensive to serve,
 # additionally reject crawlers that ignore this (see `is_crawler`).
 ROBOTS_TXT = """\
@@ -136,6 +140,9 @@ async def add_security_headers(request: web.Request, response: web.StreamRespons
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if settings.API_BASE_URL.startswith("https://"):
+        # Browsers only honor this over HTTPS; it tells them to never use plain HTTP here.
+        response.headers["Strict-Transport-Security"] = HSTS_HEADER
     if request.path in PUBLIC_CORS_PATHS:
         response.headers["Access-Control-Allow-Origin"] = "*"
 

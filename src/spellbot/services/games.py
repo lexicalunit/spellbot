@@ -17,7 +17,15 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import and_, asc, column, or_
 from sqlalchemy.sql.functions import count
 
-from spellbot.data import PlayerDataDict, QueueData
+from spellbot.data import (
+    ChannelData,
+    GameData,
+    GuildData,
+    PlayerDataDict,
+    PostData,
+    QueueData,
+    UserData,
+)
 from spellbot.database import DatabaseSession, any_of
 from spellbot.enums import GameBracket, GameFormat, GameService
 from spellbot.models import (
@@ -39,7 +47,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Any
 
-    from spellbot.data import ChannelModes, GameCriteria, GameData, GameLinkDetails
+    from spellbot.data import ChannelModes, GameCriteria, GameLinkDetails
 
 
 logger = logging.getLogger(__name__)
@@ -50,11 +58,116 @@ DISCORD_XID = re.compile(r"[1-9][0-9]{0,18}")
 MAX_XID = 2**63 - 1
 
 
+async def load_players(
+    games: Sequence[Game],
+) -> tuple[dict[int, list[User]], dict[int, list[Play]]]:
+    """
+    Load each game's players, and each game's plays, in three queries at most.
+
+    A pending game's players are its queue; a started game's are its plays. Players keep
+    the order the users table returns them in, as they always have.
+    """
+    game_ids = [game.id for game in games]
+    plays_by_game: dict[int, list[Play]] = {game_id: [] for game_id in game_ids}
+    plays = await DatabaseSession.execute(select(Play).where(any_of(Play.game_id, game_ids)))
+    for play in plays.scalars():
+        plays_by_game[play.game_id].append(play)
+
+    xids_by_game = {
+        game.id: {play.user_xid for play in plays_by_game[game.id]}
+        for game in games
+        if game.started_at is not None
+    }
+    if pending_ids := [game.id for game in games if game.started_at is None]:
+        queues = await DatabaseSession.execute(
+            select(Queue.game_id, Queue.user_xid).where(any_of(Queue.game_id, pending_ids)),
+        )
+        for game_id in pending_ids:
+            xids_by_game[game_id] = set()
+        for game_id, user_xid in queues:
+            xids_by_game[game_id].add(user_xid)
+
+    all_xids = sorted(set().union(*xids_by_game.values()))
+    users = list(
+        (await DatabaseSession.execute(select(User).where(any_of(User.xid, all_xids)))).scalars(),
+    )
+    players_by_game = {
+        game_id: [user for user in users if user.xid in xids]
+        for game_id, xids in xids_by_game.items()
+    }
+    return players_by_game, plays_by_game
+
+
+async def game_players(game: Game) -> list[User]:
+    """Return the game's players: its queue while pending, its plays once started."""
+    return (await load_players([game]))[0][game.id]
+
+
+async def games_to_data(games: Sequence[Game]) -> list[GameData]:
+    """
+    Build `GameData` for many games with a fixed number of queries.
+
+    The related guilds, channels, posts, players and plays are each loaded once for the
+    whole batch, rather than once per game.
+    """
+    if not games:
+        return []
+    game_ids = [game.id for game in games]
+    guild_rows = await DatabaseSession.execute(
+        select(Guild).where(any_of(Guild.xid, sorted({game.guild_xid for game in games}))),
+    )
+    guilds = {guild.xid: guild for guild in guild_rows.scalars()}
+    channel_rows = await DatabaseSession.execute(
+        select(Channel).where(any_of(Channel.xid, sorted({game.channel_xid for game in games}))),
+    )
+    channels = {channel.xid: ChannelData.from_model(channel) for channel in channel_rows.scalars()}
+    posts: dict[int, list[PostData]] = {game_id: [] for game_id in game_ids}
+    for post in (
+        await DatabaseSession.execute(select(Post).where(any_of(Post.game_id, game_ids)))
+    ).scalars():
+        posts[post.game_id].append(PostData.from_model(post))
+    players_by_game, plays_by_game = await load_players(games)
+
+    built: list[GameData] = []
+    for game in games:
+        guild = guilds[game.guild_xid]
+        built.append(
+            GameData.from_model(
+                game,
+                guild=GuildData.from_model(guild),
+                channel=channels[game.channel_xid],
+                posts=posts[game.id],
+                players=[UserData.from_model(user) for user in players_by_game[game.id]],
+                player_pins={
+                    play.user_xid: play.pin if guild.enable_mythic_track else None
+                    for play in plays_by_game[game.id]
+                },
+            ),
+        )
+    return built
+
+
+async def game_to_data(game: Game) -> GameData:
+    """Build `GameData` for one game; see `games_to_data`."""
+    return (await games_to_data([game]))[0]
+
+
 @tracer.wrap()
 async def get(game_id: int) -> GameData | None:
     """Fetch the game data by game id."""
     game: Game | None = await DatabaseSession.get(Game, game_id)
-    return await game.to_data() if game else None
+    return await game_to_data(game) if game else None
+
+
+@tracer.wrap()
+async def get_many(game_ids: Sequence[int]) -> list[GameData]:
+    """Fetch the data for every game with one of these ids, in id order; missing ids are skipped."""
+    if not game_ids:
+        return []
+    result = await DatabaseSession.execute(
+        select(Game).where(any_of(Game.id, list(game_ids))).order_by(Game.id),
+    )
+    return await games_to_data(result.scalars().all())
 
 
 def report_timestamp(
@@ -206,7 +319,7 @@ async def get_by_voice_xid(voice_xid: int) -> GameData | None:
     stmt = select(Game).where(Game.voice_xid == voice_xid)
     result = await DatabaseSession.execute(stmt)
     game: Game | None = result.scalar_one_or_none()
-    return await game.to_data() if game else None
+    return await game_to_data(game) if game else None
 
 
 @tracer.wrap()
@@ -215,7 +328,7 @@ async def get_by_message_xid(message_xid: int) -> GameData | None:
     stmt = select(Game).join(Post).where(Post.message_xid == message_xid)
     result = await DatabaseSession.execute(stmt)
     game: Game | None = result.scalar_one_or_none()
-    return await game.to_data() if game else None
+    return await game_to_data(game) if game else None
 
 
 def to_ms(dt: datetime | None) -> float | None:
@@ -441,7 +554,7 @@ async def add_player(game_data: GameData, player_xid: int) -> GameData | None:
     result = await DatabaseSession.execute(query)
     updated_game: Game = result.scalars().one()
     await DatabaseSession.commit()
-    return await updated_game.to_data()
+    return await game_to_data(updated_game)
 
 
 @tracer.wrap()
@@ -510,7 +623,7 @@ async def upsert(
     )
     await DatabaseSession.commit()
 
-    return new, await game.to_data()
+    return new, await game_to_data(game)
 
 
 async def find_existing(
@@ -626,7 +739,7 @@ async def add_post(
     new_post: Post | None = result.scalars().one_or_none()
     await DatabaseSession.commit()
     if new_post is not None:
-        game_data.posts.append(new_post.to_data())
+        game_data.posts.append(PostData.from_model(new_post))
     return game_data
 
 
@@ -657,7 +770,7 @@ async def shrink_game(game_data: GameData) -> GameData:
     result = await DatabaseSession.execute(query)
     updated_game: Game = result.scalars().one()
     await DatabaseSession.commit()
-    return await updated_game.to_data()
+    return await game_to_data(updated_game)
 
 
 def set_game_link(game: Game, details: GameLinkDetails) -> None:
@@ -678,7 +791,7 @@ async def attach_game_link(
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
     set_game_link(game, details)
     await DatabaseSession.commit()
-    return await game.to_data()
+    return await game_to_data(game)
 
 
 @tracer.wrap()
@@ -690,7 +803,7 @@ async def make_ready(
     """Start the pending game."""
     game: Game = await DatabaseSession.get(Game, game_data.id)  # TODO: Refactor to avoid fetch?
     queues: list[QueueData] = [
-        queue.to_data()
+        QueueData.from_model(queue)
         for queue in (await DatabaseSession.execute(select(Queue).where(Queue.game_id == game.id)))
         .scalars()
         .all()
@@ -703,7 +816,7 @@ async def make_ready(
 
     if not queues:  # Not sure this is possible, but just in case.
         await DatabaseSession.commit()
-        return await game.to_data()
+        return await game_to_data(game)
 
     # upsert into plays
     await DatabaseSession.execute(
@@ -746,7 +859,7 @@ async def make_ready(
     )
 
     await DatabaseSession.commit()
-    return await game.to_data()
+    return await game_to_data(game)
 
 
 @tracer.wrap()
@@ -766,7 +879,7 @@ async def set_voice(
     result = await DatabaseSession.execute(query)
     updated_game: Game = result.scalars().one()
     await DatabaseSession.commit()
-    return await updated_game.to_data()
+    return await game_to_data(updated_game)
 
 
 @tracer.wrap()
@@ -821,7 +934,7 @@ async def games_pending_notification() -> list[GameData]:
         .scalars()
         .all()
     )
-    return [await record.to_data() for record in records]
+    return await games_to_data(records)
 
 
 async def inactive_games(guild_xid: int | None = None) -> list[GameData]:
@@ -851,7 +964,7 @@ async def inactive_games(guild_xid: int | None = None) -> list[GameData]:
         .scalars()
         .all()
     )
-    return [await record.to_data() for record in records]
+    return await games_to_data(records)
 
 
 @tracer.wrap()
@@ -908,7 +1021,7 @@ async def get_last_game(user_xid: int, guild_xid: int) -> GameData | None:
         .order_by(Game.created_at.desc())
     )
     last_game = (await DatabaseSession.execute(stmt)).scalars().first()
-    return await last_game.to_data() if last_game else None
+    return await game_to_data(last_game) if last_game else None
 
 
 # A helper function for Convoke game creation. Would be nice to refactor to remove!
@@ -919,4 +1032,4 @@ async def player_convoke_data(game_id: int) -> list[PlayerDataDict]:
     game = (await DatabaseSession.execute(stmt)).scalars().first()
     if not game:
         return []
-    return [PlayerDataDict(xid=p.xid, name=p.name) for p in await game.players()]
+    return [PlayerDataDict(xid=p.xid, name=p.name) for p in await game_players(game)]

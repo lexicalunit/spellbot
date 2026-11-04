@@ -6,17 +6,13 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, Boolean, DateTime, String, false, func, select
+from sqlalchemy import BigInteger, Boolean, DateTime, String, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from spellbot.models import GameStatus
 
 from . import Base, now
 
 if TYPE_CHECKING:
-    from spellbot.data import GameData, UserData
-
-    from . import Game, Play, Queue
+    from . import Play, Queue
 
 
 class User(Base):
@@ -88,64 +84,3 @@ class User(Base):
         primaryjoin="User.xid == Play.user_xid",
         doc="Queryset of games played by this user",
     )
-
-    async def game(self, channel_xid: int) -> Game | None:
-        from spellbot.database import DatabaseSession  # allow_inline
-
-        from . import Game, Post, Queue  # allow_inline
-
-        queue_result = await DatabaseSession.execute(
-            select(Queue)
-            .join(Game)
-            .join(Post)
-            .where(
-                Queue.user_xid == self.xid,
-                Post.channel_xid == channel_xid,
-                Game.deleted_at.is_(None),
-            )
-            .order_by(Game.updated_at.desc()),
-        )
-        queue = queue_result.scalars().first()
-        if queue is None:
-            return None
-        return await DatabaseSession.get(Game, queue.game_id)
-
-    async def waiting(self, channel_xid: int) -> GameData | None:
-        game = await self.game(channel_xid)
-        if game is None:
-            return None
-        if game.status != GameStatus.PENDING.value:
-            return None
-        if game.deleted_at:
-            return None
-        return await game.to_data()
-
-    async def pending_games(self) -> int:
-        from spellbot.database import DatabaseSession  # allow_inline
-
-        from . import Game, Queue  # allow_inline
-
-        result = await DatabaseSession.execute(
-            select(func.count())
-            .select_from(Queue)
-            .join(Game)
-            .where(
-                Queue.user_xid == self.xid,
-                Game.deleted_at.is_(None),
-            ),
-        )
-        return result.scalar() or 0
-
-    def to_data(self) -> UserData:
-        from spellbot.data import UserData  # allow_inline
-
-        return UserData(
-            xid=self.xid,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            name=self.name,
-            banned=self.banned,
-            is_admin=self.is_admin,
-            playgroup_user_id=self.playgroup_user_id,
-            locale=self.locale,
-        )

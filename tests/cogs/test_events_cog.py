@@ -17,6 +17,7 @@ from spellbot.cogs import EventsCog
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat, GameService
 from spellbot.models import Channel, Game, GameStatus, Guild, Play, User
+from spellbot.services.users import current_game
 from tests.fixtures import run_command
 from tests.mocks import mock_discord_object, mock_operations
 
@@ -88,7 +89,7 @@ class TestCogEvents:
         admin = await DatabaseSession.get(User, interaction.user.id)
         assert admin is not None
         assert interaction.channel is not None
-        assert await admin.game(interaction.channel.id) is None
+        assert await current_game(admin.xid, interaction.channel.id) is None
         # Verify the specific players we created are in the game
         for player_xid in [player1.xid, player2.xid]:
             play = (

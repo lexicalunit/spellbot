@@ -20,7 +20,7 @@ class TestModelAward:
         guild = factories.guild.create()
         guild_award = factories.guild_award.create(guild=guild)
 
-        award_data = guild_award.to_data()
+        award_data = GuildAwardData.from_model(guild_award)
         assert isinstance(award_data, GuildAwardData)
         assert asdict(award_data) == {
             "id": guild_award.id,
@@ -42,7 +42,7 @@ class TestModelAward:
             guild_award_id=guild_award.id,
         )
 
-        award_data = user_award.to_data()
+        award_data = UserAwardData.from_model(user_award)
         assert isinstance(award_data, UserAwardData)
         assert asdict(award_data) == {
             "user_xid": user_award.user_xid,

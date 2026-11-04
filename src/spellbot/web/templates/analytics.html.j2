@@ -1,4 +1,4 @@
-{% from "chart_macros.html.j2" import loading %}
+{% from "chart_macros.html.j2" import chart_scripts, loading %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -249,10 +249,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+    {{ chart_scripts(zoom=true) }}
     <script>
     /* Config passed to external analytics.js */
     window.ANALYTICS_CONFIG = {

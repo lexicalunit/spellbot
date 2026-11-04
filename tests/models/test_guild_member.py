@@ -24,7 +24,7 @@ class TestModelGuildMember:
             guild_xid=guild.xid,
         )
 
-        member_data = guild_member.to_data()
+        member_data = GuildMemberData.from_model(guild_member)
         assert isinstance(member_data, GuildMemberData)
         assert asdict(member_data) == {
             "user_xid": user.xid,

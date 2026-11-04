@@ -4,15 +4,11 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base, now
-
-if TYPE_CHECKING:
-    from spellbot.data import BlockData
 
 
 class Block(Base):
@@ -51,13 +47,3 @@ class Block(Base):
         index=True,
         doc="The user who is being blocked by someone",
     )
-
-    def to_data(self) -> BlockData:
-        from spellbot.data import BlockData  # allow_inline
-
-        return BlockData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            user_xid=self.user_xid,
-            blocked_user_xid=self.blocked_user_xid,
-        )

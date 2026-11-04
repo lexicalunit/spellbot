@@ -2,15 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from sqlalchemy import BigInteger, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base
-
-if TYPE_CHECKING:
-    from spellbot.data import QueueData
 
 
 class Queue(Base):
@@ -38,12 +33,3 @@ class Queue(Base):
         nullable=False,
         doc="The external Discord ID of the guild where the user entered this game",
     )
-
-    def to_data(self) -> QueueData:
-        from spellbot.data import QueueData  # allow_inline
-
-        return QueueData(
-            user_xid=self.user_xid,
-            game_id=self.game_id,
-            og_guild_xid=self.og_guild_xid,
-        )

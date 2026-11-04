@@ -17,8 +17,6 @@ from spellbot.enums import GameBracket, GameFormat, GameService
 from . import Base, now, web_editable
 
 if TYPE_CHECKING:
-    from spellbot.data import ChannelData
-
     from . import Game, Guild
 
 
@@ -187,26 +185,3 @@ class Channel(Base):
         uselist=True,
         doc="The games created in this channel",
     )
-
-    def to_data(self) -> ChannelData:
-        from spellbot.data import ChannelData  # allow_inline
-
-        return ChannelData(
-            xid=self.xid,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            guild_xid=self.guild_xid,
-            name=self.name,
-            default_seats=self.default_seats,
-            default_format=GameFormat(self.default_format),
-            default_bracket=GameBracket(self.default_bracket),
-            default_service=GameService(self.default_service),
-            motd=self.motd,
-            extra=self.extra,
-            voice_category=self.voice_category,
-            voice_invite=self.voice_invite,
-            delete_expired=self.delete_expired,
-            blind_games=self.blind_games,
-            to_mode=self.to_mode,
-            competitive_mode=self.competitive_mode,
-        )

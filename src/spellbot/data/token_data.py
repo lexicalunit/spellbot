@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from datetime import datetime
 
+    from spellbot.models import Token
+
 
 @dataclass
 class TokenData:
@@ -18,3 +20,15 @@ class TokenData:
     key_hash: str
     note: str | None
     scopes: str
+
+    @classmethod
+    def from_model(cls, model: Token) -> TokenData:
+        return cls(
+            id=model.id,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            deleted_at=model.deleted_at,
+            key_hash=model.key_hash,
+            note=model.note,
+            scopes=model.scopes,
+        )

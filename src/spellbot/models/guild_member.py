@@ -4,15 +4,11 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base, now
-
-if TYPE_CHECKING:
-    from spellbot.data import GuildMemberData
 
 
 class GuildMember(Base):
@@ -59,13 +55,3 @@ class GuildMember(Base):
             " or NULL when it never has been"
         ),
     )
-
-    def to_data(self) -> GuildMemberData:
-        from spellbot.data import GuildMemberData  # allow_inline
-
-        return GuildMemberData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            user_xid=self.user_xid,
-            guild_xid=self.guild_xid,
-        )

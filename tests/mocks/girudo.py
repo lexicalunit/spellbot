@@ -182,8 +182,6 @@ def create_mock_game(
         notice=None,
         suggest_voice_category=None,
         enable_mythic_track=True,
-        channels=[],
-        awards=[],
     )
     mock_channel = ChannelData(
         xid=channel_xid,
@@ -274,8 +272,6 @@ def create_mock_guild(
         suggest_voice_category=suggest_voice_category,
         enable_mythic_track=kwargs.get("enable_mythic_track", True),
         active=kwargs.get("active", True),
-        channels=[],
-        awards=[],
     )
 
 

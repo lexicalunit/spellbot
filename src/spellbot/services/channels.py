@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.expression import update
 
 from spellbot import audit
+from spellbot.data import ChannelData
 from spellbot.database import DatabaseSession
 from spellbot.environment import running_in_pytest
 from spellbot.models import Channel, column_length, web_editable_columns
@@ -18,7 +19,6 @@ from spellbot.models import Channel, column_length, web_editable_columns
 if TYPE_CHECKING:
     from discord.abc import MessageableChannel
 
-    from spellbot.data import ChannelData
 
 channel_cache: dict[int, str] = {}
 
@@ -70,7 +70,7 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
         # channel) may have deleted the row after we cached it. Write it again.
         await write(channel, name)
         db_channel = (await DatabaseSession.execute(query)).scalar_one()
-    return db_channel.to_data()
+    return ChannelData.from_model(db_channel)
 
 
 async def forget(xid: int) -> None:
@@ -86,7 +86,7 @@ async def select(xid: int) -> ChannelData | None:
     """Fetch the channel data for the given xid."""
     result = await DatabaseSession.execute(sa_select(Channel).where(Channel.xid == xid))
     channel = result.scalar_one_or_none()
-    return channel.to_data() if channel else None
+    return ChannelData.from_model(channel) if channel else None
 
 
 async def _set_column(xid: int, **values: object) -> None:

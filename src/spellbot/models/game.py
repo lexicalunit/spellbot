@@ -7,7 +7,7 @@ from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, select
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.expression import false, text
@@ -17,9 +17,7 @@ from spellbot.enums import GameBracket, GameFormat, GameService
 from . import Base, column_length, now
 
 if TYPE_CHECKING:
-    from spellbot.data import GameData
-
-    from . import Channel, Guild, Post, User
+    from . import Channel, Guild, Post
 
 
 class GameStatus(Enum):
@@ -223,76 +221,6 @@ class Game(Base):
         back_populates="games",
         doc="The channel this game was created in",
     )
-
-    async def players(self) -> list[User]:
-        from spellbot.database import DatabaseSession, any_of  # allow_inline
-
-        from . import Play, Queue, User  # allow_inline
-
-        if self.started_at is None:
-            xid_result = await DatabaseSession.execute(
-                select(Queue.user_xid).where(Queue.game_id == self.id),
-            )
-        else:
-            xid_result = await DatabaseSession.execute(
-                select(Play.user_xid).where(Play.game_id == self.id),
-            )
-        player_xids = [int(row[0]) for row in xid_result]
-        users_result = await DatabaseSession.execute(
-            select(User).where(any_of(User.xid, player_xids)),
-        )
-        return list(users_result.scalars().all())
-
-    async def player_pins(self) -> dict[int, str | None]:
-        from spellbot.database import DatabaseSession  # allow_inline
-
-        from . import Play  # allow_inline
-
-        plays_result = await DatabaseSession.execute(select(Play).where(Play.game_id == self.id))
-        guild = await self.awaitable_attrs.guild
-        enable_mythic_track = guild.enable_mythic_track
-        return {
-            play.user_xid: play.pin if enable_mythic_track else None
-            for play in plays_result.scalars().all()
-        }
-
-    async def to_data(self) -> GameData:
-        from spellbot.data.game_data import GameData  # allow_inline
-
-        guild = await self.awaitable_attrs.guild
-        channel = await self.awaitable_attrs.channel
-        posts = await self.awaitable_attrs.posts
-        players = await self.players()
-        return GameData(
-            id=self.id,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            started_at=self.started_at,
-            deleted_at=self.deleted_at,
-            guild_xid=self.guild_xid,
-            guild=await guild.to_data(),
-            channel_xid=self.channel_xid,
-            channel=channel.to_data(),
-            posts=[post.to_data() for post in posts],
-            voice_xid=self.voice_xid,
-            voice_invite_link=self.voice_invite_link,
-            seats=self.seats,
-            status=self.status,
-            format=self.format,
-            bracket=self.bracket,
-            service=self.service,
-            game_link=self.game_link,
-            password=self.password,
-            rules=self.rules,
-            war_id=self.war_id,
-            war_title=self.war_title,
-            convoke_guild_name=self.convoke_guild_name,
-            convoke_guild_url=self.convoke_guild_url,
-            blind=self.blind,
-            locale=self.locale,
-            players=[player.to_data() for player in players],
-            player_pins=await self.player_pins(),
-        )
 
 
 MAX_RULES_LENGTH: int = column_length(Game.rules)

@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import delete
@@ -13,6 +12,7 @@ from sqlalchemy import delete
 from spellbot.data import UserData
 from spellbot.database import DatabaseSession
 from spellbot.models import GameStatus, Post
+from spellbot.services.users import current_game, is_waiting, pending_games
 
 if TYPE_CHECKING:
     from tests.fixtures import Factories
@@ -39,7 +39,7 @@ class TestModelUser:
         factories.play.create(user_xid=player1.xid, game_id=game2.id)
         factories.play.create(user_xid=player2.xid, game_id=game2.id)
 
-        user1_data = user1.to_data()
+        user1_data = UserData.from_model(user1)
         assert isinstance(user1_data, UserData)
         assert asdict(user1_data) == {
             "xid": user1.xid,
@@ -52,7 +52,7 @@ class TestModelUser:
             "locale": "en",
         }
 
-        user2_data = user2.to_data()
+        user2_data = UserData.from_model(user2)
         assert isinstance(user2_data, UserData)
         assert asdict(user2_data) == {
             "xid": user2.xid,
@@ -70,7 +70,7 @@ class TestModelUser:
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        assert await user.pending_games() == 1
+        assert await pending_games(UserData.from_model(user)) == 1
 
     async def test_pending_games_deleted_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -81,7 +81,7 @@ class TestModelUser:
             deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
         )
         user = factories.user.create(game=game)
-        assert await user.pending_games() == 0
+        assert await pending_games(UserData.from_model(user)) == 0
 
 
 @pytest.mark.asyncio
@@ -91,7 +91,7 @@ class TestModelUserGame:
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        result = await user.game(channel.xid)
+        result = await current_game(user.xid, channel.xid)
         assert result is not None
         assert result.id == game.id
 
@@ -99,7 +99,7 @@ class TestModelUserGame:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         user = factories.user.create()
-        assert await user.game(channel.xid) is None
+        assert await current_game(user.xid, channel.xid) is None
 
     async def test_deleted_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -110,7 +110,7 @@ class TestModelUserGame:
             deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
         )
         user = factories.user.create(game=game)
-        assert await user.game(channel.xid) is None
+        assert await current_game(user.xid, channel.xid) is None
 
 
 @pytest.mark.asyncio
@@ -120,7 +120,7 @@ class TestModelUserWaiting:
         channel = factories.channel.create(guild=guild)
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
-        result = await user.waiting(channel.xid)
+        result = await is_waiting(UserData.from_model(user), channel.xid)
         assert result is not None
         assert result.id == game.id
 
@@ -128,7 +128,7 @@ class TestModelUserWaiting:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
         user = factories.user.create()
-        assert await user.waiting(channel.xid) is None
+        assert await is_waiting(UserData.from_model(user), channel.xid) is None
 
     async def test_no_pending_game(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -141,7 +141,7 @@ class TestModelUserWaiting:
         )
         user = factories.user.create(game=game)
         factories.queue.create(user_xid=user.xid, game_id=game.id)
-        assert await user.waiting(channel.xid) is None
+        assert await is_waiting(UserData.from_model(user), channel.xid) is None
 
     async def test_game_is_deleted(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -152,19 +152,7 @@ class TestModelUserWaiting:
             deleted_at=datetime(2021, 11, 1, tzinfo=UTC),
         )
         user = factories.user.create(game=game)
-        assert await user.waiting(channel.xid) is None
-
-    async def test_game_is_deleted_defensive(self, factories: Factories) -> None:
-        """Test the defensive deleted_at check when game() bypasses SQL filter."""
-        guild = factories.guild.create()
-        channel = factories.channel.create(guild=guild)
-        game = factories.game.create(guild=guild, channel=channel)
-        user = factories.user.create(game=game)
-        mock_game = MagicMock()
-        mock_game.status = GameStatus.PENDING.value
-        mock_game.deleted_at = datetime(2021, 11, 1, tzinfo=UTC)
-        user.game = AsyncMock(return_value=mock_game)
-        assert await user.waiting(channel.xid) is None
+        assert await is_waiting(UserData.from_model(user), channel.xid) is None
 
     async def test_no_post(self, factories: Factories) -> None:
         guild = factories.guild.create()
@@ -172,4 +160,4 @@ class TestModelUserWaiting:
         game = factories.game.create(guild=guild, channel=channel)
         user = factories.user.create(game=game)
         await DatabaseSession.execute(delete(Post))
-        assert await user.waiting(channel.xid) is None
+        assert await is_waiting(UserData.from_model(user), channel.xid) is None

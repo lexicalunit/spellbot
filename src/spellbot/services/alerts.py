@@ -11,13 +11,13 @@ from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.sql.expression import and_, not_, or_
 from sqlalchemy.sql.expression import cast as sa_cast
 
+from spellbot.data import AlertData
 from spellbot.database import DatabaseSession
 from spellbot.models import Alert, Game, GameStatus, Queue, User
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from spellbot.data import AlertData
 
 ACTIVE_HOURS_MAX_LENGTH = 8
 
@@ -117,7 +117,7 @@ async def upsert(
         ),
     )
     record = result.scalar_one()
-    return record.to_data()
+    return AlertData.from_model(record)
 
 
 async def get_for_user_guild(
@@ -139,7 +139,7 @@ async def get_for_user_guild(
     record = result.scalar_one_or_none()
     if record is None:
         return None
-    return record.to_data()
+    return AlertData.from_model(record)
 
 
 async def get_guild_xids_for_user(user_xid: int) -> set[int]:

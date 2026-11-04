@@ -461,13 +461,12 @@ class LookingForGameAction(BaseAction):
     @tracer.wrap()
     async def update_other_game_posts(self, other_game_ids: list[int]) -> None:
         """Update any other pending games to show that some players are no longer available."""
-        for game_id in other_game_ids:
-            if game_data := await services.games.get(game_id):
-                await self.refresh_game_posts(
-                    game_data,
-                    delete_if_empty=False,
-                    view=GameView(bot=self.bot, locale=game_data.locale),
-                )
+        for game_data in await services.games.get_many(other_game_ids):
+            await self.refresh_game_posts(
+                game_data,
+                delete_if_empty=False,
+                view=GameView(bot=self.bot, locale=game_data.locale),
+            )
 
     @tracer.wrap()
     async def create_game(

@@ -21,7 +21,7 @@ class TestModelChannel:
         guild = factories.guild.create()
         channel = factories.channel.create(guild=guild)
 
-        channel_data = channel.to_data()
+        channel_data = ChannelData.from_model(channel)
         assert isinstance(channel_data, ChannelData)
         assert asdict(channel_data) == {
             "xid": channel.xid,

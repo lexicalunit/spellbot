@@ -12,8 +12,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from . import Base, now
 
 if TYPE_CHECKING:
-    from spellbot.data import PostData
-
     from . import Channel, Game, Guild
 
 
@@ -74,15 +72,3 @@ class Post(Base):
     )
     guild: Mapped["Guild"] = relationship("Guild", doc="The guild this post was created in")
     channel: Mapped["Channel"] = relationship("Channel", doc="The channel post game was created in")
-
-    def to_data(self) -> PostData:
-        from spellbot.data import PostData  # allow_inline
-
-        return PostData(
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            game_id=self.game_id,
-            guild_xid=self.guild_xid,
-            channel_xid=self.channel_xid,
-            message_xid=self.message_xid,
-        )

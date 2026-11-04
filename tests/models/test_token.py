@@ -19,7 +19,7 @@ class TestModelToken:
     def test_token_to_data(self, factories: Factories) -> None:
         token = factories.token.create()
 
-        token_data = token.to_data()
+        token_data = TokenData.from_model(token)
         assert isinstance(token_data, TokenData)
         assert asdict(token_data) == {
             "id": token.id,

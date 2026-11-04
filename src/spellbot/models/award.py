@@ -12,8 +12,6 @@ from sqlalchemy.sql.sqltypes import Boolean
 from . import Base
 
 if TYPE_CHECKING:
-    from spellbot.data import GuildAwardData, UserAwardData
-
     from . import Guild
 
 
@@ -88,19 +86,6 @@ class GuildAward(Base):
         doc="The guild where this award is available",
     )
 
-    def to_data(self) -> GuildAwardData:
-        from spellbot.data import GuildAwardData  # allow_inline
-
-        return GuildAwardData(
-            id=self.id,
-            guild_xid=self.guild_xid,
-            count=self.count,
-            repeating=self.repeating,
-            remove=self.remove,
-            role=self.role,
-            message=self.message,
-        )
-
 
 class UserAward(Base):
     """Awards that a user has achieved on a per guild basis."""
@@ -122,12 +107,3 @@ class UserAward(Base):
         index=True,
     )
     guild_award_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-
-    def to_data(self) -> UserAwardData:
-        from spellbot.data import UserAwardData  # allow_inline
-
-        return UserAwardData(
-            user_xid=self.user_xid,
-            guild_xid=self.guild_xid,
-            guild_award_id=self.guild_award_id,
-        )

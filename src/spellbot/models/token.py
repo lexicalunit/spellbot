@@ -4,15 +4,11 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from functools import partial
-from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base, now
-
-if TYPE_CHECKING:
-    from spellbot.data import TokenData
 
 
 class Token(Base):
@@ -66,16 +62,3 @@ class Token(Base):
         server_default=text("'*'"),
         doc="A comma-separated list of scopes for this token",
     )
-
-    def to_data(self) -> TokenData:
-        from spellbot.data import TokenData  # allow_inline
-
-        return TokenData(
-            id=self.id,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            deleted_at=self.deleted_at,
-            key_hash=self.key_hash,
-            note=self.note,
-            scopes=self.scopes,
-        )

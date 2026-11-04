@@ -362,7 +362,7 @@ class TestLookingForGameAction:
             players=[create_mock_user()],
             posts=posts,
         )
-        mocker.patch.object(services.games, "get", AsyncMock(return_value=game_data))
+        mocker.patch.object(services.games, "get_many", AsyncMock(return_value=[game_data]))
         fetch_stub = mocker.patch(
             "spellbot.actions.base_action.safe_fetch_text_channel",
             AsyncMock(return_value=MagicMock(spec=discord.TextChannel)),
@@ -388,7 +388,7 @@ class TestLookingForGameAction:
         mocker: MockerFixture,
     ) -> None:
         """Test _update_other_game_posts skips when no game data found."""
-        mocker.patch.object(services.games, "get", AsyncMock(return_value=None))
+        mocker.patch.object(services.games, "get_many", AsyncMock(return_value=[]))
         update_stub = mocker.patch(
             "spellbot.actions.base_action.safe_update_embed",
             AsyncMock(return_value=True),

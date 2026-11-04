@@ -1,4 +1,4 @@
-{% from "chart_macros.html.j2" import loading %}
+{% from "chart_macros.html.j2" import chart_scripts, loading %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -397,8 +397,7 @@
         <div class="footer"><p>SpellBot Admin Dashboard</p></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+    {{ chart_scripts() }}
     <script>window.CHART_AVAILABLE = typeof Chart !== "undefined";</script>
     <script>window.SQL_CONSOLE_ENABLED = {{ 'true' if is_owner else 'false' }};</script>
     <script src="/dashboard.js"></script>
