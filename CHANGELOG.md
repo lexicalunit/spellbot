@@ -52,7 +52,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed wording in the French, German, Japanese, and Tagalog translations.
 - Fixed rate limiting behind the ALB, which put every client in one shared bucket.
 - Fixed Discord HTTP spans in Datadog closing before the request ran.
-- Stopped sending Discord request bodies to Datadog as span tags.
 - Fixed the first new API tokens colliding with the ids of tokens that were added by hand.
 - Fixed French plurals for zero, which now read "0 partie" instead of "0 parties".
 - Fixed "autres joueur" in the French message for waiting on one more player.

@@ -48,9 +48,9 @@ def trace_discord_requests(client: type[HTTPClient]) -> None:
     Wrap `client.request` in a `discord.http` span that lasts until the response.
 
     The resource is the route's path template, which has placeholders in place of ids
-    and interaction tokens. The request body isn't tagged: it holds message content
-    and other user data. The wrapper repeats `HTTPClient.request`'s exact signature so
-    it type-checks as a drop-in replacement.
+    and interaction tokens. The request body is tagged as `data` for debugging; it holds
+    message content, never credentials (the bot token travels in a header). The wrapper
+    repeats `HTTPClient.request`'s exact signature so it type-checks as a drop-in.
     """
     request = client.request
 
@@ -69,6 +69,7 @@ def trace_discord_requests(client: type[HTTPClient]) -> None:
                     "channel_xid": str(route.channel_id),
                     "guild_xid": str(route.guild_id),
                     "method": route.method,
+                    "data": str({"files": files, "form": form, **kwargs}),
                 },
             )
             return await request(self, route, files=files, form=form, **kwargs)

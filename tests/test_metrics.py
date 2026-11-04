@@ -108,6 +108,7 @@ class TestTraceDiscordRequests:
             "channel_xid": "None",
             "guild_xid": "None",
             "method": "POST",
+            "data": "{'files': None, 'form': None, 'json': {'content': 'hi'}}",
         }
         assert interaction_token not in str(trace.call_args) + str(tags)
         assert Client.request.__name__ == "request"
