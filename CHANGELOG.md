@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v24.1.1](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.1) - 2026-11-04
+
 ### Changed
 
 - The web server's error logs are now JSON, so tracebacks reach Datadog as one error log.
