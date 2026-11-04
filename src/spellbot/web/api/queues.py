@@ -15,11 +15,10 @@ from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.enums import GAME_BRACKET_ORDER, GAME_FORMAT_ORDER
 from spellbot.i18n import normalize_locale
-from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.settings import settings
 from spellbot.web.api.record import bracket_choices, format_choices
 from spellbot.web.api.viewer_auth import get_viewer
-from spellbot.web.tools import redirect
+from spellbot.web.tools import redirect, tag_web_request
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -95,7 +94,7 @@ async def _resolve_icons(rows: list[dict[str, Any]]) -> dict[int, str | None]:
 @tracer.wrap(name="web", resource="queues")
 async def queues_endpoint(request: web.Request) -> web.Response:
     """Render the public list of pending games that currently have queued players."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     viewer_xid, viewer_name = await get_viewer(request)
     my_filter_on = request.query.get("my") == "1" and viewer_xid is not None
     member_of = viewer_xid if my_filter_on else None
@@ -182,7 +181,7 @@ async def guild_icon_endpoint(request: web.Request) -> web.Response:
     guild's own Discord icon without checking images in. Hits are cached in-process so
     site traffic mostly stays off the database.
     """
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     try:
         guild_xid = int(request.match_info["guild"])
     except ValueError:
@@ -210,7 +209,7 @@ async def guild_icon_endpoint(request: web.Request) -> web.Response:
 @tracer.wrap(name="web", resource="queues_json")
 async def queues_json_endpoint(request: web.Request) -> web.Response:
     """Return the public list of pending queues and recently-started games as JSON."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     only_mythic_track = request.query.get("mythic_track") == "1"
     async with db_session_manager():
         raw_rows = await services.queues.public_active_queues(only_mythic_track=only_mythic_track)
@@ -273,7 +272,7 @@ def wants_json(request: web.Request) -> bool:
 @tracer.wrap(name="web", resource="queue_guild_notify")
 async def guild_notify_endpoint(request: web.Request) -> web.Response:
     """Render the per-guild notification preferences page for the current viewer."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     try:
         guild_xid = int(request.match_info["guild"])
     except KeyError, ValueError:
@@ -361,7 +360,7 @@ def parse_active_hours_form(form: Any) -> dict[str, Any] | None:
 @tracer.wrap(name="web", resource="queue_guild_notify_save")
 async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse:
     """Save the viewer's notification preferences for a guild."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     try:
         guild_xid = int(request.match_info["guild"])
     except KeyError, ValueError:

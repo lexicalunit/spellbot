@@ -17,10 +17,9 @@ from ddtrace.trace import tracer
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.integrations import castlog
-from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.services.games import MetadataWrite
 from spellbot.settings import settings
-from spellbot.web.tools import rate_limited
+from spellbot.web.tools import rate_limited, tag_web_request
 
 if TYPE_CHECKING:
     from spellbot.data import GameData, UserData
@@ -71,7 +70,7 @@ def reply(
 @routes.post(r"/api/game/{game}/verify")
 @tracer.wrap(name="rest", resource="game_verify_endpoint")
 async def game_verify_endpoint(request: web.Request) -> web.Response:
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     try:
         async with db_session_manager():
             game_id = int(request.match_info["game"])
@@ -274,7 +273,7 @@ async def resolve_record_players(
 @routes.post(r"/api/game/{game}/record")
 @tracer.wrap(name="rest", resource="game_record_endpoint")
 async def game_record_endpoint(request: web.Request) -> web.Response:
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     async with db_session_manager():
         try:
             game_id = int(request.match_info["game"])
@@ -364,7 +363,7 @@ def sanitize_metadata(payload: dict[str, Any]) -> str | None:
 @tracer.wrap(name="rest", resource="game_metadata_endpoint")
 async def game_metadata_endpoint(request: web.Request) -> web.Response:
     """Store a post-game report for a game (match time, winner, commanders, links, etc.)."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     async with db_session_manager():
         try:
             game_id = int(request.match_info["game"])

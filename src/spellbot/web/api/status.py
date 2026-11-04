@@ -12,8 +12,8 @@ from aiohttp import web
 from ddtrace.trace import tracer
 from packaging.version import parse as parse_version
 
-from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.shard_status import ShardStatus, get_all_shard_statuses
+from spellbot.web.tools import tag_web_request
 
 logger = logging.getLogger(__name__)
 
@@ -238,7 +238,7 @@ def format_status_for_html(data: StatusData) -> dict[str, Any]:
 @tracer.wrap(name="web", resource="status")
 async def endpoint(request: web.Request) -> web.Response:
     """Render the shard status page."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     statuses, metadata = await get_all_shard_statuses()
     data = compute_status(statuses, metadata)
     context = format_status_for_html(data)
@@ -287,9 +287,9 @@ def format_status_for_json(data: StatusData) -> dict[str, Any]:
 
 @routes.get("/status.json")
 @tracer.wrap(name="web", resource="status_json")
-async def json_endpoint(_: web.Request) -> web.Response:
+async def json_endpoint(request: web.Request) -> web.Response:
     """Return SpellBot status as JSON."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     statuses, metadata = await get_all_shard_statuses()
     data = compute_status(statuses, metadata)
     response = format_status_for_json(data)

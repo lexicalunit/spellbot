@@ -15,11 +15,11 @@ from sqlalchemy import delete, select, update
 
 from spellbot import services
 from spellbot.database import DatabaseSession, db_session_manager
-from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.models import Guild, GuildMember
 from spellbot.settings import settings
 from spellbot.web.api.record import moderated_route, request_is_moderator, require_moderator_page
 from spellbot.web.signing import generate_signed_url, validate_signature
+from spellbot.web.tools import tag_web_request
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -111,7 +111,7 @@ async def analytics_json_endpoint(
 @tracer.wrap(name="web", resource="analytics")
 async def analytics_endpoint(request: web.Request) -> web.StreamResponse:
     """Shell page endpoint - returns HTML immediately with loading spinner."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     try:
         guild_xid = int(request.match_info["guild"])
     except KeyError, ValueError:
@@ -152,7 +152,7 @@ async def analytics_endpoint(request: web.Request) -> web.StreamResponse:
 @tracer.wrap(name="web", resource="analytics_share")
 async def analytics_share_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: mint a fresh pre-signed shareable analytics link."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     ids = await moderated_route(request)
     if isinstance(ids, web.Response):
         return ids
@@ -192,7 +192,7 @@ def add_json_panel(slug: str) -> None:
     name = f"analytics_{slug.replace('-', '_')}"
 
     async def endpoint(request: web.Request) -> web.Response:
-        add_span_request_id(generate_request_id())
+        tag_web_request(request)
         return await analytics_json_endpoint(
             request,
             lambda guild_xid, all_time: getattr(services.analytics, name)(
@@ -344,7 +344,7 @@ def with_membership(name: str, key: str) -> Callable[[int, bool], Awaitable[dict
 @tracer.wrap(name="web", resource="analytics_players")
 async def analytics_players_endpoint(request: web.Request) -> web.Response:
     """Return top players data with membership status."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     return await analytics_json_endpoint(
         request,
         with_membership("analytics_players", "top_players"),
@@ -355,7 +355,7 @@ async def analytics_players_endpoint(request: web.Request) -> web.Response:
 @tracer.wrap(name="web", resource="analytics_blocked")
 async def analytics_blocked_endpoint(request: web.Request) -> web.Response:
     """Return top blocked players data with membership status."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     return await analytics_json_endpoint(
         request,
         with_membership("analytics_blocked", "top_blocked"),

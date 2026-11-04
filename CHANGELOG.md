@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added an owner-only API Tokens panel to the admin dashboard to create and revoke tokens.
 - Added `TRUSTED_PROXY_HOPS` so rate limits use the real client IP behind a load balancer.
 - Added `make translations` to sync every language's `.po` file with `messages.pot`.
+- Web request spans in Datadog now carry the client's IP as `client_ip`.
 
 ### Changed
 

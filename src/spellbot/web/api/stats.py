@@ -7,8 +7,8 @@ import logging
 from aiohttp import web
 from ddtrace.trace import tracer
 
-from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.public_stats import get_public_stats
+from spellbot.web.tools import tag_web_request
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ CACHE_MAX_AGE = 60
 
 @routes.get("/stats.json")
 @tracer.wrap(name="web", resource="stats_json")
-async def stats_json_endpoint(_: web.Request) -> web.Response:
+async def stats_json_endpoint(request: web.Request) -> web.Response:
     """
     Return cached public activity counts as JSON.
 
@@ -33,7 +33,7 @@ async def stats_json_endpoint(_: web.Request) -> web.Response:
     Responds 503 when no cached value is available so consumers can tell "no data
     right now" apart from "genuinely zero activity".
     """
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     stats = await get_public_stats()
     if stats is None:
         return web.json_response(

@@ -11,7 +11,7 @@ from crawlerdetect import CrawlerDetect
 from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager
-from spellbot.metrics import add_span_request_id, generate_request_id
+from spellbot.metrics import add_span_request_id, generate_request_id, tag_span
 from spellbot.redis_client import get_redis
 from spellbot.settings import settings
 
@@ -44,6 +44,17 @@ def redirect(location: str) -> web.Response:
     the middlewares, so return a plain response instead.
     """
     return web.Response(status=302, headers={"Location": location})
+
+
+def tag_web_request(request: web.Request) -> None:
+    """
+    Tag the current web span with a fresh request id and the client's IP.
+
+    Behind the load balancer `request.remote` is the forwarded client address (see
+    `forwarded_ip_middleware`), which is also what the rate limiter keys on.
+    """
+    add_span_request_id(generate_request_id())
+    tag_span(client_ip=request.remote)
 
 
 def is_crawler(request: web.Request) -> bool:
@@ -85,7 +96,7 @@ def web_endpoint(resource: str) -> Callable[[Handler], Handler]:
     def decorate(handler: Handler) -> Handler:
         @functools.wraps(handler)
         async def endpoint(request: web.Request) -> web.StreamResponse:
-            add_span_request_id(generate_request_id())
+            tag_web_request(request)
             async with db_session_manager():
                 return await handler(request)
 

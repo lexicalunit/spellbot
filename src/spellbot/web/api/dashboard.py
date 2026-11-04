@@ -11,9 +11,9 @@ from ddtrace.trace import tracer
 
 from spellbot import services
 from spellbot.database import db_session_manager
-from spellbot.metrics import add_span_request_id, generate_request_id
 from spellbot.services.filters import GuildFilter, PeriodSpec, parse_guild, parse_period
 from spellbot.web.api.admin_auth import is_owner_session
+from spellbot.web.tools import tag_web_request
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -27,7 +27,7 @@ routes = web.RouteTableDef()
 @tracer.wrap(name="web", resource="dashboard")
 async def dashboard_endpoint(request: web.Request) -> web.Response:
     """Render the dashboard shell page. Panels are populated by dashboard.js."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     session = await get_session(request)
     admin_name = session.get("name") or "admin"
     context = {"admin_name": admin_name, "is_owner": is_owner_session(session)}
@@ -38,7 +38,7 @@ async def dashboard_endpoint(request: web.Request) -> web.Response:
 @tracer.wrap(name="web", resource="dashboard_sql")
 async def dashboard_sql_endpoint(request: web.Request) -> web.Response:
     """Run an owner-only, read-only ad-hoc SQL query and return the rows as JSON."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     session = await get_session(request)
     if not is_owner_session(session):
         return web.json_response({"error": "Forbidden"}, status=403)
@@ -93,7 +93,7 @@ async def owner_json_body(request: web.Request) -> dict[str, Any] | web.Response
 @tracer.wrap(name="web", resource="dashboard_tokens")
 async def dashboard_tokens_endpoint(request: web.Request) -> web.Response:
     """List the active API tokens (owner only)."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     if not is_owner_session(await get_session(request)):
         return web.json_response({"error": "Forbidden"}, status=403)
     async with db_session_manager():
@@ -105,7 +105,7 @@ async def dashboard_tokens_endpoint(request: web.Request) -> web.Response:
 @tracer.wrap(name="web", resource="dashboard_token_create")
 async def dashboard_token_create_endpoint(request: web.Request) -> web.Response:
     """Create an API token (owner only) and return its key, which is shown only this once."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     payload = await owner_json_body(request)
     if isinstance(payload, web.Response):
         return payload
@@ -123,7 +123,7 @@ async def dashboard_token_create_endpoint(request: web.Request) -> web.Response:
 @tracer.wrap(name="web", resource="dashboard_token_revoke")
 async def dashboard_token_revoke_endpoint(request: web.Request) -> web.Response:
     """Revoke an API token (owner only)."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     payload = await owner_json_body(request)
     if isinstance(payload, web.Response):
         return payload
@@ -199,7 +199,7 @@ def add_json_panel(slug: str) -> None:
     name = f"dashboard_{slug.replace('-', '_')}"
 
     async def endpoint(request: web.Request) -> web.Response:
-        add_span_request_id(generate_request_id())
+        tag_web_request(request)
         return await dashboard_json_endpoint(request, getattr(services.dashboard, name))
 
     endpoint.__name__ = f"{name}_endpoint"
@@ -214,7 +214,7 @@ for json_panel in JSON_PANELS:
 @tracer.wrap(name="web", resource="dashboard_guilds")
 async def dashboard_guilds_endpoint(request: web.Request) -> web.Response:
     """Return all known guilds for the dashboard's filter dropdown."""
-    add_span_request_id(generate_request_id())
+    tag_web_request(request)
     del request
     async with db_session_manager():
         return web.json_response({"guilds": await services.dashboard.dashboard_guilds()})

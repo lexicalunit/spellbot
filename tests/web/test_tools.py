@@ -11,10 +11,12 @@ import pytest_asyncio
 from spellbot import redis_client
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
-from spellbot.web.tools import is_crawler, rate_limited
+from spellbot.web.tools import is_crawler, rate_limited, tag_web_request
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    from pytest_mock import MockerFixture
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -163,3 +165,13 @@ class TestIsCrawler:
         request = MagicMock()
         request.headers = {}
         assert not is_crawler(request)
+
+
+class TestTagWebRequest:
+    def test_tags_client_ip(self, mocker: MockerFixture) -> None:
+        span = MagicMock()
+        mocker.patch("spellbot.metrics.tracer.current_span", return_value=span)
+        request = MagicMock()
+        request.remote = "203.0.113.7"
+        tag_web_request(request)
+        span.set_tags.assert_called_once_with({"client_ip": "203.0.113.7"})
