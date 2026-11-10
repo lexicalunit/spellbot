@@ -398,8 +398,8 @@
     </div>
 
     {{ chart_scripts() }}
-    <script>window.CHART_AVAILABLE = typeof Chart !== "undefined";</script>
-    <script>window.SQL_CONSOLE_ENABLED = {{ 'true' if is_owner else 'false' }};</script>
+    <script nonce="{{ csp_nonce }}">window.CHART_AVAILABLE = typeof Chart !== "undefined";</script>
+    <script nonce="{{ csp_nonce }}">window.SQL_CONSOLE_ENABLED = {{ 'true' if is_owner else 'false' }};</script>
     <script src="/dashboard.js"></script>
 </body>
 </html>

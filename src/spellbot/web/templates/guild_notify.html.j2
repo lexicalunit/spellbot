@@ -7,6 +7,7 @@
     <meta name="description" content="{{ t('web.notify.meta_description') }}">
     <meta name="theme-color" content="#1a202c">
     <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+    {% include "image_fallback.html.j2" %}
     <style>
         {% include "base.css" %}
         {% include "queues.css" %}
@@ -34,7 +35,7 @@
                     class="notify__guild-logo"
                     src="{{ guild.logo }}"
                     alt="{{ guild.guild_name }}"
-                    onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                    data-fallback-src="{{ default_logo }}"
                     loading="lazy"
                 >
                 <div class="notify__guild-titles">
@@ -188,7 +189,7 @@
         aria-live="polite"
         hidden
     ></div>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         (function () {
             var form = document.querySelector(".notify__form");
             var toast = document.getElementById("notify-toast");

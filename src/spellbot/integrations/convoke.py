@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from dataclasses import dataclass, field
 from enum import Enum
+from time import monotonic
 from typing import TYPE_CHECKING, Any, TypedDict
 
 import httpx
@@ -26,6 +29,9 @@ RETRY_ATTEMPTS = 3
 TIMEOUT_S = 3
 MAX_GUILD_NAME_LEN = column_length(Game.convoke_guild_name)
 MAX_GUILD_URL_LEN = column_length(Game.convoke_guild_url)
+# How long the live Guild Wars list is reused, and how long a failed fetch is.
+LIVE_GUILD_WARS_TTL_S = 60.0
+LIVE_GUILD_WARS_RETRY_S = 10.0
 
 
 class ConvokeGameTypes(Enum):
@@ -104,17 +110,46 @@ async def fetch_live_guild_wars(client: httpx.AsyncClient) -> list[LiveGuildWar]
     return wars
 
 
+@dataclass
+class LiveGuildWarsCache:
+    wars: list[LiveGuildWar] = field(default_factory=list)
+    expires_at: float = 0.0
+    lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
+
+live_guild_wars_cache = LiveGuildWarsCache()
+
+
 async def get_live_guild_wars() -> list[LiveGuildWar]:
-    async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT_S)) as client:
-        try:
-            return await fetch_live_guild_wars(client)
-        except Exception as ex:
-            add_span_error(ex)
-            logger.exception(
-                "Failed to fetch live Convoke Guild Wars",
-                extra=Integration.CONVOKE.about(),
-            )
-            return []
+    """
+    Return the live Guild Wars, fetched from Convoke at most once per cache period.
+
+    `/war` autocomplete asks on every keystroke, from anyone in any server, so without the
+    cache users could get SpellBot rate limited by Convoke. Concurrent callers wait for a
+    single fetch. A failed fetch is remembered as "no wars" for a shorter time, so an outage
+    isn't retried on every keystroke either.
+    """
+    cache = live_guild_wars_cache
+    if monotonic() < cache.expires_at:
+        return cache.wars
+    async with cache.lock:
+        if monotonic() < cache.expires_at:
+            return cache.wars
+        async with httpx.AsyncClient(timeout=httpx.Timeout(TIMEOUT_S)) as client:
+            try:
+                wars = await fetch_live_guild_wars(client)
+                ttl_s = LIVE_GUILD_WARS_TTL_S
+            except Exception as ex:
+                add_span_error(ex)
+                logger.exception(
+                    "Failed to fetch live Convoke Guild Wars",
+                    extra=Integration.CONVOKE.about(),
+                )
+                wars = []
+                ttl_s = LIVE_GUILD_WARS_RETRY_S
+        cache.wars = wars
+        cache.expires_at = monotonic() + ttl_s
+        return wars
 
 
 async def resolve_live_guild_war(war_id: str) -> LiveGuildWar | None:

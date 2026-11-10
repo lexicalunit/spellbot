@@ -152,6 +152,22 @@ class TestServiceUsers:
         assert block.user_xid == user1.xid
         assert block.blocked_user_xid == user2.xid
 
+    async def test_users_block_limit(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "MAX_BLOCKED_USERS", 2)
+        author, first, second, third = (UserFactory.create() for _ in range(4))
+
+        assert await users.block(author.xid, first.xid) is True
+        assert await users.block(author.xid, second.xid) is True
+        assert await users.block(author.xid, third.xid) is False  # the list is full
+        assert await users.block(author.xid, first.xid) is True  # already blocked is fine
+
+        count = (
+            await DatabaseSession.execute(
+                select(func.count()).select_from(Block).where(Block.user_xid == author.xid),
+            )
+        ).scalar_one()
+        assert count == 2
+
     async def test_users_unblock(self) -> None:
         user1 = UserFactory.create()
         user2 = UserFactory.create()

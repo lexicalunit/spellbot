@@ -19,7 +19,7 @@ from spellbot.models import Guild, GuildMember
 from spellbot.settings import settings
 from spellbot.web.api.record import moderated_route, request_is_moderator, require_moderator_page
 from spellbot.web.signing import generate_signed_url, validate_signature
-from spellbot.web.tools import tag_web_request
+from spellbot.web.tools import route_id, tag_web_request
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -77,7 +77,7 @@ async def validate_analytics_request(
     Returns (guild_xid, None) or (None, error_response).
     """
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except KeyError, ValueError:
         return None, web.Response(status=404)
 
@@ -113,7 +113,7 @@ async def analytics_endpoint(request: web.Request) -> web.StreamResponse:
     """Shell page endpoint - returns HTML immediately with loading spinner."""
     tag_web_request(request)
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except KeyError, ValueError:
         return web.Response(status=404)
 

@@ -110,6 +110,7 @@ class Settings(BaseSettings):
     ADMIN_ROLE: str = "SpellBot Admin"
     MOD_PREFIX: str = "Moderator"
     MAX_PENDING_GAMES: int = 5
+    MAX_BLOCKED_USERS: int = 50
     LOCALE: str = "en"
 
     # Task intervals

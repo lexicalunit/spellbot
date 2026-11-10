@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC
 from typing import TYPE_CHECKING, Any
@@ -17,11 +19,14 @@ from ddtrace.trace import tracer
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.integrations import castlog
+from spellbot.models import Guild, User
 from spellbot.services.games import MetadataWrite
 from spellbot.settings import settings
-from spellbot.web.tools import rate_limited, tag_web_request
+from spellbot.web.tools import parse_id, rate_limited, route_id, tag_web_request
 
 if TYPE_CHECKING:
+    from sqlalchemy.orm import QueryableAttribute
+
     from spellbot.data import GameData, UserData
 
 logger = logging.getLogger(__name__)
@@ -73,10 +78,10 @@ async def game_verify_endpoint(request: web.Request) -> web.Response:
     tag_web_request(request)
     try:
         async with db_session_manager():
-            game_id = int(request.match_info["game"])
+            game_id = route_id(request, "game")
             payload = await request.json()
-            user_xid = int(payload["user_xid"])
-            guild_xid = int(payload["guild_xid"])
+            user_xid = payload_id(payload["user_xid"], User.xid)
+            guild_xid = payload_id(payload["guild_xid"], Guild.xid)
             pin = payload["pin"]
             verified = await services.plays.verify_game_pin(
                 game_id=game_id,
@@ -235,19 +240,44 @@ async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
         logger.warning("Discord API failure: %s", ex, exc_info=True)
 
 
+def payload_id(value: object, column: QueryableAttribute[int]) -> int:
+    """
+    Parse an id from a JSON body, sent as a number or a string of digits (see `parse_id`).
+
+    Raises `ValueError` for anything else, including ids too big for `column`. No other JSON
+    value (a float, bool, null, list, or object) reads as plain digits.
+    """
+    return parse_id(str(value), column)
+
+
 async def resolve_user_xid(value: Any) -> int | None:
-    """Resolve a user xid from either an int, string int, or username."""
-    if value is None:
-        return None
-    # Try to parse as int first
-    try:
-        return int(value)
-    except ValueError, TypeError:
-        pass
-    # If it's a string, try to look up by name
+    """Resolve a user xid from a number, a string of digits, or a username."""
+    with suppress(ValueError):
+        return payload_id(value, User.xid)
     if isinstance(value, str):
         return await services.users.get_xid_by_name(value)
     return None
+
+
+# Longest commander text a record may carry. Real names, partner pairs included, are far
+# shorter. The cap stops a token from filling the players' DMs with arbitrary text.
+MAX_COMMANDER_LENGTH = 100
+
+# Characters Discord reads as inline markdown (links, emphasis, code, spoilers) or as the start
+# of `<@id>`-style syntax. A backslash in front of each makes it literal.
+INLINE_MARKDOWN = re.compile(r"([\\*_~|`\[\]()<])")
+
+
+def commander_text(raw: str) -> str:
+    """
+    Make a reported commander safe to show in a DM: one bounded line of plain text.
+
+    Collapsing whitespace onto one line means nothing can start a heading, quote or list,
+    escaping inline markdown stops masked links, and a zero-width space after `@` stops
+    `@everyone`-style mentions.
+    """
+    text = " ".join(raw.split())[:MAX_COMMANDER_LENGTH]
+    return INLINE_MARKDOWN.sub(r"\\\1", text).replace("@", "@\u200b")
 
 
 async def resolve_record_players(
@@ -261,13 +291,13 @@ async def resolve_record_players(
     commanders: dict[int | None, str] = {}
     player_xids: list[int] = []
     for p in players_data:
-        if not isinstance(p, dict) or "xid" not in p or "commander" not in p:
+        if not isinstance(p, dict) or "xid" not in p or not isinstance(p.get("commander"), str):
             return "Invalid player data"
         xid = await resolve_user_xid(p["xid"])
         if xid is None:
             return f"Player not found: {p['xid']}"
         player_xids.append(xid)
-        commanders[xid] = p["commander"]
+        commanders[xid] = commander_text(p["commander"])
     return player_xids, commanders
 
 
@@ -277,7 +307,7 @@ async def game_record_endpoint(request: web.Request) -> web.Response:
     tag_web_request(request)
     async with db_session_manager():
         try:
-            game_id = int(request.match_info["game"])
+            game_id = route_id(request, "game")
         except ValueError:
             return reply(error="Invalid game ID", status=400)
         if not (game_data := await services.games.get(game_id)):
@@ -305,10 +335,12 @@ async def game_record_endpoint(request: web.Request) -> web.Response:
             return reply(error=resolved, status=400)
         player_xids, commanders = resolved
 
+        # Everyone listed gets a DM, so the list must be exactly the game's players, each once.
+        # Otherwise a token could have the bot DM anyone it likes.
         plays = await services.plays.get_plays_by_game_id(game_id)
+        if sorted(player_xids) != sorted(play.user_xid for play in plays):
+            return reply(error="Players don't match the game's players", status=400)
         players = await services.users.get_players_by_xid(player_xids)
-        if len(plays) != len(players) or len(players) != len(player_xids):
-            return reply(error="Mismatched player count", status=400)
         # The tracker doesn't have to be one of the players in the game.
         tracker = await services.users.get(tracker_xid)
         embed = game_record_embed(
@@ -370,7 +402,7 @@ async def game_metadata_endpoint(request: web.Request) -> web.Response:
     tag_web_request(request)
     async with db_session_manager():
         try:
-            game_id = int(request.match_info["game"])
+            game_id = route_id(request, "game")
         except ValueError:
             return reply(error="Invalid game ID", status=400)
         try:

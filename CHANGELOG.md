@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Server moderators can no longer change, forget, or view the settings of another server's channels.
+- Website moderator checks now skip unknown servers, back off when Discord rate limits us, and
+  are rate limited per user, so they can't spend the bot's Discord request budget.
+- CSV exports no longer include game join links that the viewer isn't allowed to see.
+- The record API now only DMs a game's own players, and shows commanders as escaped plain text.
+- CSV exports quote names that would otherwise run as formulas when opened in a spreadsheet.
+- Block lists are capped at 50 users, and the website only blocks users SpellBot already knows.
+- Record pages and CSV exports are rate limited per visitor, and exports run a few at a time
+  and no longer hold a database connection while downloading.
+- `/war` autocomplete reuses Convoke's list of live Guild Wars for a minute instead of asking
+  Convoke on every keystroke.
+- Malformed ids, page numbers, dates, signatures, and timezone cookies on the website and API
+  now get a 4xx response or are ignored, instead of a server error.
+
+### Added
+
+- API tokens can be limited to a single endpoint with scopes like `game:verify` or `game:record`.
+- Website pages send a Content-Security-Policy that only runs SpellBot's own and pinned scripts.
+
 ## [v24.1.2](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.2) - 2026-11-10
 
 ### Added

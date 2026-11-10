@@ -12,6 +12,7 @@ from sqlalchemy import select
 from spellbot.cogs import BlockCog
 from spellbot.database import DatabaseSession
 from spellbot.models import Block, User
+from spellbot.services import users
 from tests.fixtures import run_command
 
 if TYPE_CHECKING:
@@ -119,6 +120,36 @@ class TestCogBlock:
         )
         blocks = list((await DatabaseSession.execute(select(Block))).scalars().all())
         assert len(blocks) == 0
+
+    async def test_block_limit(
+        self,
+        decoy: Decoy,
+        cog: BlockCog,
+        interaction: discord.Interaction,
+        settings: Settings,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # The `settings` fixture is a fresh copy; the app reads the shared one.
+        monkeypatch.setattr(users.settings, "MAX_BLOCKED_USERS", 0)
+        target = decoy.mock(cls=discord.Member)
+        target.id = 2
+        decoy.when(target.display_name).then_return("target-author-display-name")
+
+        await run_command(cog.block, interaction, target=target)
+
+        cta = (
+            "You can view and manage your blocked users from your profile page.\n\n"
+            f"[Open your profile on spellbot.io]({settings.API_BASE_URL}/u/{interaction.user.id})"
+        )
+        decoy.verify(
+            await interaction.response.send_message(
+                f"You can block at most 0 users. Unblock someone to make room.\n\n{cta}",
+                ephemeral=True,
+            ),
+            times=1,
+        )
+        blocks = list((await DatabaseSession.execute(select(Block))).scalars().all())
+        assert blocks == []
 
     async def test_blocked_links_to_profile(
         self,

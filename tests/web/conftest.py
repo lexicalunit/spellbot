@@ -9,6 +9,7 @@ import pytest
 import pytest_asyncio
 
 from spellbot.settings import settings as runtime_settings
+from spellbot.web import builder
 from spellbot.web.api import admin_auth, record
 from tests.mocks.http import discord_oauth, serve_httpx
 
@@ -31,6 +32,12 @@ def disable_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
     rate limiting mock `rate_limited` (or `REDIS_URL`) directly.
     """
     monkeypatch.setattr(runtime_settings, "REDIS_URL", None)
+
+
+@pytest.fixture(autouse=True)
+def pin_csp_nonce(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin the per-request CSP nonce so rendered pages, and their HTML snapshots, are stable."""
+    monkeypatch.setattr(builder, "new_csp_nonce", lambda: "test-nonce")
 
 
 @pytest.fixture(autouse=True)

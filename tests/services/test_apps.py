@@ -52,6 +52,21 @@ class TestServiceApps:
         # "//game" -> ["", "", "game"] -> [1] is "" which triggers the check
         assert await apps.verify_token("empty_scope_key", "//game/1") is False
 
+    async def test_verify_token_action_scope(self, factories: Factories) -> None:
+        """An action scope grants that one endpoint and nothing else under the resource."""
+        factories.token.create(key="verify_only", scopes="game:verify")
+        assert await apps.verify_token("verify_only", "/api/game/1/verify") is True
+        assert await apps.verify_token("verify_only", "/api/game/1/record") is False
+        assert await apps.verify_token("verify_only", "/api/game/1/metadata") is False
+
+    async def test_verify_token_resource_scope_grants_every_action(
+        self,
+        factories: Factories,
+    ) -> None:
+        factories.token.create(key="all_game", scopes="game")
+        for action in ("verify", "record", "metadata"):
+            assert await apps.verify_token("all_game", f"/api/game/1/{action}") is True
+
     async def test_verify_token_when_path_is_bad(self, factories: Factories) -> None:
         """Test that a bad path doesn't crash and returns False."""
         factories.token.create(key="key", scopes="game")
@@ -92,6 +107,19 @@ class TestHashApiKey:
         assert apps.hash_api_key("abc") == (
             "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
         )
+
+
+class TestGrantingScopes:
+    @pytest.mark.parametrize(
+        ("path", "expected"),
+        [
+            pytest.param("/api/game/1/record", {"game", "game:record"}, id="action"),
+            pytest.param("/api/game/1", {"game"}, id="no-action"),
+            pytest.param("/bogus", set(), id="too-short"),
+        ],
+    )
+    def test_granting_scopes(self, path: str, expected: set[str]) -> None:
+        assert apps.granting_scopes(path) == expected
 
 
 class TestParseScopes:

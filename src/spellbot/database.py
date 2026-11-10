@@ -203,6 +203,18 @@ async def end_session(token: Token[AsyncSession]) -> None:
             DatabaseSession.expire_all()
 
 
+async def release_connection() -> None:
+    """
+    Commit the current session and return its connection to the pool right away.
+
+    For work that goes on long after its last query, such as sending a large download
+    to a slow client. The session stays usable: it checks out a connection again if
+    queried, and `end_session` still closes it at the end.
+    """
+    await DatabaseSession.commit()
+    await DatabaseSession.close()
+
+
 @asynccontextmanager
 async def db_session_manager() -> AsyncGenerator[None]:
     token = await begin_session()

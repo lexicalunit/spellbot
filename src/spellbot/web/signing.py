@@ -27,4 +27,6 @@ def validate_signature(guild_xid: int, expires: int, sig: str) -> bool:
     message = f"{guild_xid}:{expires}"
     secret = (settings.SECRET_TOKEN or "").encode()
     expected = hmac.new(secret, message.encode(), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(sig, expected)
+    # Compared as bytes: `compare_digest` refuses non-ASCII strings, and `sig` comes
+    # straight from the query string.
+    return hmac.compare_digest(sig.encode(), expected.encode())

@@ -65,7 +65,7 @@
                 </div>
             </form>
             <form method="post" action="/g/{{ guild.xid }}/awards/{{ award.id }}/delete" class="settings-form"
-                  onsubmit='return confirm({{ t("web.awards.delete_confirm") | tojson }});'>
+                  data-confirm="{{ t('web.awards.delete_confirm') }}">
                 <div class="actions">
                     <button type="submit" class="button button-danger">{{ t("web.awards.delete") }}</button>
                 </div>

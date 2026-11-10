@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import TYPE_CHECKING, ClassVar
 
@@ -14,6 +15,7 @@ from spellbot.enums import GameBracket, GameFormat
 from spellbot.integrations import http_errors
 from spellbot.integrations.convoke import (
     ConvokeGameTypes,
+    LiveGuildWarsCache,
     convoke_game_format,
     fetch_convoke_link,
     generate_link,
@@ -28,8 +30,15 @@ if TYPE_CHECKING:
     from decoy import Decoy
 
     from spellbot.data import GameData
+    from spellbot.integrations.convoke import LiveGuildWar
     from tests.fixtures import Stub
     from tests.mocks.http import JSON, Responder
+
+
+@pytest.fixture(autouse=True)
+def empty_live_guild_wars_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Start each test with no cached Guild Wars, so it sees its own Convoke responses."""
+    monkeypatch.setattr(convoke_module, "live_guild_wars_cache", LiveGuildWarsCache())
 
 
 class TestConvokeGameFormat:
@@ -786,6 +795,79 @@ class TestGetLiveGuildWars:
         # not surface as an error to the user.
         serve_httpx(monkeypatch, raising())
         assert await convoke_module.get_live_guild_wars() == []
+
+
+class Clock:
+    """A settable stand-in for `monotonic`."""
+
+    def __init__(self) -> None:
+        self.now = 1000.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+@pytest.fixture
+def clock(monkeypatch: pytest.MonkeyPatch) -> Clock:
+    clock = Clock()
+    monkeypatch.setattr(convoke_module, "monotonic", clock)
+    return clock
+
+
+@pytest.mark.asyncio
+class TestLiveGuildWarsCache:
+    PAYLOAD: ClassVar = {"wars": [{"id": WAR_ID, "title": "Summer Clash"}]}
+
+    async def test_reuses_the_list_until_it_expires(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        clock: Clock,
+    ) -> None:
+        requests = serve_httpx(monkeypatch, lambda _: httpx.Response(200, json=self.PAYLOAD))
+        first = await convoke_module.get_live_guild_wars()
+        clock.now += convoke_module.LIVE_GUILD_WARS_TTL_S - 1
+        assert await convoke_module.get_live_guild_wars() == first
+        assert len(requests) == 1
+
+        clock.now += 1
+        assert await convoke_module.get_live_guild_wars() == first
+        assert len(requests) == 2
+
+    async def test_concurrent_callers_share_one_fetch(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        war: LiveGuildWar = {"id": WAR_ID, "title": "Summer Clash", "slug": WAR_ID, "status": "x"}
+        fetches: list[httpx.AsyncClient] = []
+
+        async def slow_fetch(client: httpx.AsyncClient) -> list[LiveGuildWar]:
+            fetches.append(client)
+            await asyncio.sleep(0)  # let the other callers run while this one is in flight
+            return [war]
+
+        monkeypatch.setattr(convoke_module, "fetch_live_guild_wars", slow_fetch)
+        results = await asyncio.gather(*(convoke_module.get_live_guild_wars() for _ in range(5)))
+        assert results == [[war]] * 5
+        assert len(fetches) == 1
+
+    async def test_failures_are_retried_after_a_short_wait(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        clock: Clock,
+    ) -> None:
+        requests = serve_httpx(
+            monkeypatch,
+            in_order(httpx.ConnectError, httpx.Response(200, json=self.PAYLOAD)),
+        )
+        assert await convoke_module.get_live_guild_wars() == []
+        clock.now += convoke_module.LIVE_GUILD_WARS_RETRY_S - 1
+        assert await convoke_module.get_live_guild_wars() == []
+        assert len(requests) == 1
+
+        clock.now += 1
+        wars = await convoke_module.get_live_guild_wars()
+        assert [war["id"] for war in wars] == [WAR_ID]
+        assert len(requests) == 2
 
 
 @pytest.mark.asyncio

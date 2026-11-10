@@ -27,6 +27,7 @@ from .base import (  # noqa: I001,E402
     now,
     reverse_all,
     column_length,
+    column_max,
     web_editable,
 )
 
@@ -83,6 +84,7 @@ __all__ = [
     "UserAward",
     "Verify",
     "column_length",
+    "column_max",
     "create_all",
     "generate_pin",
     "import_models",

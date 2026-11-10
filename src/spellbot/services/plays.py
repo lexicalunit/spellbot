@@ -16,6 +16,8 @@ from spellbot.models import Channel, Game, Guild, Play, User
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Sequence
 
+    from sqlalchemy.sql import ColumnElement
+
 
 USER_PAGE_SIZE = 25
 CHANNEL_PAGE_SIZE = 10
@@ -483,7 +485,7 @@ async def channel_records(
 
     Returns a `(rows, total_count)` tuple where `total_count` is the total number
     of distinct matching games (not players) before pagination, or `None` if the
-    guild or channel is unknown.
+    guild or channel is unknown, or the channel isn't in the guild.
     """
     guild = (
         await DatabaseSession.execute(select(Guild).where(Guild.xid == guild_xid))
@@ -491,7 +493,9 @@ async def channel_records(
     if not guild:
         return None
     channel = (
-        await DatabaseSession.execute(select(Channel).where(Channel.xid == channel_xid))
+        await DatabaseSession.execute(
+            select(Channel).where(channel_in_guild(guild_xid, channel_xid)),
+        )
     ).scalar_one_or_none()
     if not channel:
         return None
@@ -543,12 +547,19 @@ async def user_export_target_exists(user_xid: int) -> bool:
     return await user_exists(user_xid)
 
 
+def channel_in_guild(guild_xid: int, channel_xid: int) -> ColumnElement[bool]:
+    """Filter for the channel `channel_xid`, matching only when it belongs to `guild_xid`."""
+    return and_(Channel.xid == channel_xid, Channel.guild_xid == guild_xid)
+
+
 async def channel_export_target_exists(guild_xid: int, channel_xid: int) -> bool:
-    """Return True if both the guild and channel for a channel-records export exist."""
+    """Return True if the guild exists and the channel exists within it."""
     if not await guild_exists(guild_xid):
         return False
     return (
-        await DatabaseSession.execute(select(Channel.xid).where(Channel.xid == channel_xid))
+        await DatabaseSession.execute(
+            select(Channel.xid).where(channel_in_guild(guild_xid, channel_xid)),
+        )
     ).scalar_one_or_none() is not None
 
 
@@ -576,7 +587,9 @@ async def stream_channel_records(
     if guild_name is None:
         return
     channel_name = (
-        await DatabaseSession.execute(select(Channel.name).where(Channel.xid == channel_xid))
+        await DatabaseSession.execute(
+            select(Channel.name).where(channel_in_guild(guild_xid, channel_xid)),
+        )
     ).scalar_one_or_none()
     if channel_name is None:
         return

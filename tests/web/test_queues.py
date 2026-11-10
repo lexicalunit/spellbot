@@ -36,7 +36,7 @@ NOW = datetime(2024, 6, 15, 12, 0, tzinfo=UTC)
 
 
 @pytest.fixture(autouse=True)
-def _clear_icon_fetch_throttle() -> None:
+def clear_icon_fetch_throttle() -> None:
     queues_endpoint_mod._icon_fetch_attempts.clear()
     queues_endpoint_mod.guild_icon_cache.clear()
 
@@ -1106,6 +1106,34 @@ class TestGuildNotifySaveEndpoint:
             "channels": [],
             "active_hours": None,
         }
+
+    @pytest.mark.parametrize(
+        ("accept", "expected"),
+        [("text/html", None), ("application/json", {"ok": False, "error": "not_found"})],
+    )
+    async def test_unknown_guild_is_404(
+        self,
+        client: WebClient,
+        factories: Factories,
+        decoy: Decoy,
+        stub: Stub,
+        accept: str,
+        expected: dict[str, object] | None,
+    ) -> None:
+        me = factories.user.create(xid=883_011, name="me")
+        get_viewer_fake = stub(queues_endpoint_mod, "get_viewer")
+        decoy.when(await get_viewer_fake(ANY), ignore_extra_args=True).then_return((me.xid, "Me"))
+
+        resp = await client.post(
+            "/queues/g/983099/notify",
+            data={"formats": ["1"]},
+            headers={"Accept": accept},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+        if expected is not None:
+            assert await resp.json() == expected
+        assert await alerts.get_for_user_guild(983_099, me.xid) is None
 
     async def test_returns_400_for_invalid_format_value(
         self,

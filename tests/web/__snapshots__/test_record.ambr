@@ -840,7 +840,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -930,6 +930,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -1714,7 +1722,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -1804,6 +1812,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -2793,7 +2809,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -2883,6 +2899,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -3729,7 +3753,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -3819,6 +3843,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -4808,7 +4840,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -4898,6 +4930,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -5887,7 +5927,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -5977,6 +6017,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -6975,7 +7023,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -7065,6 +7113,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -7918,7 +7974,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -8008,6 +8064,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>
@@ -9006,7 +9070,7 @@
           crossorigin="anonymous"
           referrerpolicy="no-referrer"></script>
   
-      <script>
+      <script nonce="test-nonce">
           const timezoneOffsetCookie = 'timezone_offset';
           const timezoneNameCookie = 'timezone_name';
           const testCookie = 'test';
@@ -9096,6 +9160,14 @@
                       el.textContent = orig;
                       el.classList.remove('copied');
                   }, 1200);
+              });
+          });
+  
+          // Ask before submitting a destructive form. Done here rather than with inline
+          // `onsubmit` handlers, which the Content-Security-Policy blocks.
+          document.querySelectorAll('form[data-confirm]').forEach((form) => {
+              form.addEventListener('submit', (event) => {
+                  if (!confirm(form.dataset.confirm)) event.preventDefault();
               });
           });
       </script>

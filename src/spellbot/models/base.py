@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import alembic
 import alembic.command
 import alembic.config
-from sqlalchemy import create_engine, text
+from sqlalchemy import BigInteger, Integer, create_engine, text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Query
 
@@ -17,6 +17,7 @@ from . import import_models
 
 if TYPE_CHECKING:
     from sqlalchemy.engine.url import URL
+    from sqlalchemy.orm import QueryableAttribute
 
 MODULE_ROOT = Path(__file__).resolve().parent
 PACKAGE_ROOT = MODULE_ROOT.parent
@@ -39,6 +40,24 @@ WEB_EDITABLE = "[web-editable]"
 def column_length(column: Any) -> int:
     """Return the maximum length of a string column, e.g. `column_length(Game.rules)`."""
     return column.property.columns[0].type.length
+
+
+# Largest value of each Postgres integer type the models use. `BigInteger` subclasses
+# `Integer`, so it's listed first.
+INTEGER_MAXIMUMS: tuple[tuple[type[Integer], int], ...] = (
+    (BigInteger, 2**63 - 1),
+    (Integer, 2**31 - 1),
+)
+
+
+def column_max(column: QueryableAttribute[int]) -> int:
+    """Return the largest value an integer column can hold, e.g. `column_max(Game.id)`."""
+    column_type = column.expression.type
+    for integer_type, maximum in INTEGER_MAXIMUMS:
+        if isinstance(column_type, integer_type):
+            return maximum
+    msg = f"{column} is not an integer column"
+    raise TypeError(msg)
 
 
 def web_editable(doc: str) -> str:

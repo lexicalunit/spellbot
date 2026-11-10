@@ -79,7 +79,7 @@ class TestServiceChannels:
         channel_cache[discord_channel.id] = "test-channel"
 
         # Forget the channel
-        await channels.forget(discord_channel.id)
+        await channels.forget(guild.xid, discord_channel.id)
 
         # Verify it's removed from the database
         data = await channels.select(discord_channel.id)
@@ -87,6 +87,16 @@ class TestServiceChannels:
 
         # Verify it's also removed from the cache
         assert discord_channel.id not in channel_cache
+
+    async def test_channels_forget_other_guild_is_a_noop(self) -> None:
+        guild = GuildFactory.create()
+        other_guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild, xid=9104)
+
+        await channels.forget(other_guild.xid, channel.xid)
+
+        DatabaseSession.expire_all()
+        assert await channels.select(channel.xid) is not None
 
     async def test_channels_upsert_cached_but_deleted(
         self,
@@ -119,7 +129,7 @@ class TestServiceChannelsUpdateSettings:
     async def test_updates_allow_listed_fields(self) -> None:
         guild = GuildFactory.create()
         channel = ChannelFactory.create(guild=guild, xid=9101, default_seats=4, blind_games=False)
-        await channels.update_settings(channel.xid, default_seats=2, blind_games=True)
+        await channels.update_settings(guild.xid, channel.xid, default_seats=2, blind_games=True)
         DatabaseSession.expire_all()
         updated = await DatabaseSession.get(Channel, channel.xid)
         assert updated is not None
@@ -129,16 +139,27 @@ class TestServiceChannelsUpdateSettings:
     async def test_ignores_unlisted_fields(self) -> None:
         guild = GuildFactory.create()
         channel = ChannelFactory.create(guild=guild, xid=9102, name="keep", default_seats=4)
-        await channels.update_settings(channel.xid, name="hacked", guild_xid=999)
+        await channels.update_settings(guild.xid, channel.xid, name="hacked", guild_xid=999)
         DatabaseSession.expire_all()
         updated = await DatabaseSession.get(Channel, channel.xid)
         assert updated is not None
         assert updated.name == "keep"
+        assert updated.guild_xid == guild.xid
+
+    async def test_other_guild_is_a_noop(self) -> None:
+        guild = GuildFactory.create()
+        other_guild = GuildFactory.create()
+        channel = ChannelFactory.create(guild=guild, xid=9105, motd="keep")
+        await channels.update_settings(other_guild.xid, channel.xid, motd="hacked")
+        DatabaseSession.expire_all()
+        updated = await DatabaseSession.get(Channel, channel.xid)
+        assert updated is not None
+        assert updated.motd == "keep"
 
     async def test_no_safe_fields_is_a_noop(self) -> None:
         guild = GuildFactory.create()
         channel = ChannelFactory.create(guild=guild, xid=9103, name="keep")
-        await channels.update_settings(channel.xid, name="hacked")
+        await channels.update_settings(guild.xid, channel.xid, name="hacked")
         DatabaseSession.expire_all()
         updated = await DatabaseSession.get(Channel, channel.xid)
         assert updated is not None

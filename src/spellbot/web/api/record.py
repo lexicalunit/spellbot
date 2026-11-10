@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import logging
@@ -10,11 +11,13 @@ from datetime import UTC, date, datetime, timedelta
 from enum import Enum, auto
 from typing import Any, NamedTuple
 from urllib.parse import quote, urlencode
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import aiohttp_jinja2
 from aiohttp import web
 
 from spellbot import audit, services
+from spellbot.database import release_connection
 from spellbot.enums import (
     GAME_BRACKET_ORDER,
     GAME_FORMAT_ORDER,
@@ -25,7 +28,7 @@ from spellbot.enums import (
     VALID_FORMATS,
     VALID_SERVICES,
 )
-from spellbot.models import Channel, Guild, GuildAward, column_length, web_editable_docs
+from spellbot.models import Channel, Guild, GuildAward, User, column_length, web_editable_docs
 from spellbot.services.plays import (
     CHANNEL_PAGE_SIZE,
     CHANNEL_RECORDS_SORT_COLUMNS,
@@ -33,15 +36,39 @@ from spellbot.services.plays import (
     USER_RECORDS_SORT_COLUMNS,
     RecordFilters,
 )
+from spellbot.settings import settings
 from spellbot.web.api.admin_auth import is_owner_request
 from spellbot.web.api.moderation import viewer_is_moderator
 from spellbot.web.api.oauth import safe_relative_path
 from spellbot.web.api.viewer_auth import get_viewer
-from spellbot.web.tools import is_crawler, redirect, web_endpoint
+from spellbot.web.tools import (
+    is_crawler,
+    parse_id,
+    parse_page,
+    rate_limited,
+    redirect,
+    route_id,
+    too_many_requests,
+    web_endpoint,
+)
 
 logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
+
+# Per-IP limits per minute (`TIME_WINDOW`) on the pages that run record queries shaped by
+# the visitor's filters. Plenty for someone browsing, but they stop a script hammering them.
+RECORD_PAGE_RATE_LIMIT = 60
+EXPORT_RATE_LIMIT = 10
+
+# An export fetches a whole history at once, so each process runs only a couple at a time;
+# its database pool is only `DATABASE_POOL_SIZE + DATABASE_POOL_MAX_OVERFLOW` connections.
+# Requests beyond that get a 503 right away instead of queueing.
+export_slots = asyncio.Semaphore(2)
+EXPORT_BUSY_RETRY_AFTER_S = 5
+
+# Real UTC offsets run from -14 to +12 hours; a `timezone_offset` cookie past a day is junk.
+MAX_TZ_OFFSET_M = 24 * 60
 
 VALID_SORT_DIRS = frozenset({"asc", "desc"})
 DEFAULT_SORT_BY = "updated_at"
@@ -112,7 +139,7 @@ def parse_local_date(value: str | None) -> date | None:
     return None
 
 
-def local_day_to_utc(d: date, tz_offset: int | None, *, end_of_day: bool) -> datetime:
+def local_day_to_utc(d: date, tz_offset: int | None, *, end_of_day: bool) -> datetime | None:
     """
     Convert a viewer's local-calendar date into a UTC datetime boundary.
 
@@ -120,12 +147,18 @@ def local_day_to_utc(d: date, tz_offset: int | None, *, end_of_day: bool) -> dat
     such as `480` means the viewer is at UTC-8. When `end_of_day` is True, the
     boundary is the exclusive end-of-day (start of the next day) so date filters can
     be expressed as half-open ranges.
+
+    Returns None when the boundary falls outside the dates Python can represent (such
+    as the end of `9999-12-31`). Such a date excludes nothing, so no boundary is needed.
     """
     base = datetime(d.year, d.month, d.day, tzinfo=UTC)
-    if end_of_day:
-        base += timedelta(days=1)
-    if tz_offset is not None:
-        base += timedelta(minutes=tz_offset)
+    try:
+        if end_of_day:
+            base += timedelta(days=1)
+        if tz_offset is not None:
+            base += timedelta(minutes=tz_offset)
+    except OverflowError:
+        return None
     return base
 
 
@@ -195,13 +228,13 @@ def parse_filters(
 async def parse_opts(request: web.Request, kind: RecordKind) -> Opts:
     """Parse out the request options from web request object."""
     if kind is RecordKind.CHANNEL:
-        guild_xid: int | None = int(request.match_info["guild"])
-        target_xid = int(request.match_info["channel"])
+        guild_xid: int | None = route_id(request, "guild")
+        target_xid = route_id(request, "channel")
     else:
         guild_xid = None
-        target_xid = int(request.match_info["user"])
+        target_xid = route_id(request, "user")
 
-    page = max(int(request.query.get("page", 0)), 0)
+    page = parse_page(request.query.get("page"))
 
     tz_offset, tz_name = viewer_timezone(request)
     filters, raw_filters = parse_filters(request, kind, tz_offset)
@@ -405,12 +438,29 @@ def login_url(request: web.Request) -> str:
     return f"/login?next={quote(next_path, safe='')}"
 
 
+def known_zone(name: str) -> bool:
+    """Whether `name` is a time zone Python knows, such as `America/New_York`."""
+    try:
+        ZoneInfo(name)
+    except ZoneInfoNotFoundError, ValueError:
+        return False
+    return True
+
+
 def viewer_timezone(request: web.Request) -> tuple[int | None, str | None]:
-    """Return the viewer's UTC offset (in minutes) and timezone name, from their cookies."""
+    """
+    Return the viewer's UTC offset (in minutes) and timezone name, from their cookies.
+
+    The page's script sets both cookies, but a visitor can send anything. Either comes back
+    None when it isn't a real offset or time zone, since date math on one would fail.
+    """
     tz_offset: int | None = None
-    with suppress(TypeError, ValueError):
-        tz_offset = int(request.cookies.get("timezone_offset") or "")
-    return tz_offset, request.cookies.get("timezone_name")
+    with suppress(ValueError):
+        offset = int(request.cookies.get("timezone_offset") or "")
+        if abs(offset) <= MAX_TZ_OFFSET_M:
+            tz_offset = offset
+    tz_name = request.cookies.get("timezone_name")
+    return tz_offset, tz_name if tz_name and known_zone(tz_name) else None
 
 
 async def moderated_route(request: web.Request, *extra_ids: str) -> tuple[int, ...] | web.Response:
@@ -420,12 +470,28 @@ async def moderated_route(request: web.Request, *extra_ids: str) -> tuple[int, .
     Returns the parsed ids, guild first, or the 404 or 403 response to send instead.
     """
     try:
-        ids = tuple(int(request.match_info[name]) for name in ("guild", *extra_ids))
+        ids = tuple(route_id(request, name) for name in ("guild", *extra_ids))
     except KeyError, ValueError:
         return web.Response(status=404)
     if not await request_is_moderator(request, ids[0]):
         return web.Response(status=403, text="Forbidden")
     return ids
+
+
+async def moderated_channel_route(request: web.Request) -> tuple[int, int] | web.Response:
+    """
+    Like `moderated_route` for a channel route, also requiring the channel to be in the guild.
+
+    Moderating the guild in the URL says nothing about a channel id from another guild, so
+    without this a moderator of any guild could change or forget any guild's channel.
+    """
+    ids = await moderated_route(request, "channel")
+    if isinstance(ids, web.Response):
+        return ids
+    guild_xid, channel_xid = ids
+    if not await services.channels.in_guild(guild_xid, channel_xid):
+        return web.Response(status=404)
+    return guild_xid, channel_xid
 
 
 async def require_moderator_page(request: web.Request, guild_xid: int) -> web.Response | None:
@@ -439,6 +505,8 @@ async def require_moderator_page(request: web.Request, guild_xid: int) -> web.Re
 
 
 async def impl(request: web.Request, kind: RecordKind) -> web.Response:
+    if await rate_limited(request, f"records:{request.remote}", limit=RECORD_PAGE_RATE_LIMIT):
+        return too_many_requests()
     try:
         opts = await parse_opts(request, kind)
     except ValueError:
@@ -554,18 +622,32 @@ async def viewer_owns_profile(request: web.Request, user_xid: int) -> bool:
 # a server-controlled message and ignores anything not in this allow-list.
 BLOCK_ERRORS = {
     "invalid": "Enter a Discord user ID or name to block.",
-    "not_found": "No SpellBot user with that name was found.",
+    "not_found": "No SpellBot user with that ID or name was found.",
     "self": "You can't block yourself.",
+    "limit": (
+        f"You can block at most {settings.MAX_BLOCKED_USERS} users. Unblock someone to make room."
+    ),
 }
 
 
 async def resolve_block_target(raw: str) -> tuple[int | None, str | None]:
-    """Resolve a block-target form value (a Discord id or name) to `(xid, None)`/`(None, code)`."""
+    """
+    Resolve a block-target form value (a Discord id or name) to `(xid, None)`/`(None, code)`.
+
+    Only existing SpellBot users can be blocked, so the form can't be used to create user rows
+    for arbitrary ids.
+    """
     token = (raw or "").strip().lstrip("@")
     if not token:
         return None, "invalid"
-    if token.isdigit():
-        return int(token), None
+    if token.isascii() and token.isdigit():
+        try:
+            xid = parse_id(token, User.xid)
+        except ValueError:
+            return None, "not_found"
+        if await services.users.get(xid) is None:
+            return None, "not_found"
+        return xid, None
     xid = await services.users.get_xid_by_name(token)
     if xid is None:
         return None, "not_found"
@@ -589,7 +671,7 @@ def block_error_redirect(user_xid: int, code: str) -> web.Response:
 async def user_block_add_endpoint(request: web.Request) -> web.Response:
     """Owner-only: add a user to the profile owner's block list, then redirect back."""
     try:
-        user_xid = int(request.match_info["user"])
+        user_xid = route_id(request, "user")
     except ValueError:
         return web.Response(status=404)
     if not await viewer_owns_profile(request, user_xid):
@@ -601,9 +683,10 @@ async def user_block_add_endpoint(request: web.Request) -> web.Response:
         return block_error_redirect(user_xid, error)
     if target_xid == user_xid:
         return block_error_redirect(user_xid, "self")
+    # The viewer's own id came from Discord sign-in, so it's safe to create their row.
     await services.users.ensure_exists(user_xid)
-    await services.users.ensure_exists(target_xid)
-    await services.users.block(user_xid, target_xid)
+    if not await services.users.block(user_xid, target_xid):
+        return block_error_redirect(user_xid, "limit")
     return redirect(f"/u/{user_xid}")
 
 
@@ -612,8 +695,8 @@ async def user_block_add_endpoint(request: web.Request) -> web.Response:
 async def user_block_remove_endpoint(request: web.Request) -> web.Response:
     """Owner-only: remove a user from the profile owner's block list, then redirect back."""
     try:
-        user_xid = int(request.match_info["user"])
-        target_xid = int(request.match_info["target"])
+        user_xid = route_id(request, "user")
+        target_xid = route_id(request, "target")
     except ValueError:
         return web.Response(status=404)
     if not await viewer_owns_profile(request, user_xid):
@@ -647,7 +730,7 @@ async def viewer_can_view_game_links(
 @web_endpoint("game_detail")
 async def game_endpoint(request: web.Request) -> web.Response:
     try:
-        game_id = int(request.match_info["game_id"])
+        game_id = route_id(request, "game_id")
     except ValueError:
         return web.Response(status=404)
     game = await services.games.game_detail_view(game_id)
@@ -671,7 +754,7 @@ async def game_endpoint(request: web.Request) -> web.Response:
 @web_endpoint("guild_detail")
 async def guild_endpoint(request: web.Request) -> web.Response:
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except ValueError:
         return web.Response(status=404)
     guild = await services.games.guild_detail_view(guild_xid)
@@ -707,7 +790,7 @@ async def guild_endpoint(request: web.Request) -> web.Response:
 async def guild_awards_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: render the dedicated player awards management page."""
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except ValueError:
         return web.Response(status=404)
     guild = await services.games.guild_detail_view(guild_xid)
@@ -737,7 +820,7 @@ async def guild_promote_endpoint(request: web.Request) -> web.Response:
     if not await is_owner_request(request):
         return web.Response(status=403, text="Forbidden")
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except ValueError:
         return web.Response(status=404)
     form = await request.post()
@@ -843,14 +926,18 @@ async def award_delete_endpoint(request: web.Request) -> web.Response:
 @web_endpoint("channel_settings")
 async def channel_settings_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: update a channel's settings, then redirect back to its page."""
-    ids = await moderated_route(request, "channel")
+    ids = await moderated_channel_route(request)
     if isinstance(ids, web.Response):
         return ids
     guild_xid, channel_xid = ids
     form = await request.post()
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
-        await services.channels.update_settings(channel_xid, **parse_channel_settings(form))
+        await services.channels.update_settings(
+            guild_xid,
+            channel_xid,
+            **parse_channel_settings(form),
+        )
     return redirect(f"/g/{guild_xid}/c/{channel_xid}")
 
 
@@ -858,20 +945,37 @@ async def channel_settings_endpoint(request: web.Request) -> web.Response:
 @web_endpoint("channel_forget")
 async def channel_forget_endpoint(request: web.Request) -> web.Response:
     """Moderator-only: forget (delete) a channel's settings, then redirect to its guild page."""
-    ids = await moderated_route(request, "channel")
+    ids = await moderated_channel_route(request)
     if isinstance(ids, web.Response):
         return ids
     guild_xid, channel_xid = ids
     viewer_xid, viewer_name = await get_viewer(request)
     with audit.actor(viewer_xid, viewer_name, audit.SOURCE_WEB):
-        await services.channels.forget(channel_xid)
+        await services.channels.forget(guild_xid, channel_xid)
     return redirect(f"/g/{guild_xid}")
 
 
+# A cell starting with one of these is run as a formula by Excel, Sheets, and LibreOffice.
+FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def csv_cell(value: Any) -> Any:
+    """
+    Make a CSV cell safe to open in a spreadsheet.
+
+    Names in exports come from Discord, so anyone can pick one like `=HYPERLINK(...)` and
+    have it run when a moderator opens the file. A leading `'` makes the spreadsheet show
+    the text as-is (the OWASP recommendation for CSV injection).
+    """
+    if isinstance(value, str) and value.startswith(FORMULA_PREFIXES):
+        return f"'{value}"
+    return value
+
+
 def csv_line(values: list[Any]) -> bytes:
-    """Serialize a single CSV row to UTF-8 bytes."""
+    """Serialize a single CSV row to UTF-8 bytes, neutralizing spreadsheet formulas."""
     buf = io.StringIO()
-    csv.writer(buf).writerow(values)
+    csv.writer(buf).writerow([csv_cell(value) for value in values])
     return buf.getvalue().encode("utf-8")
 
 
@@ -880,8 +984,8 @@ def iso_utc(updated_at_ms: float) -> str:
     return datetime.fromtimestamp(updated_at_ms / 1000, tz=UTC).isoformat()
 
 
-def format_user_export_row(record: dict[str, Any]) -> list[Any]:
-    """Build the per-game CSV row for a user export."""
+def format_user_export_row(record: dict[str, Any], *, include_link: bool) -> list[Any]:
+    """Build the per-game CSV row for a user export, leaving out the link unless allowed."""
     players = "; ".join(f"{name} ({data[0]})" for name, data in record["scores"].items())
     return [
         record["id"],
@@ -892,13 +996,13 @@ def format_user_export_row(record: dict[str, Any]) -> list[Any]:
         record["seats"],
         record["bracket"],
         record["locale"],
-        record["link"] or "",
+        (record["link"] or "") if include_link else "",
         players,
     ]
 
 
-def format_channel_export_row(record: dict[str, Any]) -> list[Any]:
-    """Build the per-player CSV row for a channel export."""
+def format_channel_export_row(record: dict[str, Any], *, include_link: bool) -> list[Any]:
+    """Build the per-player CSV row for a channel export, leaving out the link unless allowed."""
     return [
         record["id"],
         iso_utc(record["updated_at"]),
@@ -908,42 +1012,84 @@ def format_channel_export_row(record: dict[str, Any]) -> list[Any]:
         record["seats"],
         record["bracket"],
         record["locale"],
-        record["link"] or "",
+        (record["link"] or "") if include_link else "",
         record["user_name"] or "",
         record["user_xid"],
     ]
 
 
-async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamResponse:
-    if is_crawler(request):
-        return web.Response(status=403, text="Forbidden")
+async def channel_export_includes_links(request: web.Request, guild_xid: int) -> bool:
+    """
+    Whether a channel export may include game join links for the requesting viewer.
 
+    This is the game page's rule (see `viewer_can_view_game_links`) applied to the whole
+    guild: links are public when the guild posts them in its channels, and otherwise only
+    its moderators see them. Players get their own games' links from their user export.
+    """
+    guild = await services.guilds.get(guild_xid)
+    if guild is not None and guild.show_links:
+        return True
+    return await request_is_moderator(request, guild_xid)
+
+
+async def fetch_export(request: web.Request, kind: RecordKind) -> tuple[str, list[bytes]] | None:
+    """Fetch the export's filename and encoded CSV lines, or None if there's no such export."""
     try:
         if kind is RecordKind.CHANNEL:
-            guild_xid = int(request.match_info["guild"])
-            target_xid = int(request.match_info["channel"])
+            guild_xid = route_id(request, "guild")
+            target_xid = route_id(request, "channel")
         else:
-            target_xid = int(request.match_info["user"])
+            target_xid = route_id(request, "user")
     except ValueError:
-        return web.Response(status=404)
+        return None
 
     if kind is RecordKind.CHANNEL:
         if not await services.plays.channel_export_target_exists(guild_xid, target_xid):
-            return web.Response(status=404)
+            return None
         header = CHANNEL_EXPORT_HEADER
         stream = services.plays.stream_channel_records(guild_xid, target_xid)
         format_row = format_channel_export_row
+        include_link = await channel_export_includes_links(request, guild_xid)
         filename_part = f"channel-{target_xid}"
     else:
         if not await services.plays.user_export_target_exists(target_xid):
-            return web.Response(status=404)
+            return None
         header = USER_EXPORT_HEADER
         stream = services.plays.stream_user_records(target_xid)
         format_row = format_user_export_row
+        # As on the profile page, only the player themselves sees their games' links.
+        include_link = await viewer_owns_profile(request, target_xid)
         filename_part = f"user-{target_xid}"
 
+    lines = [
+        csv_line(header),
+        *[csv_line(format_row(record, include_link=include_link)) async for record in stream],
+    ]
     today = datetime.now(tz=UTC).strftime("%Y%m%d")
-    filename = f"spellbot-{filename_part}-{today}.csv"
+    return f"spellbot-{filename_part}-{today}.csv", lines
+
+
+async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamResponse:
+    if is_crawler(request):
+        return web.Response(status=403, text="Forbidden")
+    if await rate_limited(request, f"export:{request.remote}", limit=EXPORT_RATE_LIMIT):
+        return too_many_requests()
+    if export_slots.locked():
+        return web.Response(
+            status=503,
+            text="Too many exports in progress, please try again shortly",
+            headers={"Retry-After": str(EXPORT_BUSY_RETRY_AFTER_S)},
+        )
+
+    async with export_slots:
+        export = await fetch_export(request, kind)
+        # The whole export is in memory now, so hand the connection back before sending
+        # it; otherwise a client reading slowly would hold it for the entire download.
+        await release_connection()
+    if export is None:
+        return web.Response(status=404)
+    filename, lines = export
+
     response = web.StreamResponse(
         status=200,
         headers={
@@ -956,9 +1102,8 @@ async def export_impl(request: web.Request, kind: RecordKind) -> web.StreamRespo
 
     try:
         await response.prepare(request)
-        await response.write(csv_line(header))
-        async for record in stream:
-            await response.write(csv_line(format_row(record)))
+        for line in lines:
+            await response.write(line)
         # No `write_eof()` here: aiohttp finishes the response after the handler returns, and
         # quietly handles a client that's gone by then. Finishing it here too would flush the
         # gzip stream twice when the client drops at the end (`zlib.error`).

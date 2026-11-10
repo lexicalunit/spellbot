@@ -23,7 +23,7 @@ TIMEOUT_S = 3
 MAX_PLAYERS = GameService.PLAYGROUP_LIVE.max_seats
 
 
-def _api_headers() -> dict[str, str]:
+def api_headers() -> dict[str, str]:
     return {
         "Authorization": f"Bearer {settings.PLAYGROUP_LIVE_API_KEY}",
         "User-Agent": USER_AGENT,
@@ -70,7 +70,7 @@ async def lookup_playgroup_user(
 ) -> tuple[int | None, str | None]:
     endpoint = f"{settings.PLAYGROUP_LIVE_API_URL}/api/v2/users/by_discord/{discord_id}"
     try:
-        resp = await client.get(endpoint, headers=_api_headers())
+        resp = await client.get(endpoint, headers=api_headers())
         if resp.status_code == 404:
             logger.info("Playgroup user not found for Discord ID %s", discord_id)
             return None, None
@@ -116,7 +116,7 @@ async def fetch_playgroup_live_session(
         payload["bracket"] = bracket_value
 
     endpoint = f"{settings.PLAYGROUP_LIVE_API_URL}/api/public/v1/live_sessions"
-    resp = await client.post(endpoint, json=payload, headers=_api_headers())
+    resp = await client.post(endpoint, json=payload, headers=api_headers())
     resp.raise_for_status()
     return resp.json()
 

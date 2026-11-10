@@ -14,7 +14,7 @@ from sqlalchemy import select
 from spellbot.data import PostData
 from spellbot.database import DatabaseSession
 from spellbot.enums import GameFormat
-from spellbot.models import Game, GameStatus, Play
+from spellbot.models import Game, GameStatus, Play, User
 from spellbot.services import plays
 from spellbot.web import builder
 from spellbot.web.api import rest
@@ -97,6 +97,18 @@ class TestWebRecord:
         )
         assert resp.status == 200
         assert await resp.json() == {"result": {"verified": False}}
+
+        # ids too big for the database are rejected rather than queried
+        for body in (
+            {"user_xid": 2**63, "guild_xid": guild.xid, "pin": "A"},
+            {"user_xid": user1.xid, "guild_xid": str(2**63), "pin": "A"},
+        ):
+            resp = await client.post(
+                f"/api/game/{game.id}/verify",
+                headers={"Authorization": "Bearer XYZ"},
+                json=body,
+            )
+            assert resp.status == 400
 
         # guild_xid wrong
         resp = await client.post(
@@ -185,7 +197,7 @@ class TestWebRecord:
         )
         assert resp.status == 400
         assert await resp.json() == {
-            "error": "invalid literal for int() with base 10: 'FOO'",
+            "error": "not an id: 'FOO'",
         }
 
         # unexpected error
@@ -239,6 +251,24 @@ class TestWebRecord:
         )
         assert resp.status == 429
         assert await resp.json() == {"error": "Rate limited"}
+
+
+class TestCommanderText:
+    def test_plain_name_is_unchanged(self) -> None:
+        assert rest.commander_text("  Kenrith, the Returned King ") == "Kenrith, the Returned King"
+
+    def test_markdown_and_mentions_are_escaped(self) -> None:
+        text = rest.commander_text("**[free](https://evil.example)** <@123> @everyone")
+        assert text == (
+            r"\*\*\[free\]\(https://evil.example\)\*\* \<@" + "\u200b" + "123> @\u200beveryone"
+        )
+
+    def test_text_is_one_line(self) -> None:
+        text = rest.commander_text("Atraxa\n# Free Nitro\n> click")
+        assert text == "Atraxa # Free Nitro > click"
+
+    def test_long_text_is_cut(self) -> None:
+        assert len(rest.commander_text("x" * 500)) == rest.MAX_COMMANDER_LENGTH
 
 
 class TestReply:
@@ -655,6 +685,11 @@ class TestGameRecordEndpoint:
                 "Invalid player data",
                 id="player-not-object",
             ),
+            pytest.param(
+                {"json": {"tracker": 102, "players": [{"xid": 1001, "commander": {"a": 1}}]}},
+                "Invalid player data",
+                id="commander-not-string",
+            ),
         ],
     )
     async def test_game_record_bad_body(
@@ -721,7 +756,94 @@ class TestGameRecordEndpoint:
         )
         assert resp.status == 400
         data = await resp.json()
-        assert data["error"] == "Mismatched player count"
+        assert data["error"] == "Players don't match the game's players"
+
+    @pytest.mark.parametrize(
+        "listed",
+        [
+            pytest.param([1011, 4242], id="stranger-swapped-in"),
+            pytest.param([1011, 1011], id="player-listed-twice"),
+            pytest.param([1011, 1012, 4242], id="stranger-added"),
+        ],
+    )
+    async def test_game_record_only_dms_the_games_players(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        decoy: Decoy,
+        stub: Stub,
+        listed: list[int],
+    ) -> None:
+        send_dm_fake = stub(rest, "send_dm")
+        guild = factories.guild.create(xid=2011, name="guild")
+        channel = factories.channel.create(xid=3011, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1011,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+            started_at=datetime.now(tz=UTC),
+        )
+        for xid in (1011, 1012):
+            factories.user.create(xid=xid, name=f"user-{xid}")
+            factories.play.create(game_id=game.id, user_xid=xid)
+        factories.user.create(xid=4242, name="stranger")
+        factories.token.create(key="RECORD11")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": "Bearer RECORD11"},
+            json={
+                "tracker": 1011,
+                "players": [{"xid": xid, "commander": "Atraxa"} for xid in listed],
+            },
+        )
+
+        assert resp.status == 400
+        assert (await resp.json())["error"] == "Players don't match the game's players"
+        decoy.verify(await send_dm_fake(ANY, ANY), times=0)
+
+    async def test_game_record_sanitizes_commanders(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        sent: list[dict[str, Any]] = []
+
+        async def send_dm(user_xid: int, message: dict[str, Any]) -> None:
+            sent.append(message)
+
+        monkeypatch.setattr(rest, "send_dm", send_dm)
+        guild = factories.guild.create(xid=2012, name="guild")
+        channel = factories.channel.create(xid=3012, name="channel", guild=guild)
+        game = factories.game.create(
+            id=1012,
+            seats=1,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+            started_at=datetime.now(tz=UTC),
+        )
+        factories.user.create(xid=1013, name="player")
+        factories.play.create(game_id=game.id, user_xid=1013)
+        factories.token.create(key="RECORD12")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": "Bearer RECORD12"},
+            json={
+                "tracker": 1013,
+                "players": [{"xid": 1013, "commander": "[Claim prize](https://evil.example)"}],
+            },
+        )
+
+        assert resp.status == 200
+        [message] = sent
+        players_field = message["embeds"][0]["fields"][-1]["value"]
+        assert "[Claim prize](https://evil.example)" not in players_field
+        assert r"\[Claim prize\]\(https://evil.example\)" in players_field
 
     async def test_game_record_with_username_tracker(
         self,
@@ -951,6 +1073,37 @@ class TestGameRecordEndpoint:
         assert resp.status == 400
         data = await resp.json()
         assert data["error"] == "Tracker not found"
+
+    @pytest.mark.parametrize("tracker", [2**63, str(2**63)])
+    async def test_game_record_tracker_id_too_big(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        tracker: int | str,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(id=1, seats=2, guild=guild, channel=channel)
+        factories.token.create(key="RECORD10")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": "Bearer RECORD10"},
+            json={"tracker": tracker, "players": [{"xid": 101, "commander": "Atraxa"}]},
+        )
+        assert resp.status == 400
+        assert (await resp.json())["error"] == "Tracker not found"
+
+
+class TestPayloadId:
+    @pytest.mark.parametrize(("value", "expected"), [(5, 5), ("5", 5), (2**63 - 1, 2**63 - 1)])
+    def test_numbers_and_digit_strings(self, value: int | str, expected: int) -> None:
+        assert rest.payload_id(value, User.xid) == expected
+
+    @pytest.mark.parametrize("value", [2**63, -5, 5.0, True, None, [5], " 5", "5x"])
+    def test_rejects_everything_else(self, value: object) -> None:
+        with pytest.raises(ValueError, match="id"):
+            rest.payload_id(value, User.xid)
 
 
 @pytest.mark.asyncio

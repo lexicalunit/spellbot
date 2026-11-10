@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import re
+import secrets
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from ipaddress import ip_address
@@ -58,6 +60,60 @@ PUBLIC_CORS_PATHS = frozenset({"/stats.json", "/queues.json", "/status.json"})
 # host is served over HTTPS.
 HSTS_HEADER = "max-age=31536000; includeSubDomains"
 
+# Per-request nonce that marks a page's own inline `<script>` blocks as trusted.
+CSP_NONCE = web.RequestKey("csp_nonce", str)
+
+SCRIPT_SRC = re.compile(r'<script\b[^>]*?\bsrc="(https://[^"]+)"')
+
+
+def external_scripts(root: Path) -> tuple[str, ...]:
+    """Return the off-site script URLs loaded by the templates in `root`, sorted."""
+    return tuple(
+        sorted(
+            {
+                url
+                for path in root.glob("*.j2")
+                for url in SCRIPT_SRC.findall(path.read_text(encoding="utf-8"))
+            },
+        ),
+    )
+
+
+# The CDN scripts the Content-Security-Policy allows, read from the templates so the
+# policy always matches exactly what the pages load. Each is pinned to one file.
+CSP_EXTERNAL_SCRIPTS = external_scripts(TEMPLATES_ROOT)
+
+
+def content_security_policy(nonce: str | None) -> str:
+    """
+    Build the Content-Security-Policy header value.
+
+    Scripts may only come from this site, the pinned CDN files, or inline blocks
+    carrying this response's nonce, so markup injected through an escaping mistake
+    can't run. Inline styles stay allowed: every page embeds its CSS and the chart
+    code sets `style` attributes, and injected CSS can't run code. Images come from
+    spellbot.io (logo, favicon) and Discord's CDN (server icons). The status page
+    fetches Discord's public status API.
+    """
+    script_src = ["'self'", *([f"'nonce-{nonce}'"] if nonce else []), *CSP_EXTERNAL_SCRIPTS]
+    directives = {
+        "default-src": "'self'",
+        "script-src": " ".join(script_src),
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' https://spellbot.io https://cdn.discordapp.com",
+        "connect-src": "'self' https://discordstatus.com",
+        "object-src": "'none'",
+        "base-uri": "'none'",
+        "form-action": "'self'",
+        "frame-ancestors": "'none'",
+    }
+    return "; ".join(f"{name} {value}" for name, value in directives.items())
+
+
+def new_csp_nonce() -> str:
+    return secrets.token_urlsafe(16)
+
+
 # Keep crawlers off the whole site. CSV exports, which are expensive to serve,
 # additionally reject crawlers that ignore this (see `is_crawler`).
 ROBOTS_TXT = """\
@@ -100,7 +156,12 @@ async def i18n_context_processor(request: web.Request) -> dict[str, object]:
     def translate(key: str, **kwargs: object) -> str:
         return t(key, locale=locale, **kwargs)
 
-    return {"lang": locale, "t": translate, "nav": await nav_context(request)}
+    return {
+        "lang": locale,
+        "t": translate,
+        "nav": await nav_context(request),
+        "csp_nonce": request.get(CSP_NONCE, ""),
+    }
 
 
 async def nav_context(request: web.Request) -> dict[str, object]:
@@ -140,6 +201,7 @@ async def add_security_headers(request: web.Request, response: web.StreamRespons
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = content_security_policy(request.get(CSP_NONCE))
     if settings.API_BASE_URL.startswith("https://"):
         # Browsers only honor this over HTTPS; it tells them to never use plain HTTP here.
         response.headers["Strict-Transport-Security"] = HSTS_HEADER
@@ -168,6 +230,20 @@ def forwarded_client_ip(request: web.Request, hops: int) -> str | None:
         return str(ip_address(candidate))
     except ValueError:
         return None
+
+
+@web.middleware
+async def csp_nonce_middleware(request: web.Request, handler: Handler) -> web.StreamResponse:
+    """
+    Give each request a fresh nonce for its page's inline scripts.
+
+    This must be the first middleware. `forwarded_ip_middleware` clones the request, and
+    a clone gets a copy of the original's state, so setting the nonce before that lets
+    the template (rendered from the clone) and `add_security_headers` (which may be
+    handed either request) see the same value.
+    """
+    request[CSP_NONCE] = new_csp_nonce()
+    return await handler(request)
 
 
 @web.middleware
@@ -244,7 +320,9 @@ async def serve_robots_txt(_: web.Request) -> web.Response:
 
 def build_web_app() -> web.Application:
     import_models()
-    app = web.Application(middlewares=[forwarded_ip_middleware, auth_middleware])
+    app = web.Application(
+        middlewares=[csp_nonce_middleware, forwarded_ip_middleware, auth_middleware],
+    )
     app.on_response_prepare.append(add_security_headers)
     # `setup_admin_sessions` appends the aiohttp_session middleware;
     # so it must come before `admin_auth_middleware`

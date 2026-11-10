@@ -49,6 +49,7 @@ class TestSecurityHeaders:
         assert resp.headers["X-Content-Type-Options"] == "nosniff"
         assert resp.headers["X-Frame-Options"] == "DENY"
         assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+        assert "script-src 'self' 'nonce-test-nonce'" in resp.headers["Content-Security-Policy"]
         assert "X-XSS-Protection" not in resp.headers
         assert "Access-Control-Allow-Origin" not in resp.headers
         assert "Strict-Transport-Security" not in resp.headers

@@ -18,7 +18,7 @@ from spellbot.i18n import normalize_locale
 from spellbot.settings import settings
 from spellbot.web.api.record import bracket_choices, format_choices
 from spellbot.web.api.viewer_auth import get_viewer
-from spellbot.web.tools import redirect, tag_web_request
+from spellbot.web.tools import redirect, route_id, tag_web_request
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -69,7 +69,7 @@ def format_wait(seconds: int) -> str:
     return f"{hours}h {minutes}m"
 
 
-async def _resolve_icons(rows: list[dict[str, Any]]) -> dict[int, str | None]:
+async def resolve_icons(rows: list[dict[str, Any]]) -> dict[int, str | None]:
     """Return a `{guild_xid: icon_url}` map, backfilling missing entries from Discord."""
     now = datetime.now(UTC)
     candidates = {row["guild_xid"] for row in rows if not row.get("guild_icon")}
@@ -117,7 +117,7 @@ async def queues_endpoint(request: web.Request) -> web.Response:
             if viewer_xid is not None
             else set()
         )
-        backfilled = await _resolve_icons(raw_rows + raw_games + raw_played_guilds)
+        backfilled = await resolve_icons(raw_rows + raw_games + raw_played_guilds)
     rows = [
         {
             **row,
@@ -183,7 +183,7 @@ async def guild_icon_endpoint(request: web.Request) -> web.Response:
     """
     tag_web_request(request)
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except ValueError:
         return web.Response(status=404)
     now = datetime.now(UTC)
@@ -195,7 +195,7 @@ async def guild_icon_endpoint(request: web.Request) -> web.Response:
             row = await services.guilds.promoted_icon(guild_xid)
             icon = None
             if row is not None:
-                icon = row["guild_icon"] or (await _resolve_icons([row])).get(guild_xid)
+                icon = row["guild_icon"] or (await resolve_icons([row])).get(guild_xid)
         # Only cache found guilds so the cache can't be grown by requesting random xids
         if icon is not None:
             guild_icon_cache[guild_xid] = (now, icon)
@@ -217,7 +217,7 @@ async def queues_json_endpoint(request: web.Request) -> web.Response:
             STARTED_GAMES_WINDOW,
             only_mythic_track=only_mythic_track,
         )
-        backfilled = await _resolve_icons(raw_rows + raw_games)
+        backfilled = await resolve_icons(raw_rows + raw_games)
     queues = [
         {
             "guild_xid": row["guild_xid"],
@@ -268,13 +268,26 @@ def wants_json(request: web.Request) -> bool:
     return "application/json" in accept
 
 
+def notify_error(
+    request: web.Request,
+    status: int,
+    error: str,
+    detail: str | None = None,
+) -> web.Response:
+    """Reject a notification save: as JSON for the page's script, else as a bare status."""
+    if not wants_json(request):
+        return web.Response(status=status)
+    body = {"ok": False, "error": error} | ({"detail": detail} if detail else {})
+    return web.json_response(body, status=status)
+
+
 @routes.get(r"/queues/g/{guild}")
 @tracer.wrap(name="web", resource="queue_guild_notify")
 async def guild_notify_endpoint(request: web.Request) -> web.Response:
     """Render the per-guild notification preferences page for the current viewer."""
     tag_web_request(request)
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except KeyError, ValueError:
         return web.Response(status=404)
     viewer_xid, viewer_name = await get_viewer(request)
@@ -284,7 +297,7 @@ async def guild_notify_endpoint(request: web.Request) -> web.Response:
         guild = await services.queues.guild_summary(guild_xid)
         if guild is None:
             return web.Response(status=404)
-        backfilled = await _resolve_icons([guild])
+        backfilled = await resolve_icons([guild])
         # Fetch soft-deleted alerts too so the viewer's prior preferences can be
         # re-displayed (and restored on save) after they previously turned
         # notifications off for this guild.
@@ -362,7 +375,7 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
     """Save the viewer's notification preferences for a guild."""
     tag_web_request(request)
     try:
-        guild_xid = int(request.match_info["guild"])
+        guild_xid = route_id(request, "guild")
     except KeyError, ValueError:
         return web.Response(status=404)
     viewer_xid, _ = await get_viewer(request)
@@ -381,13 +394,11 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
     try:
         active_hours = services.alerts.parse_active_hours(active_hours_raw)
     except ValueError as ex:
-        if wants_json(request):
-            return web.json_response(
-                {"ok": False, "error": "invalid_active_hours", "detail": str(ex)},
-                status=400,
-            )
-        return web.Response(status=400)
+        return notify_error(request, 400, "invalid_active_hours", str(ex))
     async with db_session_manager():
+        # Alerts reference their guild, so one for an unknown guild can't be saved.
+        if await services.guilds.get(guild_xid) is None:
+            return notify_error(request, 404, "not_found")
         played_channels = await services.queues.viewer_played_channels(
             viewer_xid,
             guild_xid,
@@ -396,9 +407,7 @@ async def guild_notify_save_endpoint(request: web.Request) -> web.StreamResponse
         valid_channel_values = {int(c["channel_xid"]) for c in played_channels}
         channels = parse_notify_values(form.getall("channels", []), valid_channel_values)
         if formats is None or brackets is None or channels is None:
-            if wants_json(request):
-                return web.json_response({"ok": False, "error": "invalid_input"}, status=400)
-            return web.Response(status=400)
+            return notify_error(request, 400, "invalid_input")
         await services.users.ensure_exists(viewer_xid)
         saved = await services.alerts.upsert(
             guild_xid,

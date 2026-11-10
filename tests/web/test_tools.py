@@ -10,14 +10,20 @@ from aiohttp.test_utils import make_mocked_request
 from ddtrace._trace.span import Span
 
 from spellbot import metrics, redis_client
+from spellbot.models import Game, User
 from spellbot.redis_client import close_redis
 from spellbot.settings import settings
 from spellbot.web.tools import (
+    MAX_PAGE,
     RATE_LIMIT_SCRIPT,
     TIME_WINDOW,
     is_crawler,
+    parse_id,
+    parse_page,
     rate_limited,
+    route_id,
     tag_web_request,
+    too_many_requests,
 )
 from tests.mocks.redis import FakeRedis, serve_redis
 
@@ -26,6 +32,7 @@ if TYPE_CHECKING:
 
     from aiohttp import web
     from decoy import Decoy
+    from sqlalchemy.orm import QueryableAttribute
 
     from tests.fixtures import Stub
 
@@ -57,6 +64,16 @@ class TestRateLimited:
         """Test request over rate limit."""
         serve_redis(monkeypatch, FakeRedis(eval_result="15"))  # Over RATE_LIMIT of 10
         assert await rate_limited(request_from("192.168.1.1")) is True
+
+    @pytest.mark.parametrize(("count", "expected"), [("20", False), ("21", True)])
+    async def test_custom_limit(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        count: str,
+        expected: bool,
+    ) -> None:
+        serve_redis(monkeypatch, FakeRedis(eval_result=count))
+        assert await rate_limited(request_from("192.168.1.1"), limit=20) is expected
 
     async def test_keys_on_the_client_ip(self, monkeypatch: pytest.MonkeyPatch) -> None:
         redis = FakeRedis(eval_result="1")
@@ -90,6 +107,64 @@ class TestRateLimited:
         await rate_limited(request_from("192.168.1.1"))
         await rate_limited(request_from("192.168.1.1"))
         assert connections == ["redis://localhost"]
+
+
+class TestParseId:
+    def test_accepts_ids_that_fit(self) -> None:
+        assert parse_id("0", User.xid) == 0
+        assert parse_id(str(2**63 - 1), User.xid) == 2**63 - 1
+        assert parse_id(str(2**31 - 1), Game.id) == 2**31 - 1
+
+    @pytest.mark.parametrize(
+        ("raw", "column"),
+        [
+            pytest.param(str(2**63), User.xid, id="past-bigint"),
+            pytest.param(str(2**31), Game.id, id="past-int"),
+            pytest.param("9" * 5000, User.xid, id="too-many-digits"),
+            pytest.param("", User.xid, id="empty"),
+            pytest.param("-1", User.xid, id="negative"),
+            pytest.param("+1", User.xid, id="plus"),
+            pytest.param(" 1", User.xid, id="space"),
+            pytest.param("1_000", User.xid, id="underscore"),
+            pytest.param("²", User.xid, id="superscript"),
+            pytest.param("١٢", User.xid, id="arabic-indic"),
+        ],
+    )
+    def test_rejects_everything_else(self, raw: str, column: QueryableAttribute[int]) -> None:
+        with pytest.raises(ValueError, match="id"):
+            parse_id(raw, column)
+
+    def test_route_id_uses_the_parameters_column(self) -> None:
+        request = make_mocked_request("GET", "/", match_info={"game_id": str(2**31)})
+        with pytest.raises(ValueError, match="out of range"):
+            route_id(request, "game_id")
+        request = make_mocked_request("GET", "/", match_info={"guild": str(2**31)})
+        assert route_id(request, "guild") == 2**31
+
+
+class TestParsePage:
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            (None, 0),
+            ("", 0),
+            ("3", 3),
+            ("-3", 0),
+            ("abc", 0),
+            ("²", 0),
+            (str(MAX_PAGE + 1), MAX_PAGE),
+            ("9" * 5000, MAX_PAGE),
+        ],
+    )
+    def test_parse_page(self, raw: str | None, expected: int) -> None:
+        assert parse_page(raw) == expected
+
+
+class TestTooManyRequests:
+    def test_says_when_to_retry(self) -> None:
+        resp = too_many_requests()
+        assert resp.status == 429
+        assert resp.headers["Retry-After"] == str(TIME_WINDOW)
 
 
 class TestIsCrawler:

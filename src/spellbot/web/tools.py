@@ -12,11 +12,14 @@ from ddtrace.trace import tracer
 
 from spellbot.database import db_session_manager
 from spellbot.metrics import add_span_request_id, generate_request_id, tag_span
+from spellbot.models import Channel, Game, Guild, GuildAward, User, column_max
 from spellbot.redis_client import get_redis
 from spellbot.settings import settings
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
+
+    from sqlalchemy.orm import QueryableAttribute
 
 logger = logging.getLogger(__name__)
 
@@ -57,23 +60,90 @@ def tag_web_request(request: web.Request) -> None:
     tag_span(client_ip=request.remote)
 
 
+def parse_id(raw: str, column: QueryableAttribute[int]) -> int:
+    """
+    Parse `raw` as a value of the integer id `column`, raising `ValueError` if it isn't one.
+
+    Plain `int()` also takes signs, spaces, underscores, non-ASCII digits, and numbers too
+    big for the column, which the database then rejects with an error (a 500 for the
+    visitor). This takes only ASCII digits that fit.
+    """
+    if not (raw.isascii() and raw.isdigit()):
+        msg = f"not an id: {raw!r}"
+        raise ValueError(msg)
+    maximum = column_max(column)
+    # Checking the length first also keeps `int()` from refusing a huge digit string.
+    if len(raw) > len(str(maximum)) or int(raw) > maximum:
+        msg = f"id out of range: {raw[:30]!r}"
+        raise ValueError(msg)
+    return int(raw)
+
+
+# The column each id in a route's path refers to, by the name the routes give it.
+ROUTE_ID_COLUMNS: dict[str, QueryableAttribute[int]] = {
+    "award": GuildAward.id,
+    "channel": Channel.xid,
+    "game": Game.id,
+    "game_id": Game.id,
+    "guild": Guild.xid,
+    "target": User.xid,
+    "user": User.xid,
+}
+
+
+def route_id(request: web.Request, name: str) -> int:
+    """Parse the route's `name` id (see `parse_id`), raising `ValueError` if it isn't one."""
+    return parse_id(request.match_info[name], ROUTE_ID_COLUMNS[name])
+
+
+# Pages past this are empty for any real history, and capping it keeps the query's
+# `OFFSET` well within range.
+MAX_PAGE = 1_000_000
+
+
+def parse_page(raw: str | None) -> int:
+    """Parse a `page` query value, using the first page for anything that isn't a number."""
+    if not raw or not (raw.isascii() and raw.isdigit()):
+        return 0
+    # Checking the length first also keeps `int()` from refusing a huge digit string.
+    if len(raw) > len(str(MAX_PAGE)):
+        return MAX_PAGE
+    return min(int(raw), MAX_PAGE)
+
+
 def is_crawler(request: web.Request) -> bool:
     """Whether the request comes from a self-identified crawler."""
     return crawler_detect.is_crawler(request.headers.get("User-Agent", ""))
 
 
-async def rate_limited(request: web.Request, key: str | None = None) -> bool:
+async def rate_limited(
+    request: web.Request,
+    key: str | None = None,
+    *,
+    limit: int = RATE_LIMIT,
+) -> bool:
+    """Count this request against `key` (default: the client IP) and report if it's over."""
+    return await over_rate_limit(key or f"rate_limit:{request.remote}", limit=limit)
+
+
+def too_many_requests() -> web.Response:
+    """Build the 429 response for a rate-limited client, saying when to try again."""
+    return web.Response(
+        status=429,
+        text="Too many requests",
+        headers={"Retry-After": str(TIME_WINDOW)},
+    )
+
+
+async def over_rate_limit(key: str, *, limit: int = RATE_LIMIT) -> bool:
     """
-    Count this request against `key` (default: the client IP) and report if it's over.
+    Count one attempt against `key` and report if it's over `limit` per `TIME_WINDOW`.
 
     Without Redis, whether unconfigured or erroring, there's no limit: an outage
     shouldn't take the API down with it.
     """
     if not settings.REDIS_URL:
         return False
-
-    ip = request.remote
-    key = key or f"rate_limit:{ip}"
 
     try:
         redis = await get_redis()
@@ -84,7 +154,7 @@ async def rate_limited(request: web.Request, key: str | None = None) -> bool:
     except Exception:
         logger.warning("redis error in rate limiter", exc_info=True)
         return False
-    return int(resp) > RATE_LIMIT
+    return int(resp) > limit
 
 
 type Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]

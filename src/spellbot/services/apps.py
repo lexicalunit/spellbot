@@ -30,6 +30,24 @@ def parse_scopes(raw: str) -> str | None:
     return ",".join(scopes) if scopes else None
 
 
+def granting_scopes(path: str) -> set[str]:
+    """
+    Return the scopes that grant access to an API path.
+
+    A resource scope grants all of its endpoints, and `resource:action` grants just one, so
+    `/api/game/1/record` is open to `game` and to `game:record`. That lets a token be limited
+    to the one endpoint it needs, such as `game:verify` without the ability to send DMs.
+    """
+    parts = path.lstrip("/").split("/")
+    if len(parts) < 2:
+        return set()
+    resource = parts[1]
+    scopes = {resource}
+    if len(parts) > 3:
+        scopes.add(f"{resource}:{parts[3]}")
+    return scopes
+
+
 @tracer.wrap()
 async def verify_token(key: str, path: str) -> bool:
     """Verify that the given API key has access to the given path."""
@@ -41,12 +59,7 @@ async def verify_token(key: str, path: str) -> bool:
         return False
     if token.scopes == "*":
         return True
-    try:
-        required_scope = path.lstrip("/").split("/")[1]
-    except IndexError:
-        return False
-    scopes_list = token.scopes.split(",")
-    return required_scope in scopes_list
+    return not granting_scopes(path).isdisjoint(token.scopes.split(","))
 
 
 async def create_token(*, scopes: str, note: str | None) -> tuple[TokenData, str]:

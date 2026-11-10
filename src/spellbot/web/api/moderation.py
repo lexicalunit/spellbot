@@ -5,17 +5,46 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
 import httpx
 
+from spellbot import services
+from spellbot.database import DatabaseSession, db_session_manager
 from spellbot.settings import settings
 from spellbot.utils import is_moderator
+from spellbot.web.tools import over_rate_limit
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
 logger = logging.getLogger(__name__)
+
+# Every lookup here spends the bot token's Discord budget, and the web server shares its IP
+# with the bot. Discord bans an IP for a while after 10,000 invalid requests (401, 403 or
+# 429) in 10 minutes, so a viewer who could make the web server ask about guilds it can't
+# see, or ask fast enough to be rate limited, could take the bot offline. Hence: only known
+# guilds are looked up, a guild the bot can't see is remembered, each viewer's lookups are
+# rate limited, and nothing is asked while Discord is telling us to back off.
+
+# Discord answers these for a guild the bot isn't in (or that doesn't exist).
+INACCESSIBLE_GUILD_STATUSES: Final = frozenset({httpx.codes.FORBIDDEN, httpx.codes.NOT_FOUND})
+INACCESSIBLE_GUILD_TTL_S: Final = 3600.0
+inaccessible_guilds: dict[int, float] = {}
+
+# How long to back off after a 429 that doesn't say how long to wait.
+DEFAULT_RETRY_AFTER_S: Final = 5.0
+
+
+@dataclass
+class Backoff:
+    """Until when (`time.monotonic`) Discord has asked us not to send requests."""
+
+    until: float = 0.0
+
+
+discord_backoff = Backoff()
 
 # Discord permission bit flags we care about for moderator detection.
 PERMISSION_ADMINISTRATOR: Final = 0x8
@@ -73,6 +102,48 @@ def guild_cache_put(guild_xid: int, guild: dict[str, Any]) -> None:
     guild_cache[guild_xid] = (guild, time.monotonic() + GUILD_CACHE_TTL_S)
 
 
+def guild_inaccessible(guild_xid: int) -> bool:
+    """Whether Discord recently told us the bot can't see this guild."""
+    expires_at = inaccessible_guilds.get(guild_xid)
+    if expires_at is None:
+        return False
+    if time.monotonic() >= expires_at:
+        inaccessible_guilds.pop(guild_xid, None)
+        return False
+    return True
+
+
+def retry_after_s(response: httpx.Response) -> float:
+    """How long a 429 response asks us to wait, in seconds."""
+    try:
+        return float(response.headers.get("Retry-After", ""))
+    except ValueError:
+        return DEFAULT_RETRY_AFTER_S
+
+
+async def guild_known(guild_xid: int) -> bool:
+    """
+    Whether SpellBot has a record of this guild, reusing the request's session if it has one.
+
+    Opening a nested session would expire the outer session's objects when it closes.
+    """
+    if DatabaseSession.is_set():
+        return await services.plays.guild_exists(guild_xid)
+    async with db_session_manager():
+        return await services.plays.guild_exists(guild_xid)
+
+
+async def discord_get(client: httpx.AsyncClient, path: str) -> httpx.Response:
+    """GET a Discord API path with the bot token, starting a back-off if we're rate limited."""
+    response = await client.get(
+        f"https://discord.com/api/v10{path}",
+        headers={"Authorization": f"Bot {settings.BOT_TOKEN}"},
+    )
+    if response.status_code == httpx.codes.TOO_MANY_REQUESTS:
+        discord_backoff.until = time.monotonic() + retry_after_s(response)
+    return response
+
+
 def roles_are_stale(guild: dict[str, Any], member_role_ids: set[str]) -> bool:
     """
     Whether the viewer holds a role this snapshot of the guild has never heard of.
@@ -85,17 +156,32 @@ def roles_are_stale(guild: dict[str, Any], member_role_ids: set[str]) -> bool:
     return not member_role_ids.issubset(known)
 
 
-async def fetch_guild(
-    client: httpx.AsyncClient,
-    guild_xid: int,
-    headers: dict[str, str],
-) -> dict[str, Any]:
-    response = await client.get(
-        f"https://discord.com/api/v10/guilds/{guild_xid}",
-        headers=headers,
-    )
+async def fetch_guild(client: httpx.AsyncClient, guild_xid: int) -> dict[str, Any] | None:
+    """Fetch and cache a guild's roles, or remember and return None if the bot can't see it."""
+    response = await discord_get(client, f"/guilds/{guild_xid}")
+    if response.status_code in INACCESSIBLE_GUILD_STATUSES:
+        inaccessible_guilds[guild_xid] = time.monotonic() + INACCESSIBLE_GUILD_TTL_S
+        return None
     response.raise_for_status()
-    return response.json()
+    guild = response.json()
+    guild_cache_put(guild_xid, guild)
+    return guild
+
+
+async def guild_roles(client: httpx.AsyncClient, guild_xid: int) -> dict[str, Any] | None:
+    """Return the guild's roles from the cache or Discord, or None if the bot can't see it."""
+    guild = guild_cache_get(guild_xid)
+    return guild if guild is not None else await fetch_guild(client, guild_xid)
+
+
+async def may_ask_discord(viewer_xid: int) -> bool:
+    """Whether Discord may be asked right now on this viewer's behalf."""
+    if time.monotonic() < discord_backoff.until:
+        return False
+    if await over_rate_limit(f"moderator_lookup:{viewer_xid}"):
+        logger.warning("moderator lookups rate limited for viewer %s", viewer_xid)
+        return False
+    return True
 
 
 async def resolve_once(key: tuple[int, int], viewer_xid: int, guild_xid: int) -> bool | None:
@@ -131,6 +217,10 @@ async def viewer_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
     cached = cache_get(key)
     if cached is not None:
         return cached
+    if not await guild_known(guild_xid):
+        # Never ask Discord about a guild SpellBot doesn't know. Not cached, since the id
+        # comes from the URL and caching every made-up one would grow the cache without bound.
+        return False
     result = await resolve_once(key, viewer_xid, guild_xid)
     if result is None:
         # Could not reach Discord. Deny this request, but do not remember the denial: a
@@ -141,28 +231,33 @@ async def viewer_is_moderator(viewer_xid: int, guild_xid: int) -> bool:
 
 
 async def fetch_is_moderator(viewer_xid: int, guild_xid: int) -> bool | None:
-    """Ask Discord whether the viewer moderates the guild, or None if it could not be asked."""
+    """
+    Ask Discord whether the viewer moderates the guild, or None if it could not be asked.
+
+    This runs once per viewer and guild however many requests are waiting on it (see
+    `resolve_once`), so the per-viewer rate limit counts real Discord round-trips only.
+    """
     if not settings.BOT_TOKEN:
         return False
-    headers = {"Authorization": f"Bot {settings.BOT_TOKEN}"}
+    if guild_inaccessible(guild_xid):
+        return False
+    if not await may_ask_discord(viewer_xid):
+        return None
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            guild = guild_cache_get(guild_xid)
+            guild = await guild_roles(client, guild_xid)
             if guild is None:
-                guild = await fetch_guild(client, guild_xid, headers)
-                guild_cache_put(guild_xid, guild)
-            member_resp = await client.get(
-                f"https://discord.com/api/v10/guilds/{guild_xid}/members/{viewer_xid}",
-                headers=headers,
-            )
-            if member_resp.status_code == 404:
+                return False  # the bot can't see this guild
+            member_resp = await discord_get(client, f"/guilds/{guild_xid}/members/{viewer_xid}")
+            if member_resp.status_code == httpx.codes.NOT_FOUND:
                 return False  # the viewer is not a member of this guild
             member_resp.raise_for_status()
             member = member_resp.json()
             held_role_ids = {str(role_id) for role_id in member.get("roles", [])}
             if roles_are_stale(guild, held_role_ids):
-                guild = await fetch_guild(client, guild_xid, headers)
-                guild_cache_put(guild_xid, guild)
+                guild = await fetch_guild(client, guild_xid)
+                if guild is None:
+                    return False
     except httpx.HTTPError:
         logger.warning(
             "could not resolve moderator status for viewer %s in guild %s",

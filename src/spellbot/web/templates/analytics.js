@@ -320,8 +320,9 @@
     refreshAll();
   }
 
-  // Expose switchPeriod globally for onclick handlers
-  window.switchPeriod = switchPeriod;
+  document
+    .querySelectorAll("#globalPeriodToggle .toggle-btn")
+    .forEach((b) => b.addEventListener("click", () => switchPeriod(b.dataset.period)));
 
   /* ── Individual render functions ── */
 
