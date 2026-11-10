@@ -783,6 +783,11 @@ ol.steps li::before {
   grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
 }
 
+/* At most two columns (a 2x2 grid for four items), down to one on narrow screens. */
+.kit-grid-pairs {
+  grid-template-columns: repeat(auto-fit, minmax(min(max(220px, calc(50% - 0.5rem)), 100%), 1fr));
+}
+
 .kit-asset {
   display: flex;
   flex-direction: column;
