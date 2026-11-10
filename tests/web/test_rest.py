@@ -335,10 +335,12 @@ class TestGameRecordEmbed:
             commanders=commanders,
             winner_xid=101,
             tracker_xid=102,
+            tracker_name="Player2",
         )
         assert "embeds" in result
         assert "🎉 Winner 🎉" in str(result)
         assert "Atraxa" in str(result)
+        assert "tracked by <@102> (Player2)." in result["embeds"][0]["description"]
 
     def test_without_winner(self) -> None:
 
@@ -368,10 +370,31 @@ class TestGameRecordEmbed:
             commanders=commanders,
             winner_xid=None,
             tracker_xid=102,
+            tracker_name="Player2",
         )
         assert "embeds" in result
         assert "No Winner" in str(result)
         assert "Draw game" in str(result)
+
+    def test_unknown_tracker_name(self) -> None:
+        game_data = create_mock_game(game_id=1)
+        game_data.guild_xid = 123
+        game_data.channel_xid = 456
+        game_data.started_at = datetime(2024, 1, 15, 10, 30, tzinfo=UTC)
+        players = [
+            create_mock_user(xid=101, name="Player1"),
+            create_mock_user(xid=102, name="Player2"),
+        ]
+        commanders: dict[int | None, str] = {101: "Atraxa", 102: "Kenrith"}
+        result = game_record_embed(
+            game_data=game_data,
+            players=players,
+            commanders=commanders,
+            winner_xid=101,
+            tracker_xid=999,
+            tracker_name=None,
+        )
+        assert "tracked by <@999>." in result["embeds"][0]["description"]
 
 
 @pytest.mark.asyncio
@@ -737,6 +760,54 @@ class TestGameRecordEndpoint:
             json={
                 "winner": user1.xid,
                 "tracker": "PlayerTwo",  # Username instead of xid
+                "players": [
+                    {"xid": user1.xid, "commander": "Atraxa"},
+                    {"xid": user2.xid, "commander": "Kenrith"},
+                ],
+            },
+        )
+        assert resp.status == 200
+
+    @pytest.mark.parametrize("tracker_in_db", [True, False])
+    async def test_game_record_tracker_not_a_player(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        freezer: FrozenDateTimeFactory,
+        decoy: Decoy,
+        stub: Stub,
+        tracker_in_db: bool,
+    ) -> None:
+        """Test that the tracker doesn't have to be one of the players in the game."""
+        freezer.move_to(datetime(2020, 1, 1, tzinfo=UTC))
+        send_dm_fake = stub(rest, "send_dm")
+        decoy.when(await send_dm_fake(ANY, ANY), ignore_extra_args=True).then_return(None)
+
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        user1 = factories.user.create(xid=101, name="PlayerOne")
+        user2 = factories.user.create(xid=102, name="PlayerTwo")
+        if tracker_in_db:
+            factories.user.create(xid=103, name="Tracker")
+        game = factories.game.create(
+            id=1,
+            seats=2,
+            status=GameStatus.STARTED.value,
+            format=GameFormat.MODERN.value,
+            guild=guild,
+            channel=channel,
+            started_at=datetime.now(tz=UTC),
+        )
+        factories.play.create(user_xid=user1.xid, game_id=game.id)
+        factories.play.create(user_xid=user2.xid, game_id=game.id)
+        factories.token.create(key="RECORD_NON_PLAYER_TRACKER")
+
+        resp = await client.post(
+            f"/api/game/{game.id}/record",
+            headers={"Authorization": "Bearer RECORD_NON_PLAYER_TRACKER"},
+            json={
+                "winner": user1.xid,
+                "tracker": 103,
                 "players": [
                     {"xid": user1.xid, "commander": "Atraxa"},
                     {"xid": user2.xid, "commander": "Kenrith"},

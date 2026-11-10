@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Recording a game via the API no longer fails when the tracker isn't one of the game's players.
+
+### Changed
+
+- Updated dependencies.
+
 ## [v24.1.1](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.1) - 2026-11-04
 
 ### Changed

@@ -109,11 +109,11 @@ def game_record_embed(
     commanders: dict[int | None, str],
     winner_xid: int | None,
     tracker_xid: int,
+    tracker_name: str | None,
 ) -> dict[str, Any]:
     fields: list[dict[str, Any]] = []
     winner_name = next((p.name for p in players if p.xid == winner_xid), None)
     winner_commander = commanders.get(winner_xid)
-    tracker_name = next(p.name for p in players if p.xid == tracker_xid)
     has_winner = winner_xid and winner_name and winner_commander
     if has_winner:
         value = f"<@{winner_xid}> ({winner_name}) - {winner_commander}"
@@ -126,7 +126,8 @@ def game_record_embed(
             "value": "\n".join(f"• <@{p.xid}> ({p.name}) - {commanders[p.xid]}" for p in players),
         },
     )
-    description = f"A game you played was tracked by <@{tracker_xid}> ({tracker_name})."
+    tracker = f"<@{tracker_xid}> ({tracker_name})" if tracker_name else f"<@{tracker_xid}>"
+    description = f"A game you played was tracked by {tracker}."
     if has_winner:
         description += f" The winner was marked as <@{winner_xid}> ({winner_name})."
     else:
@@ -308,12 +309,15 @@ async def game_record_endpoint(request: web.Request) -> web.Response:
         players = await services.users.get_players_by_xid(player_xids)
         if len(plays) != len(players) or len(players) != len(player_xids):
             return reply(error="Mismatched player count", status=400)
+        # The tracker doesn't have to be one of the players in the game.
+        tracker = await services.users.get(tracker_xid)
         embed = game_record_embed(
             game_data=game_data,
             players=players,
             commanders=commanders,
             winner_xid=winner_xid,
             tracker_xid=tracker_xid,
+            tracker_name=tracker.name if tracker else None,
         )
         logger.info("Sending DMs to players %s...", ", ".join(str(x) for x in player_xids))
         notify_player_tasks = [send_dm(player_xid, embed) for player_xid in player_xids]
