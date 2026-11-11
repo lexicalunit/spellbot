@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v24.1.4](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.4) - 2026-11-11
+
 ### Fixed
 
 - PIN verification now refuses a game's requests once it has had too many wrong PINs, even a right one, and requires the PIN to be a string of 6 digits.
