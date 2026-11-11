@@ -63,7 +63,8 @@ HSTS_HEADER = "max-age=31536000; includeSubDomains"
 # Per-request nonce that marks a page's own inline `<script>` blocks as trusted.
 CSP_NONCE = web.RequestKey("csp_nonce", str)
 
-SCRIPT_SRC = re.compile(r'<script\b[^>]*?\bsrc="(https://[^"]+)"')
+# HTML tag and attribute names are case-insensitive, so `<SCRIPT SRC=...>` counts too.
+SCRIPT_SRC = re.compile(r'<script\b[^>]*?\bsrc="(https://[^"]+)"', re.IGNORECASE)
 
 
 def external_scripts(root: Path) -> tuple[str, ...]:

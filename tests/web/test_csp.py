@@ -23,7 +23,8 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.use_db
 
-SCRIPT_TAG = re.compile(r"<script\b([^>]*)>")
+# HTML tag names are case-insensitive, so `<SCRIPT>` has to be caught too.
+SCRIPT_TAG = re.compile(r"<script\b([^>]*)>", re.IGNORECASE)
 INLINE_HANDLER = re.compile(r"""\son[a-z]+\s*=\s*["']""", re.IGNORECASE)
 TEMPLATES = sorted(TEMPLATES_ROOT.glob("*.j2"))
 
@@ -65,12 +66,23 @@ class TestExternalScripts:
             '<script src="https://b.example/x.js"></script>\n'
             '<script\n    src="https://a.example/y.js"\n    integrity="sha384-z"></script>\n'
             '<script src="/local.js"></script>\n'
+            '<SCRIPT SRC="https://c.example/v.js"></SCRIPT>\n'
             '<script nonce="{{ csp_nonce }}">var s = "<b>";</script>\n'
             '<img src="https://c.example/z.png">\n',
         )
         (tmp_path / "b.html.j2").write_text('<script src="https://b.example/x.js"></script>')
         (tmp_path / "ignored.txt").write_text('<script src="https://d.example/w.js"></script>')
-        assert external_scripts(tmp_path) == ("https://a.example/y.js", "https://b.example/x.js")
+        assert external_scripts(tmp_path) == (
+            "https://a.example/y.js",
+            "https://b.example/x.js",
+            "https://c.example/v.js",
+        )
+
+
+class TestScriptTagPattern:
+    @pytest.mark.parametrize("tag", ["<script>", "<SCRIPT>", '<Script type="module">'])
+    def test_matches_any_case(self, tag: str) -> None:
+        assert SCRIPT_TAG.search(tag)
 
 
 class TestTemplatesFollowThePolicy:
