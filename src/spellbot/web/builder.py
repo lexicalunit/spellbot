@@ -37,7 +37,7 @@ from spellbot.web.api import (
     viewer_auth,
 )
 from spellbot.web.api.oauth import oauth_configured, safe_relative_path
-from spellbot.web.tools import rate_limited
+from spellbot.web.tools import already_rate_limited, rate_limited
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -275,11 +275,16 @@ async def auth_middleware(request: web.Request, handler: Handler) -> web.StreamR
     token = auth_header.removeprefix("Bearer ").strip()
     if not token:
         return web.json_response({"error": "Missing or invalid Authorization header"}, status=401)
+    # Only bad tokens count against the client, but once it's sent too many, refuse it
+    # before looking the token up, so a flood of junk tokens never reaches the database.
+    if await already_rate_limited(request):
+        return web.json_response({"error": "Too many requests"}, status=429)
     async with db_session_manager():
-        if not await services.apps.verify_token(token, request.rel_url.path):
-            if await rate_limited(request):
-                return web.json_response({"error": "Too many requests"}, status=429)
-            return web.json_response({"error": "Unauthorized"}, status=403)
+        valid = await services.apps.verify_token(token, request.rel_url.path)
+    if not valid:
+        if await rate_limited(request):
+            return web.json_response({"error": "Too many requests"}, status=429)
+        return web.json_response({"error": "Unauthorized"}, status=403)
 
     return await handler(request)
 

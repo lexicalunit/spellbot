@@ -171,6 +171,8 @@ If there is an error processing these requests, the response will follow the fol
 
 Verifies the user's PIN for the given game for the given guild. This API is for external applications that track a user's game history, such as [Mythic Track](https://www.mythictrack.com/).
 
+The `pin` must be a string of exactly 6 digits; anything else is a `400`. Wrong PINs are rate limited per game. Once a game hits the limit, its requests get a `429` with `{"error": "Rate limited"}` for a while, even ones with the right PIN.
+
 > Note: Required API scope: `game` or `game:verify`.
 
 #### Request

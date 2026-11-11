@@ -65,6 +65,18 @@ class TestAuthMiddlewareDirect:
         resp = await auth_middleware(request, UNREACHABLE)
         assert resp.status == 429
 
+    async def test_refused_before_the_token_lookup_once_over_the_limit(
+        self,
+        factories: Factories,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Even a valid token: the limiter answers before the database is asked.
+        factories.token.create(key="VALID-KEY")
+        monkeypatch.setattr(builder, "already_rate_limited", decoys.async_returning(True))
+        monkeypatch.setattr(builder.services.apps, "verify_token", UNREACHABLE)
+        resp = await auth_middleware(api_request("Bearer VALID-KEY"), UNREACHABLE)
+        assert resp.status == 429
+
     async def test_valid_token_calls_handler(self, factories: Factories, decoy: Decoy) -> None:
         factories.token.create(key="VALID-KEY")
         request = api_request("Bearer VALID-KEY")

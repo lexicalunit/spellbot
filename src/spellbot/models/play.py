@@ -11,9 +11,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from . import Base, now
 
+# Digits in a play's PIN, which players use to verify their games with integrations.
+PIN_LENGTH = 6
+
 
 def generate_pin() -> str:
-    return "".join(secrets.choice("0123456789") for i in range(6))
+    return "".join(secrets.choice("0123456789") for _ in range(PIN_LENGTH))
 
 
 class Play(Base):
@@ -57,7 +60,7 @@ class Play(Base):
         doc="The external Discord ID of the guild where the user entered this game",
     )
     pin: Mapped[str | None] = mapped_column(
-        String(6),
+        String(PIN_LENGTH),
         nullable=True,
         default=generate_pin,
         doc="A generated PIN for users to identify this game",

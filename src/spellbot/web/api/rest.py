@@ -19,10 +19,17 @@ from ddtrace.trace import tracer
 from spellbot import services
 from spellbot.database import db_session_manager
 from spellbot.integrations import castlog
-from spellbot.models import Guild, User
+from spellbot.metrics import add_span_error
+from spellbot.models import PIN_LENGTH, Guild, User
 from spellbot.services.games import MetadataWrite
 from spellbot.settings import settings
-from spellbot.web.tools import parse_id, rate_limited, route_id, tag_web_request
+from spellbot.web.tools import (
+    already_rate_limited,
+    parse_id,
+    rate_limited,
+    route_id,
+    tag_web_request,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import QueryableAttribute
@@ -72,38 +79,64 @@ def reply(
     return web.json_response({"error": error}, status=status)
 
 
+# A play's PIN, as `generate_pin` makes them: exactly `PIN_LENGTH` ASCII digits.
+PIN_PATTERN = re.compile(rf"[0-9]{{{PIN_LENGTH}}}")
+
+
+async def parse_verify_request(request: web.Request) -> tuple[int, int, int, str]:
+    """Read a verify request's game, user, guild, and PIN, or raise `ValueError` saying why not."""
+    game_id = route_id(request, "game")
+    payload = await request.json()
+    try:
+        user_xid = payload_id(payload["user_xid"], User.xid)
+        guild_xid = payload_id(payload["guild_xid"], Guild.xid)
+        pin = payload["pin"]
+    except KeyError as e:
+        msg = f"missing key: {e}"
+        raise ValueError(msg) from e
+    except TypeError as e:
+        msg = "Verify request must be a JSON object"
+        raise ValueError(msg) from e
+    if not isinstance(pin, str) or not PIN_PATTERN.fullmatch(pin):
+        msg = f"pin must be a string of {PIN_LENGTH} digits"
+        raise ValueError(msg)
+    return game_id, user_xid, guild_xid, pin
+
+
 @routes.post(r"/api/game/{game}/verify")
 @tracer.wrap(name="rest", resource="game_verify_endpoint")
 async def game_verify_endpoint(request: web.Request) -> web.Response:
     tag_web_request(request)
     try:
+        game_id, user_xid, guild_xid, pin = await parse_verify_request(request)
+    except ValueError as e:
+        if await rate_limited(request):
+            return reply({}, error="Rate limited", status=429)
+        return reply(error=str(e), status=400)
+
+    # Wrong PINs count against the game, and once it has had too many, no PIN for it is
+    # checked, right or wrong, until the window passes. Checking before verifying is what
+    # stops a brute force; otherwise the right guess would still get through. Right PINs
+    # don't count, so verifying a game's real players never runs into the limit.
+    attempts_key = f"game_verify:{game_id}"
+    if await already_rate_limited(request, attempts_key):
+        return reply({}, error="Rate limited", status=429)
+    try:
         async with db_session_manager():
-            game_id = route_id(request, "game")
-            payload = await request.json()
-            user_xid = payload_id(payload["user_xid"], User.xid)
-            guild_xid = payload_id(payload["guild_xid"], Guild.xid)
-            pin = payload["pin"]
             verified = await services.plays.verify_game_pin(
                 game_id=game_id,
                 user_xid=user_xid,
                 guild_xid=guild_xid,
                 pin=pin,
             )
-            if not verified and await rate_limited(request, key=f"game_verify:{game_id}"):
-                return reply({}, error="Rate limited", status=429)
-            return reply({"verified": verified})
-    except ValueError as e:
-        if await rate_limited(request):
-            return reply({}, error="Rate limited", status=429)
-        return reply(error=str(e), status=400)
-    except KeyError as e:
-        if await rate_limited(request):
-            return reply({}, error="Rate limited", status=429)
-        return reply(error=f"missing key: {e}", status=400)
-    except Exception as e:
-        if await rate_limited(request):
-            return reply({}, error="Rate limited", status=429)
-        return reply(error=str(e))
+    except Exception as ex:
+        # The exception's text can include SQL, so it's logged but not sent back.
+        add_span_error(ex)
+        logger.exception("failed to verify a game PIN")
+        return reply(error="Internal error")
+    if not verified:
+        await rate_limited(request, attempts_key)
+    return reply({"verified": verified})
 
 
 @tracer.wrap(name="rest", resource="game_record_embed")

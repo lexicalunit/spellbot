@@ -123,7 +123,26 @@ async def rate_limited(
     limit: int = RATE_LIMIT,
 ) -> bool:
     """Count this request against `key` (default: the client IP) and report if it's over."""
-    return await over_rate_limit(key or f"rate_limit:{request.remote}", limit=limit)
+    return await over_rate_limit(rate_limit_key(request, key), limit=limit)
+
+
+async def already_rate_limited(
+    request: web.Request,
+    key: str | None = None,
+    *,
+    limit: int = RATE_LIMIT,
+) -> bool:
+    """
+    Report whether `key` (default: the client IP) has used up its `limit`, without counting.
+
+    For limits on failures only: check this before an attempt, and count the attempt with
+    `rate_limited` only if it fails. Successful requests then never use up the limit.
+    """
+    return await at_rate_limit(rate_limit_key(request, key), limit=limit)
+
+
+def rate_limit_key(request: web.Request, key: str | None) -> str:
+    return key or f"rate_limit:{request.remote}"
 
 
 def too_many_requests() -> web.Response:
@@ -155,6 +174,24 @@ async def over_rate_limit(key: str, *, limit: int = RATE_LIMIT) -> bool:
         logger.warning("redis error in rate limiter", exc_info=True)
         return False
     return int(resp) > limit
+
+
+async def at_rate_limit(key: str, *, limit: int = RATE_LIMIT) -> bool:
+    """
+    Report whether `key` has been counted `limit` times this `TIME_WINDOW`, without counting.
+
+    Fails open without Redis, like `over_rate_limit`.
+    """
+    if not settings.REDIS_URL:
+        return False
+
+    try:
+        redis = await get_redis()
+        count = await redis.get(key)
+    except Exception:
+        logger.warning("redis error in rate limiter", exc_info=True)
+        return False
+    return count is not None and int(count) >= limit
 
 
 type Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]

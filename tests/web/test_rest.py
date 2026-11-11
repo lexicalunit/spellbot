@@ -27,13 +27,15 @@ from spellbot.web.api.rest import (
     send_dm,
     send_message,
 )
+from spellbot.web.tools import RATE_LIMIT
 from tests.mocks import create_mock_game, create_mock_user
 from tests.mocks.decoys import ANY, async_raising, async_returning
+from tests.mocks.redis import FakeRedis, serve_redis
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Mapping
 
-    from aiohttp.client import ClientSession
+    from aiohttp.client import ClientResponse, ClientSession
     from decoy import Decoy
     from freezegun.api import FrozenDateTimeFactory
 
@@ -76,15 +78,25 @@ class TestWebRecord:
             updated_at=datetime.now(tz=UTC),
         )
         factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
-        factories.play.create(game_id=game.id, user_xid=user1.xid, og_guild_xid=guild.xid, pin="A")
-        factories.play.create(game_id=game.id, user_xid=user2.xid, og_guild_xid=guild.xid, pin="B")
+        factories.play.create(
+            game_id=game.id,
+            user_xid=user1.xid,
+            og_guild_xid=guild.xid,
+            pin="111111",
+        )
+        factories.play.create(
+            game_id=game.id,
+            user_xid=user2.xid,
+            og_guild_xid=guild.xid,
+            pin="222222",
+        )
         factories.token.create(key="XYZ")
 
         # all data correct
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
+            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 200
         assert await resp.json() == {"result": {"verified": True}}
@@ -93,15 +105,15 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid + 200, "guild_xid": guild.xid, "pin": "A"},
+            json={"user_xid": user1.xid + 200, "guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 200
         assert await resp.json() == {"result": {"verified": False}}
 
         # ids too big for the database are rejected rather than queried
         for body in (
-            {"user_xid": 2**63, "guild_xid": guild.xid, "pin": "A"},
-            {"user_xid": user1.xid, "guild_xid": str(2**63), "pin": "A"},
+            {"user_xid": 2**63, "guild_xid": guild.xid, "pin": "111111"},
+            {"user_xid": user1.xid, "guild_xid": str(2**63), "pin": "111111"},
         ):
             resp = await client.post(
                 f"/api/game/{game.id}/verify",
@@ -114,7 +126,7 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid + 200, "pin": "A"},
+            json={"user_xid": user1.xid, "guild_xid": guild.xid + 200, "pin": "111111"},
         )
         assert resp.status == 200
         assert await resp.json() == {"result": {"verified": False}}
@@ -123,7 +135,7 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "C"},
+            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "333333"},
         )
         assert resp.status == 200
         assert await resp.json() == {"result": {"verified": False}}
@@ -132,7 +144,7 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id + 100}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
+            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 200
         assert await resp.json() == {"result": {"verified": False}}
@@ -146,7 +158,7 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer BOGUS"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
+            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 403
         assert await resp.json() == {"error": "Unauthorized"}
@@ -157,7 +169,7 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer BOGUS"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
+            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 429
         assert await resp.json() == {"error": "Too many requests"}
@@ -166,7 +178,7 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"guild_xid": guild.xid, "pin": "A"},
+            json={"guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 400
         assert await resp.json() == {"error": "missing key: 'user_xid'"}
@@ -175,7 +187,7 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "pin": "A"},
+            json={"user_xid": user1.xid, "pin": "111111"},
         )
         assert resp.status == 400
         assert await resp.json() == {"error": "missing key: 'guild_xid'"}
@@ -205,21 +217,11 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
+            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 500
-        assert await resp.json() == {"error": "BOOM"}
-
-        # Test rate limiting on failed verification
-        monkeypatch.setattr(plays, "verify_game_pin", async_returning(False))
-        monkeypatch.setattr(rest, "rate_limited", async_returning(True))
-        resp = await client.post(
-            f"/api/game/{game.id}/verify",
-            headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
-        )
-        assert resp.status == 429
-        assert await resp.json() == {"error": "Rate limited"}
+        # The exception's text isn't sent back; it can include SQL.
+        assert await resp.json() == {"error": "Internal error"}
 
         # Test rate limiting on ValueError
         monkeypatch.setattr(rest, "rate_limited", async_returning(True))
@@ -236,21 +238,94 @@ class TestWebRecord:
         resp = await client.post(
             f"/api/game/{game.id}/verify",
             headers={"Authorization": "Bearer XYZ"},
-            json={"guild_xid": guild.xid, "pin": "A"},
+            json={"guild_xid": guild.xid, "pin": "111111"},
         )
         assert resp.status == 429
         assert await resp.json() == {"error": "Rate limited"}
 
-        # Test rate limiting on Exception
-        monkeypatch.setattr(plays, "verify_game_pin", async_raising(Exception("BOOM")))
-        monkeypatch.setattr(rest, "rate_limited", async_returning(True))
-        resp = await client.post(
-            f"/api/game/{game.id}/verify",
-            headers={"Authorization": "Bearer XYZ"},
-            json={"user_xid": user1.xid, "guild_xid": guild.xid, "pin": "A"},
+
+@pytest.mark.asyncio
+class TestVerifyPinLimit:
+    """Wrong PINs count against the game, and past the limit no PIN is checked at all."""
+
+    @pytest_asyncio.fixture
+    async def play(self, factories: Factories) -> Play:
+        guild = factories.guild.create(xid=201, name="guild")
+        channel = factories.channel.create(xid=301, name="channel", guild=guild)
+        game = factories.game.create(id=1, seats=2, guild=guild, channel=channel)
+        user = factories.user.create(xid=101, name="user")
+        factories.token.create(key="XYZ")
+        return factories.play.create(
+            game_id=game.id,
+            user_xid=user.xid,
+            og_guild_xid=guild.xid,
+            pin="123456",
         )
+
+    @staticmethod
+    async def verify(client: ClientSession, play: Play, pin: object) -> ClientResponse:
+        return await client.post(
+            f"/api/game/{play.game_id}/verify",
+            headers={"Authorization": "Bearer XYZ"},
+            json={"user_xid": play.user_xid, "guild_xid": play.og_guild_xid, "pin": pin},
+        )
+
+    async def test_a_right_pin_is_refused_once_the_game_is_over_the_limit(
+        self,
+        client: ClientSession,
+        play: Play,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        redis = FakeRedis(data={"game_verify:1": str(RATE_LIMIT)})
+        serve_redis(monkeypatch, redis)
+        resp = await self.verify(client, play, "123456")
         assert resp.status == 429
         assert await resp.json() == {"error": "Rate limited"}
+        assert redis.evals == []  # refused without counting or checking
+
+    async def test_only_wrong_pins_count(
+        self,
+        client: ClientSession,
+        play: Play,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        redis = FakeRedis(data={"game_verify:1": str(RATE_LIMIT - 1)})
+        serve_redis(monkeypatch, redis)
+
+        resp = await self.verify(client, play, "123456")
+        assert await resp.json() == {"result": {"verified": True}}
+        assert redis.evals == []
+
+        resp = await self.verify(client, play, "654321")
+        assert await resp.json() == {"result": {"verified": False}}
+        [(_script, _numkeys, key, _window)] = redis.evals
+        assert key == "game_verify:1"
+
+    @pytest.mark.parametrize("pin", ["12345", "1234567", "12345a", "١٢٣٤٥٦", 123456, None])
+    async def test_pin_must_be_a_six_digit_string(
+        self,
+        client: ClientSession,
+        play: Play,
+        pin: object,
+    ) -> None:
+        resp = await self.verify(client, play, pin)
+        assert resp.status == 400
+        assert await resp.json() == {"error": "pin must be a string of 6 digits"}
+
+    @pytest.mark.parametrize("body", [[1, 2, 3], "text", 5])
+    async def test_body_must_be_an_object(
+        self,
+        client: ClientSession,
+        play: Play,
+        body: object,
+    ) -> None:
+        resp = await client.post(
+            f"/api/game/{play.game_id}/verify",
+            headers={"Authorization": "Bearer XYZ"},
+            json=body,
+        )
+        assert resp.status == 400
+        assert await resp.json() == {"error": "Verify request must be a JSON object"}
 
 
 class TestCommanderText:

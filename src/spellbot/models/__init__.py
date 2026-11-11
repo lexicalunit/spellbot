@@ -38,7 +38,7 @@ from .channel import Channel  # noqa: E402
 from .game import Game, GameStatus, MAX_RULES_LENGTH  # noqa: E402
 from .guild import Guild  # noqa: E402
 from .guild_member import GuildMember  # noqa: E402
-from .play import Play, generate_pin  # noqa: E402
+from .play import PIN_LENGTH, Play, generate_pin  # noqa: E402
 from .post import Post  # noqa: E402
 from .queue import Queue  # noqa: E402
 from .token import Token  # noqa: E402
@@ -66,6 +66,7 @@ def web_editable_docs(model: type[Base]) -> dict[str, str]:
 
 __all__ = [
     "MAX_RULES_LENGTH",
+    "PIN_LENGTH",
     "WEB_EDITABLE",
     "Alert",
     "Base",

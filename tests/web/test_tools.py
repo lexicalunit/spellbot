@@ -15,8 +15,10 @@ from spellbot.redis_client import close_redis
 from spellbot.settings import settings
 from spellbot.web.tools import (
     MAX_PAGE,
+    RATE_LIMIT,
     RATE_LIMIT_SCRIPT,
     TIME_WINDOW,
+    already_rate_limited,
     is_crawler,
     parse_id,
     parse_page,
@@ -107,6 +109,40 @@ class TestRateLimited:
         await rate_limited(request_from("192.168.1.1"))
         await rate_limited(request_from("192.168.1.1"))
         assert connections == ["redis://localhost"]
+
+
+@pytest.mark.asyncio
+class TestAlreadyRateLimited:
+    async def test_no_redis_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "REDIS_URL", None)
+        assert await already_rate_limited(request_from("192.168.1.1")) is False
+
+    @pytest.mark.parametrize(
+        ("count", "expected"),
+        [(None, False), (str(RATE_LIMIT - 1), False), (str(RATE_LIMIT), True)],
+    )
+    async def test_reads_the_client_ips_count_without_adding_to_it(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        count: str | None,
+        expected: bool,
+    ) -> None:
+        data = {} if count is None else {"rate_limit:192.168.1.1": count}
+        redis = FakeRedis(data=data)
+        serve_redis(monkeypatch, redis)
+        assert await already_rate_limited(request_from("192.168.1.1")) is expected
+        assert redis.evals == []
+        assert redis.data == data
+
+    async def test_custom_key_and_limit(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        serve_redis(monkeypatch, FakeRedis(data={"custom:key": "3"}))
+        request = request_from("192.168.1.1")
+        assert await already_rate_limited(request, "custom:key", limit=3) is True
+        assert await already_rate_limited(request, "custom:key", limit=4) is False
+
+    async def test_redis_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        serve_redis(monkeypatch, FakeRedis(error=Exception("Redis error")))
+        assert await already_rate_limited(request_from("192.168.1.1")) is False
 
 
 class TestParseId:
