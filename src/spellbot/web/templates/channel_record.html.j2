@@ -133,7 +133,7 @@
             {{ t("web.channel_settings.forget_hint") }}
         </p>
         <form method="post" action="/g/{{ guild_xid }}/c/{{ target_xid }}/forget" class="settings-form"
-              onsubmit='return confirm({{ t("web.channel_settings.forget_confirm") | tojson }});'>
+              data-confirm="{{ t('web.channel_settings.forget_confirm') }}">
             <div class="actions">
                 <button type="submit" class="button button-danger">{{ t("web.channel_settings.forget") }}</button>
             </div>

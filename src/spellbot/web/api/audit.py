@@ -8,14 +8,14 @@ from typing import TYPE_CHECKING, Any
 import aiohttp_jinja2
 from aiohttp import web
 
-from spellbot import audit
+from spellbot import audit, services
 from spellbot.web.api.record import (
     bracket_choices,
     format_choices,
     require_moderator_page,
     service_choices,
 )
-from spellbot.web.tools import web_endpoint
+from spellbot.web.tools import parse_page, route_id, web_endpoint
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -51,7 +51,7 @@ def millis(issued_at: datetime) -> int:
     return int(issued_at.replace(tzinfo=UTC).timestamp() * 1000)
 
 
-def _change_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def change_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Flatten save events into one display row per changed field, newest first."""
     rows: list[dict[str, Any]] = []
     for event in events:
@@ -73,24 +73,20 @@ def _change_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rows
 
 
-def parse_page(request: web.Request) -> int:
-    try:
-        return max(int(request.query.get("page", "0")), 0)
-    except ValueError:
-        return 0
-
-
 async def impl(request: web.Request, *, is_channel: bool) -> web.StreamResponse:
     try:
-        guild_xid = int(request.match_info["guild"])
-        target_xid = int(request.match_info["channel"]) if is_channel else guild_xid
+        guild_xid = route_id(request, "guild")
+        target_xid = route_id(request, "channel") if is_channel else guild_xid
     except ValueError:
         return web.Response(status=404)
 
     if denied := await require_moderator_page(request, guild_xid):
         return denied
+    # Moderating `guild_xid` only grants access to that guild's own channels.
+    if is_channel and not await services.channels.in_guild(guild_xid, target_xid):
+        return web.Response(status=404)
 
-    page = parse_page(request)
+    page = parse_page(request.query.get("page"))
     page_size = audit.SETTINGS_CHANGE_PAGE_SIZE
     table_name = "channels" if is_channel else "guilds"
     events, total = await audit.setting_changes(table_name, target_xid, page=page)
@@ -101,7 +97,7 @@ async def impl(request: web.Request, *, is_channel: bool) -> web.StreamResponse:
     context = {
         "scope": "channel" if is_channel else "server",
         "back_url": back_url,
-        "rows": _change_rows(events),
+        "rows": change_rows(events),
         "total": total,
         "has_prev": has_prev,
         "has_next": has_next,

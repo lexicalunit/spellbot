@@ -1,0 +1,12 @@
+{#- Swap a broken image for its `data-fallback-src`. Included in `<head>` so the listener
+    exists before any image can fail. Error events don't bubble, so it listens in the
+    capture phase. Replaces inline `onerror` handlers, which the CSP blocks. -#}
+<script nonce="{{ csp_nonce }}">
+    document.addEventListener("error", function (event) {
+        var img = event.target;
+        if (!(img instanceof HTMLImageElement) || !img.dataset.fallbackSrc) return;
+        var fallback = img.dataset.fallbackSrc;
+        delete img.dataset.fallbackSrc;
+        img.src = fallback;
+    }, true);
+</script>

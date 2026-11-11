@@ -73,9 +73,13 @@ async def upsert(channel: MessageableChannel) -> ChannelData:
     return ChannelData.from_model(db_channel)
 
 
-async def forget(xid: int) -> None:
-    """Delete the channel with the given xid from the database."""
-    query = delete(Channel).where(Channel.xid == xid).execution_options(synchronize_session=False)
+async def forget(guild_xid: int, xid: int) -> None:
+    """Delete the channel with the given xid from the database, if it belongs to the guild."""
+    query = (
+        delete(Channel)
+        .where(Channel.xid == xid, Channel.guild_xid == guild_xid)
+        .execution_options(synchronize_session=False)
+    )
     # Record the deletion in one actor-attributed transaction so the audit triggers capture it.
     async with audit.transaction():
         await DatabaseSession.execute(query)
@@ -89,11 +93,19 @@ async def select(xid: int) -> ChannelData | None:
     return ChannelData.from_model(channel) if channel else None
 
 
-async def _set_column(xid: int, **values: object) -> None:
-    """Update the given columns on the channel with the given xid."""
+async def in_guild(guild_xid: int, xid: int) -> bool:
+    """Return True if the channel with the given xid is known and belongs to the guild."""
+    result = await DatabaseSession.execute(
+        sa_select(Channel.xid).where(Channel.xid == xid, Channel.guild_xid == guild_xid),
+    )
+    return result.scalar_one_or_none() is not None
+
+
+async def set_column(guild_xid: int, xid: int, **values: object) -> None:
+    """Update the given columns on the channel with the given xid, if it belongs to the guild."""
     query = (
         update(Channel)
-        .where(Channel.xid == xid)
+        .where(Channel.xid == xid, Channel.guild_xid == guild_xid)
         .values(**values)
         .execution_options(synchronize_session=False)
     )
@@ -109,9 +121,15 @@ async def _set_column(xid: int, **values: object) -> None:
 SETTINGS_FIELDS = web_editable_columns(Channel)
 
 
-async def update_settings(xid: int, **fields: object) -> None:
-    """Update an allow-listed subset of this channel's configurable settings."""
+async def update_settings(guild_xid: int, xid: int, /, **fields: object) -> None:
+    """
+    Update an allow-listed subset of this channel's configurable settings.
+
+    Only a channel belonging to `guild_xid` is changed, so a moderator of one guild can't
+    reach another guild's channel by its id. The ids are positional-only so that a
+    `guild_xid` smuggled in with the fields lands in `fields`, where the allow-list drops it.
+    """
     safe = {key: value for key, value in fields.items() if key in SETTINGS_FIELDS}
     if not safe:
         return
-    await _set_column(xid, **safe)
+    await set_column(guild_xid, xid, **safe)

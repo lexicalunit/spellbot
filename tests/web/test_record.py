@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+import asyncio
+import csv
+import io
+from datetime import UTC, date, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
 from aiohttp import ClientPayloadError, http_writer, web
+from aiohttp.test_utils import make_mocked_request
 from sqlalchemy import func, select
 
 from spellbot.database import DatabaseSession
@@ -17,6 +21,8 @@ from tests.mocks import decoys
 from tests.mocks.decoys import ANY
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from aiohttp.abc import AbstractStreamWriter
     from aiohttp.client import ClientSession
     from decoy import Decoy
@@ -26,6 +32,34 @@ if TYPE_CHECKING:
     from tests.fixtures import Factories, Stub
 
 pytestmark = pytest.mark.use_db
+
+GAME_LINK = "https://convoke.games/join/secret"
+# Both export headers put the game's join link in the ninth column.
+LINK_COLUMN = 8
+
+
+def linked_game(factories: Factories, *, player_xid: int, show_links: bool) -> int:
+    """Create a started game with a join link in guild 201 / channel 301; return its player."""
+    user = factories.user.create(xid=player_xid, name="player")
+    guild = factories.guild.create(xid=201, name="guild", show_links=show_links)
+    channel = factories.channel.create(xid=301, name="channel", guild=guild)
+    game = factories.game.create(
+        seats=2,
+        status=GameStatus.STARTED.value,
+        guild=guild,
+        channel=channel,
+        game_link=GAME_LINK,
+    )
+    factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+    factories.play.create(game_id=game.id, user_xid=user.xid)
+    return user.xid
+
+
+async def export_rows(client: ClientSession, path: str) -> list[list[str]]:
+    """Download a CSV export and parse it into rows, the header first."""
+    resp = await client.get(path)
+    assert resp.status == 200
+    return list(csv.reader(io.StringIO((await resp.read()).decode("utf-8"))))
 
 
 @pytest.mark.asyncio
@@ -1023,6 +1057,184 @@ class TestWebRecordExport:
     async def test_channel_export_invalid_ids(self, client: ClientSession) -> None:
         resp = await client.get("/g/abc/c/xyz/export.csv")
         assert resp.status == 404
+
+    async def test_user_export_hides_links_from_others(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        user = linked_game(factories, player_xid=42, show_links=False)
+        rows = await export_rows(client, f"/u/{user}/export.csv")
+        assert rows[1][LINK_COLUMN] == ""
+
+    async def test_user_export_shows_links_to_the_player(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # `owner_client` is logged in as xid 42, so this is the viewer's own export.
+        user = linked_game(factories, player_xid=42, show_links=False)
+        rows = await export_rows(owner_client, f"/u/{user}/export.csv")
+        assert rows[1][LINK_COLUMN] == GAME_LINK
+
+    async def test_channel_export_hides_links_from_anonymous(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        linked_game(factories, player_xid=42, show_links=False)
+        rows = await export_rows(client, "/g/201/c/301/export.csv")
+        assert rows[1][LINK_COLUMN] == ""
+
+    async def test_channel_export_hides_links_from_non_moderators(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        viewer_is_moderator_fake = stub(record, "viewer_is_moderator")
+        decoy.when(await viewer_is_moderator_fake(ANY, ANY)).then_return(False)
+        linked_game(factories, player_xid=7, show_links=False)
+        rows = await export_rows(owner_client, "/g/201/c/301/export.csv")
+        assert rows[1][LINK_COLUMN] == ""
+
+    async def test_channel_export_shows_links_to_moderators(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        linked_game(factories, player_xid=7, show_links=False)
+        rows = await export_rows(mod_client, "/g/201/c/301/export.csv")
+        assert rows[1][LINK_COLUMN] == GAME_LINK
+
+    async def test_channel_export_shows_public_links_to_anyone(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        linked_game(factories, player_xid=7, show_links=True)
+        rows = await export_rows(client, "/g/201/c/301/export.csv")
+        assert rows[1][LINK_COLUMN] == GAME_LINK
+
+    async def test_exports_neutralize_spreadsheet_formulas(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # The export query drops `:` and `@` from player names, so this formula avoids both.
+        user = factories.user.create(xid=101, name='=HYPERLINK("evil.example","x")')
+        guild = factories.guild.create(xid=201, name="+guild")
+        channel = factories.channel.create(xid=301, name="@channel", guild=guild)
+        game = factories.game.create(
+            seats=2,
+            status=GameStatus.STARTED.value,
+            guild=guild,
+            channel=channel,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game, message_xid=901)
+        factories.play.create(game_id=game.id, user_xid=user.xid)
+
+        channel_rows = await export_rows(client, f"/g/{guild.xid}/c/{channel.xid}/export.csv")
+        user_rows = await export_rows(client, f"/u/{user.xid}/export.csv")
+
+        # Game, Time, Guild, Channel, ..., User Name, User ID
+        assert channel_rows[1][2:4] == ["'+guild", "'@channel"]
+        assert channel_rows[1][9] == '\'=HYPERLINK("evil.example","x")'
+        # The user export's Players cell starts with the first player's name.
+        assert user_rows[1][2:4] == ["'+guild", "'@channel"]
+        assert user_rows[1][9].startswith("'=HYPERLINK(")
+
+    async def test_channel_export_other_guilds_channel(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=201, name="guild")
+        other_guild = factories.guild.create(xid=202, name="other")
+        channel = factories.channel.create(xid=301, name="channel", guild=other_guild)
+        resp = await client.get(f"/g/{guild.xid}/c/{channel.xid}/export.csv")
+        assert resp.status == 404
+
+
+def over_limit(calls: list[tuple[str | None, int]]) -> Callable[..., Awaitable[bool]]:
+    """Stand in for `rate_limited`, recording each key and limit and always saying over."""
+
+    async def check(request: web.Request, key: str | None = None, *, limit: int) -> bool:
+        calls.append((key, limit))
+        return True
+
+    return check
+
+
+@pytest.mark.asyncio
+class TestRecordLoadLimits:
+    @pytest.mark.parametrize("path", ["/u/101", "/g/201/c/301"])
+    async def test_record_pages_are_rate_limited_per_ip(
+        self,
+        client: ClientSession,
+        monkeypatch: pytest.MonkeyPatch,
+        path: str,
+    ) -> None:
+        calls: list[tuple[str | None, int]] = []
+        monkeypatch.setattr(record, "rate_limited", over_limit(calls))
+        resp = await client.get(path)
+        assert resp.status == 429
+        assert resp.headers["Retry-After"] == "60"
+        assert calls == [("records:127.0.0.1", record.RECORD_PAGE_RATE_LIMIT)]
+
+    @pytest.mark.parametrize("path", ["/u/101/export.csv", "/g/201/c/301/export.csv"])
+    async def test_exports_are_rate_limited_per_ip(
+        self,
+        client: ClientSession,
+        monkeypatch: pytest.MonkeyPatch,
+        path: str,
+    ) -> None:
+        calls: list[tuple[str | None, int]] = []
+        monkeypatch.setattr(record, "rate_limited", over_limit(calls))
+        resp = await client.get(path)
+        assert resp.status == 429
+        assert calls == [("export:127.0.0.1", record.EXPORT_RATE_LIMIT)]
+
+    async def test_export_turned_away_when_all_slots_are_busy(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        monkeypatch.setattr(record, "export_slots", asyncio.Semaphore(0))
+        resp = await client.get(f"/u/{user.xid}/export.csv")
+        assert resp.status == 503
+        assert resp.headers["Retry-After"] == str(record.EXPORT_BUSY_RETRY_AFTER_S)
+
+    async def test_export_frees_its_slot(
+        self,
+        client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        user = factories.user.create(xid=101, name="user")
+        await export_rows(client, f"/u/{user.xid}/export.csv")
+        assert not record.export_slots.locked()
+
+    async def test_export_releases_the_database_before_sending(
+        self,
+        client: ClientSession,
+        factories: Factories,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        player_xid = linked_game(factories, player_xid=101, show_links=True)
+        in_transaction: list[bool] = []
+        write = web.StreamResponse.write
+
+        async def recording_write(self: web.StreamResponse, data: bytes) -> None:
+            in_transaction.append(DatabaseSession.in_transaction())
+            await write(self, data)
+
+        monkeypatch.setattr(web.StreamResponse, "write", recording_write)
+        rows = await export_rows(client, f"/u/{player_xid}/export.csv")
+        assert len(rows) == 2
+        assert in_transaction == [False, False]
 
 
 @pytest.mark.asyncio
@@ -2361,6 +2573,58 @@ class TestWebChannelSettings:
         )
         assert resp.status == 404
 
+    async def test_unknown_channel_is_404(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=718, name="guild")
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/c/404/settings",
+            data={"motd": "x"},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+
+    async def test_other_guilds_channel_is_404(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        # The viewer moderates `guild`, which says nothing about a channel in `victim_guild`.
+        guild = factories.guild.create(xid=719, name="guild")
+        victim_guild = factories.guild.create(xid=720, name="victim")
+        channel = factories.channel.create(
+            xid=819,
+            name="channel",
+            guild=victim_guild,
+            motd="keep",
+            extra=None,
+        )
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/c/{channel.xid}/settings",
+            data={"motd": "hacked", "extra": "@everyone hacked"},
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+        DatabaseSession.expire_all()
+        updated = (
+            await DatabaseSession.execute(select(Channel).where(Channel.xid == channel.xid))
+        ).scalar_one()
+        assert updated.motd == "keep"
+        assert updated.extra is None
+
+    async def test_panel_hidden_for_other_guilds_channel(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=725, name="guild")
+        victim_guild = factories.guild.create(xid=726, name="victim")
+        channel = factories.channel.create(xid=825, name="channel", guild=victim_guild)
+        resp = await mod_client.get(f"/g/{guild.xid}/c/{channel.xid}")
+        assert resp.status == 404
+
 
 @pytest.mark.asyncio
 class TestWebChannelForget:
@@ -2444,6 +2708,25 @@ class TestWebChannelForget:
         )
         assert resp.status == 404
 
+    async def test_other_guilds_channel_is_404(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=727, name="guild")
+        victim_guild = factories.guild.create(xid=728, name="victim")
+        channel = factories.channel.create(xid=827, name="channel", guild=victim_guild)
+        resp = await mod_client.post(
+            f"/g/{guild.xid}/c/{channel.xid}/forget",
+            allow_redirects=False,
+        )
+        assert resp.status == 404
+        DatabaseSession.expire_all()
+        still_there = (
+            await DatabaseSession.execute(select(Channel).where(Channel.xid == channel.xid))
+        ).scalar_one_or_none()
+        assert still_there is not None
+
 
 @pytest.mark.asyncio
 class TestWebUserBlocks:
@@ -2515,23 +2798,57 @@ class TestWebUserBlocks:
         ).scalar_one_or_none()
         assert block is not None
 
-    async def test_add_block_creates_placeholder_user(
+    @pytest.mark.parametrize(
+        "target",
+        [
+            pytest.param("8102", id="unknown-id"),
+            pytest.param("9" * 30, id="too-large"),
+            pytest.param("²", id="non-ascii-digit"),
+        ],
+    )
+    async def test_add_block_requires_an_existing_user(
         self,
         owner_client: ClientSession,
         factories: Factories,
+        target: str,
     ) -> None:
         factories.user.create(xid=self.OWNER_XID, name="owner")
-        # A target that SpellBot has never seen before is created on demand.
         resp = await owner_client.post(
             f"/u/{self.OWNER_XID}/blocks/add",
-            data={"target": "8102"},
+            data={"target": target},
             allow_redirects=False,
         )
         assert resp.status == 302
-        created = await DatabaseSession.get(User, 8102)
-        assert created is not None
-        block = await DatabaseSession.get(Block, (self.OWNER_XID, 8102))
-        assert block is not None
+        assert resp.headers["Location"] == f"/u/{self.OWNER_XID}?block_error=not_found"
+        # No placeholder user is created for an id SpellBot has never seen.
+        users = (await DatabaseSession.execute(select(func.count()).select_from(User))).scalar()
+        assert users == 1
+        count = (await DatabaseSession.execute(select(func.count()).select_from(Block))).scalar()
+        assert (count or 0) == 0
+
+    async def test_add_block_limit(
+        self,
+        owner_client: ClientSession,
+        factories: Factories,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(record.settings, "MAX_BLOCKED_USERS", 1)
+        factories.user.create(xid=self.OWNER_XID, name="owner")
+        factories.user.create(xid=8104, name="already-blocked")
+        factories.block.create(user_xid=self.OWNER_XID, blocked_user_xid=8104)
+        factories.user.create(xid=8105, name="one-too-many")
+
+        resp = await owner_client.post(
+            f"/u/{self.OWNER_XID}/blocks/add",
+            data={"target": "8105"},
+            allow_redirects=False,
+        )
+
+        assert resp.status == 302
+        assert resp.headers["Location"] == f"/u/{self.OWNER_XID}?block_error=limit"
+        assert await DatabaseSession.get(Block, (self.OWNER_XID, 8105)) is None
+        page = await owner_client.get(resp.headers["Location"])
+        assert "Unblock someone to make room." in await page.text()
 
     async def test_add_block_by_name(
         self,
@@ -2690,6 +3007,16 @@ class TestWebUserBlocks:
         assert resp.status == 404
 
 
+class TestCsvCell:
+    @pytest.mark.parametrize("prefix", ["=", "+", "-", "@", "\t", "\r"])
+    def test_formula_prefixes_are_quoted(self, prefix: str) -> None:
+        assert record.csv_cell(f"{prefix}SUM(A1)") == f"'{prefix}SUM(A1)"
+
+    @pytest.mark.parametrize("value", ["guild", "", 42, None, "a=b"])
+    def test_other_values_are_unchanged(self, value: str | int | None) -> None:
+        assert record.csv_cell(value) == value
+
+
 class TestFormChoice:
     def test_missing_returns_none(self) -> None:
         assert record.form_choice({}, "default_seats", record.VALID_SEATS) is None
@@ -2730,3 +3057,50 @@ class TestLoginUrl:
         request = decoy.mock(cls=web.Request)
         decoy.when(request.path).then_return("//evil.example/x")
         assert record.login_url(request) == "/login?next=%2F"
+
+
+class TestLocalDayToUtc:
+    def test_shifts_by_the_viewers_offset(self) -> None:
+        day = date(2020, 1, 1)
+        start = record.local_day_to_utc(day, 480, end_of_day=False)
+        assert start == datetime(2020, 1, 1, 8, tzinfo=UTC)
+        end = record.local_day_to_utc(day, None, end_of_day=True)
+        assert end == datetime(2020, 1, 2, tzinfo=UTC)
+
+    @pytest.mark.parametrize(
+        ("day", "offset", "end_of_day"),
+        [
+            pytest.param(date.max, None, True, id="after-the-last-day"),
+            pytest.param(date.max, 24 * 60, False, id="a-day-west-of-the-last-day"),
+            pytest.param(date.min, -60, False, id="east-of-the-first-day"),
+        ],
+    )
+    def test_no_boundary_past_the_representable_dates(
+        self,
+        day: date,
+        offset: int | None,
+        end_of_day: bool,
+    ) -> None:
+        assert record.local_day_to_utc(day, offset, end_of_day=end_of_day) is None
+
+
+class TestViewerTimezone:
+    @staticmethod
+    def timezone_of(cookies: dict[str, str]) -> tuple[int | None, str | None]:
+        header = "; ".join(f"{name}={value}" for name, value in cookies.items())
+        return record.viewer_timezone(make_mocked_request("GET", "/", headers={"Cookie": header}))
+
+    def test_real_values_pass_through(self) -> None:
+        cookies = {"timezone_offset": "-840", "timezone_name": "Pacific/Kiritimati"}
+        assert self.timezone_of(cookies) == (-840, "Pacific/Kiritimati")
+
+    def test_missing_cookies(self) -> None:
+        assert self.timezone_of({}) == (None, None)
+
+    @pytest.mark.parametrize("offset", ["1441", "-1441", "9" * 30, "9" * 5000, "abc"])
+    def test_rejects_impossible_offsets(self, offset: str) -> None:
+        assert self.timezone_of({"timezone_offset": offset}) == (None, None)
+
+    @pytest.mark.parametrize("name", ["Not/AZone", "../../etc/passwd", "/abs", "America/"])
+    def test_rejects_unknown_zones(self, name: str) -> None:
+        assert self.timezone_of({"timezone_offset": "60", "timezone_name": name}) == (60, None)

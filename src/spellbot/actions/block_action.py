@@ -45,8 +45,10 @@ class BlockAction(BaseAction):
             return
 
         if action is ActionType.BLOCK:
-            await services.users.block(self.interaction.user.id, target_xid)
-            msg = t("block.blocked", locale=locale, user_id=target_xid)
+            if await services.users.block(self.interaction.user.id, target_xid):
+                msg = t("block.blocked", locale=locale, user_id=target_xid)
+            else:
+                msg = t("block.limit", locale=locale, count=settings.MAX_BLOCKED_USERS)
         else:
             await services.users.unblock(self.interaction.user.id, target_xid)
             msg = t("block.unblocked", locale=locale, user_id=target_xid)

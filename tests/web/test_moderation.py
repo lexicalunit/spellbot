@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import time
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 import httpx
 import pytest
 
 from spellbot.web.api import moderation
+from spellbot.web.api.moderation import guild_known
 from tests.mocks.decoys import ANY
 from tests.mocks.http import in_order, raising, serve_httpx
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import AsyncGenerator, Mapping, Sequence
 
     from decoy import Decoy
 
@@ -42,12 +44,34 @@ def record_fetches(monkeypatch: pytest.MonkeyPatch, *, result: bool) -> list[tup
     return calls
 
 
+def known_guilds(monkeypatch: pytest.MonkeyPatch, *, known: bool) -> list[int]:
+    """Answer `guild_known` with `known`, recording each guild it's asked about."""
+    calls: list[int] = []
+
+    async def fake_guild_known(guild_xid: int) -> bool:
+        calls.append(guild_xid)
+        return known
+
+    monkeypatch.setattr(moderation, "guild_known", fake_guild_known)
+    return calls
+
+
+def rate_limited_response(retry_after: str | None) -> httpx.Response:
+    headers = {"Retry-After": retry_after} if retry_after is not None else {}
+    return httpx.Response(429, headers=headers, json={"message": "You are being rate limited."})
+
+
 @pytest.fixture(autouse=True)
 def reset_moderation_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     moderation.mod_cache.clear()
     moderation.mod_inflight.clear()
     moderation.guild_cache.clear()
+    moderation.inaccessible_guilds.clear()
+    moderation.discord_backoff.until = 0.0
     monkeypatch.setattr(moderation.settings, "BOT_TOKEN", "bot-token")
+    monkeypatch.setattr(moderation.settings, "REDIS_URL", None)
+    # Every guild is one SpellBot knows unless a test says otherwise.
+    known_guilds(monkeypatch, known=True)
 
 
 @pytest.mark.asyncio
@@ -396,3 +420,216 @@ class TestNewRoleIsPickedUpImmediately:
         cached = moderation.guild_cache_get(100)
         assert cached is not None
         assert cached["roles"] == fresh
+
+
+@pytest.mark.asyncio
+class TestUnknownGuilds:
+    """Discord is never asked about a guild SpellBot has no record of."""
+
+    async def test_unknown_guild_is_denied_without_asking_discord(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        known_guilds(monkeypatch, known=False)
+        requests = serve_httpx(monkeypatch, in_order())
+
+        assert await moderation.viewer_is_moderator(1, 100) is False
+
+        assert requests == []
+
+    async def test_unknown_guild_denial_is_not_cached(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # The guild id comes from the URL, so caching made-up ones would grow without bound.
+        known_guilds(monkeypatch, known=False)
+
+        await moderation.viewer_is_moderator(1, 100)
+
+        assert moderation.mod_cache == {}
+
+    async def test_cached_result_skips_the_guild_check(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        moderation.cache_put((1, 100), result=True)
+        calls = known_guilds(monkeypatch, known=False)
+
+        assert await moderation.viewer_is_moderator(1, 100) is True
+        assert calls == []
+
+
+@pytest.mark.asyncio
+class TestGuildKnown:
+    async def test_reuses_open_session(self, decoy: Decoy, stub: Stub) -> None:
+        is_set_fake = stub(moderation.DatabaseSession, "is_set")
+        decoy.when(is_set_fake(), ignore_extra_args=True).then_return(True)
+        manager = stub(moderation, "db_session_manager")
+        guild_exists = stub(moderation.services.plays, "guild_exists")
+        decoy.when(await guild_exists(ANY), ignore_extra_args=True).then_return(True)
+
+        assert await guild_known(100) is True
+
+        decoy.verify(await guild_exists(100), times=1)
+        decoy.verify(manager(), times=0, ignore_extra_args=True)
+
+    async def test_opens_session_when_none(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        is_set_fake = stub(moderation.DatabaseSession, "is_set")
+        decoy.when(is_set_fake()).then_return(False)
+        opened: list[bool] = []
+
+        @asynccontextmanager
+        async def session_manager() -> AsyncGenerator[None]:
+            opened.append(True)
+            yield
+
+        monkeypatch.setattr(moderation, "db_session_manager", session_manager)
+        guild_exists = stub(moderation.services.plays, "guild_exists")
+        decoy.when(await guild_exists(100)).then_return(False)
+
+        assert await guild_known(100) is False
+        assert opened == [True]
+
+
+@pytest.mark.asyncio
+class TestInaccessibleGuilds:
+    """A guild the bot can't see is asked about once, not once per request."""
+
+    @pytest.mark.parametrize("status_code", [403, 404])
+    async def test_inaccessible_guild_is_not_a_moderator(
+        self,
+        status_code: int,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        serve_httpx(monkeypatch, in_order(httpx.Response(status_code, json={})))
+
+        assert await moderation.fetch_is_moderator(1, 100) is False
+        assert moderation.guild_inaccessible(100) is True
+
+    async def test_other_viewers_do_not_ask_again(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        requests = serve_httpx(monkeypatch, in_order(httpx.Response(403, json={})))
+
+        assert await moderation.viewer_is_moderator(1, 100) is False
+        assert await moderation.viewer_is_moderator(2, 100) is False
+        assert await moderation.viewer_is_moderator(3, 100) is False
+
+        assert len(requests) == 1
+
+    async def test_inaccessible_entry_expires(self) -> None:
+        moderation.inaccessible_guilds[100] = time.monotonic() - 1
+
+        assert moderation.guild_inaccessible(100) is False
+        assert 100 not in moderation.inaccessible_guilds
+
+    async def test_unrecorded_guild_is_accessible(self) -> None:
+        assert moderation.guild_inaccessible(100) is False
+
+    async def test_losing_access_during_a_role_refetch(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # The viewer holds a role the cached snapshot doesn't know, and when the guild is
+        # fetched again the bot has been removed from it.
+        moderation.guild_cache_put(100, {"owner_id": "2", "roles": []})
+        serve_httpx(monkeypatch, in_order(member_response(["500"]), httpx.Response(403, json={})))
+
+        assert await moderation.fetch_is_moderator(1, 100) is False
+        assert moderation.guild_inaccessible(100) is True
+
+
+@pytest.mark.asyncio
+class TestDiscordBackoff:
+    """A 429 counts toward Discord's ban threshold, so stop asking until told to resume."""
+
+    async def test_rate_limited_guild_fetch_backs_off(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        clock = stub(moderation.time, "monotonic")
+        decoy.when(clock()).then_return(1000.0)
+        serve_httpx(monkeypatch, in_order(rate_limited_response("2.5")))
+
+        assert await moderation.fetch_is_moderator(1, 100) is None
+        assert moderation.discord_backoff.until == 1002.5
+
+    async def test_rate_limited_member_fetch_backs_off(
+        self,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        clock = stub(moderation.time, "monotonic")
+        decoy.when(clock()).then_return(1000.0)
+        serve_httpx(monkeypatch, in_order(guild_response("2", []), rate_limited_response("3")))
+
+        assert await moderation.fetch_is_moderator(1, 100) is None
+        assert moderation.discord_backoff.until == 1003.0
+
+    @pytest.mark.parametrize("retry_after", [None, "soon"])
+    async def test_unusable_retry_after_uses_the_default(
+        self,
+        retry_after: str | None,
+        decoy: Decoy,
+        stub: Stub,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        clock = stub(moderation.time, "monotonic")
+        decoy.when(clock()).then_return(1000.0)
+        serve_httpx(monkeypatch, in_order(rate_limited_response(retry_after)))
+
+        await moderation.fetch_is_moderator(1, 100)
+
+        assert moderation.discord_backoff.until == 1000.0 + moderation.DEFAULT_RETRY_AFTER_S
+
+    async def test_nothing_is_asked_while_backing_off(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        moderation.discord_backoff.until = time.monotonic() + 60
+        requests = serve_httpx(monkeypatch, in_order())
+
+        assert await moderation.viewer_is_moderator(1, 100) is False
+
+        assert requests == []
+        assert moderation.mod_cache == {}  # a back-off is not a verdict
+
+
+@pytest.mark.asyncio
+class TestPerViewerRateLimit:
+    async def test_over_the_limit_is_not_asked(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        keys: list[str] = []
+
+        async def over_rate_limit(key: str) -> bool:
+            keys.append(key)
+            return True
+
+        monkeypatch.setattr(moderation, "over_rate_limit", over_rate_limit)
+        requests = serve_httpx(monkeypatch, in_order())
+
+        assert await moderation.viewer_is_moderator(1, 100) is False
+
+        assert keys == ["moderator_lookup:1"]
+        assert requests == []
+        assert moderation.mod_cache == {}
+
+    async def test_cached_results_do_not_count(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        keys: list[str] = []
+
+        async def over_rate_limit(key: str) -> bool:
+            keys.append(key)
+            return False
+
+        monkeypatch.setattr(moderation, "over_rate_limit", over_rate_limit)
+        serve_httpx(monkeypatch, in_order(guild_response("1", []), member_response([])))
+
+        assert await moderation.viewer_is_moderator(1, 100) is True
+        assert await moderation.viewer_is_moderator(1, 100) is True
+
+        assert keys == ["moderator_lookup:1"]

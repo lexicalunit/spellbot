@@ -190,7 +190,7 @@ async def session_context(
         sync_session_factory = sessionmaker(bind=sync_engine, expire_on_commit=False)
         sync_session = sync_session_factory()
 
-        def _truncate_all() -> None:
+        def truncate_all() -> None:
             # Schema-qualify so the audit-schema tables (audit.activity / audit.transaction) are
             # reset between tests too, not just public tables.
             tables = ",".join(
@@ -200,7 +200,7 @@ async def session_context(
             with sync_engine.connect() as conn:
                 conn.execute(text(f"TRUNCATE TABLE {tables} RESTART IDENTITY CASCADE"))
 
-        _truncate_all()
+        truncate_all()
 
         FactorySession.current = sync_session
 
@@ -209,7 +209,7 @@ async def session_context(
                 try:
                     sync_session.close()
                     await test_session.close()
-                    _truncate_all()
+                    truncate_all()
                     sync_engine.dispose()
                     if async_engine.value is not None:
                         await async_engine.value.dispose()

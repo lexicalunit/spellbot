@@ -8,6 +8,7 @@
     <meta name="theme-color" content="#1a202c">
     <meta http-equiv="refresh" content="60">
     <link rel="icon" type="image/x-icon" href="https://spellbot.io/favicon.ico">
+    {% include "image_fallback.html.j2" %}
     <style>
         {% include "base.css" %}
         {% include "queues.css" %}
@@ -100,7 +101,7 @@
                         class="played-list__logo"
                         src="{{ pg.logo }}"
                         alt=""
-                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                        data-fallback-src="{{ default_logo }}"
                         loading="lazy"
                     >
                     <span class="played-list__name">{{ pg.guild_name or t("web.common.spellbot_server") }}</span>
@@ -139,7 +140,7 @@
                         class="queue-card__logo"
                         src="{{ row.logo }}"
                         alt="{{ row.guild_name }}"
-                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                        data-fallback-src="{{ default_logo }}"
                         loading="lazy"
                     >
                     <div class="queue-card__heading">
@@ -202,7 +203,7 @@
                         class="queue-card__logo"
                         src="{{ game.logo }}"
                         alt="{{ game.guild_name }}"
-                        onerror="this.onerror=null;this.src='{{ default_logo }}';"
+                        data-fallback-src="{{ default_logo }}"
                         loading="lazy"
                     >
                     <div class="queue-card__heading">
@@ -253,7 +254,7 @@
             {% endfor %}
         </section>
         {% endif %}
-        <script>
+        <script nonce="{{ csp_nonce }}">
             (function () {
                 var formatSelect = document.getElementById("filter-format");
                 var bracketSelect = document.getElementById("filter-bracket");
@@ -309,7 +310,7 @@
         </script>
         {% endif %}
         {% if viewer.logged_in %}
-        <script>
+        <script nonce="{{ csp_nonce }}">
             (function () {
                 var mine = document.getElementById("filter-mine");
                 if (!mine) return;

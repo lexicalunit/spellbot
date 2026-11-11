@@ -28,7 +28,7 @@ def is_cached(xid: int, name: str, locale: str | None, icon: str | None) -> bool
     return guild_cache.get(xid) == (name, locale, icon)
 
 
-def _guild_icon_url(guild: discord.Guild) -> str | None:
+def guild_icon_url(guild: discord.Guild) -> str | None:
     """Return the Discord CDN URL for a `discord.Guild`'s icon, or None."""
     icon = getattr(guild, "icon", None)
     return str(icon) if icon else None
@@ -40,7 +40,7 @@ async def upsert(guild: discord.Guild, locale: str | None = None) -> GuildData |
     icon_max_len = column_length(Guild.icon)
     raw_name = getattr(guild, "name", "")
     name = raw_name[:name_max_len]
-    raw_icon = _guild_icon_url(guild)
+    raw_icon = guild_icon_url(guild)
     icon = raw_icon[:icon_max_len] if raw_icon else None
     if not is_cached(guild.id, name, locale, icon):
         values = {

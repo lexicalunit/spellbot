@@ -309,7 +309,7 @@
             <p><a href="/status.json">SpellBot Status JSON API</a></p>
         </div>
     </div>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         (async function() {
             const dot = document.getElementById('discord-status-dot');
             const text = document.getElementById('discord-status-text');

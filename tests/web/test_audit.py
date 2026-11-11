@@ -42,7 +42,7 @@ class TestAuditDisplayHelpers:
             "old_data": {"default_seats": 4},
             "changed_data": {"default_seats": 2},
         }
-        row = audit_web._change_rows([event])[0]
+        row = audit_web.change_rows([event])[0]
         assert row["who"] == "—"
         assert row["source"] == "—"
         assert row["old"] == "4"
@@ -57,12 +57,12 @@ class TestAuditDisplayHelpers:
             "old_data": {},
             "changed_data": {"motd": "hi"},
         }
-        assert audit_web._change_rows([event])[0]["who"] == "7"
+        assert audit_web.change_rows([event])[0]["who"] == "7"
 
 
-async def _record_channel_change(channel_xid: int, **values: object) -> None:
+async def record_channel_change(guild_xid: int, channel_xid: int, **values: object) -> None:
     with audit.actor(42, "owner", audit.SOURCE_WEB):
-        await channels.update_settings(channel_xid, **values)
+        await channels.update_settings(guild_xid, channel_xid, **values)
 
 
 @pytest.mark.asyncio
@@ -156,12 +156,27 @@ class TestChannelAuditPage:
         channel = factories.channel.create(xid=304, name="channel", guild=guild, blind_games=False)
         # Toggle a boolean back and forth to record more than one page of changes.
         for i in range(audit.SETTINGS_CHANGE_PAGE_SIZE + 1):
-            await _record_channel_change(channel.xid, blind_games=bool(i % 2 == 0))
+            await record_channel_change(guild.xid, channel.xid, blind_games=bool(i % 2 == 0))
 
         first = await mod_client.get(f"/g/{guild.xid}/c/{channel.xid}/audit")
         assert "Next page" in await first.text()
         second = await mod_client.get(f"/g/{guild.xid}/c/{channel.xid}/audit?page=1")
         assert "Previous page" in await second.text()
+
+    async def test_other_guilds_channel_is_404(
+        self,
+        mod_client: ClientSession,
+        factories: Factories,
+    ) -> None:
+        guild = factories.guild.create(xid=208, name="guild")
+        victim_guild = factories.guild.create(xid=209, name="victim")
+        channel = factories.channel.create(xid=308, name="channel", guild=victim_guild, motd="old")
+        await record_channel_change(victim_guild.xid, channel.xid, motd="secret plans")
+
+        # Moderating `guild` must not reveal the history of a channel in `victim_guild`.
+        resp = await mod_client.get(f"/g/{guild.xid}/c/{channel.xid}/audit")
+        assert resp.status == 404
+        assert "secret plans" not in await resp.text()
 
 
 @pytest.mark.asyncio

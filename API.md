@@ -157,7 +157,7 @@ Returns the public list of pending queues currently waiting for players, the lis
 
 All authenticated endpoints require a valid API token to be passed in the `Authorization` header. The token should be prefixed with `"Bearer "`.
 
-> Note: API tokens are scoped to certain endpoints. Just because you have an API token does not mean that all authenticated endpoints are accessible.
+> Note: API tokens are scoped to certain endpoints. Just because you have an API token does not mean that all authenticated endpoints are accessible. A resource scope such as `game` grants every endpoint under `/api/game`, while `game:verify`, `game:record`, or `game:metadata` grants only that one endpoint.
 
 If there is an error processing these requests, the response will follow the following format:
 
@@ -171,7 +171,7 @@ If there is an error processing these requests, the response will follow the fol
 
 Verifies the user's PIN for the given game for the given guild. This API is for external applications that track a user's game history, such as [Mythic Track](https://www.mythictrack.com/).
 
-> Note: Required API scope: `game`.
+> Note: Required API scope: `game` or `game:verify`.
 
 #### Request
 
@@ -197,7 +197,9 @@ Verifies the user's PIN for the given game for the given guild. This API is for 
 
 Records the given game as played by the given users and their commanders. This will send a DM to each user with the game record, informing them that the game was recorded. This API is for external applications that track a user's game history, such as [Mythic Track](https://www.mythictrack.com/).
 
-> Note: Required API scope: `game`.
+Because every listed player gets a DM, `players` must list exactly the game's players, each once; otherwise the request is a `400`. Each `commander` must be a string. It is shown as plain text (markdown and mentions are escaped) and cut to 100 characters.
+
+> Note: Required API scope: `game` or `game:record`.
 
 #### Request
 
@@ -242,7 +244,7 @@ A few rules are enforced on write:
 - `players` is capped at 64 entries and `links` at 32 entries; exceeding either is a `400`.
 - Each `links` value must be an `http(s)` URL. Other values (e.g. `javascript:` URIs) are dropped before storage.
 
-> Note: Required API scope: `game`.
+> Note: Required API scope: `game` or `game:metadata`.
 
 #### Request
 

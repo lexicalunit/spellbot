@@ -523,6 +523,11 @@ msgid "<@%(user_id)s> has been unblocked."
 msgstr "<@%(user_id)s> har avblockerats."
 
 #, python-format
+msgctxt "block.limit"
+msgid "You can block at most %(count)s users. Unblock someone to make room."
+msgstr ""
+
+#, python-format
 msgctxt "block.manage_message"
 msgid ""
 "You can view and manage your blocked users from your profile page.\n"

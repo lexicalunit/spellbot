@@ -278,8 +278,20 @@ async def ensure_exists(user_xid: int) -> None:
     await DatabaseSession.commit()
 
 
-async def block(author_xid: int, target_xid: int) -> None:
-    """Add a block for the given author, blocking the given target."""
+async def block(author_xid: int, target_xid: int) -> bool:
+    """
+    Add a block for the given author, blocking the given target.
+
+    Returns False, blocking no one, when the author already blocks `MAX_BLOCKED_USERS` other
+    users. Blocking someone who is already blocked always succeeds.
+    """
+    others = await DatabaseSession.execute(
+        select(func.count())
+        .select_from(Block)
+        .where(Block.user_xid == author_xid, Block.blocked_user_xid != target_xid),
+    )
+    if others.scalar_one() >= settings.MAX_BLOCKED_USERS:
+        return False
     values = {
         "user_xid": author_xid,
         "blocked_user_xid": target_xid,
@@ -288,6 +300,7 @@ async def block(author_xid: int, target_xid: int) -> None:
     upsert = upsert.on_conflict_do_nothing()
     await DatabaseSession.execute(upsert, values)
     await DatabaseSession.commit()
+    return True
 
 
 @tracer.wrap()

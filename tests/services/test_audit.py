@@ -44,7 +44,7 @@ class TestSettingsAudit:
         channel = factories.channel.create(xid=2, guild=guild, default_seats=4)
 
         with audit.actor(123, "Amy", audit.SOURCE_WEB):
-            await channels.update_settings(channel.xid, default_seats=2)
+            await channels.update_settings(guild.xid, channel.xid, default_seats=2)
 
         changes = await make_changes("channels")
         assert len(changes) == 1
@@ -60,7 +60,7 @@ class TestSettingsAudit:
         channel = factories.channel.create(xid=2, guild=guild, default_seats=4)
 
         with audit.actor(123, "Amy", audit.SOURCE_WEB):
-            await channels.update_settings(channel.xid, default_seats=4)  # same value
+            await channels.update_settings(guild.xid, channel.xid, default_seats=4)  # same value
 
         assert await make_changes("channels") == []
 
@@ -68,7 +68,7 @@ class TestSettingsAudit:
         guild = factories.guild.create(xid=1)
         channel = factories.channel.create(xid=2, guild=guild, blind_games=False)
 
-        await channels.update_settings(channel.xid, blind_games=True)  # no actor context
+        await channels.update_settings(guild.xid, channel.xid, blind_games=True)  # no actor context
 
         changes = await make_changes("channels")
         assert len(changes) == 1

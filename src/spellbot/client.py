@@ -47,13 +47,13 @@ class TTLDict[K, V]:
         self._ttl = ttl
         self._data: OrderedDict[K, tuple[float, V]] = OrderedDict()
 
-    def _purge(self) -> None:
+    def purge(self) -> None:
         now = monotonic()
         for k in [k for k, (exp, _) in self._data.items() if exp <= now]:
             del self._data[k]
 
     def get(self, key: K) -> V | None:
-        self._purge()
+        self.purge()
         item = self._data.get(key)
         if item is None:
             return None
@@ -61,13 +61,13 @@ class TTLDict[K, V]:
         return item[1]
 
     def __getitem__(self, key: K) -> V:
-        self._purge()
+        self.purge()
         item = self._data[key]
         self._data.move_to_end(key)
         return item[1]
 
     def __setitem__(self, key: K, value: V) -> None:
-        self._purge()
+        self.purge()
         self._data[key] = (monotonic() + self._ttl, value)
         self._data.move_to_end(key)
         while len(self._data) > self._maxsize:
