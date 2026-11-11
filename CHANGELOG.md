@@ -9,8 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-- PIN verification now refuses a game's requests once it has had too many wrong PINs, even
-  a right one, and requires the PIN to be a string of 6 digits.
+- PIN verification now refuses a game's requests once it has had too many wrong PINs, even a right one, and requires the PIN to be a string of 6 digits.
 - The API turns away clients that sent too many bad tokens before looking the token up.
 - Unexpected errors from PIN verification no longer echo the error's text back to the caller.
 
@@ -19,18 +18,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Server moderators can no longer change, forget, or view the settings of another server's channels.
-- Website moderator checks now skip unknown servers, back off when Discord rate limits us, and
-  are rate limited per user, so they can't spend the bot's Discord request budget.
+- Website moderator checks now skip unknown servers, back off when Discord rate limits us, and are rate limited per user, so they can't spend the bot's Discord request budget.
 - CSV exports no longer include game join links that the viewer isn't allowed to see.
 - The record API now only DMs a game's own players, and shows commanders as escaped plain text.
 - CSV exports quote names that would otherwise run as formulas when opened in a spreadsheet.
 - Block lists are capped at 50 users, and the website only blocks users SpellBot already knows.
-- Record pages and CSV exports are rate limited per visitor, and exports run a few at a time
-  and no longer hold a database connection while downloading.
-- `/war` autocomplete reuses Convoke's list of live Guild Wars for a minute instead of asking
-  Convoke on every keystroke.
-- Malformed ids, page numbers, dates, signatures, and timezone cookies on the website and API
-  now get a 4xx response or are ignored, instead of a server error.
+- Record pages and CSV exports are rate limited per visitor, and exports run a few at a time and no longer hold a database connection while downloading.
+- `/war` autocomplete reuses Convoke's list of live Guild Wars for a minute instead of asking Convoke on every keystroke.
+- Malformed ids, page numbers, dates, signatures, and timezone cookies on the website and API now get a 4xx response or are ignored, instead of a server error.
 
 ### Added
 
