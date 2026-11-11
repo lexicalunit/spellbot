@@ -73,7 +73,7 @@ First copy the example variables file:
 cp infrastructure/db/terraform.tfvars.example infrastructure/db/terraform.tfvars
 ```
 
-Then edit `infrastructure/db/terraform.tfvars` to replace the placeholder values with your actual values.
+Then edit `infrastructure/db/terraform.tfvars` to replace the placeholder values with your actual values. The database isn't reachable from the internet, so open a tunnel first (see [Connecting to production](../DATABASE.md#connecting-to-production)) and set `db_host = "localhost"` and `db_port` to the tunnel's local port.
 
 Finally, run the following commands:
 

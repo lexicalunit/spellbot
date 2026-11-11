@@ -11,8 +11,12 @@ module "aurora_cluster" {
   # Use the smallest Aurora instance type
   instances = {
     one = {
-      instance_class                        = "db.t4g.medium"
-      publicly_accessible                   = true
+      instance_class = "db.t4g.medium"
+      # No public endpoint: only the ECS tasks reach the database, and people connect
+      # through them with `scripts/db-tunnel.sh`.
+      publicly_accessible = false
+      # Apply instance changes now rather than in the next maintenance window.
+      apply_immediately                     = true
       monitoring_interval                   = 60
       performance_insights_enabled          = true
       performance_insights_retention_period = 7

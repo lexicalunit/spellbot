@@ -64,6 +64,16 @@ pg_restore \
   ./spellbot.dump
 ```
 
+## Connecting to production
+
+The production database isn't reachable from the internet. To connect from your machine, open a tunnel through one of the running SpellBot tasks:
+
+```sh
+scripts/db-tunnel.sh prod 5433
+```
+
+This forwards `localhost:5433` to the database until you press Ctrl-C, and a deploy closes it. It needs the AWS CLI with credentials that can start ECS Exec sessions, and the Session Manager plugin (`brew install --cask session-manager-plugin`). While it's open, run `export PGPORT=5433 PGSSLMODE=require` and use `localhost` as the host in the commands below.
+
 ## Readonly access
 
 Sometimes it's useful to have readonly access to the production database, for example when debugging a production issue or [taking a snapshot for local testing](#local-snapshot-of-production).

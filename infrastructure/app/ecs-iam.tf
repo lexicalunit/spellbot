@@ -71,3 +71,26 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets_policy" {
     ]
   })
 }
+
+# ECS Exec: lets the SSM agent Fargate adds to each task open the channels that
+# `scripts/db-tunnel.sh` forwards the database port over.
+resource "aws_iam_role_policy" "ecs_task_exec_policy" {
+  name = "spellbot-ecs-exec"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

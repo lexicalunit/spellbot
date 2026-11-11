@@ -10,6 +10,10 @@ resource "aws_ecs_service" "spellbot" {
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
 
+  # ECS Exec, so `scripts/db-tunnel.sh` can forward a local port to the database
+  # through a running task. Only tasks started after this is turned on get the agent.
+  enable_execute_command = true
+
   dynamic "deployment_circuit_breaker" {
     for_each = var.enable_circuit_breaker ? [1] : []
     content {
