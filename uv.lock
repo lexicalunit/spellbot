@@ -1551,16 +1551,16 @@ wheels = [
 
 [[package]]
 name = "pylic"
-version = "5.0.1"
+version = "6.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "license-expression" },
     { name = "toml" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/80/f9c03d4c6f8e6db67582408dbb4c042dd788435d95e75268af61a27729d3/pylic-5.0.1.tar.gz", hash = "sha256:2948a64298f3f3b3a1ce8b81e0bfc6ee73eeccb5a9a8785c3c5c362d771d7f6a", size = 21966, upload-time = "2025-03-19T21:34:18.697Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/af/d9aa11cd36a02734b45e5dbbc0c67c3a8097d57aefc107fbed2a554be9d5/pylic-6.2.0.tar.gz", hash = "sha256:1c8fb7d5812ecf150f8b366d5b5a9f3be5c5de089acd589a5afde7e687c14ad4", size = 18249, upload-time = "2026-11-02T06:53:28.684Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6c/bf/dbb14e8e2d72952784570156fa885750eaf81fd03e45c93bf5dc2c1ab97b/pylic-5.0.1-py3-none-any.whl", hash = "sha256:ae9a863acec4df949f005c3f30c78045a204ee19a7e4c652fdf791d72b4b8bad", size = 7412, upload-time = "2025-03-19T21:34:17.537Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/dd/0386ed1bd4b394729c66374128e2c16a62731200c09d2b0faa48278a7789/pylic-6.2.0-py3-none-any.whl", hash = "sha256:5ec087359f2ef04f2ec10cfb49b622d8c106adee69491fd15e53cf5f21cf845d", size = 7540, upload-time = "2026-11-02T06:53:27.812Z" },
 ]
 
 [[package]]
