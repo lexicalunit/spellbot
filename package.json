@@ -21,10 +21,10 @@
     "jquery": "^4.0.0"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/coverage-v8": "^5.1.0",
     "license-checker-evergreen": "^6.3.1",
-    "oxfmt": "^0.75.0",
-    "oxlint": "^1.90.0",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
     "prettier": "^3.9.10",
     "prettier-plugin-jinja-template": "^2.2.0",
     "vitest": "^5.0.1"
