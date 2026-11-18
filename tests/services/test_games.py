@@ -1141,9 +1141,9 @@ class TestGamesToData:
         assert await games.games_to_data([]) == []
         assert statements == []
 
-    async def test_pins_hidden_without_mythic_track(self) -> None:
+    async def test_pins_kept_without_mythic_track(self) -> None:
         guild = GuildFactory.create(enable_mythic_track=False)
         channel = ChannelFactory.create(guild=guild)
         started = self.make_games(guild, channel, 2)[1]
         data = await game_to_data(started)
-        assert set(data.player_pins.values()) == {None}
+        assert set(data.player_pins.values()) == {"123456"}

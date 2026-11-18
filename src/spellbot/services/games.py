@@ -138,10 +138,7 @@ async def games_to_data(games: Sequence[Game]) -> list[GameData]:
                 channel=channels[game.channel_xid],
                 posts=posts[game.id],
                 players=[UserData.from_model(user) for user in players_by_game[game.id]],
-                player_pins={
-                    play.user_xid: play.pin if guild.enable_mythic_track else None
-                    for play in plays_by_game[game.id]
-                },
+                player_pins={play.user_xid: play.pin for play in plays_by_game[game.id]},
             ),
         )
     return built

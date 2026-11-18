@@ -83,8 +83,8 @@ class GameStart:
         # Convoke needs player pins, so we have to generate them before creating the game link.
         # Initially the design was to let the DB do this later, in the `make_ready()` method.
         # This could be revisited later to better factor this code. Note that we always generate
-        # pin for a player, even if Mythic Track is not enabled for the guild. The `player_pins()`
-        # method of the Game object will return None for players if MT is not enabled.
+        # a pin for each player, even if Mythic Track is not enabled for the guild. Convoke links
+        # carry the pin either way; only the Mythic Track DM section depends on the guild setting.
         pins = {xid: generate_pin() for xid in player_xids}
 
         if game_data.game_link:
@@ -245,7 +245,7 @@ class GameStart:
                 pin=pin,
             )
 
-            if pin:
+            if pin and game_data.guild.enable_mythic_track:
                 mt_emoji = ""
                 emojis = self.action.bot.emojis_cache
                 if emoji := next((e for e in emojis if e.name == "mythic_track"), None):

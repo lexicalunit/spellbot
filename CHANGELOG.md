@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds the PIN to the Convoke URL in DMs even when Mythic Track is disabled.
+
 ## [v24.1.5](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.5) - 2026-11-17
 
 ### Changed

@@ -1290,7 +1290,7 @@ class TestLookingForGameAction:
         decoy: Decoy,
         stub: Stub,
     ) -> None:
-        """DMed Convoke links carry the player's PIN when Mythic Track gives them one."""
+        """DMed Convoke links carry the player's PIN."""
         mock_user = decoy.mock(cls=discord.User)
 
         game_data = create_mock_game(
@@ -1318,6 +1318,43 @@ class TestLookingForGameAction:
         embed_value = captured(embed, discord.Embed)
         assert embed_value.description is not None
         assert "(https://www.convoke.games/en/play/abc?pin=123456)" in embed_value.description
+
+    async def test_handle_direct_messages_convoke_link_carries_pin_without_mythic_track(
+        self,
+        action: LookingForGameAction,
+        decoy: Decoy,
+        stub: Stub,
+    ) -> None:
+        """DMed Convoke links carry the PIN even when the guild has Mythic Track disabled."""
+        mock_user = decoy.mock(cls=discord.User)
+
+        game_data = create_mock_game(
+            game_id=1,
+            service=GameService.CONVOKE.value,
+            game_link="https://www.convoke.games/en/play/abc",
+        )
+        game_data.guild = create_mock_guild(enable_mythic_track=False)
+        game_data.status = GameStatus.STARTED.value
+        game_data.posts = [create_test_post()]
+        game_data.players = [create_mock_user(xid=123, name="TestPlayer")]
+        game_data.player_pins = {123: "123456"}
+
+        safe_fetch_user_fake = stub(game_start, "safe_fetch_user")
+        decoy.when(await safe_fetch_user_fake(ANY, ANY), ignore_extra_args=True).then_return(
+            mock_user
+        )
+        send_stub = stub(game_start, "safe_send_user")
+        give_awards_fake = stub(services.awards, "give_awards")
+        decoy.when(await give_awards_fake(ANY, ANY), ignore_extra_args=True).then_return({})
+
+        await action.game_start.handle_direct_messages(game_data)
+
+        embed = matchers.ValueCaptor[discord.Embed]()
+        decoy.verify(await send_stub(mock_user, embed=embed.matcher), times=1)
+        embed_value = captured(embed, discord.Embed)
+        assert embed_value.description is not None
+        assert "(https://www.convoke.games/en/play/abc?pin=123456)" in embed_value.description
+        assert "Mythic Track" not in embed_value.description
 
     async def test_handle_direct_messages_award_to_unfetched_player(
         self,
