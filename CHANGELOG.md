@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Adds the MT PIN to the Convoke URL in DMs.
+
 ## [v24.1.4](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.4) - 2026-11-11
 
 ### Fixed

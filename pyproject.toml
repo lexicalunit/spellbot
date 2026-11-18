@@ -283,6 +283,7 @@ addopts = """
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
   "ignore:The default span name for @tracer.wrap on methods does not include the class name:ddtrace.internal.utils.deprecations.DDTraceDeprecationWarning",
-  # upstream in discord.py (as of 2.7.1), nothing for us to change
   "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:discord.ext.commands.core",
+  "ignore:It is recommended to use web.RequestKey instances for keys:aiohttp.web_exceptions.NotAppKeyWarning:aiohttp_session",
+  "ignore:It is recommended to use web.RequestKey instances for keys:aiohttp.web_exceptions.NotAppKeyWarning:aiohttp_jinja2",
 ]

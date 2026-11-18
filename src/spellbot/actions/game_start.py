@@ -234,16 +234,18 @@ class GameStart:
             # Use the stored locale from database, falling back to guild locale
             player_locale = player_locales.get(player_xid, guild_locale_fallback)
 
-            # Generate a personalized embed for this player with their locale
+            # Generate a personalized embed for this player with their locale and PIN
+            pin = player_pins[player_xid]
             embed = self.action.game_embed(
                 game_data,
                 dm=True,
                 suggested_vc=suggested_vc,
                 rematch=rematch,
                 locale_override=player_locale,
+                pin=pin,
             )
 
-            if pin := player_pins[player_xid]:
+            if pin:
                 mt_emoji = ""
                 emojis = self.action.bot.emojis_cache
                 if emoji := next((e for e in emojis if e.name == "mythic_track"), None):

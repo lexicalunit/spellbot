@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC
 from typing import TYPE_CHECKING
+from urllib.parse import urlencode
 
 import discord
 from ddtrace.trace import tracer
@@ -178,6 +179,7 @@ class GameData:
         rematch: bool = False,
         emojis: Emojis | None = None,
         locale: str | None = None,
+        pin: str | None = None,
     ) -> str:
         locale = locale or self.locale
         tag_span(
@@ -192,7 +194,14 @@ class GameData:
         if self.guild.notice:
             parts.append(f"{self.guild.notice}")
         parts.append(
-            self.embed_description_link_info(effective_service, dm, rematch, emojis, locale),
+            self.embed_description_link_info(
+                effective_service,
+                dm,
+                rematch,
+                emojis,
+                locale,
+                pin=pin,
+            ),
         )
         parts.extend(self.embed_description_extras(dm, suggested_vc, locale))
         parts.extend(self.embed_motd())
@@ -254,6 +263,7 @@ class GameData:
         emojis: Emojis | None = None,
         supporters: set[int] | None = None,
         locale_override: str | None = None,
+        pin: str | None = None,
     ) -> discord.Embed:
         locale = locale_override or self.locale
         emojis = emojis or []
@@ -266,6 +276,7 @@ class GameData:
             rematch=rematch,
             emojis=emojis,
             locale=locale,
+            pin=pin,
         )
         if self.rules:
             embed.add_field(
@@ -338,6 +349,8 @@ class GameData:
         rematch: bool,
         emojis: Emojis | None = None,
         locale: str | None = None,
+        *,
+        pin: str | None = None,
     ) -> str:
         locale = locale or self.locale
         if self.status != GameStatus.STARTED.value:
@@ -355,11 +368,14 @@ class GameData:
         if rematch:
             return t("game.description.rematch_info", locale=locale)
         if self.game_link:
+            link = self.game_link
+            if dm and pin and effective_service == GameService.CONVOKE:
+                link = f"{link}?{urlencode({'pin': pin})}"
             return t(
                 "game.description.join_link",
                 locale=locale,
                 service=str(effective_service),
-                link=self.game_link,
+                link=link,
             )
         if effective_service.fallback_url:
             return t(

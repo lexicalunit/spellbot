@@ -1372,3 +1372,46 @@ class TestConvokeGuildCta:
     async def test_cta_is_not_a_field(self, factories: Factories) -> None:
         game = await self.make_game(factories)
         assert "Cool Guild" not in str(game.to_embed().fields)
+
+
+@pytest.mark.asyncio
+class TestConvokePinLink:
+    LINK = "https://www.convoke.games/en/play/abc"
+
+    async def make_game(
+        self,
+        factories: Factories,
+        *,
+        service: int = GameService.CONVOKE.value,
+    ) -> GameData:
+        guild = factories.guild.create(show_links=True)
+        channel = factories.channel.create(guild=guild)
+        game = factories.game.create(
+            guild=guild,
+            channel=channel,
+            service=service,
+            status=GameStatus.STARTED.value,
+            started_at=datetime(2021, 10, 31, tzinfo=UTC),
+            game_link=self.LINK,
+        )
+        factories.post.create(guild=guild, channel=channel, game=game)
+        return await game_to_data(game)
+
+    async def test_direct_message_link_carries_the_pin(self, factories: Factories) -> None:
+        game = await self.make_game(factories)
+        embed = game.to_embed(dm=True, pin="123456")
+        assert f"({self.LINK}?pin=123456)" in (embed.description or "")
+
+    async def test_channel_post_link_has_no_pin(self, factories: Factories) -> None:
+        game = await self.make_game(factories)
+        embed = game.to_embed(pin="123456")
+        assert f"({self.LINK})" in (embed.description or "")
+
+    async def test_direct_message_without_a_pin(self, factories: Factories) -> None:
+        game = await self.make_game(factories)
+        assert f"({self.LINK})" in description(game, dm=True)
+
+    async def test_only_convoke_links_carry_the_pin(self, factories: Factories) -> None:
+        game = await self.make_game(factories, service=GameService.GIRUDO.value)
+        embed = game.to_embed(dm=True, pin="123456")
+        assert f"({self.LINK})" in (embed.description or "")
