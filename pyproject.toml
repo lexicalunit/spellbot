@@ -107,7 +107,7 @@ error-on-warning = true
 # factory_boy's nested `Meta` classes don't subclass the base factory's `Meta`.
 [[tool.ty.overrides]]
 include = ["tests/factories/**"]
-rules = { invalid-attribute-override = "ignore" }
+rules = { incompatible-attribute-override = "ignore" }
 
 # Tests type mocks as the discord.py classes they stand in for, which use `__slots__`.
 [[tool.ty.overrides]]
