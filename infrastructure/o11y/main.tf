@@ -65,18 +65,29 @@ resource "datadog_monitor" "spellbot_application_error" {
 }
 
 # One monitor per outside service, matching SpellBot's `Integration` enum (a test checks
-# they agree). Failure logs carry `@integration:<name>`. A service is failing while any of
-# its failures fall in the window, which re-alerts every two hours, and recovers once a
-# whole window passes without one. Each window must outlast the gap between calls to that
-# service: Patreon is only synced hourly, so a shorter window would recover between syncs.
+# they agree). Failure logs carry `@integration:<name>`. A service is failing while more
+# than its tolerated number of failures fall in the window, which re-alerts every two hours,
+# and recovers once a whole window passes without one. Each window must outlast the gap
+# between calls to that service: Patreon is only synced hourly, so a shorter window would
+# recover between syncs.
 locals {
   integration_failure_windows = {
     "Castlog"        = "30m"
-    "Convoke"        = "30m"
+    "Convoke"        = "60m"
     "EDHLab"         = "30m"
     "Girudo"         = "30m"
     "Patreon"        = "90m"
     "Playgroup Live" = "30m"
+  }
+
+  # Failures a service may have in its window without alerting; any service not listed
+  # tolerates none. Castlog and Convoke each drop a lone request every few days, every retry
+  # timing out at once, with nothing failing around it. Those cost one link or report, not an
+  # outage, so it takes several together to alert. Convoke's wider window keeps a quiet-hours
+  # outage, with only a few games starting, from slipping under the bar.
+  integration_failure_tolerance = {
+    "Castlog" = 2
+    "Convoke" = 2
   }
 }
 
@@ -89,13 +100,13 @@ resource "datadog_monitor" "spellbot_integration_failing" {
   renotify_interval   = 120
   renotify_statuses   = ["alert"]
   monitor_thresholds {
-    critical = 0
+    critical = lookup(local.integration_failure_tolerance, each.key, 0)
   }
   name    = "SpellBot: ${each.key} requests are failing"
   type    = "log alert"
   tags    = ["service:spellbot", "env:prod"]
   query   = <<-EOT
-    logs("environment:prod status:error @integration:\"${each.key}\"").index("*").rollup("count").last("${each.value}") > 0
+    logs("environment:prod status:error @integration:\"${each.key}\"").index("*").rollup("count").last("${each.value}") > ${lookup(local.integration_failure_tolerance, each.key, 0)}
   EOT
   message = <<-EOT
     {{#is_alert}}

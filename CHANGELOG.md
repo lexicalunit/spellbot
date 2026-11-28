@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- The Castlog and Convoke monitors now ignore a lone failed request and alert on three or more.
+
 ## [v24.1.6](https://github.com/lexicalunit/spellbot/releases/tag/v24.1.6) - 2026-11-18
 
 ### Changed
